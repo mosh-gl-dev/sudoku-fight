@@ -1,0 +1,55 @@
+{
+ "checks": [
+  {
+   "id": "H1 T3-HISTORY-FREEZE + T3-HISTORY-ALL-ONE-CARD + NEW-history-hidden-cards",
+   "result": "pass",
+   "detail": "apk6, phone 1. I opened Home → 'היסטוריה' 6 times, once right after a force-stop. Every time: 0 synchronouslyUpdateUIProps failures, no Skipped frames and no Davey. The longest frame was 77–116 ms (it used to be 6.5–7.4 s). In the shot taken about 1 s after the tap on a cold start, the cards are already there. Under 'הכל', all cards are fully opaque, and after scrolling the ranked games and the older practice games are sharp (summary '47 משחקים · 55% ניצחונות · 50 אימונים'). Quick filter switching ('מדורג'/'הכל'/'אימון'/'הכל', 0.7 s apart, starting 1 s after opening): 0 failures, longest frame 107 ms. Leaderboard: opening it gave 0 failures and an 82 ms max frame. Switching 'רגיל'↔'כללי' 4 times, 0.3–0.7 s apart: 0 failures, longest frame 147 ms, a brief skeleton, and the pinned 'me' row visible in all 4 shots. 'הישגים': 0 failures, max frame 48 ms. Not checked: the skeleton with reduced motion on, and step 4 (airplane mode, which needs 'no practice games on the phone'). Shots: qa-shots/RF8Y60PP2XZ-H1-cold-1s.png, RF8Y60PP2XZ-H1-mont.png."
+  },
+  {
+   "id": "H3 T3-FIRST-PLAY-SLOW",
+   "result": "fail",
+   "detail": "Not fixed. Force-stop, open, wait 6–12 s on Home, gfxinfo reset, tap 'שחק'. In 4 runs: press frames up to about 85 ms, then no frame at all until 533–606 ms after the tap (before the fix it was 544 ms). Longest frame 136–159 ms. The fade ends around 0.7–0.8 s. On a second visit in the same process, the first frame comes at 270–320 ms and the whole change takes about 0.45 s. I also did force-stop, open, and 'עוד סיבוב' about 2.6 s after launch: the game started with 0 failures, no Skipped frames and no Davey, and the longest frame in the window I could see was 45 ms."
+  },
+  {
+   "id": "H4 T3-MOVE-UIPROPS / T3-GAME-RESULTS-HITCH",
+   "result": "pass",
+   "detail": "Practice game against Pip (רגיל): 10 moves 2 s apart (9 correct, 1 wrong, A7=2). Each move had 0 failures, and so did the total (logcat -T plus the awk count of 'more times'). No Skipped frames or Davey. Game → results, over 3 games, filling the board to the end: 0 failures every time, no Skipped/Davey, and in framestats polled every 0.8 s (439 frames over 4.9 s) the longest frame was 149 ms, none over 200 ms. A 10-shot screencap burst after the last move goes board → Results header → the 'ניצחון!' content rising in. There is no spinner and no 'טוען את התוצאה…'. I did not judge the look of the lock pulse, the flash or the bot avatar. Montage: scratchpad r/mont.png (session)."
+  },
+  {
+   "id": "F4 NEW-hunter-stars-labels-maxfont",
+   "result": "pass",
+   "detail": "font_scale 2.0, L041. Hebrew: '13' x=745–781, '15.5' x=881–956, '17.5' x=972–1043, a 15 px gap between 15.5 and 17.5, and the final 5 whole. The bar ends at x=1034, so 9 px (about 3.4 dp) past it. English: the same positions to the pixel. Digit height is 36 px at 2.0 against 27 at 1.0 (×1.33). The board is not covered. Time bar on L34 (36/48/60) in English at 2.0: '60' whole at x=1007–1053, screen edge 1080. At 1.0: '13' 744–771, '15.5' 881–938, '17.5' 991–1044, so the right edge is not further right at 2.0. Font back to 1.0 and locale he. Shots: qa-shots/RF8Y60PP2XZ-F4-he-f2.png, -he-f2-crop.png, -en-f2.png, -en-f2-L34.png, -he-f1.png."
+  },
+  {
+   "id": "NEW-home-hero-scale (K14)",
+   "result": "pass",
+   "detail": "I read the bounds of play-face from uiautomator 13 times: 5 presses on 'שחק' with system Back, 3 with the in-app back arrow, a press with drag-off, a long press, and 4 cold starts (each also checked again after 15 s). Every time [68,1314][1013,1584], full size. The bug's reduced size [85,1319][996,1579] never appeared."
+  },
+  {
+   "id": "B14 general-ambient-screen-change",
+   "result": "partial",
+   "detail": "Re-marked partial. No sliding and no black flash. 0 failures on every change. Times: Settings ~0.37 s, back arrow ~0.2 s, Back ~0.23 s, 'שחק' second time ~0.45 s, History ~0.4–0.5 s (cards ~0.8 s), History→Home ~0.33 s. But the first 'שחק' after a cold start is ~0.7–0.8 s (no frame until 533–606 ms). Known K8, and H3 not fixed. Digit movement was not measured in pixels, and there is no ffmpeg for the recording."
+  },
+  {
+   "id": "avatars-idle-still",
+   "result": "untested",
+   "detail": "Not checked and not re-marked. Every step needs a ranked search (3 players / 2 phones on the VS), and this batch was told no ranked search, and only one phone."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "general-ambient-screen-change",
+   "result": "partial",
+   "summary": "אין החלקה ואין הבהוב, 0 כשלים. היסטוריה בלי הקפאה (פריים מקסימלי 116 ms). 'שחק' ראשון אחרי הפעלה קרה עדיין ~0.7–0.8 ש׳ (K8 / T3-FIRST-PLAY-SLOW). שאר המעברים 0.2–0.5 ש׳"
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "general-ambient-screen-change",
+   "title": "T3-FIRST-PLAY-SLOW still: the first 'שחק' after a cold start waits about 0.55 s before the first frame (apk6)",
+   "what": "Phone 1 SM-A165F, build 1.1.0 (06.11 18:25, K1 fix + Reanimated patch). Steps: adb shell am force-stop com.mosheg.sudokufight; launch; wait 6–12 s on Home (longer than the ~1.2 s warm-up); adb shell dumpsys gfxinfo com.mosheg.sudokufight reset; input tap on 'שחק' (541,1449); dump framestats. 4 runs: press frames up to ~85 ms after the tap, then no frame at all until 533, 545, 552 and 606 ms. The first 'משחק חדש' frames take 75–159 ms, and the fade ends ~0.7–0.8 s after the tap. The fix check expected the first frame at ~250–300 ms and the end at ~0.45–0.55 s. The second and later visits in the same process are fine: first frame at 270–320 ms, ~0.45 s in total. 0 synchronouslyUpdateUIProps failures, no Skipped/Davey. So the warm-up does not seem to cover what makes the first New Game mount slow.",
+   "severity": "minor"
+  }
+ ],
+ "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי), apk6 מותקן (תואם ל־latest-build). בוצע adb.ts reset (font 1, אנימציות 1, בלי מצב טיסה). שפת האפליקציה he, ו־font_scale 1.0 (הוחזר אחרי בדיקת 2.0). האפליקציה הופעלה מחדש ונמצאת בבית. המתג 'פתח את כל השלבים (בדיקה)' היה דלוק לפני שהתחלתי, ולא נגעתי בו. שיחקתי 3 משחקי אימון מול Pip, ושלבים 41 (פעמיים) ו־34 נוסו בלי כוכבים (פג זמן / יציאה)."
+}

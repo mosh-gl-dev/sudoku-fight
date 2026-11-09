@@ -1,3 +1,5 @@
+import type { Digit, MoveScore } from '@sudoku-fight/engine';
+import type { TFunction } from 'i18next';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,10 +14,20 @@ import {
 } from 'react-native';
 
 import { Icon } from '../../components/Icon';
-import { displayName, ltr, paletteAt, SeatGlyph, signedText, withDecimal } from '../../components/player';
+import { useProbeWidths, WidthProbes, widthsOf, wordsOf } from '../../components/player/statusFit';
+import {
+  displayName,
+  formatScore,
+  ltr,
+  MoveText,
+  paletteAt,
+  SeatGlyph,
+  signedText,
+} from '../../components/player';
 import { Text } from '../../components/ui/Text';
-import { decimalSeparator, labelValue, spaceSentences } from '../../i18n/compose';
+import { closeSentences, decimalSeparator, labelValue } from '../../i18n/compose';
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { scoreCountsOf } from '../results/resultsModel';
 import type { KeyMoments, PlayerExplanation, ReplayPlayer, TimelineDot } from './replayModel';
 
 /**
@@ -52,6 +64,7 @@ export function ExplanationCard({
   testID?: string;
 }) {
   const { t } = useTranslation('replay');
+  const { t: tg } = useTranslation('game');
   const who = useWho()(player);
   const palette = paletteAt(player.colorIndex);
   const border = x.live ? { borderColor: palette.ring, borderWidth: tokens.border.focus } : null;
@@ -87,9 +100,10 @@ export function ExplanationCard({
   const move = ltr(t('explain.move', { cell: x.cellName, digit: x.answer ?? '?' }));
   const body = x.text ?? t('explain.noLogic', { cell: x.cellName, digit: x.answer ?? '?' });
   const why = x.wrongText ? t('explain.why', { digit: x.played, text: x.wrongText }) : null;
-  const scoreLine = x.scoreLine ? ltr(withDecimal(x.scoreLine, decimal)) : null;
-  const penaltyLine = x.penaltyLine ? ltr(withDecimal(x.penaltyLine, decimal)) : null;
-  // The card's sentences as one label (the space after each from match:sentenceSpace: none in Japanese).
+  const score = x.score ? calculationOf(x.score, x.answer, t, tg, decimal) : null;
+  const penalty = x.penaltyScore ? calculationOf(x.penaltyScore, x.answer, t, tg, decimal) : null;
+  // The card's lines as one label, each closed as a sentence where it isn't one yet ("5 instead of 7", the
+  // "label: value" lines), so no two run together: Japanese puts no space after a sentence (match:sentenceSpace).
   const parts = [
     t('explain.label', {
       name: who,
@@ -100,10 +114,10 @@ export function ExplanationCard({
     }),
     x.status === 'wrong' ? t('explain.played', { digit: x.played, answer: x.answer }) : null,
     why,
-    scoreLine ? labelValue(t('explain.scoreLine'), scoreLine, t) : null,
-    penaltyLine ? labelValue(t('explain.penaltyLine'), penaltyLine, t) : null,
+    score ? labelValue(t('explain.scoreLine'), score.spoken, t) : null,
+    penalty ? labelValue(t('explain.penaltyLine'), penalty.spoken, t) : null,
   ];
-  const label = spaceSentences(parts, t);
+  const label = closeSentences(parts, t);
 
   return (
     <View
@@ -123,14 +137,17 @@ export function ExplanationCard({
           </Text>
         </View>
       </Head>
+      {/* Replay.dc.html: the move whole on one line (MoveText, B20); a long technique wraps beside it. */}
       <View style={styles.moveRow}>
-        <Text style={[text('cellRef'), styles.strong]} testID={testID && `${testID}-move`}>
-          {move}
-        </Text>
+        <MoveText
+          move={t('explain.move', { cell: x.cellName, digit: x.answer ?? '?' })}
+          style={[text('cellRef'), styles.strong]}
+          testID={testID && `${testID}-move`}
+        />
         {x.techniqueName ? (
           <Text
-            style={[text('caption'), styles.accent]}
-            numberOfLines={1}
+            style={[text('caption'), styles.accent, styles.technique]}
+            numberOfLines={2}
             testID={testID && `${testID}-technique`}
           >
             {x.techniqueName}
@@ -146,22 +163,74 @@ export function ExplanationCard({
         {body}
       </Text>
       {why ? <Text style={[text('caption'), styles.muted]}>{why}</Text> : null}
-      {scoreLine ? (
-        <View style={styles.formula}>
-          <Text style={[text('micro'), styles.muted]}>{t('explain.scoreLine')}</Text>
-          <Text style={[text('label'), styles.strong, styles.ltr]} testID={testID && `${testID}-score`}>
-            {scoreLine}
-          </Text>
-        </View>
+      {score ? (
+        <Calculation
+          title={t('explain.scoreLine')}
+          calculation={score}
+          testID={testID && `${testID}-score`}
+        />
       ) : null}
-      {penaltyLine ? (
-        <View style={styles.formula}>
-          <Text style={[text('micro'), styles.muted]}>{t('explain.penaltyLine')}</Text>
-          <Text style={[text('label'), styles.strong, styles.ltr]} testID={testID && `${testID}-penalty`}>
-            {penaltyLine}
-          </Text>
-        </View>
+      {penalty ? (
+        <Calculation
+          title={t('explain.penaltyLine')}
+          calculation={penalty}
+          testID={testID && `${testID}-penalty`}
+        />
       ) : null}
+    </View>
+  );
+}
+
+interface CalculationText {
+  /** "9 − 6 + (9 − 5) / 2 = 5", an LTR isolate. */
+  formula: string;
+  /** The two counts it was worked out from: "6 בשורה, 5 בריבוע". */
+  counts: string;
+  /** Both, for the card's label. */
+  spoken: string;
+}
+
+/**
+ * A move's calculation (spec §13.2) in the viewer's language (B1: the engine's "points = 9 − 6 + …" was English
+ * in every language). The formula in numbers alone, with the language's decimal separator, and under it the two
+ * counts that set it (the engine's X and Y, matched to their counts by the results' scoreCountsOf), said as the
+ * results say them (game:results.best.filled). `digit` is the right digit: its count is the one on the board.
+ */
+function calculationOf(
+  s: MoveScore,
+  digit: Digit | null,
+  t: TFunction<'replay'>,
+  tg: TFunction<'game'>,
+  decimal: string,
+): CalculationText {
+  const formula = ltr(
+    t('explain.formula', { x: String(s.X), y: String(s.Y), points: formatScore(s.points, decimal) }),
+  );
+  const { highest, next } = scoreCountsOf(s);
+  const counts = [highest, next]
+    .map((c) => tg(`results.best.filled.${c.count}`, { count: c.value, digit: digit ?? '?' }))
+    .join(tg('listSep'));
+  return { formula, counts, spoken: [formula, counts].join(tg('listSep')) };
+}
+
+function Calculation({
+  title,
+  calculation: c,
+  testID,
+}: {
+  title: string;
+  calculation: CalculationText;
+  testID?: string;
+}) {
+  return (
+    <View style={styles.formula}>
+      <Text style={[text('micro'), styles.muted]}>{title}</Text>
+      <Text style={[text('label'), styles.strong, styles.ltr]} testID={testID}>
+        {c.formula}
+      </Text>
+      <Text style={[text('caption'), styles.muted]} testID={testID && `${testID}-counts`}>
+        {c.counts}
+      </Text>
     </View>
   );
 }
@@ -297,7 +366,16 @@ export function StepButton({
 }) {
   const { t } = useTranslation('replay');
   const label = direction === 'prev' ? t('nav.prev') : t('nav.next');
-  const icon = (
+  // The label takes two lines at a large text size, broken between words (QA loop 7, font 1.3: "Previous st…");
+  // where its widest word (measured at full size) does not fit beside the chevron, the chevron goes: the word stays
+  // whole and the button's name says the way.
+  const [buttonWidth, setButtonWidth] = useState<number | null>(null);
+  const [widths, report] = useProbeWidths();
+  const probes = wordsOf(label).map((word, k) => ({ id: `step-${k}`, text: word, style: text('button') }));
+  const measured = widthsOf(probes, widths);
+  const chevron =
+    buttonWidth === null || measured === null || stepWordFits(buttonWidth, Math.max(0, ...measured), true);
+  const icon = !chevron ? null : (
     <View style={direction === 'prev' ? styles.flip : null}>
       <Icon name="chevronForward" size={size.icon.card} color={disabled ? color.textFaint : color.text} />
     </View>
@@ -310,16 +388,30 @@ export function StepButton({
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [styles.stepButton, pressed && !disabled ? styles.pressed : null]}
+      onLayout={(e) => setButtonWidth(e.nativeEvent.layout.width)}
       testID={testID}
     >
+      <WidthProbes probes={probes} onWidth={report} />
       {direction === 'prev' ? icon : null}
-      <Text style={[text('button'), disabled ? styles.faint : styles.strong]} numberOfLines={1}>
+      <Text
+        style={[text('button'), disabled ? styles.faint : styles.strong, styles.stepLabel]}
+        numberOfLines={2}
+      >
         {label}
       </Text>
       {direction === 'next' ? icon : null}
     </Pressable>
   );
 }
+
+/** Whether a word `word` wide fits a step button `width` wide, beside the chevron or alone. */
+export function stepWordFits(width: number, word: number, withChevron: boolean): boolean {
+  const inner = width - 2 * STEP_PADDING - 2 * tokens.border.hairline;
+  return word <= inner - (withChevron ? size.icon.card + STEP_GAP : 0);
+}
+
+const STEP_PADDING = space[4];
+const STEP_GAP = space[3];
 
 // ---------------------------------------------------------------------------------------------------------
 // Key moments (spec §13.1: best move, mistakes, interferences, the turning point)
@@ -388,7 +480,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: tokens.border.hairline,
   },
-  moveRow: { flexDirection: 'row', alignItems: 'baseline', gap: space[5], flexWrap: 'wrap' },
+  moveRow: { flexDirection: 'row', alignItems: 'baseline', gap: space[5] },
+  technique: { flexShrink: 1 },
   formula: { gap: space[1] },
   strong: { color: color.text },
   muted: { color: color.textMuted },
@@ -424,6 +517,7 @@ const styles = StyleSheet.create({
     borderWidth: tokens.border.focus,
     borderColor: color.accent,
   },
+  stepLabel: { flexShrink: 1, textAlign: 'center' },
   stepButton: {
     flex: 1,
     minHeight: size.buttonMd,

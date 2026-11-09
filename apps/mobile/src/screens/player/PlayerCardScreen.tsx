@@ -1,7 +1,7 @@
 import type { MyProgress, PlayerCard, RecentResult } from '@sudoku-fight/protocol';
 import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isProgressApiError, isProgressOffline } from '../../api/progressApi';
@@ -27,9 +27,11 @@ import {
   StateView,
   supportCodeOf,
 } from '../../components/ui';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { LEVEL_UI } from '../../config/levels';
 import type { LevelsSummary } from '../../levels/levelsRepo';
+import { type MyProfile, useProfileOver } from '../../progress/myProfile';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { TokenArt } from '../game/arsenal/TokenArt';
 import { ScreenHeader, SectionLabel } from '../home/parts';
@@ -49,6 +51,7 @@ import {
   xpText,
 } from './playerCardModel';
 import { Sparkline } from './Sparkline';
+import { StatCells } from './StatCells';
 
 /**
  * A player's card (spec §14.3; Profile.dc.html in direction C): avatar in its frame (mine: P1), name, flag and
@@ -71,6 +74,11 @@ export interface PlayerCardScreenProps {
   cached?: PlayerCard | null;
   /** My progress (the level's XP), when this is me. */
   myProgress?: MyProgress | null;
+  /**
+   * My name, avatar and country as the phone knows them (me). On my card they win over a saved card, and over the
+   * server's once they changed after it came: a profile edit shows the moment I come back from it.
+   */
+  myProfile?: MyProfile | null;
   /**
    * The card's player's staged practice (stages played, stars): "שלבים: 87 · ★ 214" under the XP bar, on my card
    * only (D58), or on anyone's with LEVEL_UI.cardShowsToOthers; never before the first stage. The route gives
@@ -98,7 +106,7 @@ function LevelsLine({ played, stars }: { played: number; stars: number }) {
   const { t } = useTranslation('levels');
   return (
     <Text
-      style={[text('label'), styles.muted]}
+      style={[text('label'), styles.muted, styles.ownLine]}
       accessibilityLabel={t('card.label', { played, count: stars })}
       testID="player-card-levels"
     >
@@ -123,6 +131,7 @@ export function PlayerCardScreen({
   myId,
   cached = null,
   myProgress = null,
+  myProfile = null,
   levels = null,
   onBack,
   onEditProfile,
@@ -136,8 +145,11 @@ export function PlayerCardScreen({
   const tp = t as ProgressT;
   const insets = useSafeAreaInsets();
   const mine = myId !== null && playerId === myId;
-  const [card, setCard] = useState<PlayerCard | null>(mine ? cached : null);
+  const [loadedCard, setCard] = useState<PlayerCard | null>(mine ? cached : null);
   const [status, setStatus] = useState<CardLoadStatus>(load ? 'loading' : 'signedOut');
+  // The server's card once it came ('ok'); before that, the saved one shows.
+  const over = useProfileOver(myProfile, status === 'ok' ? loadedCard : null);
+  const card = loadedCard && mine && over ? { ...loadedCard, ...over } : loadedCard;
   /** The last failure's support code (spec §16.3). */
   const [code, setCode] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -281,7 +293,8 @@ export function PlayerCardScreen({
                 </View>
               ) : null}
               {joined ? (
-                <Text style={[text('caption'), styles.muted]} numberOfLines={1} testID="player-card-joined">
+                // Two lines, broken between words (QA loop 7, font 1.3: "Playing since Octobe…").
+                <Text style={[text('caption'), styles.muted]} numberOfLines={2} testID="player-card-joined">
                   {joined}
                 </Text>
               ) : null}
@@ -303,7 +316,7 @@ export function PlayerCardScreen({
                   level: level.level + 1,
                 })}
               />
-              <Text style={[text('label'), styles.muted]}>
+              <Text style={[text('label'), styles.muted, styles.ownLine]} testID="player-card-xp-text">
                 {xpText(level.xpIntoLevel, level.xpForNext, tp)}
               </Text>
             </View>
@@ -337,22 +350,7 @@ export function PlayerCardScreen({
         )}
 
         <SectionLabel title={t('card.statsTitle')} />
-        <View style={styles.stats} testID="player-card-stats">
-          {cells.map((cell) => (
-            <View
-              key={cell.key}
-              style={styles.stat}
-              accessible
-              accessibilityLabel={`${cell.label}: ${cell.value}`}
-              testID={`player-card-stat-${cell.key}`}
-            >
-              <Text style={[text('scoreCompact'), styles.strong]}>{cell.value}</Text>
-              <Text style={[text('micro'), styles.muted]} numberOfLines={2}>
-                {cell.label}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <StatCells cells={cells} />
         {favorite ? (
           <View
             style={styles.favorite}
@@ -556,18 +554,19 @@ function RecentResults({
             ) : null}
           </Fragment>
         );
+        // My own games open their replay: a tappable card with the one card press (D125), as History's.
         return mine && onOpenReplay ? (
-          <Pressable
+          <PressableCard
             key={r.gameId}
             accessibilityRole="button"
             accessibilityLabel={words}
             accessibilityHint={t('card.replayHint')}
             onPress={() => onOpenReplay(r.gameId)}
-            style={({ pressed }) => [styles.result, pressed && styles.pressed]}
+            style={styles.resultCard}
             testID={`player-card-recent-${r.gameId}`}
           >
             {content}
-          </Pressable>
+          </PressableCard>
         ) : (
           <View
             key={r.gameId}
@@ -591,7 +590,7 @@ const FORM = space[10];
 const STRIPE = space[2];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: { paddingHorizontal: tokens.layout.gutterGame, paddingTop: space[4], gap: space[8] },
   identity: { gap: space[8] },
   skeleton: { gap: space[8] },
@@ -611,18 +610,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
   },
   tileHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[2] },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space[4] },
-  stat: {
-    width: '22%',
-    flexGrow: 1,
-    minHeight: size.listRow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space[2],
-    padding: space[3],
-    borderRadius: radius.lg,
-    backgroundColor: color.surface,
-  },
   favorite: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -661,8 +648,17 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
     overflow: 'hidden',
   },
+  // The card surface (PressableCard) gives the fill, the lit border, the radius and the base; the stripe is
+  // clipped to the radius.
+  resultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[5],
+    minHeight: size.recentRow,
+    paddingEnd: space[6],
+    overflow: 'hidden',
+  },
   stripe: { width: STRIPE, alignSelf: 'stretch' },
-  pressed: { opacity: 0.85 },
   soon: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -683,6 +679,13 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
   },
   grow: { flex: 1, minWidth: 0 },
+  /**
+   * A label line standing on its own (the XP, "Stages: 9 • ★ 0"): the label's 13 on the caption's line (16), which
+   * holds Rubik's whole height. The label's own line is its size (13/13); Android splits the missing room between
+   * the top and the bottom and clips the text to its box, so the tail of a "g" was cut by a straight line at font 1.3
+   * (QA loop 9). Taller scripts keep their own least line height (text()).
+   */
+  ownLine: { lineHeight: Math.max(text('label').lineHeight ?? 0, text('caption').lineHeight ?? 0) },
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
   shrink: { flexShrink: 1 },
   strong: { color: color.text },

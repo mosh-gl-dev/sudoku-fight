@@ -35,6 +35,14 @@ export const syncSettingsStorage: StateStorage = {
  */
 export type ReduceMotionSetting = 'system' | 'on' | 'off';
 
+/**
+ * Reduced motion starts off, whatever the phone says (Moshe, 31.10.2026: "ברירת מחדל של הפחתת תנועה צריך להיות
+ * שלילי"); the player turns it on, or to "כמו במכשיר", in Settings. A record from before (version 2 or older)
+ * that still held the old default, 'system', takes the new one.
+ */
+export const DEFAULT_REDUCE_MOTION: ReduceMotionSetting = 'off';
+const REDUCE_MOTION_OFF_SINCE = 3;
+
 export interface SettingsState extends LanguagePrefs {
   sound: boolean;
   haptics: boolean;
@@ -56,7 +64,7 @@ export const useSettings = create<SettingsState>()(
       ...defaultLanguagePrefs(),
       sound: true,
       haptics: true,
-      reduceMotion: 'system',
+      reduceMotion: DEFAULT_REDUCE_MOTION,
       setLanguage: (language, languageSource = 'app') => set({ language, languageSource }),
       setLanguagePrefs: (prefs) => set(prefs),
       setSound: (sound) => set({ sound }),
@@ -67,11 +75,17 @@ export const useSettings = create<SettingsState>()(
       name: SETTINGS_STORE_KEY,
       version: SETTINGS_VERSION,
       storage: createJSONStorage(() => syncSettingsStorage),
-      // Version 1 (until 1.0.4): { language: 'he' | 'en', sound, haptics, reduceMotion }.
-      migrate: (persisted, version) => ({
-        ...(persisted as Partial<Persisted>),
-        ...languagePrefsOf(persisted, version),
-      }),
+      // Version 1 (until 1.0.4): { language: 'he' | 'en', sound, haptics, reduceMotion }. Version 2 (1.1.0): the
+      // language fields. Version 3: reduced motion's default is off.
+      migrate: (persisted, version) => {
+        const saved = persisted as Partial<Persisted>;
+        const oldDefault = version < REDUCE_MOTION_OFF_SINCE && saved.reduceMotion === 'system';
+        return {
+          ...saved,
+          ...languagePrefsOf(persisted, version),
+          ...(oldDefault ? { reduceMotion: DEFAULT_REDUCE_MOTION } : {}),
+        };
+      },
       partialize: (s): Persisted => ({
         language: s.language,
         languageSource: s.languageSource,

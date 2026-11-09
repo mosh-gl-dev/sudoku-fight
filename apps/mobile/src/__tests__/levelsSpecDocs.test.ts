@@ -153,10 +153,12 @@ describe('01-SPEC.md', () => {
     expect(spec).not.toMatch(/D64[^\n]{0,40}החלטת משה/);
   });
 
-  it('§24: the rows run D1 … D124 in order, with no gap, so D48–D65, D66–D79 and D80–D99 sit together', () => {
+  it('§24: the rows run D1 … D131 in order, with no gap, so D48–D65, D66–D79 and D80–D99 sit together', () => {
     // D100 (23.10.2026): where "צור חדר" and "הצטרף עם קוד" sit on "משחק חדש", after Moshe's device test of 1.0.4.
     // D101–D124 (24.10.2026): the 19 languages (localizationDocs.test.ts).
-    expect(decisions.map((cells) => cells[0])).toEqual(Array.from({ length: 124 }, (_, i) => `D${i + 1}`));
+    // D125–D130 (30.10.2026): the UI polish (depth, ambient digits, living avatars, the new results, the pair rule)
+    // and the production domain. D131 (31.10.2026): the staged practice's map as a board-game road.
+    expect(decisions.map((cells) => cells[0])).toEqual(Array.from({ length: 131 }, (_, i) => `D${i + 1}`));
   });
 
   it.each(LEVEL_DECISIONS)('§24 %s: ✓ only where Moshe decided, ☐ where it is a default', (id) => {

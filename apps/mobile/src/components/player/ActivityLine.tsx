@@ -12,7 +12,8 @@ import Animated, {
 
 import { color, text } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
-import { Text } from '../ui/Text';
+import { Icon } from '../Icon';
+import { FONT_SCALE_CAPS, Text } from '../ui/Text';
 import { easing, NEVER_REDUCE, springs, useBlink } from './anim';
 import type { Activity } from './cardModel';
 import { ltr } from './format';
@@ -24,6 +25,13 @@ const hidden = {
   accessibilityElementsHidden: true,
   importantForAccessibility: 'no-hide-descendants',
 } as const;
+
+/**
+ * B47: the status row of a 2-player card holds what its buttons leave (63 dp beside mine), and German, Russian or
+ * Thai words are longer ("Keine Fehler", "Без ошибок"). They wrap to a second line where they can, then shrink a
+ * little, and are cut only past that.
+ */
+const FIT = { adjustsFontSizeToFit: true, minimumFontScale: metrics.card.statusMinFontScale } as const;
 
 export interface ActivityLineProps {
   activity: Activity;
@@ -50,7 +58,11 @@ export function ActivityLine({ activity, colorIndex, gender, compact = false }: 
   const ring = compact ? metrics.timerRing.compact : metrics.timerRing.card;
 
   return (
-    <View style={[styles.row, compact && styles.compactRow]} {...hidden} testID="activity">
+    <View
+      style={[styles.row, compact ? styles.compactRow : trails && styles.trailing]}
+      {...hidden}
+      testID="activity"
+    >
       {lock ? (
         <TimerRing
           size={ring}
@@ -63,21 +75,34 @@ export function ActivityLine({ activity, colorIndex, gender, compact = false }: 
         />
       ) : null}
       {compact ? (
+        // The compact card's row grows with the text only up to the HUD's cap (BRD-3): "חושב" at the largest
+        // system size was taller than the row and lost its top (QA 2026-11-03, the replay's cards).
         <>
-          <Text style={[wordStyle, styles.muted]} numberOfLines={1}>
+          <Text scale="hud" style={[wordStyle, styles.muted]} numberOfLines={1}>
             {word}
           </Text>
-          {lock ? <Text style={[metrics.compact.cellStyle, styles.strong]}>{lock.cell}</Text> : null}
+          {lock ? (
+            <Text scale="hud" style={[metrics.compact.cellStyle, styles.strong]}>
+              {lock.cell}
+            </Text>
+          ) : null}
         </>
       ) : (
-        <Text style={[wordStyle, styles.muted, styles.shrink]} numberOfLines={1}>
+        // A lone word shrinks on its line (a second line would cut it in the middle); with a cell, the cell may
+        // take the second line.
+        <Text style={[wordStyle, styles.muted, styles.shrink]} numberOfLines={lock ? 2 : 1} {...FIT}>
           {word}
           {lock ? t('sep') : null}
           {lock ? <Text style={styles.strong}>{ltr(lock.cell)}</Text> : null}
         </Text>
       )}
       {trails ? (
-        <Animated.Text style={[wordStyle, styles.muted, blink]}>{t('ellipsis')}</Animated.Text>
+        <Animated.Text
+          maxFontSizeMultiplier={compact ? FONT_SCALE_CAPS.hud : undefined}
+          style={[wordStyle, styles.muted, blink]}
+        >
+          {t('ellipsis')}
+        </Animated.Text>
       ) : null}
     </View>
   );
@@ -86,8 +111,10 @@ export function ActivityLine({ activity, colorIndex, gender, compact = false }: 
 /**
  * My mistake count on the 2P card ("1 טעות", components.md §3.2). A new mistake pops it (.8 → 1) and turns it
  * red for 600 ms (motion.md `mistakes.tag`); reduced motion keeps the colour and drops the pop.
+ * `mark`: where the words don't fit at their full size (statusFit mistakesWordsFit; 320 dp in English, QA loop
+ * 6), the mistake mark and the count in Teko, never a word broken or shrunk. The card's label says it in words.
  */
-export function MistakesText({ count }: { count: number }) {
+export function MistakesText({ count, mark = false }: { count: number; mark?: boolean }) {
   const { t } = useTranslation('player');
   const reduce = useReduceMotion();
   const scale = useSharedValue(1);
@@ -106,6 +133,7 @@ export function MistakesText({ count }: { count: number }) {
           easing: easing.standard,
           reduceMotion: NEVER_REDUCE,
         }),
+        NEVER_REDUCE,
       ),
     );
     if (!reduce) {
@@ -117,10 +145,21 @@ export function MistakesText({ count }: { count: number }) {
     color: interpolateColor(red.get(), [0, 1], [color.textMuted, color.danger]),
     transform: [{ scale: scale.get() }],
   }));
+  if (mark) {
+    return (
+      <View style={styles.mark} {...hidden} testID="mistakes-mark">
+        <Icon name="cancel" size={metrics.card.mistakesMarkIcon} color={color.textMuted} />
+        <Animated.Text style={[text('scoreDelta'), anim]} numberOfLines={1} testID="mistakes">
+          {count}
+        </Animated.Text>
+      </View>
+    );
+  }
   return (
     <Animated.Text
       style={[text('body'), styles.shrink, anim]}
-      numberOfLines={1}
+      numberOfLines={2}
+      {...FIT}
       {...hidden}
       testID="mistakes"
     >
@@ -138,7 +177,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   compactRow: { gap: metrics.compact.activityGap },
+  // "חושבת…" (components.md §3.3): the blinking ellipsis follows its word with no gap (there is no ring then).
+  trailing: { gap: 0 },
   muted: { color: color.textMuted },
   strong: { color: color.text },
   shrink: { flexShrink: 1 },
+  mark: { flexDirection: 'row', alignItems: 'center', gap: metrics.card.mistakesMarkGap, flexShrink: 0 },
 });

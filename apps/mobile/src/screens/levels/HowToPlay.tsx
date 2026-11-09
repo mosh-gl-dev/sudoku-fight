@@ -169,7 +169,7 @@ export function HowToPlay({ kind, level, onDone, renderPanel }: HowToPlayProps) 
 const PICTURE_HEIGHT = 140;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: tokens.layout.gutterGame, gap: space[6], backgroundColor: color.bg },
+  screen: { flex: 1, paddingHorizontal: tokens.layout.gutterGame, gap: space[6] },
   header: { flexDirection: 'row', alignItems: 'center', gap: space[6], minHeight: size.header + space[6] },
   titles: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: space[1] },
   over: { ...text('label'), color: color.textMuted },

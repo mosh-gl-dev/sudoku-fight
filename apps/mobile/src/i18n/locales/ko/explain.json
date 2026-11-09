@@ -30,14 +30,14 @@
       "box": "{{label}}번 박스에서 빠진 숫자는 {{digit}} 하나뿐이에요."
     },
     "missing": {
-      "row": "{{label}}행에서 빠진 숫자는 {{digits}}뿐이에요.",
-      "col": "{{label}}열에서 빠진 숫자는 {{digits}}뿐이에요.",
-      "box": "{{label}}번 박스에서 빠진 숫자는 {{digits}}뿐이에요."
+      "row_other": "{{label}}행에서 빠진 숫자는 {{digits}}뿐이에요.",
+      "col_other": "{{label}}열에서 빠진 숫자는 {{digits}}뿐이에요.",
+      "box_other": "{{label}}번 박스에서 빠진 숫자는 {{digits}}뿐이에요."
     },
     "seen": {
-      "row": "{{label}}행에서는 {{digits}}의 자리가 이미 정해져 있어요.",
-      "col": "{{label}}열에서는 {{digits}}의 자리가 이미 정해져 있어요.",
-      "box": "{{label}}번 박스에서는 {{digits}}의 자리가 이미 정해져 있어요."
+      "row_other": "{{label}}행에서는 {{digits}}의 자리가 이미 정해져 있어요.",
+      "col_other": "{{label}}열에서는 {{digits}}의 자리가 이미 정해져 있어요.",
+      "box_other": "{{label}}번 박스에서는 {{digits}}의 자리가 이미 정해져 있어요."
     },
     "eliminated": "{{cell}}의 {{digit}} 후보는 {{step}}단계에서 제외됐어요.",
     "only": "그러니 {{digit}}만 남아요."

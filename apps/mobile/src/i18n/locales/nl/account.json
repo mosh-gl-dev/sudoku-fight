@@ -68,7 +68,8 @@
       "timeout": "De server antwoordde niet op tijd. Probeer het opnieuw.",
       "signedOut": "Je bent niet ingelogd. Log opnieuw in.",
       "unexpected": "De server stuurde een onverwacht antwoord. Probeer het opnieuw, of werk de app bij."
-    }
+    },
+    "avatarUnavailable": "Deze avatar is nog niet beschikbaar op de server. Kies een andere."
   },
   "splash": {
     "tagline": "Eén bord. Iedereen lost op. Maar één wint.",
@@ -79,7 +80,7 @@
       "lock_other": "Een vakje dat je kiest, is alleen voor jou vergrendeld: {{seconds}} seconden in speltype {{type}}.",
       "hard": "Een moeilijkere zet levert meer punten op.",
       "mistake": "Een fout kost precies de punten die het juiste cijfer had opgeleverd. Denk liever even langer na.",
-      "interfere": "Stuur een verstoring in twee tikken: “Verstoren” op de kaart van je tegenstander, en dan de verstoring die je kiest."
+      "interfere": "Stuur een verstoring in twee tikken: “Storen” op de kaart van je tegenstander, en dan de verstoring die je kiest."
     },
     "errorTitle": "We konden je strijder niet laden",
     "retry": "Opnieuw proberen",
@@ -250,6 +251,9 @@
     "deleteGoogleBody": "Kies het Google-account {{email}} opnieuw om het account te verwijderen.",
     "deleteGoogleSubmit": "Bevestigen met Google en verwijderen",
     "deleteGoogleAgain": "Om het account te verwijderen is een nieuwe bevestiging nodig. Probeer het opnieuw en kies je Google-account.",
-    "deleteWithPassword": "Liever bevestigen met je wachtwoord"
+    "deleteWithPassword": "Liever bevestigen met je wachtwoord",
+    "deleteGoogleOffTitle": "Inloggen met Google nodig",
+    "deleteGoogleOffBody": "Dit account logt in met Google, dus verwijderen moet je met Google bevestigen. Deze versie van de app heeft geen inloggen met Google, dus het account kan hier niet worden verwijderd. Je kunt het verwijderen in de app uit de store (Google Play).",
+    "deleteGoogleOffOk": "Begrepen"
   }
 }

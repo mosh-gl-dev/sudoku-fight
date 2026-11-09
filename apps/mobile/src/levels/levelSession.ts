@@ -33,8 +33,9 @@ import {
   type Scheduler,
 } from '@sudoku-fight/engine';
 import type { GameHost } from '@sudoku-fight/protocol';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
+import { modalWindowOpen } from '../components/ui/modalWindows';
 import { LEVEL_UI, type LevelUiSettings } from '../config/levels';
 import { levelRulesNow } from '../config/testing';
 import { type AppStateSource, BackgroundPause, type PauseState } from '../game/backgroundPause';
@@ -45,6 +46,11 @@ import { closeSentence } from '../i18n/compose';
 import { formatBlock, formatExplanation } from '../i18n/explain';
 import { type AnalyticsEventName, type AnalyticsProps, track as defaultTrack } from '../services/analytics';
 import { crashReporter } from '../services/crashlytics';
+import {
+  type HideRecentsPicture,
+  hideRecentsPicture,
+  type RecentsPictureHold,
+} from '../services/recentsPicture';
 import { levelQuitProps, levelStartProps } from './analyticsProps';
 import { levelAttemptOf, type LevelFinished, levelFinished, type LevelFinisher } from './appLevels';
 import { allLevels } from './levelsData';
@@ -73,8 +79,16 @@ import { useLevels } from './levelsStore';
  * - [D65] The app leaving the foreground (any AppState but 'active': a phone call, another app, the screen
  *   off) freezes the stage: host.pause() stops its clock, its time limit, the locks, the race's freezes and the
  *   bot. Back to 'active': a 3, 2, 1 countdown (LEVEL_UI.resumeCountdownMs) over the covered board (the screens
- *   draw `pause`), then host.resume(), from the very same point. LEVEL_UI.backgroundPause off: no freeze. The
+ *   draw `pause`), then host.resume(), from the very same point. A stage that starts with the app already away
+ *   (it left between "מוכן?" and the start) starts frozen. LEVEL_UI.backgroundPause off: no freeze. The
  *   freeze is game/backgroundPause.ts, which a solo practice and a practice against a bot share.
+ * - The board is never in Android's Recents picture while the stage runs (QA levels-freeze-background): Android
+ *   takes that picture as the app leaves, before 'background' and before any cover can be drawn. On Android
+ *   13+ the app keeps no Recents picture while a session is open (services/recentsPicture.ts, released at
+ *   close; screenshots still work, it is not FLAG_SECURE), whatever is on top, "לצאת מהשלב?" too. Where that
+ *   cannot be (below 13, a binary without the module), the freeze comes as early as the window loses the focus
+ *   (AppState 'blur': Recents, the notification shade), and 'focus' with the app in the foreground gives the
+ *   same 3, 2, 1; the app's own windows (its dialogs, modalWindows.ts) do not freeze it.
  *
  * A stage never touches practice.db, the practice session, its XP queue or game_start / game_end [D58]. Errors
  * of the way (storage, telemetry) are reported, never thrown at the screens.
@@ -106,6 +120,13 @@ export interface LevelStartOptions {
   quick?: boolean;
 }
 
+/** What the freeze needs of the window's focus (React Native's AppState on Android; tests give their own). */
+export interface WindowFocusSource {
+  /** The app's state now ('active' in the foreground). */
+  readonly currentState?: string | null;
+  addEventListener(type: 'blur' | 'focus', listener: () => void): { remove(): void };
+}
+
 export interface LevelSessionDeps {
   clock?: Clock;
   scheduler?: Scheduler;
@@ -124,6 +145,16 @@ export interface LevelSessionDeps {
   onTimerError?: (error: unknown) => void;
   /** [D65] The app's foreground state; React Native's AppState by default, null for none. */
   appState?: AppStateSource | null;
+  /**
+   * The window's focus (AppState 'blur' and 'focus'): freezes before 'background' does. React Native's AppState
+   * on Android by default (iOS says 'inactive' in time already), null for none.
+   */
+  windowFocus?: WindowFocusSource | null;
+  /**
+   * Keeps the app's picture out of Android's Recents while the stage runs (services/recentsPicture.ts, Android
+   * 13+); when it cannot (`hidden` false), the freeze listens to `windowFocus`. Null for none.
+   */
+  hideRecentsPicture?: HideRecentsPicture | null;
   settings?: Pick<LevelUiSettings, 'backgroundPause' | 'resumeCountdownMs' | 'reactions' | 'worthHintLevels'>;
   /** Where a stage stands among the stages of its kind (0 for the first); the levels' data by default. */
   kindOrdinalOf?: (level: AppLevel) => number;
@@ -250,6 +281,8 @@ class Session implements LevelSession {
   private resolve!: (result: LevelFinishResult) => void;
   private readonly unsubscribe: () => void;
   private readonly freeze: BackgroundPause;
+  private readonly focusSubs: { remove(): void }[] = [];
+  private recents: RecentsPictureHold | null = null;
 
   constructor(
     readonly level: AppLevel,
@@ -335,6 +368,9 @@ class Session implements LevelSession {
     this.startedAt = this.clock.now();
     this.local.dispatch({ type: 'start' });
     this.attachBotIfAny();
+    // [D65] The app may have left between "מוכן?" and this start (B28): then the stage starts frozen.
+    this.freeze.started();
+    this.guardRecents(deps);
     this.report('level_start', () =>
       levelStartProps(level, {
         attempt,
@@ -404,6 +440,9 @@ class Session implements LevelSession {
   close(): void {
     if (this.closed) return;
     this.closed = true;
+    for (const sub of this.focusSubs.splice(0)) sub.remove();
+    this.recents?.release();
+    this.recents = null;
     this.freeze.close();
     this.detachBot();
     const view = this.local.getView();
@@ -413,6 +452,42 @@ class Session implements LevelSession {
   }
 
   // -----------------------------------------------------------------------------------------------------
+
+  /**
+   * [D65] Keeps the board out of Recents while the stage runs (see the top): no Recents picture on Android 13+;
+   * where that cannot be, the freeze comes at the window's blur.
+   */
+  private guardRecents(deps: LevelSessionDeps): void {
+    if (!this.settings.backgroundPause) return;
+    const hide = deps.hideRecentsPicture === undefined ? hideRecentsPicture : deps.hideRecentsPicture;
+    try {
+      this.recents = hide ? hide() : null;
+    } catch (error) {
+      this.onError('could not hide the Recents picture', error);
+    }
+    if (this.recents?.hidden) return;
+    this.watchFocus(
+      deps.windowFocus === undefined ? (Platform.OS === 'android' ? AppState : null) : deps.windowFocus,
+    );
+  }
+
+  /** [D65] Freezes as the window loses the focus to anything but the app's own windows (see the top). */
+  private watchFocus(focus: WindowFocusSource | null): void {
+    if (!focus || !this.settings.backgroundPause) return;
+    try {
+      this.focusSubs.push(
+        focus.addEventListener('blur', () => {
+          if (!modalWindowOpen()) this.background();
+        }),
+        focus.addEventListener('focus', () => {
+          // Back from Recents, 'focus' may come before 'active': then 'active' gives the 3, 2, 1.
+          if (focus.currentState === 'active') this.foreground();
+        }),
+      );
+    } catch (error) {
+      this.onError('could not watch the window focus', error);
+    }
+  }
 
   private attachBotIfAny(): void {
     if (!(this.local instanceof LocalGameHost) || this.mode !== 'bot' || !this.played.bot) return;

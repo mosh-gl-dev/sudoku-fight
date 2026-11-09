@@ -30,14 +30,14 @@
       "box": "ブロック{{label}}に足りないのは{{digit}}だけです。"
     },
     "missing": {
-      "row": "{{label}}行に足りないのは{{digits}}です。",
-      "col": "{{label}}列に足りないのは{{digits}}です。",
-      "box": "ブロック{{label}}に足りないのは{{digits}}です。"
+      "row_other": "{{label}}行に足りないのは{{digits}}です。",
+      "col_other": "{{label}}列に足りないのは{{digits}}です。",
+      "box_other": "ブロック{{label}}に足りないのは{{digits}}です。"
     },
     "seen": {
-      "row": "{{label}}行にはすでに{{digits}}があります。",
-      "col": "{{label}}列にはすでに{{digits}}があります。",
-      "box": "ブロック{{label}}にはすでに{{digits}}があります。"
+      "row_other": "{{label}}行にはすでに{{digits}}があります。",
+      "col_other": "{{label}}列にはすでに{{digits}}があります。",
+      "box_other": "ブロック{{label}}にはすでに{{digits}}があります。"
     },
     "eliminated": "{{digit}}はステップ{{step}}で{{cell}}の候補から外れました。",
     "only": "よって{{digit}}しかありません。"

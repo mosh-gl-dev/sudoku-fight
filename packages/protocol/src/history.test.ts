@@ -4,10 +4,13 @@ import {
   HISTORY_PAGE_SIZE,
   HISTORY_PATHS,
   type HistoryGame,
+  historyGameForCatalog,
   type HistoryPlayer,
   isHistoryGame,
   isHistoryPage,
   isReplayAnswer,
+  readHistoryPage,
+  readReplayAnswer,
   replayPath,
 } from './index';
 
@@ -100,6 +103,39 @@ describe('answer checks (the app refuses what it can not read)', () => {
     const { friends: _flag, ...withoutFlag } = friends;
     expect(isHistoryGame({ ...withoutFlag, extra: 1 })).toBe(true);
     expect(friends.mode).toBe('ranked');
+  });
+
+  it('reads a seat whose avatar this app does not know as none, instead of refusing the page or the replay', () => {
+    // a newer app's avatar (a catalog after this one), and a retired one of the old pack
+    const page = {
+      games: [game({ players: [player(0, { avatarId: 'dragons-1-house' as never }), player(1)] })],
+      nextCursor: null,
+    };
+    expect(isHistoryPage(page)).toBe(false);
+    const read = readHistoryPage(page);
+    expect(read?.games[0]?.players.map((p) => p.avatarId)).toEqual([null, 'lava-lamp']);
+    expect(
+      readHistoryPage({
+        ...page,
+        games: [game({ players: [player(0, { avatarId: 'av49' as never }), player(1)] })],
+      })?.games[0]?.players[0]?.avatarId,
+    ).toBe('owl');
+    const replay = { game: page.games[0], events: [{ seq: 1, t: 5, type: 'gameCreated' }] };
+    expect(isReplayAnswer(replay)).toBe(false);
+    expect(readReplayAnswer(replay)?.game.players[0]?.avatarId).toBeNull();
+    // the rest is checked as before
+    expect(readHistoryPage({ games: [game({ mySeat: 5 })], nextCursor: null })).toBeNull();
+    expect(readHistoryPage(null)).toBeNull();
+    expect(readReplayAnswer({ game: game(), events: [] })).toBeNull();
+  });
+
+  it('gives an app of an older avatar catalog none for an avatar it does not know (the server side)', () => {
+    const g = game({
+      players: [player(0, { avatarId: 'pirates-5-house' }), player(1), player(2, { avatarId: null })],
+    });
+    expect(historyGameForCatalog(g, 1).players.map((p) => p.avatarId)).toEqual([null, 'lava-lamp', null]);
+    expect(historyGameForCatalog(g, 2)).toEqual(g);
+    expect(isHistoryGame(historyGameForCatalog(g, 1))).toBe(true);
   });
 
   it('refuses a replay without its log, or one that does not start with gameCreated', () => {

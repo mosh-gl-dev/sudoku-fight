@@ -5,6 +5,7 @@ import { type AppLevelOf, ManualClock, ManualScheduler } from '@sudoku-fight/eng
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { BackHandler } from 'react-native';
 
+import { useToast } from '../../../components/ui';
 import { gameEndConfig } from '../../../config/gameEnd';
 import { LEVEL_UI, PUZZLE_UI } from '../../../config/levels';
 import i18n from '../../../i18n';
@@ -245,6 +246,35 @@ describe('PuzzleLevelScreen: drawn from the GameView', () => {
   });
 });
 
+describe('a fixed box says so on the screen, not only to a screen reader (QA levels-puzzle-fixed)', () => {
+  beforeEach(() => useToast.getState().clear());
+  afterEach(() => useToast.getState().clear());
+
+  it('a tap on a fixed box: the toast "הריבוע הזה קבוע" with the lock, the live region too; no pile of toasts', async () => {
+    const s = await show(PUZZLE);
+    const fixed = PUZZLE.targets.fixed[0]!;
+    await activate(fixed);
+    expect(cue).toHaveBeenCalledWith('cellDenied');
+    expect(useToast.getState().current).toMatchObject({
+      variant: 'info',
+      icon: 'lock',
+      message: 'הריבוע הזה קבוע',
+    });
+    // Tapped again while it is up: the lock shakes again, the same toast stays, none waits behind it.
+    await activate(fixed);
+    expect(useToast.getState().queue).toHaveLength(0);
+    await wait(s, 1600);
+    expect(live()).toContain('הריבוע הזה קבוע');
+  });
+
+  it('a swap onto a fixed box (the engine’s boxFixed): the same toast', async () => {
+    await show(PUZZLE);
+    const movable = [...Array(9).keys()].find((p) => !PUZZLE.targets.fixed.includes(p))!;
+    await swap(movable, PUZZLE.targets.fixed[0]!);
+    expect(useToast.getState().current?.message).toBe('הריבוע הזה קבוע');
+  });
+});
+
 describe('LEVEL_UI.puzzleTapSwap (D78a)', () => {
   it('off: no "או: הקש על ריבוע…" and a tap does nothing; a screen reader still swaps', async () => {
     LEVEL_UI.puzzleTapSwap = false;
@@ -292,6 +322,33 @@ describe('PuzzleLevelScreen: the shell (useStageShell)', () => {
     expect(s.session.over).toMatchObject({ reason: 'quit', stars: 0 });
     await wait(s, motion.duration.sheetOut + 300);
     expect(s.onOver).toHaveBeenCalledTimes(1);
+    // The player's own "יציאה": no guard on the result.
+    expect(s.onOver).toHaveBeenCalledWith();
+  });
+
+  it('QA N1: the time runs out under "לצאת מהשלב?": the dialog closes, and the result is told it came under it', async () => {
+    const s = await show(PUZZLE);
+    await fireEvent.press(screen.getByTestId('stage-exit'));
+    await wait(s, motion.duration.sheetIn + 50);
+    expect(screen.getByText('לצאת מהשלב?')).toBeOnTheScreen();
+    // The clock runs on under the dialog (the spec has no rule; stopping it would be Moshe's decision).
+    await wait(s, PUZZLE.timeLimitMs + 50, 500);
+    expect(s.session.over).toMatchObject({ reason: 'timeUp' });
+    await wait(s, motion.duration.sheetOut + levelEndDelayMs('boardComplete', false) + 300);
+    expect(screen.queryByText('לצאת מהשלב?')).toBeNull();
+    expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith({ underDialog: true });
+  });
+
+  it('QA N1: a dialog answered "המשך לשחק" before the time ran out: the result is not guarded', async () => {
+    const s = await show(PUZZLE);
+    await fireEvent.press(screen.getByTestId('stage-exit'));
+    await wait(s, motion.duration.sheetIn + 50);
+    await fireEvent.press(screen.getByTestId('level-exit-cancel'));
+    await wait(s, PUZZLE.timeLimitMs + levelEndDelayMs('boardComplete', false) + 300, 500);
+    expect(s.session.over).toMatchObject({ reason: 'timeUp' });
+    expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith();
   });
 
   it('Android back asks the same; "המשך לשחק" keeps the puzzle going', async () => {

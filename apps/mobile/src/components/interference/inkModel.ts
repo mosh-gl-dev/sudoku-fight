@@ -93,26 +93,33 @@ export function inkPlan(seed: number, board: RegionRect, cfg: InkConfig = INK): 
   return { blots };
 }
 
-/** A blot at `t` ms into a hit of `totalMs`: its scale (about its centre) and opacity, before the hit's fade. */
+/**
+ * A blot at `t` ms into a hit of `totalMs`: its scale (about its centre) and opacity, before the hit's fade.
+ * A worklet. No default parameters: the worklets plugin reads its closure (INK) in the body, after the
+ * parameters, so a default that reads INK throws on the UI runtime (QA loop 8: "Property 'INK' doesn't exist",
+ * the receiver's app died; src/__tests__/workletClosures.test.ts).
+ */
 export function inkPose(
   blot: Pick<InkBlot, 'at'>,
   t: number,
   totalMs: number,
-  splatMs: number = INK.splatMs,
-  fadeMs: number = INK.fadeMs,
+  splatMs?: number,
+  fadeMs?: number,
 ): { scale: number; opacity: number } {
   'worklet';
+  const splat = splatMs ?? INK.splatMs;
+  const fade = fadeMs ?? INK.fadeMs;
   const local = t - blot.at;
   if (local < 0) return { scale: 0.25, opacity: 0 };
   // The splat: 0.25 → 1.08 by 65 % of it, then back to 1.
   let scale = 1;
-  if (local < splatMs) {
-    const p = local / splatMs;
+  if (local < splat) {
+    const p = local / splat;
     scale = p < 0.65 ? 0.25 + (1.08 - 0.25) * (1 - (1 - p / 0.65) ** 2) : 1.08 - 0.08 * ((p - 0.65) / 0.35);
   }
   const appear = Math.min(1, local / 80);
   // Wiped away over the last `fadeMs`: fainter, and a little smaller.
-  const left = Math.max(0, Math.min(1, (totalMs - t) / fadeMs));
+  const left = Math.max(0, Math.min(1, (totalMs - t) / fade));
   return { scale: scale * (0.85 + 0.15 * left), opacity: appear * left };
 }
 

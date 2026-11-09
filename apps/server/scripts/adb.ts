@@ -7,7 +7,7 @@
  *   npm run adb -- ui                          # the screen as lines: "label" id=testID @x,y [tap]
  *   npm run adb -- tap "משחק חדש"              # by text, description or testID; or: tap 540 1200
  *   npm run adb -- swipe 540 1800 540 600 [ms]
- *   npm run adb -- type "Fake1"                # ASCII only: adb cannot type Hebrew
+ *   npm run adb -- type "Fake1"                # ASCII only: adb cannot type Hebrew; then tap once (touch mode)
  *   npm run adb -- key back|home|enter
  *   npm run adb -- shot [file.png]             # default: the temp folder sudoku-fight-qa
  *   npm run adb -- launch | stop
@@ -16,14 +16,26 @@
  *   npm run adb -- reset                       # font scale, animations, colour correction, airplane mode back
  *
  * `--device <serial>` picks a phone (or ANDROID_SERIAL). Never uninstalls or clears data: those need Moshe's OK.
+ *
+ * `ui` and `tap "…"` read a fresh dump every time: while the screen animates uiautomator may not manage one
+ * ("could not get idle state"); after 3 tries (up to ~30 s) they exit 1 with that message, never the last screen.
+ * `shot` exits 1 when screencap gives no picture, and leaves no older file under the name it was given.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { centerOf, describeNodes, findNode, parseUiDump } from '../src/testing/qaAgent';
+import {
+  centerOf,
+  describeNodes,
+  dumpUi,
+  findNode,
+  isPng,
+  parseUiDump,
+  type UiDumpDevice,
+} from '../src/testing/qaAgent';
 
 const PACKAGE = 'com.mosheg.sudokufight';
 const DUMP_PATH = '/sdcard/qa-ui.xml';
@@ -49,14 +61,16 @@ function adbPath(): string {
 
 const ADB = adbPath();
 
-function adb(args: string[]): Buffer {
+function run(args: string[]): { stdout: Buffer; stderr: Buffer } {
   const all = values.device === undefined ? args : ['-s', values.device, ...args];
   const out = spawnSync(ADB, all, { maxBuffer: 64 * 1024 * 1024 });
   if (out.error !== undefined) throw out.error;
   if (out.status !== 0)
     throw new Error(`adb ${args.join(' ')}: ${out.stderr.toString().trim() || `exit ${out.status}`}`);
-  return out.stdout;
+  return out;
 }
+
+const adb = (args: string[]): Buffer => run(args).stdout;
 
 const shell = (...args: string[]) =>
   adb(['shell', ...args])
@@ -68,10 +82,17 @@ function usage(message: string): never {
   process.exit(2);
 }
 
-function screen() {
-  shell('uiautomator', 'dump', DUMP_PATH);
-  return parseUiDump(adb(['exec-out', 'cat', DUMP_PATH]).toString('utf8'));
-}
+const phone: UiDumpDevice = {
+  shell: (...args) => {
+    const out = run(['shell', ...args]);
+    return `${out.stdout.toString()}${out.stderr.toString()}`.trim();
+  },
+  read: (path) => adb(['exec-out', 'cat', path]).toString('utf8'),
+  sleep: (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms),
+};
+
+/** A fresh dump, or an error (dumpUi): never the last screen's. */
+const screen = () => parseUiDump(dumpUi(phone, DUMP_PATH));
 
 function main(): void {
   const [command, ...rest] = positionals;
@@ -106,6 +127,13 @@ function main(): void {
       const text = rest.join(' ');
       if (!/^[\x20-\x7e]+$/.test(text)) usage('type takes printable ASCII only (adb cannot type Hebrew)');
       shell('input', 'text', text.replace(/ /g, '%s').replace(/(["'`\\$&|;<>()])/g, '\\$1'));
+      // Typed keys take the phone out of touch mode (a user's on-screen keyboard does not): until the next touch,
+      // Android focuses the first focusable view of each new screen and draws its focus highlight, a grey box (QA
+      // joiner-me-card-box, loop 15: the game's "אני" card after a join typed with this command).
+      console.log(
+        'typed; key events left touch mode: until a tap, a grey focus box on the first control of each new screen ' +
+          "(the lobby's, the game's 'me' card) is Android's own; tap an empty spot once before judging how it looks",
+      );
       return;
     }
     case 'key': {
@@ -123,7 +151,13 @@ function main(): void {
       const dir = join(tmpdir(), 'sudoku-fight-qa');
       mkdirSync(dir, { recursive: true });
       const file = rest[0] ?? join(dir, `shot-${Date.now()}.png`);
-      writeFileSync(file, adb(['exec-out', 'screencap', '-p']));
+      // The file goes first, so a failed shot leaves no older picture under its name; `exec-out` passes on
+      // screencap's error as if it were the picture, and exits 0.
+      rmSync(file, { force: true });
+      const png = adb(['exec-out', 'screencap', '-p']);
+      if (!isPng(png))
+        throw new Error(`screencap gave no picture: ${png.toString('utf8', 0, 300).trim() || 'nothing'}`);
+      writeFileSync(file, png);
       console.log(file);
       return;
     }

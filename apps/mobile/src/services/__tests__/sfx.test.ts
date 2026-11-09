@@ -119,18 +119,31 @@ describe('sfx: playing', () => {
     expect(b!.play).toHaveBeenCalledTimes(1);
   });
 
-  it('preload creates the players without playing; a later play creates nothing new', () => {
+  it('preload creates the players and plays each once, muted (its warm-up); a later play creates nothing new', () => {
     sfx.preload(['correct', 'wrong', 'count_tick']);
     expect(audio.createAudioPlayer).toHaveBeenCalledTimes(4);
-    expect(audio.__players.every((p) => p.play.mock.calls.length === 0)).toBe(true);
+    expect(audio.__players.every((p) => p.play.mock.calls.length === 1 && p.volume === 0)).toBe(true);
     sfx.play('correct');
     expect(audio.createAudioPlayer).toHaveBeenCalledTimes(4);
+    expect(audio.__players[0]!.volume).toBe(0.8);
+    expect(audio.__players[0]!.play).toHaveBeenCalledTimes(2);
   });
 
   it('preload with no list loads every sound', () => {
     sfx.preload();
     const expected = SOUND_IDS.reduce((n, id) => n + voicesOf(id), 0);
     expect(audio.createAudioPlayer).toHaveBeenCalledTimes(expected);
+  });
+
+  // QA go-hold-joiner (loop 12): every caller (the game screen, the level screens) gets the same rule.
+  it('preload with sound off makes no player (nothing built for sounds that will not play); on again, it does', () => {
+    useSettings.setState({ sound: false });
+    sfx.preload();
+    sfx.preload(['correct', 'count_tick']);
+    expect(audio.createAudioPlayer).not.toHaveBeenCalled();
+    useSettings.setState({ sound: true });
+    sfx.preload(['correct']);
+    expect(audio.createAudioPlayer).toHaveBeenCalledTimes(1);
   });
 
   it('release frees every player; the next play starts over', () => {
@@ -181,6 +194,7 @@ describe('sfx: settings and app state', () => {
 
   it('stopAll pauses only the players that are playing', () => {
     sfx.preload(['wrong']);
+    audio.__players[0]!.playing = false; // its muted warm-up is over
     sfx.play('correct');
     sfx.stopAll();
     const [wrong, correct] = audio.__players;
@@ -217,7 +231,7 @@ describe('sfx: limits and errors', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(warn).toHaveBeenCalledTimes(2);
-    expect(audio.__players[0]!.play).toHaveBeenCalledTimes(1);
+    expect(audio.__players[0]!.play).toHaveBeenCalledTimes(2); // its muted warm-up, then the play
   });
 
   it('swallows a player that throws on play', () => {

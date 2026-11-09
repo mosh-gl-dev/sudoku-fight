@@ -1,14 +1,28 @@
 import { avatarById, type AvatarDef, MOTIONS, nativeLayers, renderStatic } from '@sudoku-fight/avatars';
 import { act, render, screen } from '@testing-library/react-native';
 import { NavigationContext } from 'expo-router/react-navigation';
+import { Activity } from 'react';
 import { PixelRatio, StyleSheet, type ViewStyle } from 'react-native';
 
 import { Avatar } from '../../components/player/Avatar';
 import { AVATAR_SIZES } from '../../components/player/metrics';
 import { useSettings } from '../../state/settings';
-import { AvatarArt, type AvatarReaction, REACTION_FACE_MS } from '../AvatarArt';
+import {
+  AvatarArt,
+  type AvatarReaction,
+  LAYERS_RETIRE_MS,
+  REACTION_FACE_MS,
+  RETIRED_LAYERS_ID,
+} from '../AvatarArt';
+import { IDLE_FIRST_BEAT_MS } from '../idleBeat';
 import { idleMovers, layerStack, svgCount } from '../layerStack';
-import { avatarIdsIn, drawnAvatarId, shownFace, svgXmlsIn } from '../testing/avatarTesting';
+import {
+  avatarIdsIn,
+  drawnAvatarId,
+  type RenderedNode,
+  shownFace,
+  svgXmlsIn,
+} from '../testing/avatarTesting';
 
 /**
  * AvatarArt (spec §3.4): one still SvgXml for an avatar that does not move; the package's layers, moved by
@@ -24,6 +38,20 @@ const styleOf = (el: { props: { style?: unknown } }) =>
   (StyleSheet.flatten(el.props.style as ViewStyle) ?? {}) as ViewStyle;
 /** Still: one SvgXml of renderStatic, with its clip path's id. */
 const isStill = (testID = 'art') => xmls(testID).length === 1 && drawnAvatarId(xmls(testID)[0]) !== null;
+/** The pose of each moving layer now (its animated style under Jest), hidden ones too. */
+const posesIn = (el: RenderedNode): string[] => [
+  ...(el.props.jestAnimatedStyle
+    ? [JSON.stringify((el.props.jestAnimatedStyle as { value: unknown }).value)]
+    : []),
+  ...el.children.flatMap((c) => (typeof c === 'string' ? [] : posesIn(c))),
+];
+/** Every SvgXml under an element, the hidden stacks included. */
+const svgsUnder = (el: RenderedNode): RenderedNode[] => [
+  ...(el.type === 'SvgXml' ? [el] : []),
+  ...el.children.flatMap((c) => (typeof c === 'string' ? [] : svgsUnder(c))),
+];
+/** The layers kept hidden a while (LAYERS_RETIRE_MS), or null. */
+const kept = () => screen.queryByTestId(RETIRED_LAYERS_ID, hidden);
 
 async function frames(ms: number) {
   await act(async () => {
@@ -227,7 +255,7 @@ describe('moving', () => {
     expect(art()).toHaveProp('renderToHardwareTextureAndroid', false);
   });
 
-  it('a stage idles only while its screen is the one shown (Home under the game stays still)', async () => {
+  it('a stage idles only while its screen is the one shown, and keeps its layers, still, under another (B14)', async () => {
     let focused = false;
     const listeners = new Set<() => void>();
     const navigation = {
@@ -237,24 +265,155 @@ describe('moving', () => {
         return () => listeners.delete(cb);
       },
     };
-    const covered = (
+    const focus = (on: boolean) =>
+      act(async () => {
+        focused = on;
+        listeners.forEach((cb) => cb());
+      });
+    await render(
       <NavigationContext.Provider value={navigation as never}>
         <AvatarArt avatarId="kettle" size={96} idle testID="art" />
-      </NavigationContext.Provider>
+      </NavigationContext.Provider>,
     );
-    await render(covered);
+    const layers = nativeLayers(def('kettle'), { size: 96 });
+    const stage = svgCount(layerStack(layers, idleMovers(layers)));
+    // Covered (Home under the game): its layers, at rest.
+    await frames(100);
+    const atRest = posesIn(art());
+    const drawn = svgXmlsIn(art());
+    expect(drawn).toHaveLength(stage);
     await frames(10_000);
-    expect(xmls()).toEqual([renderStatic(def('kettle'), { size: 96 })]);
-    await act(async () => {
-      focused = true;
-      listeners.forEach((cb) => cb());
-    });
+    expect(posesIn(art())).toEqual(atRest);
+    // Shown: it idles (its first beat, a burst of the kettle's steam) in the same views.
+    await focus(true);
+    await frames(IDLE_FIRST_BEAT_MS + 300);
+    expect(posesIn(art())).not.toEqual(atRest);
+    // Covered again: at rest at once, in the same views; never one picture under the next screen and the
+    // layers again on the way back, and nothing kept hidden.
+    await focus(false);
+    await frames(0);
+    expect(posesIn(art())).toEqual(atRest);
+    const again = svgXmlsIn(art());
+    expect(again).toHaveLength(stage);
+    again.forEach((x, i) => expect(x).toBe(drawn[i]));
+    expect(kept()).toBeNull();
+  });
+
+  it('layers it no longer shows stay a while, hidden and still: no view Reanimated holds goes with the new picture (B32)', async () => {
+    const view = await render(<AvatarArt avatarId="fox" size={44} reaction={null} testID="art" />);
+    const bounce: AvatarReaction = { motion: 'bounce', key: 1 };
+    await view.rerender(<AvatarArt avatarId="fox" size={44} reaction={bounce} testID="art" />);
+    await frames(MOTIONS.bounce.durationMs - 50);
+    const moving = svgXmlsIn(art());
     expect(isStill()).toBe(false);
-    await act(async () => {
-      focused = false;
-      listeners.forEach((cb) => cb());
-    });
-    expect(xmls()).toEqual([renderStatic(def('kettle'), { size: 96 })]);
+    await frames(50);
+    // The still picture at once, over the same layer views, hidden.
+    expect(xmls()).toEqual([renderStatic(def('fox'), { size: 44 })]);
+    expect(styleOf(kept()!)).toMatchObject({ opacity: 0 });
+    const hiddenLayers = svgXmlsIn(kept()!);
+    expect(hiddenLayers).toHaveLength(moving.length);
+    hiddenLayers.forEach((x, i) => expect(x).toBe(moving[i]));
+    // They go once Reanimated has let go of them.
+    await frames(LAYERS_RETIRE_MS);
+    expect(kept()).toBeNull();
+    expect(xmls()).toEqual([renderStatic(def('fox'), { size: 44 })]);
+  });
+
+  it('kept layers still go when its effects stop and run again without an unmount (a hidden Activity)', async () => {
+    const bounce: AvatarReaction = { motion: 'bounce', key: 1 };
+    const at = (mode: 'visible' | 'hidden', reaction: AvatarReaction | null) => (
+      <Activity mode={mode}>
+        <AvatarArt avatarId="fox" size={44} reaction={reaction} testID="art" />
+      </Activity>
+    );
+    const view = await render(at('visible', null));
+    await view.rerender(at('visible', bounce));
+    await frames(MOTIONS.bounce.durationMs - 50);
+    await frames(50);
+    expect(kept()).not.toBeNull();
+    await view.rerender(at('hidden', bounce));
+    await view.rerender(at('visible', bounce));
+    await frames(LAYERS_RETIRE_MS);
+    expect(kept()).toBeNull();
+    expect(xmls()).toEqual([renderStatic(def('fox'), { size: 44 })]);
+  });
+
+  it('frozen (the VS under the count): a nod under way keeps its layers, no still picture comes, no face changes; shown again, it ends', async () => {
+    const nod: AvatarReaction = { expression: 'smile', motion: 'nod', key: 1 };
+    const at = (frozen: boolean, expression: 'neutral' | 'angry' = 'neutral', reaction = nod) => (
+      <AvatarArt
+        avatarId="fox"
+        size={44}
+        expression={expression}
+        reaction={reaction}
+        frozen={frozen}
+        testID="art"
+      />
+    );
+    const view = await render(<AvatarArt avatarId="fox" size={44} reaction={null} testID="art" />);
+    await view.rerender(at(false));
+    await frames(MOTIONS.nod.durationMs / 2);
+    const moving = svgXmlsIn(art());
+    expect(isStill()).toBe(false);
+    await view.rerender(at(true));
+    // Long past the nod's end, a new base face and a new reaction meanwhile: the same views, nothing new drawn.
+    await frames(MOTIONS.nod.durationMs * 3);
+    await view.rerender(at(true, 'angry', { expression: 'sad', motion: 'shake', key: 2 }));
+    await frames(LAYERS_RETIRE_MS + 1_000);
+    const still = svgXmlsIn(art());
+    expect(still).toHaveLength(moving.length);
+    still.forEach((x, i) => expect(x).toBe(moving[i]));
+    expect(shownFace(art())).toBe('smile');
+    expect(kept()).toBeNull();
+    // Shown again, the nod cut short ends at once: the base face, still.
+    await view.rerender(at(false));
+    await frames(0);
+    expect(xmls()).toEqual([renderStatic(def('fox'), { size: 44 })]);
+    // Its layers kept hidden a while, as ever, then gone.
+    expect(kept()).not.toBeNull();
+    await frames(LAYERS_RETIRE_MS);
+    expect(kept()).toBeNull();
+  });
+
+  it('frozen, the layers it kept hidden stay until it is shown again, then their whole while', async () => {
+    const bounce: AvatarReaction = { motion: 'bounce', key: 1 };
+    const at = (frozen: boolean) => (
+      <AvatarArt avatarId="fox" size={44} reaction={bounce} frozen={frozen} testID="art" />
+    );
+    const view = await render(<AvatarArt avatarId="fox" size={44} reaction={null} testID="art" />);
+    await view.rerender(at(false));
+    await frames(0);
+    await frames(MOTIONS.bounce.durationMs);
+    expect(kept()).not.toBeNull();
+    const drawn = svgsUnder(art());
+    await view.rerender(at(true));
+    await frames(LAYERS_RETIRE_MS * 2);
+    const now = svgsUnder(art());
+    expect(now).toHaveLength(drawn.length);
+    now.forEach((x, i) => expect(x).toBe(drawn[i]));
+    await view.rerender(at(false));
+    await frames(LAYERS_RETIRE_MS - 100);
+    expect(kept()).not.toBeNull();
+    await frames(100);
+    expect(kept()).toBeNull();
+  });
+
+  it('another avatar while it moves: the new one at once, the old one’s layers kept hidden a while', async () => {
+    const view = await render(<AvatarArt avatarId="kettle" size={96} idle testID="art" />);
+    const kettle = xmls();
+    await view.rerender(<AvatarArt avatarId="fox" size={96} idle testID="art" />);
+    const fox = nativeLayers(def('fox'), { size: 96 });
+    expect(xmls()).toHaveLength(svgCount(layerStack(fox, idleMovers(fox))));
+    expect(xmls().some((x) => kettle.includes(x))).toBe(false);
+    expect(svgXmlsIn(kept()!).map((x) => x.props.xml)).toEqual(kettle);
+    // And back within the while: the kept layers come back as they are (nothing new is drawn).
+    const foxLayers = svgXmlsIn(art());
+    await view.rerender(<AvatarArt avatarId="kettle" size={96} idle testID="art" />);
+    expect(xmls()).toEqual(kettle);
+    expect(svgXmlsIn(kept()!)).toEqual(foxLayers);
+    await frames(LAYERS_RETIRE_MS);
+    expect(kept()).toBeNull();
+    expect(xmls()).toEqual(kettle);
   });
 
   it('a gimmick its expression starts plays from 48 px up (the rain cloud rains when sad)', async () => {

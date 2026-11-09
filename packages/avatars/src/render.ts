@@ -15,13 +15,21 @@
  *         [<g class="sfa-gimmick sfa-g-{id}">markup   the gimmick with z 'face', if any, holds the face
  *         <g id="{p}-face" class="sfa-face">         renderFace() rebuilds what is inside
  *           <g id="{p}-cheeks"/> <g id="{p}-eyes"/> <g id="{p}-brows"/> <g id="{p}-mouth"/>
- *           [<g id="{p}-art"/>] <g id="{p}-extras"/>
- *         </g>[</g>]
+ *           [<g id="{p}-art"/>]
+ *         </g>
+ *         [<g id="{p}-extras" class="sfa-extras"/></g>]  here when a gimmick holds the face (it moves with it)
  *         <g class="sfa-front">layers.front</g>
  *         <g class="sfa-gimmick sfa-g-{id}"/>…       gimmicks with z 'front' (the default)
+ *         <g id="{p}-extras" class="sfa-extras"/>    renderExtras() rebuilds what is inside
  *       </g>
  *     </g>
  *   </svg>
+ *
+ * The extras (a tear, a sweat drop, an anger mark, sleepy z's, dizzy stars) are the face's, but they are drawn
+ * over everything, the front layers and gimmicks too: a hat, a bandana or a scarf over the rig's temple point
+ * (beside the right eye) would hide the main cue of angry and sleepy. A motion that moves the face moves them
+ * with it (motion.ts motionCss). Only when a gimmick holds the face do they stay inside that gimmick, right
+ * after the face, so they ride with it.
  *
  * Inside g#{p}-eyes each eye has its own <g class="sfa-eye"> (rig.ts drawEyes). `sfa-small` marks a render
  * under GIMMICK_MIN_SIZE, where no gimmick plays; `sfa-idle` (option `idle`) lets the gimmicks idle.
@@ -88,7 +96,8 @@ export function originVars(def: AvatarDef): string {
 }
 
 /**
- * What goes inside g#face for one expression: replace the group's content to change the face.
+ * What goes inside g#face for one expression: replace the group's content to change the face, and
+ * g#extras's with renderExtras().
  * `size` is the on-screen size of the whole 100-unit canvas; for a `crop: 'head'` render pass
  * size × 100 / headBox.size, as renderAvatar does, so the lines stay the same weight.
  */
@@ -107,9 +116,17 @@ export function renderFace(
     g('eyes', drawEyes(face, expression, rig)) +
     g('brows', drawBrows(face, expression, rig)) +
     g('mouth', drawMouth(face, expression, rig)) +
-    (art === undefined ? '' : g('art', art)) +
-    g('extras', drawExtras(face, expression, rig))
+    (art === undefined ? '' : g('art', art))
   );
+}
+
+/** What goes inside g#extras for one expression (the same `size` as renderFace): '' when it has none. */
+export function renderExtras(
+  def: AvatarDef,
+  expression: Expression,
+  opts: Pick<RenderOptions, 'size'> = {},
+): string {
+  return drawExtras(def.face, expression, { size: opts.size ?? CANVAS });
 }
 
 /** A gimmick's group in its rest pose, around `inner` (gimmick.ts plays it). */
@@ -126,10 +143,15 @@ export function renderGimmicks(def: AvatarDef, z: Exclude<GimmickZ, 'face'>): st
     .join('');
 }
 
-/** The face group, held by the `face` gimmick if the avatar has one. */
-function faceGroup(def: AvatarDef, face: string): string {
-  const holder = def.gimmicks?.find((g) => g.z === 'face');
-  return holder ? gimmickGroup(holder, face) : face;
+/** The gimmick that holds the face (z 'face'), if the avatar has one. */
+export function faceHolderOf(def: AvatarDef): GimmickDef | undefined {
+  return def.gimmicks?.find((g) => g.z === 'face');
+}
+
+/** The face group, held by the `face` gimmick if the avatar has one (with the extras right after it). */
+function faceGroup(def: AvatarDef, face: string, extras: string): string {
+  const holder = faceHolderOf(def);
+  return holder ? gimmickGroup(holder, face + extras) : face;
 }
 
 export function renderAvatar(def: AvatarDef, opts: RenderOptions = {}): string {
@@ -147,6 +169,7 @@ export function renderAvatar(def: AvatarDef, opts: RenderOptions = {}): string {
   const viewBox = `${f(box.x)} ${f(box.y)} ${f(box.size)} ${f(box.size)}`;
   const small = size < GIMMICK_MIN_SIZE;
   const cls = `sfa${small ? ' sfa-small' : ''}${opts.idle && !small ? ' sfa-idle' : ''}`;
+  const extras = `<g id="${p}-extras" class="sfa-extras">${renderExtras(def, expression, { size: faceSize })}</g>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${f(size)}" height="${f(size)}" ` +
     `class="${cls}" data-avatar="${esc(def.id)}" data-expression="${expression}" ${a11y} style="${originVars(def)}">` +
@@ -160,9 +183,11 @@ export function renderAvatar(def: AvatarDef, opts: RenderOptions = {}): string {
     faceGroup(
       def,
       `<g id="${p}-face" class="sfa-face">${renderFace(def, expression, { size: faceSize, idPrefix: p })}</g>`,
+      extras,
     ) +
     (def.layers.front ? `<g class="sfa-front">${def.layers.front}</g>` : '') +
     renderGimmicks(def, 'front') +
+    (faceHolderOf(def) ? '' : extras) +
     `</g></g></svg>`
   );
 }

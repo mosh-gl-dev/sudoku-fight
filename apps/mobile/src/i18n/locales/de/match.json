@@ -95,6 +95,7 @@
     },
     "code": "Fehlercode: {{code}}",
     "retry": "Erneut suchen",
+    "backToGame": "Zurück zum Spiel",
     "verify": "E-Mail bestätigen",
     "practice": "Zum Training",
     "practiceNote": "Training allein oder gegen einen Bot geht auch offline.",
@@ -111,11 +112,11 @@
     "retry": "Erneut prüfen",
     "retrying": "Verbindung wird geprüft…",
     "stillOffline": "Immer noch keine Verbindung · Versuch {{count}}",
-    "rankedNote": "Verfügbar, wenn online",
+    "rankedNote": "Nur mit Internet",
     "needsConnection": "Braucht Verbindung",
     "needsConnectionLabel": "Braucht eine Internetverbindung",
     "practiceNote": "Ohne Internet verfügbar",
-    "availableOffline": "Auch offline",
+    "availableOffline": "Auch ohne Netz",
     "back": "Du bist wieder online. Ranglistenspiele sind verfügbar."
   },
   "modes": {

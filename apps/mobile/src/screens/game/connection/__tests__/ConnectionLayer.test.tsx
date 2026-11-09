@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 
+import { color } from '../../../../theme';
 import { ConnectionLayer, type ConnectionLayerProps } from '../ConnectionLayer';
 import { connectionModel, type ConnectionModel, lobbyOf } from '../connectionModel';
 import { NINA, rankedGame } from '../testing/games';
@@ -124,6 +125,23 @@ describe('ConnectionLayer', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'עבור לאימון' }));
     await fireEvent.press(screen.getByRole('button', { name: 'לבית' }));
     expect([h.onRetry, h.onPractice, h.onHome].map((f) => f.mock.calls.length)).toEqual([1, 1, 1]);
+  });
+
+  it('the error paints the ground over a live game, and stays see-through alone (D126)', async () => {
+    const model: ConnectionModel = {
+      kind: 'error',
+      failure: 'lost',
+      code: '4000',
+      attempts: 3,
+      retrying: false,
+      refusal: null,
+    };
+    const view = await render(layer(model));
+    expect(StyleSheet.flatten(screen.getByTestId('connection-error-cover').props.style)).not.toHaveProperty(
+      'backgroundColor',
+    );
+    await view.rerender(layer(model, { overGame: true }));
+    expect(screen.getByTestId('connection-error-cover')).toHaveStyle({ backgroundColor: color.bg });
   });
 
   it('shows the connecting steps, which can be cancelled', async () => {

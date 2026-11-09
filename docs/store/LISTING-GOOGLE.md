@@ -29,10 +29,10 @@
 | App or game | **Game** |
 | Category | **Puzzle** (חלופה: Board) |
 | Tags | Sudoku, Multiplayer, Puzzle, Logic, Competitive (בוחרים מהרשימה של Play, עד 5) |
-| Email | **חובה ומתפרסם.** תיבה ייעודית (לא המייל של משה בלי אישורו), אותה כמו `LEGAL_CONTACT_EMAIL` |
+| Email | `support@sudokufight.app`. **חובה ומתפרסם.** מנותב ל־Gmail של משה (Cloudflare Email Routing; ‏`docs/handoff/2026-10-27/play-release/plan.md` צעד 1ג), ולכן ממלאים רק אחרי שמייל בדיקה מגיע. כדאי שיהיה אותו מייל כמו `LEGAL_CONTACT_EMAIL` (היום המייל מ־C2: להחליף רק באישור משה) |
 | Website | לא חובה |
 | Phone | לא חובה. לא למלא |
-| Privacy policy | `https://<שרת ה־Production>/legal/privacy?lang=en` |
+| Privacy policy | `https://sudokufight.app/legal/privacy?lang=en` |
 
 ## 3. App content (הצהרות)
 
@@ -77,7 +77,7 @@ Sign in with the demo account (email verified). Practice (Home → Play → "Pra
 
 ## 4. Content rating (שאלון IARC)
 
-- **Email:** אותה תיבה של יצירת הקשר. **Category:** ‏**Game**.
+- **Email:** אותה תיבה של יצירת הקשר, ‏`support@sudokufight.app`. **Category:** ‏**Game**.
 
 | שאלה (בקיצור) | תשובה | למה |
 |---|---|---|

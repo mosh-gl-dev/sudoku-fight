@@ -4,10 +4,11 @@ import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { Icon } from '../../../components/Icon';
 import { StarsBar } from '../../../components/levels/StarsBar';
-import { secondsOf, signedText } from '../../../components/player/format';
+import { clockLabelSeconds, secondsOf, signedText } from '../../../components/player/format';
 import { Text } from '../../../components/ui/Text';
 import { decimalSeparator } from '../../../i18n/compose';
 import { color, radius, size, space, text } from '../../../theme';
+import { opaqueOver } from '../../../theme/blend';
 import type { LevelsT } from '../levelWording';
 import { clockText } from './BoxHud';
 import { levelClock, StageHeader } from './FindHud';
@@ -59,8 +60,8 @@ export function PuzzleHud({ level, view, now, penalty = null, onExit, style }: P
         style={styles.clock}
         accessibilityRole="timer"
         accessibilityLabel={t('hud.box.timeLabel', {
-          count: secondsOf(elapsed),
-          s: secondsOf(elapsed),
+          count: clockLabelSeconds(elapsed, 'elapsed'),
+          s: clockLabelSeconds(elapsed, 'elapsed'),
           limit: secondsOf(lv?.limitMs ?? 0),
         })}
         testID="puzzle-clock"
@@ -116,6 +117,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     paddingVertical: space[1],
     borderRadius: radius.xs,
-    backgroundColor: color.dangerSubtle,
+    // Laid flat over the ground: the wandering digits pass behind the HUD (B12).
+    backgroundColor: opaqueOver(color.dangerSubtle),
   },
 });

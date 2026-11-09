@@ -3,22 +3,28 @@ import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { retryLoad, signOut, useAuth } from '../../auth/authStore';
 import { Button, Spinner } from '../../components/ui';
-import { usePresence } from '../../components/ui/motion';
+import { Enter } from '../../components/ui/Enter';
+import { curve, usePresence } from '../../components/ui/motion';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
-import { motion, useReduceMotion } from '../../theme/motion';
+import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
 import { errorMessage } from './messages';
 import { AccountApiError } from '../../api/accountApi';
-import { Brand, DevModeBadge } from './parts';
+import { Brand, BRAND_ENTRANCE, DevModeBadge } from './parts';
 
 const TIPS = ['lock', 'hard', 'mistake', 'interfere'] as const;
 /** A new tip every few seconds while the arena loads. */
 export const TIP_MS = 4_000;
+/** A tip gives way to the next: out, then in, 240 ms in all (MOT-3: no hard cut). */
+export const TIP_FADE_MS = 240;
+/** The tagline fades in after the wordmark (the Splash's entrance). */
+const TAGLINE_AT = BRAND_ENTRANCE.subAt + 120;
 
 /**
  * A tip's words. The numbers come from the rules, not the copy (the Splash board's "12 שניות במשחק רגיל"
@@ -67,6 +73,7 @@ export function SplashScreen() {
   const loadError = useAuth((s) => s.loadError);
   const [tip, setTip] = useState(0);
   const [busy, setBusy] = useState<'retry' | 'signOut' | null>(null);
+  const shownTip = useCrossFade(tip);
 
   useEffect(() => {
     const timer = setInterval(() => setTip((i) => (i + 1) % TIPS.length), TIP_MS);
@@ -91,8 +98,10 @@ export function SplashScreen() {
         <DevModeBadge />
       </View>
       <View style={styles.middle}>
-        <Brand />
-        <Text style={styles.tagline}>{t('splash.tagline')}</Text>
+        <Brand entrance testID="splash-brand" />
+        <Enter kind="fade" delayMs={TAGLINE_AT}>
+          <Text style={styles.tagline}>{t('splash.tagline')}</Text>
+        </Enter>
       </View>
 
       {loadError ? (
@@ -135,14 +144,47 @@ export function SplashScreen() {
             <View style={styles.tipChip}>
               <Text style={styles.tipChipText}>{t('splash.tipLabel')}</Text>
             </View>
-            <Text style={styles.tipText} accessibilityLiveRegion="none" testID="splash-tip">
-              {splashTip(t, TIPS[tip]!)}
-            </Text>
+            <Animated.View style={[styles.tipBox, shownTip.style]}>
+              <Text style={styles.tipText} accessibilityLiveRegion="none" testID="splash-tip">
+                {splashTip(t, TIPS[shownTip.value]!)}
+              </Text>
+            </Animated.View>
           </View>
         </View>
       )}
     </View>
   );
+}
+
+/**
+ * A value that gives way to the next by a cross-fade (TIP_FADE_MS: half out, then the new one half in), so a
+ * tip never cuts hard to the next. Reduced Motion: the new one at once.
+ */
+function useCrossFade(value: number) {
+  const reduce = useReduceMotion();
+  const [shown, setShown] = useState(value);
+  // Reduced Motion: the new value at once (derived during render, no extra effect pass).
+  if (reduce && shown !== value) setShown(value);
+  const opacity = useSharedValue(1);
+  useEffect(() => {
+    const half = {
+      duration: TIP_FADE_MS / 2,
+      easing: curve('standard'),
+      reduceMotion: reduceMotionFlag(false),
+    };
+    if (value === shown) {
+      opacity.set(withTiming(1, half));
+      return;
+    }
+    if (reduce) return;
+    opacity.set(
+      withTiming(0, half, (finished) => {
+        if (finished) scheduleOnRN(setShown, value);
+      }),
+    );
+  }, [value, shown, reduce, opacity]);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  return { value: shown, style };
 }
 
 const styles = StyleSheet.create({
@@ -167,7 +209,8 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface2,
   },
   tipChipText: { ...text('micro'), color: color.accent },
-  tipText: { ...text('caption'), color: color.textMuted, flexShrink: 1 },
+  tipBox: { flexShrink: 1 },
+  tipText: { ...text('caption'), color: color.textMuted },
   errorTitle: { ...text('h1'), color: color.text, textAlign: 'center' },
   errorBody: { ...text('body'), color: color.textMuted, textAlign: 'center' },
 });

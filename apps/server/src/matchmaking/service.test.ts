@@ -4,7 +4,13 @@ import {
   ManualClock,
   ManualScheduler,
 } from '@sudoku-fight/engine';
-import type { MatchmakingServerMessage, MatchSeatReservation } from '@sudoku-fight/protocol';
+import {
+  FOUND_HOLD_MS,
+  type MatchmakingServerMessage,
+  type MatchSeatReservation,
+  matchmakingQueueOf,
+  matchmakingRoomOf,
+} from '@sudoku-fight/protocol';
 
 import { quietLog } from '../testing';
 import type { OpponentRecord } from './matcher';
@@ -358,6 +364,7 @@ describe('a match', () => {
 
   it('everyone connected (D37): `ready`, the countdown, then GO and `started`; the connections close', async () => {
     const { ana, ben, room, advance, service, join } = await found();
+    await advance(FOUND_HOLD_MS);
     room.link.join('ana');
     expect(ana.last('ready').ready).toEqual(['ana']);
     expect(ben.last('ready').ready).toEqual(['ana']);
@@ -366,14 +373,14 @@ describe('a match', () => {
     expect(ana.last('countdown')).toEqual({
       type: 'countdown',
       matchId: 'match-1',
-      startsAt: T0 + 2500 + 3000,
-      serverTime: T0 + 2500,
+      startsAt: T0 + 3700 + 3000,
+      serverTime: T0 + 3700,
     });
-    expect(room.calls).toEqual(['countdown@5500']);
+    expect(room.calls).toEqual(['countdown@6700']);
     await advance(2999);
     expect(room.calls).not.toContain('go');
     await advance(1);
-    expect(room.calls).toEqual(['countdown@5500', 'go']);
+    expect(room.calls).toEqual(['countdown@6700', 'go']);
     for (const s of [ana, ben]) {
       expect(s.last('started')).toEqual({ type: 'started', matchId: 'match-1', roomId: 'ROOM1' });
       expect(s.closed).toBe(true);
@@ -382,6 +389,13 @@ describe('a match', () => {
     // One ranked game at a time: no search while it runs.
     expect(service.isPlaying('ana')).toBe(true);
     await expect(join('ana')).rejects.toMatchObject({ error: 'alreadyQueued' });
+    // QA density-change-orphans-ranked-game: the refusal names the game's room, the app's way back into it.
+    const refused = await join('ana').then(
+      () => '',
+      (error: unknown) => (error as Error).message,
+    );
+    expect(matchmakingRoomOf(`alreadyQueued: ${refused}`)).toBe('ROOM1');
+    expect(matchmakingQueueOf(`alreadyQueued: ${refused}`)).toBe('fast-2p');
     // The room reports the game over (its result stored): free to search again.
     room.link.over();
     expect(service.isPlaying('ana')).toBe(false);
@@ -393,13 +407,13 @@ describe('a match', () => {
     const { room, advance, service, join } = await found();
     room.link.join('ana');
     room.link.join('ben');
-    await advance(3000);
+    await advance(FOUND_HOLD_MS + 3000);
     expect(service.isPlaying('ben')).toBe(true);
     room.link.closed();
     expect(service.isPlaying('ana')).toBe(false);
     expect(service.isPlaying('ben')).toBe(false);
     await join('ben');
-    expect(room.calls).toEqual(['countdown@5500', 'go']); // nothing more: the match was not called off
+    expect(room.calls).toEqual(['countdown@6700', 'go']); // nothing more: the match was not called off
   });
 
   it('no cancelling after "found" [D32]; leaving matchmaking then does not stop the match', async () => {
@@ -409,9 +423,44 @@ describe('a match', () => {
     service.left(ana.id); // the app closed this connection, and joins the game room
     room.link.join('ana');
     room.link.join('ben');
-    await advance(3000);
-    expect(room.calls).toEqual(['countdown@5500', 'go']);
+    await advance(FOUND_HOLD_MS + 3000);
+    expect(room.calls).toEqual(['countdown@6700', 'go']);
     expect(ben.last('started').roomId).toBe('ROOM1');
+  });
+
+  it('everyone in at once: the VS holds FOUND_HOLD_MS after `found`, then the countdown (spec §10)', async () => {
+    const { ana, room, advance } = await found();
+    room.link.join('ana');
+    room.link.join('ben');
+    // Both ready at once, said at once; the count waits for the VS (motion tokens sequence.matchFound).
+    expect(ana.last('ready').ready).toEqual(['ana', 'ben']);
+    expect(ana.of('countdown')).toEqual([]);
+    await advance(FOUND_HOLD_MS - 1);
+    expect(room.calls).toEqual([]);
+    await advance(1);
+    expect(ana.last('countdown')).toEqual({
+      type: 'countdown',
+      matchId: 'match-1',
+      startsAt: T0 + 2500 + FOUND_HOLD_MS + 3000,
+      serverTime: T0 + 2500 + FOUND_HOLD_MS,
+    });
+    expect(room.calls).toEqual(['countdown@6700']);
+    await advance(3000);
+    expect(room.calls).toEqual(['countdown@6700', 'go']);
+  });
+
+  it('a player who drops during the VS hold is waited for: the count starts once they are back', async () => {
+    const { ana, room, advance } = await found();
+    room.link.join('ana');
+    room.link.join('ben');
+    room.link.leave('ben');
+    await advance(FOUND_HOLD_MS);
+    expect(ana.of('countdown')).toEqual([]);
+    await advance(300);
+    room.link.join('ben');
+    // Past the hold: at once.
+    expect(ana.last('countdown').serverTime).toBe(T0 + 2500 + FOUND_HOLD_MS + 300);
+    expect(room.calls).toEqual(['countdown@7000']);
   });
 
   it('a player who leaves the game room before everyone is in is not ready any more', async () => {
@@ -613,11 +662,12 @@ describe('the ready check (spec §10, D37)', () => {
     await t.join('ben');
     await t.advance(500);
     const room = t.rooms[0]!;
+    await t.advance(FOUND_HOLD_MS);
     room.link.join('ana');
     room.link.join('ben');
     room.link.leave('ben');
     await t.advance(3000);
-    expect(room.calls).toEqual(['countdown@3500', 'go']);
+    expect(room.calls).toEqual(['countdown@4700', 'go']);
   });
 });
 
@@ -632,6 +682,21 @@ describe('3 and 4 players (stage 10, spec §10)', () => {
       ['ana', 'fast'],
       ['dan', 'hard'],
     ]);
+  });
+
+  it('alone at a table of 3 or 4: the search times out at 60 s like any other, its clock whole (QA NEW-3p-timeout-early)', async () => {
+    const t = setup();
+    const ana = await t.join('ana', 'fast-3p');
+    const dan = await t.join('dan', 'hard-4p');
+    expect(ana.last('searching')).toMatchObject({ elapsedMs: 0, timeoutAt: T0 + 60 * S, nextRange: null });
+    await t.advance(20 * S);
+    expect(ana.of('timeout')).toEqual([]);
+    await t.advance(39_500);
+    expect(ana.of('timeout')).toEqual([]);
+    expect(dan.of('timeout')).toEqual([]);
+    await t.advance(500);
+    expect(ana.last('timeout')).toMatchObject({ queueKey: 'fast-3p', elapsedMs: 60 * S, nextRange: null });
+    expect(dan.last('timeout')).toMatchObject({ queueKey: 'hard-4p', elapsedMs: 60 * S, nextRange: null });
   });
 
   it('a match of 3 forms only when the group is full; whoever is found waits for the rest', async () => {

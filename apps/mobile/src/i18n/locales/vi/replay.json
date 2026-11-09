@@ -65,6 +65,7 @@
     "noLogic": "Đáp án: {{cell}} → {{digit}}",
     "scoreLine": "Điểm số",
     "penaltyLine": "Mức phạt: giá trị của số đúng",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Đã hủy lựa chọn",
       "timeout": "Hết giờ",

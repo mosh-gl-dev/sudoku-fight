@@ -30,14 +30,20 @@
       "box": "Blok {{label}} mist alleen nog {{digit}}."
     },
     "missing": {
-      "row": "Rij {{label}} mist {{digits}}.",
-      "col": "Kolom {{label}} mist {{digits}}.",
-      "box": "Blok {{label}} mist {{digits}}."
+      "row_one": "Rij {{label}} mist {{digits}}.",
+      "row_other": "Rij {{label}} mist {{digits}}.",
+      "col_one": "Kolom {{label}} mist {{digits}}.",
+      "col_other": "Kolom {{label}} mist {{digits}}.",
+      "box_one": "Blok {{label}} mist {{digits}}.",
+      "box_other": "Blok {{label}} mist {{digits}}."
     },
     "seen": {
-      "row": "Rij {{label}} heeft al {{digits}}.",
-      "col": "Kolom {{label}} heeft al {{digits}}.",
-      "box": "Blok {{label}} heeft al {{digits}}."
+      "row_one": "Rij {{label}} heeft al {{digits}}.",
+      "row_other": "Rij {{label}} heeft al {{digits}}.",
+      "col_one": "Kolom {{label}} heeft al {{digits}}.",
+      "col_other": "Kolom {{label}} heeft al {{digits}}.",
+      "box_one": "Blok {{label}} heeft al {{digits}}.",
+      "box_other": "Blok {{label}} heeft al {{digits}}."
     },
     "eliminated": "{{digit}} is in stap {{step}} uitgesloten voor {{cell}}.",
     "only": "Dus alleen {{digit}}."

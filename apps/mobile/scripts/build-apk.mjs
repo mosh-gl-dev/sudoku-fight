@@ -4,17 +4,23 @@
 //   npm run apk                          staging server (eas.json's preview profile)
 //   npm run apk -- --install             ... and install it on every phone adb sees
 //   npm run apk -- --server local        a server on this PC (npm run server), for phones on the same Wi-Fi
+//   npm run apk -- --key                 once per PC: make the signing key, print its fingerprints
+//   npm run apk -- --resign-sha1 debug   an APK that will be signed again with another key (Google sign-in
+//                                        then follows that key: docs/BUILD-APK.md)
 //   npm run apk -- --help                every option
 //
-// Steps: checks (disk, Java, Android SDK, Firebase file) → `expo prebuild` (android/, from app.json and
-// app.config.ts; only when they changed, since every prebuild writes android/ anew) → `gradlew assembleRelease`
-// for arm64-v8a only, the JS bundled every time, with the server's EXPO_PUBLIC_* set (Metro inlines them into
-// the bundle) → a look inside the APK (signed, one ABI, the server's host in the bundle) → apps/mobile/apk/ (the
-// newest 3 kept) → optional install.
+// Steps: checks (disk, Java, Android SDK, Firebase file, the signing key) → `expo prebuild` (android/, from
+// app.json and app.config.ts; only when they changed, since every prebuild writes android/ anew) → `gradlew
+// assembleRelease` for arm64-v8a only, the JS bundled every time, with the server's EXPO_PUBLIC_* set (Metro
+// inlines them into the bundle) → a look inside the APK (signed with this PC's key, one ABI, the server's host
+// in the bundle) → apps/mobile/apk/ (the newest 3 kept) → optional install.
 //
-// Release builds are signed with the debug keystore that Expo's template puts in android/app (checked in
-// android/app/build.gradle before every build). EAS signs with its own key, so an APK from here and one from
-// the cloud can't update each other: a phone switching between them uninstalls the app once.
+// Release builds are signed with this PC's own key, ~/.sudoku-fight/apk-key (made by `--key`, outside the repo;
+// Moshe keeps a copy in his password manager). Until 2026-10-30 they were signed with the debug keystore of
+// Expo's template, which is public, so Firebase could not keep listing it once the game is in the store
+// (app.config.ts TEMPLATE_DEBUG_KEY_SHA1). EAS and Google Play sign with keys of their own, so an APK from here
+// and one from the cloud or the store can't update each other: a phone switching between them uninstalls the
+// app once.
 //
 // The pure parts (and their tests) are in lib/build-apk.mjs. Gradle's output goes to apps/mobile/apk/last-build.log.
 import { spawn, spawnSync } from 'node:child_process';
@@ -32,7 +38,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { homedir, networkInterfaces } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -41,10 +47,13 @@ import { fileURLToPath } from 'node:url';
 import {
   ABI,
   ABORT_FREE,
+  APK_KEY_ALIAS,
   apkFileName,
+  apkSignerSha256s,
   apkProblems,
   apksToPrune,
   buildInfoEnv,
+  colonFingerprint,
   describeServer,
   EXIT,
   failureSummary,
@@ -59,21 +68,24 @@ import {
   isLockedError,
   isOutOfMemory,
   javaMajorVersion,
+  keytoolFingerprints,
+  localApkEnv,
   appJsonFiles,
   MIN_FREE_FULL,
   MIN_FREE_INCREMENTAL,
   nativeConfigHash,
   newestApk,
+  newestBuildTools,
   PACKAGE,
   packageDeps,
   parseAdbDevices,
   parseApkArgs,
   prebuildPlan,
-  releaseSigningConfig,
   REPLACEABLE,
   resolveServer,
   serverEnv,
   serverNativeInput,
+  signingEnv,
   staleConfigDirs,
   uninstallCommand,
   USAGE,
@@ -87,6 +99,10 @@ const APK_DIR = join(MOBILE, 'apk');
 const LOG_FILE = join(APK_DIR, 'last-build.log');
 const HASH_FILE = join(ANDROID, '.sf-prebuild-hash');
 const FIREBASE_FILE = join(MOBILE, 'config', 'firebase', 'google-services.json');
+/** This PC's signing key (npm run apk -- --key): a PKCS12 keystore and its password, outside the repo. */
+const KEY_DIR = join(homedir(), '.sudoku-fight', 'apk-key');
+const KEY_STORE = join(KEY_DIR, 'sudoku-fight-apk.p12');
+const KEY_PASSWORD_FILE = join(KEY_DIR, 'password.txt');
 const BUILT_APK = join(ANDROID, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
 const WINDOWS = process.platform === 'win32';
 const GRADLEW = join(ANDROID, WINDOWS ? 'gradlew.bat' : 'gradlew');
@@ -287,7 +303,7 @@ function killTree(child) {
  * Everything a build step runs with: the server, the build's commit and server label (the app's version line),
  * production, no .env files, never "CI", never "EAS".
  */
-function buildEnv(server, git) {
+function buildEnv(server, git, key, resignSha1) {
   const env = { ...process.env, ...serverEnv(server), ...buildInfoEnv(server, git), NODE_ENV: 'production' };
   // apps/mobile/.env.local (npm run dev:lan writes a LAN address there) must not decide the APK's server.
   env.EXPO_NO_DOTENV = '1';
@@ -298,9 +314,11 @@ function buildEnv(server, git) {
   delete env.CI;
   // app.config.ts gives builds on this PC their own plugins, and never lets an EAS build allow cleartext.
   delete env.EAS_BUILD;
-  // The APK is signed with the template debug key: app.config.ts shows "המשך עם Google" only while Firebase
-  // lists that key's SHA-1 (it can't work otherwise).
-  env.SF_LOCAL_APK = '1';
+  // The APK is signed with this PC's key: app.config.ts shows "המשך עם Google" only while Firebase lists that
+  // key's SHA-1 (it can't work otherwise), or the SHA-1 of the key that signs it again (--resign-sha1).
+  // expo-constants evaluates app.config.ts again in every Gradle run.
+  Object.assign(env, localApkEnv(key.sha1, resignSha1));
+  Object.assign(env, signingEnv(key));
   if (server.secure) delete env.SF_ALLOW_CLEARTEXT;
   else env.SF_ALLOW_CLEARTEXT = '1';
   if (!env.ANDROID_HOME) env.ANDROID_HOME = androidSdk();
@@ -367,14 +385,127 @@ function nativeInputs(server) {
 const GRADLE_HISTORY = join(ANDROID, '.gradle');
 const GRADLE_HISTORY_ASIDE = join(APK_DIR, '.android-gradle');
 
-/** The release signing in android/app/build.gradle (lib: releaseSigningConfig); throws when there is none. */
-function releaseSigning() {
-  const signing = releaseSigningConfig(readFileSync(join(ANDROID, 'app', 'build.gradle'), 'utf8'));
-  if (signing === null)
+// ---------------------------------------------------------------- the signing key
+
+const keytool = () =>
+  process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', WINDOWS ? 'keytool.exe' : 'keytool') : 'keytool';
+
+/** keytool with the keystore's password in an environment variable (`-storepass:env`), never on its command line. */
+function runKeytool(args, password) {
+  const result = spawnSync(keytool(), args, {
+    encoding: 'utf8',
+    env: { ...process.env, SF_APK_KEY_PASSWORD: password },
+  });
+  if (result.error)
+    throw new Failure(`keytool did not run (${result.error.message}): set JAVA_HOME to JDK 17`);
+  return { code: result.status, text: `${result.stdout}${result.stderr}` };
+}
+
+/**
+ * This PC's signing key and its fingerprints, or null when `npm run apk -- --key` hasn't made it yet. Throws
+ * when the keystore is there but can't be opened (a wrong password file): a new key would not update the app
+ * already on the phones.
+ */
+function readApkKey() {
+  if (!existsSync(KEY_STORE) || !existsSync(KEY_PASSWORD_FILE)) return null;
+  const password = readFileSync(KEY_PASSWORD_FILE, 'utf8').trim();
+  const list = runKeytool(
+    [
+      '-list',
+      '-v',
+      '-keystore',
+      KEY_STORE,
+      '-storetype',
+      'PKCS12',
+      '-alias',
+      APK_KEY_ALIAS,
+      '-storepass:env',
+      'SF_APK_KEY_PASSWORD',
+    ],
+    password,
+  );
+  const fingerprints = list.code === 0 ? keytoolFingerprints(list.text) : null;
+  if (!fingerprints)
     throw new Failure(
-      'android/app/build.gradle signs no release build: the APK would be unsigned and no phone would install it',
+      `Can't open the signing key ${KEY_STORE} with the password in ${KEY_PASSWORD_FILE} ` +
+        '(restore both files from the copy in the password manager). keytool said: ' +
+        list.text.trim().split(/\r?\n/).slice(-1)[0],
+      EXIT.preflight,
     );
-  return signing;
+  return { storeFile: KEY_STORE, password, alias: APK_KEY_ALIAS, ...fingerprints };
+}
+
+/** `npm run apk -- --key`: makes the key once (never replaces one), then prints what goes where. */
+function makeApkKey() {
+  let key = readApkKey();
+  if (key) say(`The signing key is already here: ${KEY_STORE}`);
+  else {
+    if (existsSync(KEY_STORE))
+      throw new Failure(
+        `${KEY_STORE} is here without ${KEY_PASSWORD_FILE}: restore it from the password manager`,
+      );
+    mkdirSync(KEY_DIR, { recursive: true });
+    const password = randomBytes(24).toString('base64url');
+    writeFileSync(KEY_PASSWORD_FILE, `${password}\n`, { mode: 0o600 });
+    const made = runKeytool(
+      [
+        '-genkeypair',
+        '-keystore',
+        KEY_STORE,
+        '-storetype',
+        'PKCS12',
+        '-alias',
+        APK_KEY_ALIAS,
+        '-keyalg',
+        'RSA',
+        '-keysize',
+        '2048',
+        '-validity',
+        '10000',
+        '-dname',
+        'CN=Sudoku Fight test APKs, O=Moshe Glazman',
+        '-storepass:env',
+        'SF_APK_KEY_PASSWORD',
+        '-keypass:env',
+        'SF_APK_KEY_PASSWORD',
+      ],
+      password,
+    );
+    if (made.code !== 0) {
+      rmSync(KEY_STORE, { force: true });
+      rmSync(KEY_PASSWORD_FILE, { force: true });
+      throw new Failure(`keytool could not make the key: ${made.text.trim()}`);
+    }
+    key = readApkKey();
+    say(`Made the signing key: ${KEY_STORE}`);
+  }
+  say(`  password  ${KEY_PASSWORD_FILE}`);
+  say('  Keep a copy of both files (the password manager): without them, the next APK needs an uninstall.');
+  say('');
+  say(`  SHA-1    ${colonFingerprint(key.sha1)}`);
+  say('           → Firebase: Project settings > Your apps > Sudoku Fight Android > Add fingerprint');
+  say(`  SHA-256  ${colonFingerprint(key.sha256)}`);
+  say('           → fly.toml ANDROID_APP_LINK_SHA256 (staging room links)');
+  return EXIT.ok;
+}
+
+/** apksigner of the newest build-tools in the Android SDK, or null. */
+function apksigner() {
+  const dir = join(androidSdk(), 'build-tools');
+  const newest = newestBuildTools(existsSync(dir) ? readdirSync(dir) : []);
+  return newest ? join(dir, newest, WINDOWS ? 'apksigner.bat' : 'apksigner') : null;
+}
+
+/** The SHA-256 of the certificates that signed the APK (apksigner verify --print-certs). */
+function apkSigners(apk) {
+  const tool = apksigner();
+  if (!tool || !existsSync(tool)) throw new Failure('apksigner not found in the Android SDK build-tools');
+  const result = WINDOWS
+    ? spawnSync(`"${tool}" verify --print-certs "${apk}"`, { encoding: 'utf8', shell: true })
+    : spawnSync(tool, ['verify', '--print-certs', apk], { encoding: 'utf8' });
+  if (result.status !== 0)
+    throw new Failure(`apksigner verify failed: ${`${result.stdout}${result.stderr}`.trim()}`);
+  return apkSignerSha256s(result.stdout);
 }
 
 /** A file call that another program's open file can make fail on Windows: a Failure that says so. */
@@ -496,14 +627,22 @@ function apkFiles() {
     .map((name) => ({ name, mtimeMs: statSync(join(APK_DIR, name)).mtimeMs }));
 }
 
-function checkApk(server) {
+function checkApk(server, key) {
   const report = inspectApk(readFileSync(BUILT_APK), server.host);
   const problems = apkProblems(report, server.host);
+  // Proof the injected signing took: without it build.gradle's signingConfig (the public debug key) signs.
+  const signers = apkSigners(BUILT_APK);
+  if (signers.length !== 1 || signers[0] !== key.sha256)
+    problems.push(
+      `it is signed with ${signers.map(colonFingerprint).join(', ') || 'no key'}, not this PC's key ${colonFingerprint(key.sha256)}`,
+    );
   if (problems.length > 0)
     throw new Failure(
       `The APK is not right: ${problems.join('; ')}. Try once more from scratch: npm run apk -- --clean-native`,
     );
-  say(`      signed; native code for ${report.abis.join(', ')}; ${server.host} is in the JS bundle`);
+  say(
+    `      signed with this PC's key; native code for ${report.abis.join(', ')}; ${server.host} is in the JS bundle`,
+  );
 }
 
 function keepApk(server, version, git) {
@@ -728,6 +867,7 @@ async function main() {
   };
   const freeAtStart = freeBytes();
 
+  if (options.keyOnly) return makeApkKey();
   if (options.installOnly) {
     const newest = newestApk(apkFiles());
     if (!newest) throw new Failure(`No APK in ${rel(APK_DIR)} yet: run npm run apk first`, EXIT.preflight);
@@ -772,11 +912,21 @@ async function main() {
   if (freeAtStart !== null) say(`  disk     ${formatBytes(freeAtStart)} free on drive C`);
   if (!server.secure)
     say('  note     plain ws:// (no TLS): the APK allows cleartext traffic; for testing on your Wi-Fi only');
+  if (options.resignSha1)
+    say(
+      `  re-sign  afterwards with SHA-1 ${colonFingerprint(options.resignSha1)}: Google sign-in follows that key`,
+    );
   if (options.dryRun) return EXIT.ok;
 
   const tools = checkTools();
   for (const line of tools.info) say(`  ${line}`);
   for (const line of tools.warnings) say(line);
+  const key = tools.problems.length === 0 ? readApkKey() : null;
+  if (key) say(`  key      ${KEY_STORE} (SHA-1 ${colonFingerprint(key.sha1)})`);
+  else if (tools.problems.length === 0)
+    tools.problems.push(
+      `no signing key on this PC (${KEY_STORE}). Make it once: npm run apk -- --key (docs/BUILD-APK.md)`,
+    );
   const needed = full ? MIN_FREE_FULL : MIN_FREE_INCREMENTAL;
   if (freeAtStart !== null && freeAtStart < needed)
     tools.problems.push(
@@ -790,11 +940,9 @@ async function main() {
 
   openLog();
   say(`  log      ${rel(LOG_FILE)}`);
-  const env = buildEnv(server, git);
+  const env = buildEnv(server, git, key, options.resignSha1);
   if (plan.run) await phase('prebuild', () => prebuild(plan, hash, env));
   else say(`[prebuild] skipped: ${plan.reason}`);
-  const signing = releaseSigning();
-  say(`      release builds are signed with the ${signing} key (android/app/build.gradle)`);
   say(`[gradle] assembleRelease for ${ABI}${full ? ': everything from the start, 30 to 45 minutes' : ''}`);
   const stale = pruneStaleCxx();
   if (stale > 0) say(`      deleted old C++ build folders: ${formatBytes(stale)}`);
@@ -804,7 +952,7 @@ async function main() {
   await stopGradle(env);
   timings.push(['gradle', Date.now() - gradleStart]);
   say(`      gradle took ${formatDuration(Date.now() - gradleStart)}`);
-  await phase('check', () => checkApk(server));
+  await phase('check', () => checkApk(server, key));
   const target = await phase('copy', () => keepApk(server, version, git));
   // A configuration this build replaced (a new NDK, other C++ arguments) leaves its C++ folders behind.
   const replaced = pruneStaleCxx();
@@ -823,7 +971,12 @@ async function main() {
   say(`     ${formatBytes(statSync(target).size)}, built in ${formatDuration(Date.now() - started)}`);
   say(`     ${timings.map(([name, ms]) => `${name} ${formatDuration(ms)}`).join(', ')}`);
   if (free !== null) say(`Free on drive C: ${formatBytes(free)}`);
-  if (!options.install)
+  if (options.resignSha1)
+    say(
+      `Sign it again with the key of SHA-1 ${colonFingerprint(options.resignSha1)} (apksigner sign), then install it: ` +
+        'Google sign-in in it works only with that key (docs/BUILD-APK.md).',
+    );
+  else if (!options.install)
     say('Install: npm run apk -- --install-only  (phones on USB), or copy the file to the phone.');
   return code;
 }

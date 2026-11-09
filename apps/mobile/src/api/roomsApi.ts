@@ -1,4 +1,6 @@
 import {
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   type FriendRoomCreateRequest,
   type FriendRoomJoinRequest,
   type FriendRoomTicket,
@@ -8,9 +10,9 @@ import {
   friendsErrorOf,
   type FriendsField,
   FRIENDS_PATHS,
-  isFriendRoomTicket,
   isFriendsErrorCode,
   normalizeFriendCode,
+  readFriendRoomTicket,
 } from '@sudoku-fight/protocol';
 
 import type { AccountFetch } from './accountApi';
@@ -126,6 +128,8 @@ export function createRoomsApi(deps: RoomsApiDeps): RoomsApi {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
+            // the avatars this app knows: the server sends an older app none for a newer one
+            [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG),
           },
           body: JSON.stringify(body),
           signal: controller.signal,
@@ -155,9 +159,11 @@ export function createRoomsApi(deps: RoomsApiDeps): RoomsApi {
     );
   }
 
+  /** The ticket; a host whose avatar this app does not know shows none, instead of refusing the room. */
   const ticketOf = (data: unknown): FriendRoomTicket => {
-    if (!isFriendRoomTicket(data)) throw new RoomsApiError('internal');
-    return data;
+    const ticket = readFriendRoomTicket(data);
+    if (ticket === null) throw new RoomsApiError('internal');
+    return ticket;
   };
 
   return {

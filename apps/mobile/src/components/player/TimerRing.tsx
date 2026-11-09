@@ -104,7 +104,10 @@ export const TimerRing = memo(function TimerRing({
       </Svg>
       {seconds === null ? null : (
         <View style={styles.center}>
-          <Text style={[metrics.timerRing.secondsStyle, styles.seconds]}>{String(seconds)}</Text>
+          {/* Inside a ring of fixed size: never larger than designed (BRD-3 'board'). */}
+          <Text scale="board" style={[metrics.timerRing.secondsStyle, styles.seconds]}>
+            {String(seconds)}
+          </Text>
         </View>
       )}
     </View>

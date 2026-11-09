@@ -6,6 +6,8 @@ import { ROUTES } from '../../auth/redirect';
 import { canPlayRanked } from '../../auth/verification';
 import { useToast } from '../../components/ui/toastStore';
 import { type RankedDeps, type RankedRequest, useGameStore } from '../../game/gameStore';
+import { isLiveOnline, liveFlowPathOf } from '../../game/liveFlow';
+import { noteLiveGameShown } from '../../game/rankedResume';
 import i18n from '../../i18n';
 import { type LastPlay, useProfile } from '../../state/profile';
 import { SUSPENDED_PATH } from '../moderation/SuspendedBanner';
@@ -34,6 +36,7 @@ const deviceRankedDeps = (): RankedDeps =>
  */
 export async function startAndOpen(play: LastPlay, how: 'push' | 'replace'): Promise<boolean> {
   if (!isStartableMode(play.mode)) return false;
+  if (backToLiveGame(how)) return true;
   const { gameType } = play;
   if (play.mode === 'ranked') {
     const players = play.players ?? DEFAULT_RANKED_PLAYERS;
@@ -71,6 +74,7 @@ export async function startAndOpen(play: LastPlay, how: 'push' | 'replace'): Pro
  * suspension's screen, with its line. Returns whether the search started.
  */
 export function startRankedAndOpen(request: RankedRequest, how: 'push' | 'replace'): boolean {
+  if (backToLiveGame(how)) return false;
   const { user, me } = useAuth.getState();
   if (isSuspended(me)) {
     useToast.getState().show({ variant: 'info', message: i18n.t('moderation:suspended.ranked') });
@@ -90,5 +94,23 @@ export function startRankedAndOpen(request: RankedRequest, how: 'push' | 'replac
     .rememberPlay({ mode: 'ranked', gameType: request.gameType, players: request.players });
   if (how === 'push') router.push(MATCH_PATH);
   else router.replace(MATCH_PATH);
+  return true;
+}
+
+/**
+ * A start while the game store still holds a live online game (ranked or with friends) opens that game instead
+ * (QA "density-change-orphans-ranked-game": after Android recreated the activity, the game ran on with no screen,
+ * and Home's "Play" left its room on purpose: the server called it abandonment, a loss, and the new search was
+ * refused alreadyQueued). Leaving a game is only ever the game screen's own, asked first (spec §6.6). Returns
+ * whether it did.
+ */
+function backToLiveGame(how: 'push' | 'replace'): boolean {
+  const { online, match } = useGameStore.getState();
+  if (!online || !isLiveOnline(online)) return false;
+  const path = liveFlowPathOf({ session: null, online, match }) ?? '/game';
+  // A start's quiet join back into the game, still on its way, does not open it a second time.
+  if (path === '/game') noteLiveGameShown();
+  if (how === 'push') router.push(path);
+  else router.replace(path);
   return true;
 }

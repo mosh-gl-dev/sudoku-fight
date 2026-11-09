@@ -30,14 +30,26 @@
       "box": "Al riquadro {{label}} manca solo il numero {{digit}}."
     },
     "missing": {
-      "row": "Numeri che mancano alla riga {{label}}: {{digits}}.",
-      "col": "Numeri che mancano alla colonna {{label}}: {{digits}}.",
-      "box": "Numeri che mancano al riquadro {{label}}: {{digits}}."
+      "row_one": "Alla riga {{label}} manca il numero {{digits}}.",
+      "row_many": "Numeri che mancano alla riga {{label}}: {{digits}}.",
+      "row_other": "Numeri che mancano alla riga {{label}}: {{digits}}.",
+      "col_one": "Alla colonna {{label}} manca il numero {{digits}}.",
+      "col_many": "Numeri che mancano alla colonna {{label}}: {{digits}}.",
+      "col_other": "Numeri che mancano alla colonna {{label}}: {{digits}}.",
+      "box_one": "Al riquadro {{label}} manca il numero {{digits}}.",
+      "box_many": "Numeri che mancano al riquadro {{label}}: {{digits}}.",
+      "box_other": "Numeri che mancano al riquadro {{label}}: {{digits}}."
     },
     "seen": {
-      "row": "La riga {{label}} contiene già {{digits}}.",
-      "col": "La colonna {{label}} contiene già {{digits}}.",
-      "box": "Il riquadro {{label}} contiene già {{digits}}."
+      "row_one": "La riga {{label}} contiene già il numero {{digits}}.",
+      "row_many": "La riga {{label}} contiene già {{digits}}.",
+      "row_other": "La riga {{label}} contiene già {{digits}}.",
+      "col_one": "La colonna {{label}} contiene già il numero {{digits}}.",
+      "col_many": "La colonna {{label}} contiene già {{digits}}.",
+      "col_other": "La colonna {{label}} contiene già {{digits}}.",
+      "box_one": "Il riquadro {{label}} contiene già il numero {{digits}}.",
+      "box_many": "Il riquadro {{label}} contiene già {{digits}}.",
+      "box_other": "Il riquadro {{label}} contiene già {{digits}}."
     },
     "eliminated": "Il numero {{digit}} è stato escluso da {{cell}} al passo {{step}}.",
     "only": "Quindi può essere solo {{digit}}."

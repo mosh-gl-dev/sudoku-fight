@@ -58,6 +58,8 @@ export function FighterPreview({
             name={shown}
             country={country}
             idle={AVATAR_STAGES.picker && settled === avatarId}
+            // Big enough for the character's own moving parts (48 and up): the stage of the choice.
+            avatarSize="home"
             note={
               <>
                 {country ? <Text style={styles.muted}>{t('player:sep')}</Text> : null}

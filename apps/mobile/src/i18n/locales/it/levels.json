@@ -327,6 +327,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "la porta ne richiede {{need}}",
     "chapterOpen": "la porta è aperta",
+    "chapterNeedSentence": "La porta ne richiede {{need}}",
+    "chapterOpenSentence": "La porta è aperta",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Questo capitolo: {{stars}} stella su {{max}}. {{gate}}",
     "chapterLine_many": "Questo capitolo: {{stars}} di stelle su {{max}}. {{gate}}",
@@ -379,6 +381,8 @@
     "button": "Lascia la fase",
     "title": "Lasciare la fase?",
     "body": "Otterrai 0 stelle, e si aprirà la fase successiva.",
+    "bodyLocked": "Otterrai 0 stelle, e la fase successiva resterà bloccata.",
+    "bodyLast": "Otterrai 0 stelle.",
     "confirm": "Lascia",
     "cancel": "Continua a giocare"
   },

@@ -21,7 +21,7 @@
 ```
 packages/engine     חוקי המשחק, ניקוד, הסברים, מאגר הלוחות ו־300 השלבים (TypeScript טהור, שעון ו־RNG מוזרקים)
 packages/protocol   הממשק GameHost וטיפוסי ההודעות בין האפליקציה לשרת
-packages/avatars    101 האווטרים המונפשים שלנו: נתונים ופונקציות שמחזירות SVG (docs/avatars/STYLE.md)
+packages/avatars    119 האווטרים המונפשים שלנו: נתונים ופונקציות שמחזירות SVG (docs/avatars/STYLE.md)
 apps/mobile         האפליקציה (Expo SDK 57, expo-router, Reanimated 4, Skia, Zustand)
 apps/server         שרת זמן אמת (Node, Colyseus 0.18)
 apps/admin          אתר הניהול (Vite, React), לקריאה בלבד

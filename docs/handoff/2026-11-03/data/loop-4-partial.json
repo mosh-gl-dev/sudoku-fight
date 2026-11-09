@@ -1,0 +1,274 @@
+{
+ "note": "round 4 stopped 08.11 07:25 at the two-phone stage (phone 1 disconnected); phone-1 lane batches 1-3 did nothing (phone offline)",
+ "checks": [
+  {
+   "id": "build-sync",
+   "result": "pass",
+   "detail": "טלפון 3 (RF8Y30L038L): installed-RF8Y30L038L.txt=apk9 = latest-build.json apk9 (1.1.0 (08.11 03:55, loop-3 fixes, Google on)); לא הותקן דבר."
+  },
+  {
+   "id": "apk9-1 delete Google-only",
+   "result": "pass",
+   "detail": "הגדרות → 'מחיקת חשבון' → 'למחוק את החשבון?' (ביטול / המשך למחיקה) → 'המשך למחיקה' פותח את החלון 'אישור עם Google' (id delete-google), עם הטקסט 'כדי למחוק את החשבון, בחר שוב את חשבון Google achvata.chess@gmail.com.' ועם הכפתורים 'ביטול' ו'אשר עם Google ומחק'. אין חלון 'אישור בסיסמה'. לחצתי על 'ביטול': החלון נסגר, ונשארתי מחובר בתור אחוותא."
+  },
+  {
+   "id": "apk9-2 ConfirmModal long labels",
+   "result": "pass",
+   "detail": "he: חלון Google בעמודה. 'ביטול' הזהוב ברוחב מלא למעלה, 'אשר עם Google ומחק' האדום ברוחב מלא מתחתיו, בגודל טקסט רגיל (צילום). גם חלון האזהרה הראשון בעמודה. 'להתנתק?' הקצר נשאר זה לצד זה ומלוכסן. de/fr/es/ru: הכיתוב האדום הארוך ('Mit Google bestätigen und löschen', 'Confirmer avec Google et supprimer', 'Confirmar con Google y eliminar', 'Подтвердить через Google и удалить') בעמודה, ונשבר לשתי שורות בגודל מלא. אין טקסט זעיר (צילומים של de, fr ו-ru). חלון ההתנתקות ב-de/fr/es בעמודה בגודל מלא, וב-ru ('Выйти' | 'Отмена') זה לצד זה. האזהרה הראשונה ב-de זה לצד זה ('Abbrechen' | 'Weiter'), וב-fr/es/ru בעמודה. בכל ה-dumps אין צמתי -measure, ולכל כיתוב יש צומת אחד בלבד. בכל חלון לחצתי על 'ביטול' (Cancel). השפה הוחזרה לעברית (he)."
+  },
+  {
+   "id": "cleanup",
+   "result": "pass",
+   "detail": "הרצתי reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה he. האפליקציה הופעלה מחדש ונמצאת במסך הבית, מחובר בתור אחוותא."
+  },
+  {
+   "id": "apk9-levels-xp-offline",
+   "result": "pass",
+   "detail": "Home before: 1,320/1,600 XP (level 8). Airplane on; stage 74 (fill the box) won with 3 new stars, result showed '+27.5 XP'; stage 79 (spot the error) won with 3 new stars, '+30 XP'. Home while still offline: 1,320. Airplane off at 05:43:29 (phone time), stayed on Home and polled every 5 s for 20 s: still 1,320. Then History and back to Home: 1,380/1,600 (+60 = 10 per star), with no app restart; the player card also showed 1,380. The update happened on Home's focus. The connectivity-switch path (offline to online while on Home) did not update the XP within 20 s."
+  },
+  {
+   "id": "apk9-levels-new-game-small-phone",
+   "result": "partial",
+   "detail": "wm density 480 (360x780dp). Font 2.0 in he and en: no row title, tagline or section note ends with '…'. 'Practice vs bot', 'Real opponents, in real time', 'Solo • full board', 'Staged practice', 'אימון לבד • לוח מלא' and 'יריבים אמיתיים, בזמן אמת' all wrap whole, and the list scrolls. Font 1.3 (en): wraps and scrolls, chips fine. Font 1.0 (en and he): all six rows fit with no scrolling, each title on one line. New issue at 2.0 in both languages: the chip text ('Stage 76 • ★ 130', 'Offline too', 'Unrated', 'Works offline', 'ללא דירוג', 'עובד גם בלי אינטרנט', 'גם אופליין') is cut at the bottom by the chip's border. Restored afterwards with wm density reset and font_scale 1.0 (both verified)."
+  },
+  {
+   "id": "apk9-levels-lang-english",
+   "result": "pass",
+   "detail": "English, stage 79 result (time's up). level-result-chapter content-desc = 'This chapter: 6 stars of 30. The gate needs 20' (capital T). The visible line still reads 'This chapter ⁦6/30⁩ · the gate needs 20' in lowercase. No Hebrew on the result screen apart from the user name. Language switched back to Hebrew through Settings, and the app locale shows [he]."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "account-settings-delete-password",
+   "result": "untested",
+   "summary": "נשאר למשה: שלבי חלון הסיסמה דורשים חשבון מייל+סיסמה (אחוותא הוא Google בלבד). בדיקת התיקון עברה: נפתח 'אישור עם Google' עם 'אשר עם Google ומחק', הכפתורים בעמודה בגודל מלא ב-he/de/fr/es/ru, וב'ביטול' נשארים מחוברים."
+  },
+  {
+   "taskId": "levels-xp-offline",
+   "result": "pass",
+   "summary": "בדיקת תיקון: במצב טיסה ניצחתי בשלבים 74 ו־79 (6 כוכבים חדשים, +27.5 ו־+30 XP). אחרי כיבוי מצב הטיסה, היסטוריה וחזרה לבית: ה־XP עלה מ־1,320 ל־1,380 בלי הפעלה מחדש, וגם בכרטיס השחקן. כשנשארתי בבית 20 ש׳ הוא לא התעדכן לבד."
+  },
+  {
+   "taskId": "levels-new-game-small-phone",
+   "result": "partial",
+   "summary": "בדיקת תיקון: ב־360dp ובגודל טקסט 2.0 אין '…', הכותרות עוטפות והרשימה נגללת. ב־1.0 שש השורות נכנסות בעברית ובאנגלית. אבל ב־2.0 התגיות (Unrated, Works offline, Stage 76 • ★ 130, ללא דירוג, גם אופליין) נחתכות בתחתית, בשתי השפות."
+  },
+  {
+   "taskId": "levels-lang-english",
+   "result": "pass",
+   "summary": "בדיקת תיקון: התווית הנגישה של שורת הפרק בתוצאה באנגלית היא 'This chapter: 6 stars of 30. The gate needs 20', עם T גדולה. השורה הגלויה נשארת באותיות קטנות, ואין עברית במסך."
+  },
+  {
+   "taskId": "avatars-react-sleepy",
+   "result": "pass",
+   "summary": "אחרי ~25 ש' בלי מגע האווטר שלי (מחשבון) ישנוני, עפעפיים כבדים ומבט למטה; Pip לא נרדם; הקשה על B2 העירה אותו וחזרה הבעה רגילה"
+  },
+  {
+   "taskId": "avatars-end-win",
+   "result": "pass",
+   "summary": "בצילום רצוף של מסך התוצאות (ניצחון 70 מול 3.5): האווטר שלי צחק והסתובב פעם אחת ואז חייך; Pip עצוב"
+  },
+  {
+   "taskId": "avatars-replay-step",
+   "result": "pass",
+   "summary": "בצפייה החוזרת, שלב 19/35 (אני נכון): חיוך והנהון אחרי רגע. במעבר 34↔35 התגובה הקודמת נעצרה מיד והחדשה התנגנה, ובחזרה התנגנה שוב"
+  },
+  {
+   "taskId": "avatars-replay-drag",
+   "result": "pass",
+   "summary": "גרירה של 3.5 ש' משלב 35 לשלב 70: בדרך אין תגובות; אחרי העצירה (אני · נכון ב־G9) רק האווטר שלי הגיב"
+  },
+  {
+   "taskId": "avatars-motion-on-picker",
+   "result": "pass",
+   "summary": "עם הפחתת תנועה מופעלת: החלון נסגר, השדה התחלף ל'פין באולינג' עם חיוך ובלי קפיצה; יצאתי בלי שמירה והאווטר נשאר 'מחשבון'"
+  },
+  {
+   "taskId": "avatars-motion-on-game",
+   "result": "partial",
+   "summary": "נכון: חיוך בלי הנהון; טעות: עצב בלי ניעור. אבל ה־🔥 מוצג סטטי מעל האווטר ומכסה את הפנים ~2 ש', ואחריו ההבעה כבר רגילה, כך שהצחוק לא נראה (נבדק פעמיים)"
+  },
+  {
+   "taskId": "avatars-motion-dev-local",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש Development Build. ב־APK הקישור sudokufight://dev/avatars חזר לבית כצפוי; 'הפחתת תנועה' נשארה 'כבויה'"
+  },
+  {
+   "taskId": "avatars-idle-picker-fast",
+   "result": "pass",
+   "summary": "10 בחירות מהירות ברצף: כל בחירה שנקלטה סגרה את החלון והשדה הראה את הדמות ואת השם. אחרי 3 שניות האבוקדו עמד בהבעה רגילה, בלי קריסה. הקשה על השדה בזמן שהחלון עוד נסגר (כחצי שנייה) נבלעת."
+  },
+  {
+   "taskId": "avatars-idle-picker-choose",
+   "result": "pass",
+   "summary": "יש 7 כותרות סוג. המחשבון ממוסגר בתכלת עם וי. הקשה על הדמות שכבר נבחרה רק סגרה את החלון. המספריים התחלפו, חייכו וקפצו פעם אחת (צילומים כל 0.3 שנייה)."
+  },
+  {
+   "taskId": "avatars-look-locked-cell",
+   "result": "pass",
+   "summary": "ב־G6, שנעולה על ידי Pip: אפרוח בביצה בקטן עם רקע ומסגרת כתומים (P2), בלי צורה. אחרי השיבוץ: 7 עם ▲ בפינה השמאלית העליונה."
+  },
+  {
+   "taskId": "avatars-look-small-details",
+   "result": "untested",
+   "summary": "נשאר למשה: המשימה דורשת Development Build. ב־Release המסך ‎/dev/avatars מחזיר לבית (הוא מאחורי __DEV__)."
+  },
+  {
+   "taskId": "avatars-perf-dev-grid",
+   "result": "untested",
+   "summary": "נשאר למשה: המשימה דורשת Development Build ואת ה־Perf Monitor של Expo. ב־Release המסך ‎/dev/avatars מחזיר לבית."
+  },
+  {
+   "taskId": "avatars-pirates-map-coin",
+   "result": "pass",
+   "summary": "נער החבלים המושקע עמד ליד מטבע 8 עם מסגרת תכלת ו־●, בלי מצמוץ. אחרי 'למפה' מטבע 9, שהיה נעול, נפתח, הדרך נצבעה והאסימון עבר אליו. אין קריסה ואין שורות ביומן הקריסות."
+  },
+  {
+   "taskId": "avatars-pirates-register",
+   "result": "untested",
+   "summary": "נשאר למשה: ההרשמה דורשת התנתקות. נבדק רק שבבוחר בעריכת פרופיל יש 'הגברת הפיראטית (סגנון הבית)' תחת 'סימנים', והשדה מציג אותה עם השם. יצאתי בלי לשמור, והאווטר נשאר 'מחשבון'."
+  },
+  {
+   "taskId": "avatars-pirates-api-catalog",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש ID token של חשבון הבדיקה Gil, ואין לי אותו."
+  },
+  {
+   "taskId": "general-lang-board-ltr",
+   "result": "pass",
+   "summary": "בעברית ובאנגלית A1 בשמאל למעלה, I9 בימין למטה, והמקלדת 1–9 משמאל לימין. בעברית: 'המשבצת שלך D5'. באנגלית D5 הייתה רמז, אז בחרתי D3: 'Your cell D3'."
+  },
+  {
+   "taskId": "general-lang-stage-word",
+   "result": "pass",
+   "summary": "באנגלית: 'Staged practice' ו־'Stage N' במפה, בשער, בשלב נעול ('Stage 14 · locked'), בתוצאה ובכרטיס ('Stages: 9'). Level מופיע רק לרמת XP."
+  },
+  {
+   "taskId": "general-display-design-system",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש Development Build. ב־APK של סטייג'ינג אין שורת 'פיתוח' בבית ואין 'מערכת עיצוב' בקטע הבדיקה."
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "levels-new-game-small-phone",
+   "severity": "minor",
+   "title": "Mode-row chips cut at the bottom at font scale 2.0 (New game)",
+   "what": "Build apk9, 1.1.0 (08.11 03:55, loop-3 fixes), SM-A165F, Android 16. Steps: adb shell wm density 480 (360x780dp) and settings put system font_scale 2.0, then Home → 'שחק' (New game) and scroll down. Happens in Hebrew and in English. The pills under 'Practice vs bot', 'Solo • full board' and 'Staged practice' ('Unrated', 'Works offline', 'Stage 76 • ★ 130', 'Offline too' / 'ללא דירוג', 'עובד גם בלי אינטרנט', 'שלב 76 • ★ 130', 'גם אופליין') are shorter than their text, so the chip's bottom border cuts the bottom of the glyphs; the descender of 'g' in 'Stage' is gone. At 1.3 and 1.0 the chips are fine. The pill height looks fixed and doesn't grow with fontScale. Screenshots: qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-1.png (he) and -4.png (en), plus crop-he-chips.png and crop-en-chips.png."
+  },
+  {
+   "taskId": "levels-xp-offline",
+   "severity": "minor",
+   "title": "Home XP doesn't update while Home stays open after the connection comes back (only on refocus)",
+   "what": "Build apk9, phone 1 (signed in as אורי), Hebrew. Steps: on Home the XP is 1,320. Turn airplane mode on, win stages 74 and 79 with 3 new stars each, then go back to Home (still 1,320, as expected). Run adb shell cmd connectivity airplane-mode disable at 05:43:29 and stay on Home, reading it every 5 s for 20 s: it stays at 1,320. Go to History and back to Home: it shows 1,380 right away. The fix in fix-loop3 says startProgress subscribes to useConnectivity and calls syncProgressNow() and refreshMyProgress() on the offline-to-online switch. On the device, that path did not update Home within 20 s; only Home's focus effect did. Related point: stage 74's result showed an estimate of '+27.5 XP' for 3 new stars (from 0, 18.5 s), but the server credited 30 (10 per star), so the estimate and the credit differ."
+  },
+  {
+   "taskId": "levels-new-game-small-phone",
+   "severity": "minor",
+   "title": "Home at font 1.3 on 360dp: 'Provisional' chip breaks mid-word, recent-game titles get '…'",
+   "what": "Build apk9, English, wm density 480 (360x780dp), font_scale 1.3, Home. Under the Normal and Hard ratings, the chip reads 'Provisiona' on one line and 'l' on the next (the word is broken). In 'Recent games', the titles are cut with '…': 'Practice…', 'Solo pra…', 'Practice v…'. Found by chance while checking New game; screenshot qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-5.png was overwritten later, so to reproduce, use the same settings and open Home."
+  },
+  {
+   "taskId": "avatars-motion-on-game",
+   "title": "With reduced motion, the static 🔥 reaction hides my avatar's laugh",
+   "what": "Build 1.1.0 (08.11 03:55, loop-3 fixes, Google on), apk9, SM-A165F (טלפון 3), Hebrew. Steps: 1) Settings > 'הפחתת תנועה' > 'מופעלת'. 2) 'שחק' > 'אימון מול בוט' > 'מהיר' > 'בחירת יריב' > 'טירון' > 'יאללה, למשחק'. 3) Tap 'תגובות' and pick 'אש' (🔥). 4) Watch my avatar (the top-right card). Result: the 🔥 emoji appears static right on top of my avatar and covers the whole face for about 2 s (frames every 0.65 s). When it fades the face is already neutral, so the laugh (reactions.ts '🔥': laugh, spin) is never visible. Reproduced twice. With 'הפחתת תנועה' 'כבויה' the laugh and then the spin are visible, and the fire floats up and off the face. Expected (catalog): with reduced motion, 🔥 shows a laugh with no spin. Suggestion: in reduced motion, offset the static emoji off the face, or keep the laugh face on after the emoji fades.",
+   "severity": "minor"
+  }
+ ],
+ "deferred": [
+  "avatars-react-hit-target",
+  "avatars-react-hit-sender",
+  "avatars-react-reconnect",
+  "interference-picker-locked",
+  "interference-picker-no-soon",
+  "interference-picker-rtl-he",
+  "interference-picker-ltr-en",
+  "interference-picker-double-tap",
+  "interference-picker-launch",
+  "interference-picker-launch-once",
+  "interference-picker-next-price",
+  "interference-picker-busy",
+  "interference-picker-close",
+  "interference-hit-banner",
+  "interference-hit-dim-board",
+  "interference-hit-dim-ends",
+  "interference-hit-play",
+  "interference-hit-lock-paused",
+  "interference-hit-sender",
+  "interference-hit-warp-dim",
+  "interference-hit-fireworks-look",
+  "interference-hit-cats-look",
+  "interference-hit-warp-look",
+  "interference-hit-fps-classic",
+  "interference-new-scramble-tap",
+  "interference-new-scramble-end",
+  "interference-new-ink-look",
+  "interference-new-ink-tap",
+  "interference-new-keypad-shuffle",
+  "interference-new-keypad-digit",
+  "interference-new-keypad-cancel",
+  "interference-new-keypad-hold",
+  "interference-new-keypad-end",
+  "avatars-look-cell-distinct",
+  "avatars-look-grey",
+  "avatars-look-sad-sleepy-sizes",
+  "avatars-perf-android-4p",
+  "avatars-pirates-old-app",
+  "general-lang-no-hebrew",
+  "general-motion-friends",
+  "general-sr-names",
+  "general-display-small-big-font"
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "avatars-motion-dev-local",
+   "issue": "Step 1 says the task only works in a Development Build, but the run's phones always use the release APK ('npm run apk'), so an agent can never test it. Consider giving it who: moshe, or noting that it needs a dev client."
+  },
+  {
+   "taskId": "avatars-replay-step",
+   "issue": "Step 3 assumes my correct move is followed right away by a bot placement. In a real replay a 'בחירה' step usually sits between them (steps 19→20 were both mine). I tested it the other way round (34 Pip correct ↔ 35 me correct). Suggest 'move to a neighbouring step where the bot placed, and back'."
+  },
+  {
+   "taskId": "interference-new-scramble-tap",
+   "issue": "הצעדים (וגם של scramble-end, ink-look, ink-tap וכל keypad-*) דורשים Development Build, שרת פיתוח מקומי ו-fake-client עם --rules interferenceKinds. סוכן על APK של staging בלי לוגין לא יכול לעשות את זה. חלופה: משחק מדורג מול הבוט הסמוי ב-staging. הבוט בוחר סוג אקראי מתוך rules.interferenceKinds (brain.ts:412), כולל scramble/ink/keypad, אבל אין שליטה על הסוג, ולכן ייתכן שיהיה צורך בכמה משחקים."
+  },
+  {
+   "taskId": "interference-hit-fps-classic",
+   "issue": "מסומנת who: claude, אבל דורשת שני טלפונים בחדר פרטי ('צור חדר' + 'הצטרף עם קוד'). אפשר למדוד אותה גם במשחק מדורג מול הבוט הסמוי, אם הבוט שולח זיקוקים, חתולים או עיוות."
+  },
+  {
+   "taskId": "avatars-pirates-map-coin",
+   "issue": "העותק של הריצה (qa.ts task 2) מנוסח אחרת משורה 2 בגרסה 6: הוא אומר רק 'המטבע שהיה נעול נפתח' ולא מתייחס למקרה של 'פתח את כל השלבים'. כדאי לסנכרן את הריצה לקטלוג 6. הערה לבודקים: אם מריצים 'adb.ts ui' בזמן ששלב רץ, ה־uiautomator נתקע כ־30 שניות (הוא מחכה לשקט), והזמן של השלב נגמר בזמן ה־dump ומסתיים ב'הזמן נגמר'. בזמן משחק בשלב עדיף screencap."
+  },
+  {
+   "taskId": "avatars-look-small-details",
+   "issue": "המשימה מחייבת Development Build, אבל בריצות הסוכנים מותקן Release (npm run apk), ושם ‎/dev/avatars מחזיר לבית. המשימה תישאר תמיד untested אצל Claude. אותו דבר ב־avatars-perf-dev-grid."
+  },
+  {
+   "taskId": "avatars-pirates-register",
+   "issue": "המשימה מסומנת who: claude, אבל היא דורשת התנתקות והתחברות במייל ובסיסמה, וסוכן לא יכול לעשות את זה. כדאי להעביר אותה ל־moshe או both."
+  },
+  {
+   "taskId": "avatars-pirates-api-catalog",
+   "issue": "המשימה מסומנת who: claude, אבל היא דורשת Firebase ID token של Gil, ואין לסוכן דרך לקבל אותו. כדאי לכתוב איך מקבלים token או להעביר את המשימה למשה."
+  },
+  {
+   "taskId": "general-lang-stage-word",
+   "issue": "בטלפונים של הבדיקה 'Unlock all stages (testing)' מופעל, אז במפה אין צומת נעול ('Chapter 3 open' כש־0 מתוך 20 כוכבים). כדאי לכתוב בצעדים שמכבים אותו זמנית, ושמחזירים אותו בסוף."
+  },
+  {
+   "taskId": "general-display-design-system",
+   "issue": "המשימה מסומנת who: both, אבל היא אפשרית רק ב־Development Build. ב־APK של סטייג'ינג אין שורת 'פיתוח' ואין 'מערכת עיצוב'."
+  }
+ ],
+ "phoneStates": [
+  "טלפון 3 (RF8Y30L038L) עם apk9, מחובר בתור אחוותא. שפת האפליקציה he, גודל גופן 1.0, הרצתי reset, והאפליקציה פתוחה במסך הבית. לא נמחק דבר, לא היה ניתוק, והחשבון לא השתנה. צילומי המסך נמצאים ב-C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/ (RF8Y30L038L-delgoogle-1..3.png, RF8Y30L038L-del-{de,fr,es,ru}-{1,2,3}.png). הערה לקטלוג: המשימה account-settings-delete-password מניחה חלון סיסמה. בחשבון Google בלבד החלון הנכון הוא 'אישור עם Google', ולכן בודקים אותה רק עם חשבון מייל+סיסמה.",
+  "RF8Y60PP2XZ (טלפון 1): apk9 was already installed, so no install was needed. At the end, adb.ts reset reported font scale 1, animations 1, colour correction off and airplane mode off. wm density reset (Physical density 450, no override) and font_scale 1.0 were checked. The app locale is [he], and the language was set back to Hebrew in the app's Settings. Right after the reset, the phone dropped off USB ('device RF8Y60PP2XZ not found'). It came back for a few seconds, then was gone again for more than 7 minutes, so the final relaunch to Home could not be done. The app may be stopped: adb.ts stop ran just before the disconnect. Needs a USB/cable check and a relaunch. XP is now 1,380/1,600, and stages 74 and 79 have ★★★ from this batch. I never touched the other phone (RF8Y30L038L).",
+  "טלפון 3 (RF8Y30L038L, אחוותא) נשאר באפליקציה, במסך הבית. ‏adb.ts reset רץ: גודל גופן 1, אנימציות 1, מצב טיסה כבוי. 'הפחתת תנועה' הוחזרה ל־'כבויה' (כמו בהתחלה). האווטר לא שונה (מחשבון), ושפת האפליקציה עברית. הבילד המותקן הוא apk9, תואם ל־latest-build, ולא הותקן כלום. אזור 'בדיקה' בהגדרות כבר היה גלוי לפני שהתחלתי, ונשאר כך. במהלך הבדיקה שוחקו 5 משחקי אימון מול Pip (טירון): שלושה הושלמו בניצחון, ושניים הסתיימו ב'סיום אימון'. קובצי ה־xml הזמניים ב־‎/sdcard נמחקו.",
+  "טלפון 1 (RF8Y60PP2XZ) לא הופיע ב-'adb devices' בכל ההרצה. ניסיתי 'adb wait-for-device' שלוש פעמים (90 שניות, 5 דקות ו-9 דקות), וכל הניסיונות נגמרו בלי שהטלפון התחבר. רק RF8Y30L038L (טלפון 3, של בודק אחר) היה מחובר, ולא נגעתי בו. לכן לא בדקתי ולא סימנתי אף משימה בשרת, לא עשיתי סנכרון גרסה (בקובץ installed-RF8Y60PP2XZ.txt כבר כתוב apk9, כמו ב-latest-build.json) ולא הרצתי reset. צריך לבדוק את חיבור ה-USB, או אם יש נעילה/אישור debugging בטלפון 1, ולהריץ שוב את האצווה. כשהטלפון יחזור, אפשר לבדוק את no-soon, את rtl-he, את ltr-en, את next-price ואת busy במשחק מדורג מול הבוט. את locked, את double-tap, את launch, את launch-once ואת close צריך לדחות, כי יש בהן שורה צפויה שדורשת את טלפון ב'.",
+  "טלפון 1 (RF8Y60PP2XZ) לא הופיע ב-'adb devices' בכל הבאץ'. חיכיתי לו כ-5.5 דקות עם wait-for-device, והוא לא חזר. לכן לא התקנתי כלום, לא הפעלתי את האפליקציה ולא נגעתי בהגדרות, ולא סימנתי אף משימה. הבנייה שרשומה בטלפון (installed-RF8Y60PP2XZ.txt) היא apk9, כמו ה-latest. ב-adb מחובר רק RF8Y30L038L (טלפון 3), ולא נגעתי בו. צריך לבדוק את חיבור ה-USB או את הסוללה של טלפון 1.",
+  "טלפון 1 (RF8Y60PP2XZ) לא מופיע ב-adb devices לאורך כל הסשן. ניסיתי launch ואחר כך wait-for-device שלוש פעמים, כ-6.5 דקות בסך הכול, ולא נגעתי בו. ההערות ב-docs/handoff/2026-11-03/README.md מציינות שהוא מנותק מאז ~05:50 ושמשה התבקש לחבר אותו מחדש ולאשר. לכן לא היה build sync: installed-RF8Y60PP2XZ.txt=apk9, וגם latest=apk9, כך שלא היה צורך בהתקנה. גם reset לא בוצע. בטלפון האחר (RF8Y30L038L) לא נגעתי. לא סומנה שום משימה, וכל עשר המשימות בבאץ' הזה נשארו לריצה חוזרת כשהטלפון יחובר.",
+  "טלפון 3 (RF8Y30L038L) נשאר על apk9 (התווית תואמת, לא היה צורך בהתקנה). האפליקציה פתוחה במסך הבית, בעברית. הורץ adb.ts reset: font scale 1, אנימציות 1, מצב טיסה כבוי. האווטר הוחזר למחשבון ונשמר. 'הפחתת תנועה' נשארה 'כבויה', כפי שמצאתי אותה. המתג 'פתח את כל השלבים (בדיקה)' כובה לבדיקה והודלק שוב. שינויים שלא אפשר להחזיר: שלב 8 נספר כמשוחק ('הזמן נגמר', בלי כוכבים), שלב 9 נפתח והאסימון עומד עליו. נוסף גם אימון מול Pip שהסתיים ב'סיום אימון'. שלבים 7 ו־8 שוחקו שוב והסתיימו ב'הזמן נגמר', בלי כוכבים. קובצי ה־raw הזמניים נמחקו גם מ־‎/sdcard וגם מ־qa-shots. ההקלטה נשמרה ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y30L038L-avatars-pirates-map-coin.mp4.",
+  "טלפון 3 (RF8Y30L038L): הותקן apk10 ('1.1.0 (08.11 06:46, loop-4 fixes)'), וגם installed-RF8Y30L038L.txt עודכן ל־apk10. האפליקציה בעברית (app locale he) ופתוחה בבית. בוצע adb.ts reset: font scale 1, אנימציות 1, תיקון צבעים כבוי, מצב טיסה כבוי. 'Unlock all stages (testing)' כובה זמנית והוחזר למופעל. האווטר נשאר 'מחשבון', בלי שינוי. נשארו בהיסטוריה שני אימונים לבד שהסתיימו ב'סיום אימון'. שלב 9 שוחק עד שנגמר הזמן, בלי כוכבים."
+ ]
+}

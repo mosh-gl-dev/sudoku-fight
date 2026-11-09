@@ -20,6 +20,7 @@ import LevelsRoute from '../../../../app/levels/index';
 import LevelPlayRoute from '../../../../app/levels/play';
 import { useAuth } from '../../../auth/authStore';
 import { signedText } from '../../../components/player/format';
+import { FONT_SCALE_CAPS } from '../../../components/ui/Text';
 import { useToast } from '../../../components/ui/toastStore';
 import { LEVEL_UI } from '../../../config/levels';
 import type { SqlJsDb } from '../../../game/testing/sqlJsDb';
@@ -36,7 +37,7 @@ import { renderApp } from '../../home/testing/homeTesting';
 import { HowToPlay, useTutorials } from '../HowToPlay';
 import { renderTutorialPanel } from '../HowToPlayPanels';
 import { IDEA_TUTORIALS, tutorialPicture } from '../howToPlayFixtures';
-import { huntMovesBetween, moveDots } from '../hud/PointHunterHud';
+import { HUNT_ROW, huntMovesBetween, moveDots } from '../hud/PointHunterHud';
 import { kindTipShown, spotTipShown } from '../hud/SpotErrorHud';
 import { levelChrome, levelPlayedOf } from '../levelChrome';
 import { LevelResultView } from '../LevelResultView';
@@ -437,6 +438,38 @@ describe('the point hunter', () => {
     expect(screen.getByTestId(`hunt-chips-${cell}`, hidden)).toHaveTextContent(
       `שווה ${s.session.levelView()!.selectedWorth}`,
     );
+  });
+
+  it('a wide or negative score never runs over the move dots: it shrinks on its line, "נקודות" and the "⁦−6⁩" stacked beside it (B25)', async () => {
+    const s = await showGame(HUNTER_FIRST);
+    const first = HUNTER_FIRST.targets.best[0]!;
+    await play(first.cell, first.digit);
+    const cell = HUNTER_FIRST.targets.best[1]!.cell;
+    await play(cell, wrongFor(s.session, cell));
+    const value = screen.getByTestId('hunt-score-value');
+    expect(value.props).toMatchObject({
+      numberOfLines: 1,
+      adjustsFontSizeToFit: true,
+      minimumFontScale: HUNT_ROW.scoreMinFontScale,
+    });
+    expect(styleOf(value).flexShrink).toBe(1);
+    // The burned move's chip and the word share one narrow column, which never shrinks under the number.
+    const side = screen.getByTestId('hunt-score-side');
+    expect(within(side).getByTestId('hunt-lost')).toBeTruthy();
+    expect(within(side).getByText('נקודות')).toBeTruthy();
+    expect(styleOf(side).flexShrink).toBe(0);
+    // The score keeps to its half of the row, as the clock does, so the dots stay between them.
+    expect(styleOf(screen.getByTestId('hunt-score'))).toMatchObject({ flex: 1, minWidth: 0 });
+    expect(styleOf(screen.getByTestId('hunt-clock'))).toMatchObject({ flex: 1, minWidth: 0 });
+    // The move words take two lines rather than more of the row ("Zug 2 verschenkt").
+    const moves = screen.getByTestId('hunt-move-text');
+    expect(moves).toHaveProp('numberOfLines', 2);
+    expect(styleOf(moves)).toMatchObject({ maxWidth: HUNT_ROW.movesTextMax, textAlign: 'center' });
+    // The system text size (hunterHudFit.test.tsx): the 64 dp number never grows, the row's words up to ×1.35.
+    expect(value).toHaveProp('maxFontSizeMultiplier', FONT_SCALE_CAPS.board);
+    const hud = ['hunt-lost-text', 'hunt-score-unit', 'hunt-move-text', 'hunt-clock-value', 'hunt-clock-sub'];
+    for (const id of hud)
+      expect(screen.getByTestId(id)).toHaveProp('maxFontSizeMultiplier', FONT_SCALE_CAPS.hud);
   });
 
   it('two views read as my moves: the points, the burned one, and the dots in order', async () => {

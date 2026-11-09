@@ -194,6 +194,65 @@ describe('entering a digit (§6.3)', () => {
 
 // ---------------------------------------------------------------------------------------------------------
 
+/*
+ * BRD-1: online, the phone sends a digit for the cell the player sees as selected, the one just tapped, right
+ * behind its select on the same socket. The server runs them in that order, so the digit is judged in the new
+ * cell, or, when the select is refused, refused with it: never entered in the old lock, never a penalty.
+ */
+describe('a digit sent right behind its select (BRD-1)', () => {
+  const selectAt = (playerId: string, cell: CellIndex): Action => ({ type: 'select', playerId, cell });
+
+  it('the first lock: select and digit in the same moment, the digit counts', () => {
+    const g = GameDriver.of();
+    g.select('p1', 'A2', 1000);
+    g.place('p1', 'A2', answer('A2'), 1000);
+    expect(g.last('placedCorrect')).toMatchObject({ playerId: 'p1', cell: A2, digit: 6 });
+    expect(g.state.grid[A2]).toBe(6);
+  });
+
+  it('a switch: the digit lands in the new cell, the old lock is let go and untouched', () => {
+    const g = GameDriver.of();
+    g.select('p1', 'A1', 0);
+    g.select('p1', 'A2', 1000);
+    g.place('p1', 'A2', answer('A2'), 1000);
+    expect(g.state.grid[A2]).toBe(6);
+    expect(g.state.grid[A1]).toBe(0);
+    expect(g.state.wrong[A1]).toEqual([]);
+    expect(g.lock('p1')).toBeUndefined();
+  });
+
+  it('a switch refused (taken): the digit is refused too, the old lock kept, no penalty', () => {
+    const g = GameDriver.of();
+    g.select('p1', 'A1', 0);
+    g.select('p2', 'A2', 500);
+    expect(g.reject(selectAt('p1', A2), 1000)).toBe('cellTaken');
+    // 5 is wrong in A1 (8): sent to the old lock it would have cost 8 points.
+    expect(g.reject(placeAt('p1', A2, 5), 1000)).toBe('notLockedCell');
+    expect(g.lock('p1')!.cell).toBe(A1);
+    expect(g.player('p1')).toMatchObject({ score: 0, mistakes: 0 });
+    expect(g.state.wrong[A1]).toEqual([]);
+    expect(g.state.wrong[A2]).toEqual([]);
+  });
+
+  it('a switch refused (the re-lock wait): the same, and with no lock at all the digit finds none', () => {
+    const g = GameDriver.of();
+    g.select('p1', 'A2', 0);
+    g.select('p1', 'A1', 100); // A2 waits until 1100 [D2]
+    expect(g.reject(selectAt('p1', A2), 600)).toBe('cooldown');
+    expect(g.reject(placeAt('p1', A2, answer('A2')), 600)).toBe('notLockedCell');
+    expect(g.lock('p1')!.cell).toBe(A1);
+    expect(g.player('p1')).toMatchObject({ score: 0, mistakes: 0 });
+
+    const none = GameDriver.of();
+    none.select('p2', 'A2', 0);
+    expect(none.reject(selectAt('p1', A2), 500)).toBe('cellTaken');
+    expect(none.reject(placeAt('p1', A2, 1), 500)).toBe('noLock');
+    expect(none.player('p1')).toMatchObject({ score: 0, mistakes: 0 });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+
 describe('a digit already tried wrongly in this cell (§6.3) [D12]', () => {
   it("[D12 'everyone'] is refused for every player in that cell, with no penalty", () => {
     const g = GameDriver.of({ players: 3 });

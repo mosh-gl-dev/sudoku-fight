@@ -1,18 +1,24 @@
 import { type AppLevel, botLevel, type BotLevelId, type GateState, type Stars } from '@sudoku-fight/engine';
-import type { ReactNode } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { normalizeAvatarId } from '../../avatars';
 import { Icon, type IconName } from '../../components/Icon';
 import { BossBadge } from '../../components/levels/BossBadge';
+import { LevelCoin } from '../../components/levels/LevelCoin';
 import { MiniBar } from '../../components/levels/MiniBar';
 import { Star, StarRow, STAR_SIZES } from '../../components/levels/StarRow';
 import { Avatar, SeatGlyph } from '../../components/player';
 import { ltr, withAlpha } from '../../components/player/format';
 import { Button } from '../../components/ui';
+import { curve } from '../../components/ui/motion';
+import { tintLayer, verticalGradient } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
+import { MAP_MOTION } from '../../config/levels';
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { reduceMotionFlag, useReduceMotion } from '../../theme/motion';
 import { KIND_ICON } from './LevelNode';
 import {
   bestText,
@@ -25,7 +31,7 @@ import {
   spotsOf,
   starsOf3,
 } from './levelWording';
-import type { NodeInfo } from './mapModel';
+import { coinLook, type NodeInfo, toneOf } from './mapModel';
 
 /**
  * The docked bottom panel of the map (components.md §19.4, D60; the Main board), in place of an opening sheet
@@ -34,6 +40,11 @@ import type { NodeInfo } from './mapModel';
  * when it has one, my best ("★★ · שיא 7.6 ש׳") or "השלב הבא", and the gold button: "המשך · שלב 37" for the
  * current stage, "שחק" for another open one. For a locked stage or a gate: why, and the button goes on with
  * the current stage. Changes are said politely to a screen reader.
+ *
+ * The board-game road of 31.10.2026: a raised tray (a soft gradient, a lit top edge), the chosen stage's own coin
+ * at its head (LevelCoin, as on the map) with its kind on a small badge, and the star scale as three raised cards,
+ * the ones I already reached in gold. When the choice changes, the content fades in rising a little
+ * (`level.map.panel`; Reduced Motion: at once).
  */
 
 export type PanelSelection =
@@ -61,6 +72,7 @@ type Tone = 'neutral' | 'bot' | 'gold';
 
 export function LevelPanel({ selection, current, onPlay, bottomInset }: LevelPanelProps) {
   const { t } = useTranslation('levels');
+  const swapKey = selection.kind === 'gate' ? `g${selection.chapter}` : `l${selection.info.n}`;
   return (
     <View
       style={[styles.panel, { paddingBottom: space[8] + bottomInset }]}
@@ -68,13 +80,46 @@ export function LevelPanel({ selection, current, onPlay, bottomInset }: LevelPan
       accessibilityLiveRegion="polite"
       testID="level-panel"
     >
-      {selection.kind === 'gate' ? (
-        <GateBody selection={selection} t={t} />
-      ) : (
-        <LevelBody selection={selection} t={t} />
-      )}
+      <Swap swapKey={swapKey}>
+        {selection.kind === 'gate' ? (
+          <GateBody selection={selection} t={t} />
+        ) : (
+          <LevelBody selection={selection} t={t} />
+        )}
+      </Swap>
       <Cta selection={selection} current={current} onPlay={onPlay} t={t} />
     </View>
+  );
+}
+
+/** The panel's content when the choice changes: a fade in, rising a little (none under Reduced Motion). */
+function Swap({ swapKey, children }: { swapKey: string; children: ReactNode }) {
+  const reduce = useReduceMotion();
+  const shown = useSharedValue(1);
+  const first = useRef(swapKey);
+  // Before the new content is painted (a layout effect, not a passive one): it never shows at full opacity for a
+  // frame, then vanishes, then fades in.
+  useLayoutEffect(() => {
+    if (first.current === swapKey || reduce) return;
+    first.current = swapKey;
+    shown.set(0);
+    shown.set(
+      withTiming(1, {
+        duration: MAP_MOTION.panelSwapMs,
+        easing: curve('standard'),
+        reduceMotion: reduceMotionFlag(false),
+      }),
+    );
+  }, [swapKey, reduce, shown]);
+  const rise = MAP_MOTION.panelRiseDp;
+  const style = useAnimatedStyle(() => ({
+    opacity: shown.get(),
+    transform: [{ translateY: (1 - shown.get()) * rise }],
+  }));
+  return (
+    <Animated.View style={[styles.swap, style]} testID="level-panel-content">
+      {children}
+    </Animated.View>
   );
 }
 
@@ -99,31 +144,61 @@ function Cta({
   );
 }
 
-function Head({
+const toneTint = (tone: Tone) =>
+  tone === 'bot' ? color.players[1]!.ring : tone === 'gold' ? color.accent : color.textMuted;
+const toneGround = (tone: Tone) =>
+  tone === 'bot' ? BOT_GROUND : tone === 'gold' ? color.accentSubtle : color.iconBg.info;
+
+/** The head's lead for a stage: its coin as on the map, and its kind (or the boss's crown) on a small badge. */
+function CoinLead({
+  info,
+  chapter,
   icon,
   tone,
-  title,
-  sub,
-  end,
 }: {
+  info: NodeInfo;
+  chapter: number;
   icon: IconName;
   tone: Tone;
-  title: string;
-  sub: string;
-  end?: ReactNode;
 }) {
-  const tint = tone === 'bot' ? color.players[1]!.ring : tone === 'gold' ? color.accent : color.textMuted;
-  const ground = tone === 'bot' ? BOT_GROUND : tone === 'gold' ? color.accentSubtle : color.iconBg.info;
+  return (
+    <View style={styles.lead} testID="level-panel-coin">
+      <LevelCoin
+        n={info.n}
+        variant="panel"
+        look={coinLook(info)}
+        tone={toneOf(chapter)}
+        testID="level-panel-coin-tile"
+      />
+      <View style={[styles.kindBadge, { backgroundColor: toneGround(tone) }]} testID="level-panel-kind">
+        <Icon name={icon} size={KIND_ICON_SIZE} color={toneTint(tone)} />
+      </View>
+    </View>
+  );
+}
+
+/** The head's lead for a gate: a raised slate tile with its lock, shut or open. */
+function GateLead({ open }: { open: boolean }) {
+  return (
+    <View style={styles.gateLead} testID="level-panel-gate-tile">
+      <View style={styles.gateLeadEdge} />
+      <View style={styles.gateLeadFace}>
+        <Icon name={open ? 'unlock' : 'lock'} size={size.icon.header} color={color.textMuted} />
+      </View>
+    </View>
+  );
+}
+
+function Head({ lead, title, sub, end }: { lead: ReactNode; title: string; sub: string; end?: ReactNode }) {
   return (
     <View style={styles.head}>
-      <View style={[styles.iconCircle, { backgroundColor: ground }]}>
-        <Icon name={icon} size={size.icon.card} color={tint} />
-      </View>
+      {lead}
+      {/* Two lines each, broken between words, at a large text size (QA loop 7, 360 dp at font 1.3: "שלב 10 · מרוץ מו…"). */}
       <View style={styles.titles}>
-        <Text style={styles.title} numberOfLines={1} testID="level-panel-title">
+        <Text style={styles.title} numberOfLines={2} testID="level-panel-title">
           {title}
         </Text>
-        <Text style={styles.sub} numberOfLines={1} testID="level-panel-sub">
+        <Text style={styles.sub} numberOfLines={2} testID="level-panel-sub">
           {sub}
         </Text>
       </View>
@@ -149,8 +224,7 @@ function LevelBody({ selection, t }: { selection: Extract<PanelSelection, { kind
     return (
       <>
         <Head
-          icon="lock"
-          tone="neutral"
+          lead={<CoinLead info={info} chapter={level.chapter} icon="lock" tone="neutral" />}
           title={t('panel.lockedTitle', { n: info.n })}
           sub={t('panel.lockedSub', { chapter: level.chapter, kind: kindName(level, t) })}
         />
@@ -160,7 +234,7 @@ function LevelBody({ selection, t }: { selection: Extract<PanelSelection, { kind
             {reason}
           </Text>
         </View>
-        <ScaleCells level={level} t={t} />
+        <ScaleCells level={level} t={t} variant="cards" />
       </>
     );
   }
@@ -181,8 +255,14 @@ function LevelBody({ selection, t }: { selection: Extract<PanelSelection, { kind
   return (
     <>
       <Head
-        icon={level.boss ? 'crown' : KIND_ICON[level.kind]}
-        tone={level.boss ? 'gold' : bot ? 'bot' : 'neutral'}
+        lead={
+          <CoinLead
+            info={info}
+            chapter={level.chapter}
+            icon={level.boss ? 'crown' : KIND_ICON[level.kind]}
+            tone={level.boss ? 'gold' : bot ? 'bot' : 'neutral'}
+          />
+        }
         title={t('panel.title', { n: info.n, kind: kindName(level, t) })}
         sub={sub}
         end={end}
@@ -191,7 +271,7 @@ function LevelBody({ selection, t }: { selection: Extract<PanelSelection, { kind
       <Text style={styles.goal} testID="level-panel-goal">
         {goalText(level, t)}
       </Text>
-      <ScaleCells level={level} t={t} />
+      <ScaleCells level={level} t={t} variant="cards" achieved={played ? info.stars : 0} />
       {level.bot ? <BotLine level={level} /> : null}
     </>
   );
@@ -255,24 +335,40 @@ function BotLine({ level }: { level: AppLevel }) {
 
 /**
  * The star scale in three cells, ★★★ first (the Main board's "כמה כוכבים אפשר לקבל"): "עד 5 ש׳", "4–5
- * מקומות", "פער 15 ומעלה". "מוכן?" shows the same.
+ * מקומות", "פער 15 ומעלה". "מוכן?" and a boss's opening show the same, as one divided strip; the map's panel as
+ * three raised cards (`variant="cards"`), the ones up to my best stars (`achieved`) in gold.
  */
 export function ScaleCells({
   level,
   t,
+  variant = 'strip',
+  achieved = 0,
   testID = 'level-scale',
 }: {
   level: AppLevel;
   t: LevelsT;
+  variant?: 'strip' | 'cards';
+  /** My best stars: the cards up to them are reached (gold). */
+  achieved?: number;
   testID?: string;
 }) {
   const rows = scaleRows(level.stars, t, spotsOf(level));
+  const cards = variant === 'cards';
   return (
-    <View style={styles.scale} accessibilityRole="list" accessibilityLabel={t('scale.label')} testID={testID}>
+    <View
+      style={cards ? styles.cards : styles.scale}
+      accessibilityRole="list"
+      accessibilityLabel={t('scale.label')}
+      testID={testID}
+    >
       {rows.map((r, i) => (
         <View
           key={r.stars}
-          style={[styles.cell, i > 0 && styles.cellDivided]}
+          style={
+            cards
+              ? [styles.card, r.stars <= achieved && styles.cardReached]
+              : [styles.cell, i > 0 && styles.cellDivided]
+          }
           accessible
           accessibilityLabel={r.label}
           testID={`${testID}-${r.stars}`}
@@ -299,8 +395,7 @@ function GateBody({ selection, t }: { selection: Extract<PanelSelection, { kind:
   return (
     <>
       <Head
-        icon={gate.open ? 'unlock' : 'lock'}
-        tone="neutral"
+        lead={<GateLead open={gate.open} />}
         title={t(gate.open ? 'panel.gateTitleOpen' : 'panel.gateTitleClosed', { n: chapter })}
         sub={t('panel.gateSub', { name: chapterName(chapter, t), range: ltr(`${first}–${first + 9}`) })}
       />
@@ -332,31 +427,69 @@ function GateBody({ selection, t }: { selection: Extract<PanelSelection, { kind:
   );
 }
 
-const ICON_CIRCLE = 40;
+/** The head's lead: the panel's coin (48, its edge 4) or the gate's tile. */
+const LEAD = size.levelCoinPanel;
+const LEAD_EDGE = 4;
+const KIND_BADGE = 20;
+const KIND_ICON_SIZE = 12;
 /** The bot's tone: its P2 ring at 16 %, as the icon backgrounds of the theme. */
 const BOT_GROUND = withAlpha(color.players[1]!.ring, 0.16);
 const NEXT_CHIP = 22;
 const SCALE_HEIGHT = 44;
+const CARD_HEIGHT = 48;
 const GATE_BAR = 6;
+const T = color.tactile;
 
 const styles = StyleSheet.create({
   panel: {
     gap: space[4],
-    paddingTop: space[6],
+    paddingTop: space[7],
     paddingHorizontal: tokens.layout.gutterGame,
     backgroundColor: color.surface,
+    experimental_backgroundImage: verticalGradient([color.surface2, color.surface]),
     borderTopWidth: tokens.border.hairline,
     borderColor: color.border,
+    borderTopColor: T.borderLit,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
+    boxShadow: [{ offsetX: 0, offsetY: 1, blurRadius: 0, color: T.cardLip, inset: true }],
   },
-  head: { flexDirection: 'row', alignItems: 'center', gap: space[6], minHeight: ICON_CIRCLE },
-  iconCircle: {
-    width: ICON_CIRCLE,
-    height: ICON_CIRCLE,
-    borderRadius: ICON_CIRCLE / 2,
+  swap: { gap: space[4] },
+  head: { flexDirection: 'row', alignItems: 'center', gap: space[6], minHeight: LEAD + LEAD_EDGE },
+  lead: { width: LEAD, height: LEAD + LEAD_EDGE },
+  kindBadge: {
+    position: 'absolute',
+    bottom: -space[2],
+    end: -space[2],
+    width: KIND_BADGE,
+    height: KIND_BADGE,
+    borderRadius: KIND_BADGE / 2,
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  gateLead: { width: LEAD, height: LEAD + LEAD_EDGE },
+  gateLeadEdge: {
+    position: 'absolute',
+    top: LEAD_EDGE,
+    width: LEAD,
+    height: LEAD,
+    borderRadius: radius.xl,
+    backgroundColor: T.slateEdge,
+  },
+  gateLeadFace: {
+    width: LEAD,
+    height: LEAD,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.surface2,
+    experimental_backgroundImage: verticalGradient(T.slateFace),
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
+    borderTopColor: T.borderLit,
   },
   titles: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: space[1] },
   title: { ...text('playerName'), color: color.text },
@@ -387,6 +520,28 @@ const styles = StyleSheet.create({
   },
   cell: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: space[2] },
   cellDivided: { borderStartWidth: tokens.border.hairline, borderColor: color.border },
+  cards: { flexDirection: 'row', gap: space[4], paddingBottom: space[1] },
+  card: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: CARD_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[2],
+    paddingHorizontal: space[2],
+    borderRadius: radius.lg,
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
+    borderTopColor: T.borderLit,
+    backgroundColor: color.surface2,
+    experimental_backgroundImage: verticalGradient(T.slateFace),
+    boxShadow: [{ offsetX: 0, offsetY: 2, blurRadius: 0, color: T.cardBase }],
+  },
+  cardReached: {
+    borderColor: color.accent,
+    borderTopColor: color.accent,
+    experimental_backgroundImage: tintLayer(color.accentSubtle),
+  },
   cellStars: { flexDirection: 'row', gap: space[1] },
   cellText: { ...text('label'), color: color.text },
   botLine: { flexDirection: 'row', alignItems: 'center', gap: space[3] },

@@ -1,6 +1,8 @@
 import {
   ACCOUNT_ERROR_CODES,
   ACCOUNT_PATHS,
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   type AccountError,
   type AccountErrorCode,
   type CreateUserRequest,
@@ -153,7 +155,11 @@ export function createAccountApi(deps: AccountApiDeps): AccountApi {
     const attempt = async (forceRefresh: boolean) => {
       const token = await deps.getToken(forceRefresh).catch(() => null);
       if (!token && opts.auth === 'required') throw new AccountApiError('signedOut');
-      const headers: Record<string, string> = { Accept: 'application/json' };
+      // the avatars this app knows: the server sends an older app none for a newer one (its own too)
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG),
+      };
       if (token) headers.Authorization = `Bearer ${token}`;
       if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
 

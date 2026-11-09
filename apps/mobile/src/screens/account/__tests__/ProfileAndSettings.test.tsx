@@ -13,8 +13,9 @@ import { ltr } from '../../../components/player';
 import { useToast } from '../../../components/ui';
 import i18n from '../../../i18n';
 import { track } from '../../../services/analytics';
+import { useSettings } from '../../../state/settings';
 import { renameDate } from '../EditProfileScreen';
-import { SplashScreen } from '../SplashScreen';
+import { SplashScreen, TIP_FADE_MS, TIP_MS } from '../SplashScreen';
 import { renderAccount } from '../testing/accountTesting';
 import { chooseAvatar } from '../testing/avatarGrid';
 
@@ -119,6 +120,33 @@ describe('Edit profile [D20, D21]', () => {
     expect(await screen.findByTestId('edit-alert')).toHaveTextContent(
       'אין חיבור לשרת. אפשר לערוך כשיהיה חיבור.',
     );
+  });
+
+  it('an avatar the server does not know yet (a pirate before its deploy): choose another, nothing saved', async () => {
+    await signedIn();
+    await renderAccount('/edit-profile');
+    await chooseAvatar('pirates-1-house');
+    expect(screen.getByRole('button', { name: 'האווטאר שנבחר: הקפטן (סגנון הבית)' })).toBeOnTheScreen();
+    // An older server checks the avatar against its own AVATAR_IDS (accounts/router.ts).
+    const refused = jest
+      .spyOn(auth.server.api, 'updateMe')
+      .mockRejectedValueOnce(
+        new AccountApiError('badRequest', 400, { error: 'badRequest', field: 'avatarId' }),
+      );
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    expect(await screen.findByTestId('edit-alert')).toHaveTextContent(
+      'האווטאר הזה עוד לא זמין בשרת. בחר אווטאר אחר.',
+    );
+    // Nothing changed: the account keeps its avatar, no "saved" toast, and the form stays with the choice.
+    expect(useAuth.getState().me?.avatarId).toBe('sun');
+    expect(useToast.getState().current).toBeNull();
+    expect(screen.getByRole('header', { name: 'עריכת פרופיל' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'האווטאר שנבחר: הקפטן (סגנון הבית)' })).toBeOnTheScreen();
+    // Another avatar saves as usual.
+    await chooseAvatar('cassette');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(useAuth.getState().me?.avatarId).toBe('cassette'));
+    refused.mockRestore();
   });
 
   it('speaks English too', async () => {
@@ -288,10 +316,57 @@ describe('Splash (spec §4.1 #1)', () => {
     expect(screen.getByText('לוח אחד. כולם פותרים. רק אחד מנצח.')).toBeOnTheScreen();
     expect(screen.getByRole('progressbar', { name: 'טוען את הזירה…' })).toBeOnTheScreen();
     const first = screen.getByTestId('splash-tip').props.children as string;
+    // MOT-3: the tip gives way to the next with a cross-fade (out, then in), never a hard cut.
     await act(async () => {
-      jest.advanceTimersByTime(4_000);
+      jest.advanceTimersByTime(TIP_MS);
+    });
+    expect(screen.getByTestId('splash-tip').props.children).toBe(first);
+    await act(async () => {
+      jest.advanceTimersByTime(TIP_FADE_MS);
     });
     expect(screen.getByTestId('splash-tip').props.children).not.toBe(first);
+    jest.useRealTimers();
+  });
+
+  it('the entrance: the seats pop in one by one, then the wordmark rises', async () => {
+    await signedIn();
+    jest.useFakeTimers();
+    useSettings.setState({ reduceMotion: 'off' });
+    await render(<SplashScreen />);
+    expect(screen.getByTestId('splash-brand-seat-0', hidden)).toHaveAnimatedStyle({
+      opacity: 0,
+      transform: [{ scale: 0.6 }],
+    });
+    expect(screen.getByTestId('splash-brand-wordmark', hidden)).toHaveAnimatedStyle({ opacity: 0 });
+    await act(async () => {
+      jest.advanceTimersByTime(2_000);
+    });
+    for (const id of ['splash-brand-seat-0', 'splash-brand-seat-3'])
+      expect(screen.getByTestId(id, hidden)).toHaveAnimatedStyle({ opacity: 1, transform: [{ scale: 1 }] });
+    expect(screen.getByTestId('splash-brand-wordmark', hidden)).toHaveAnimatedStyle({
+      opacity: 1,
+      transform: [{ translateY: 0 }],
+    });
+    useSettings.setState({ reduceMotion: 'system' });
+    jest.useRealTimers();
+  });
+
+  it('with Reduced Motion the brand is there at once, and a tip gives way to the next at once', async () => {
+    await signedIn();
+    jest.useFakeTimers();
+    useSettings.setState({ reduceMotion: 'on' });
+    await render(<SplashScreen />);
+    for (const id of ['splash-brand-seat-0', 'splash-brand-wordmark'])
+      expect(
+        (screen.getByTestId(id, hidden).props as { jestAnimatedStyle?: unknown }).jestAnimatedStyle,
+      ).toBeUndefined();
+    // And the tip changes at once: no fade out first.
+    const first = screen.getByTestId('splash-tip').props.children as string;
+    await act(async () => {
+      jest.advanceTimersByTime(TIP_MS);
+    });
+    expect(screen.getByTestId('splash-tip').props.children).not.toBe(first);
+    useSettings.setState({ reduceMotion: 'system' });
     jest.useRealTimers();
   });
 

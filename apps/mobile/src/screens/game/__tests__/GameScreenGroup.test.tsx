@@ -233,7 +233,8 @@ describe('the cards of 3–4 players (spec §6.8, components.md §6–§9)', () 
     await by(g, MAESTRO, (h) => h.select(c!));
     const expectLock = (cell: CellIndex, name: string, avatar: string, colorIndex: number) => {
       const el = screen.getByTestId(`cell-${cellName(cell)}`);
-      expect(el).toHaveProp('accessibilityLabel', `${cellName(cell)}, ריקה, נעולה על ידי ${name}, 8 שניות`);
+      // 8 s left, said in 5-second steps (Q1).
+      expect(el).toHaveProp('accessibilityLabel', `${cellName(cell)}, ריקה, נעולה על ידי ${name}, 5 שניות`);
       expect(avatarIdsIn(within(el).getByTestId('cell-avatar', hidden))).toEqual([avatar]);
       const ring = within(el).getByTestId('cell-ring', hidden).children[0] as unknown as Node;
       expect(styleOf(ring as never).borderColor).toBe(paletteAt(colorIndex).ring);
@@ -283,7 +284,7 @@ describe('interferences between 3–4 players (spec §7.3, §7.4)', () => {
       'target-frame',
       hidden,
     );
-    expect(within(frame).getByText('יעד', hidden)).toBeOnTheScreen();
+    expect(within(frame).getByTestId('target-chip-label', hidden)).toHaveTextContent('יעד');
     expect(
       within(screen.getByTestId(`group-hud-${PIP}`, hidden)).queryByTestId('target-frame', hidden),
     ).toBeNull();

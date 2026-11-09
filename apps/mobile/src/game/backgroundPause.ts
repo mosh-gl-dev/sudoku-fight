@@ -28,8 +28,13 @@ export const NOT_PAUSED: PauseState = { kind: 'none' };
 
 /** What a game needs of React Native's AppState (tests give their own). */
 export interface AppStateSource {
+  /** The state now (AppState.currentState); left out, or not yet known: the app counts as in the foreground. */
+  readonly currentState?: string | null;
   addEventListener(type: 'change', listener: (state: string) => void): { remove(): void };
 }
+
+/** An AppState that is not the foreground ('unknown', at the app's start, counts as the foreground). */
+const isAway = (state: unknown): boolean => state === 'background' || state === 'inactive';
 
 /** The freeze's settings: LEVEL_UI for a stage, PRACTICE_UI for a practice. */
 export interface BackgroundPauseSettings {
@@ -100,10 +105,11 @@ export class BackgroundPause {
   private readonly subscription: { remove(): void } | null = null;
   private readonly holdListener: ((held: boolean) => void) | null = null;
   private stopped = false;
-  /** The app is in the foreground, as far as its AppState said (a game starts in the foreground). */
-  private appActive = true;
+  /** The app is in the foreground, as far as its AppState said: as the game was made, then each change. */
+  private appActive: boolean;
 
   constructor(private readonly opts: BackgroundPauseOptions) {
+    this.appActive = !isAway(opts.appState?.currentState);
     if (!opts.settings.backgroundPause) return;
     if (opts.appState)
       this.subscription = opts.appState.addEventListener('change', (state) => {
@@ -127,6 +133,14 @@ export class BackgroundPause {
   onChange(listener: (state: PauseState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * The game has just started: frozen at once if the app is away already. A stage starts after "מוכן?" and an
+   * asynchronous read (B28), so the app may have left before this freeze could hear it: no 'change' comes then.
+   */
+  started(): void {
+    if (!this.appActive) this.background();
   }
 
   /** The app went away: a running game freezes (a countdown on the way stops, to start over at the return). */

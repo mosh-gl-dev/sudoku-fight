@@ -9,11 +9,13 @@ import {
   levelIdOf,
   levelNumber,
   type LevelOutcome,
+  ManualClock,
+  ManualScheduler,
   parseCellName,
 } from '@sudoku-fight/engine';
 import { render } from '@testing-library/react-native';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
-import { Pressable, Text, View } from 'react-native';
+import { AppState, type NativeEventSubscription, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LevelPlayFlow, type LevelPlayingProps } from '../../../../app/levels/play';
@@ -22,6 +24,7 @@ import { LEVEL_UI } from '../../../config/levels';
 import i18n from '../../../i18n';
 import type { LevelFinished } from '../../../levels/appLevels';
 import { firstBossOf, firstLevelOf, levelsOf } from '../../../levels/__tests__/helpers/levelsOf';
+import { type LevelSession, startLevel } from '../../../levels/levelSession';
 import { useSettings } from '../../../state/settings';
 import { useTutorials } from '../HowToPlay';
 import { levelPlayedOf } from '../levelChrome';
@@ -41,6 +44,8 @@ jest.mock('expo-audio', () => jest.requireActual<Mocks>('../../home/testing/nati
 jest.mock('expo-haptics', () => jest.requireActual<Mocks>('../../home/testing/nativeMocks').expoHaptics);
 
 const hidden = { includeHiddenElements: true };
+/** The right-to-left mark a Hebrew line that starts with a Latin name starts with (B27). */
+const RLM = '‏';
 const METRICS = {
   frame: { x: 0, y: 0, width: 360, height: 780 },
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
@@ -178,6 +183,25 @@ describe('LevelResultView', () => {
     );
   });
 
+  it('QA levels-xp-offline (loop 5): the XP counts in whole points, never "‎+27.5 XP" on its way to 30', async () => {
+    jest.useFakeTimers();
+    const outcome = levelOutcome(FIND, found(4200));
+    await show(FIND, { ...playedOf(FIND, found(4200)), finished: finishedOf(outcome, { xpEstimate: 30 }) });
+    const texts = new Set<string>();
+    for (let ms = 0; ms < 2600; ms += 10) {
+      await act(async () => void jest.advanceTimersByTime(10));
+      const node = screen.getByTestId('level-result-xp-value', hidden) as unknown as {
+        props: { jestAnimatedProps?: { value?: { text?: string } } };
+      };
+      const text = node.props.jestAnimatedProps?.value?.text;
+      if (text) texts.add(text);
+    }
+    // The count was seen on its way, and every step of it is a whole number of XP (the server pays whole ones).
+    expect(texts.size).toBeGreaterThan(3);
+    for (const text of texts) expect(text).toMatch(/^⁦\+\d+⁩ XP$/);
+    expect([...texts].at(-1)).toBe(`${ltr('+30')} XP`);
+  });
+
   it('Reduced Motion: the XP is there at once', async () => {
     useSettings.setState({ reduceMotion: 'on' });
     await show(FIND, playedOf(FIND, found(4200)));
@@ -232,9 +256,10 @@ describe('LevelResultView', () => {
       }),
     );
     const row = screen.getByTestId('level-result-opponent');
-    expect(row).toHaveProp('accessibilityLabel', 'Pip: 3 מקומות. Pip ניצח');
+    // B27: a shown line that starts with the bot's Latin name starts with an RLM (right to left on Android).
+    expect(row).toHaveProp('accessibilityLabel', `Pip: 3 מקומות. ${RLM}Pip ניצח`);
     expect(screen.getByTestId('glyph-triangle', hidden)).toBeTruthy();
-    expect(screen.getByTestId('level-result-verdict')).toHaveTextContent('Pip ניצח');
+    expect(screen.getByTestId('level-result-verdict')).toHaveTextContent(`${RLM}Pip ניצח`);
     await screen.unmount();
 
     await show(DUEL, {
@@ -285,6 +310,83 @@ describe('LevelResultView', () => {
     expect(screen.getByTestId('level-result-no-next')).toHaveTextContent('השלב הבא עוד נעול');
   });
 
+  it('"שיא חדש!" needs a star: never for a first try with nothing, "0 מתוך 5 מקומות" (B26)', async () => {
+    const nothing: FindLevelOver = {
+      reason: 'timeUp',
+      elapsedMs: 30000,
+      penaltyMs: 0,
+      spots: 0,
+      found: 0,
+      stars: 0,
+    };
+    const first = playedOf(RACE, nothing);
+    // The stored best is this very try (its measure, 0 places), and still no record to celebrate.
+    expect(first.finished).toMatchObject({ best: 0, newStars: 0, bestMetric: 0 });
+    expect(first.outcome.metric).toBe(0);
+    await show(RACE, first, { next: null });
+    expect(screen.queryByTestId('level-result-new-best')).toBeNull();
+    // No star in the best either: no record line at all, not "השיא שלך:" over three empty stars.
+    expect(screen.queryByTestId('level-result-your-best')).toBeNull();
+    await screen.unmount();
+
+    // No star after an earlier try with two: the best so far.
+    await show(RACE, {
+      ...first,
+      finished: finishedOf(first.outcome, { prevBest: 2, best: 2, newStars: 0, bestMetric: 3 }),
+    });
+    expect(screen.queryByTestId('level-result-new-best')).toBeNull();
+    expect(screen.getByTestId('level-result-your-best')).toHaveProp(
+      'accessibilityLabel',
+      'השיא שלך: שני כוכבים מתוך שלושה',
+    );
+    await screen.unmount();
+
+    // A better measure in a try with a star is a record, with no new star.
+    const faster = playedOf(FIND, found(7000));
+    expect(faster.outcome.stars).toBeGreaterThan(0);
+    await show(FIND, {
+      ...faster,
+      finished: finishedOf(faster.outcome, {
+        prevBest: faster.outcome.stars,
+        best: faster.outcome.stars,
+        newStars: 0,
+        xpEstimate: 0,
+      }),
+    });
+    expect(screen.getByTestId('level-result-new-best')).toHaveTextContent('שיא חדש!');
+  });
+
+  it('once in, the result is held visible by React too, not only by the fade (B11)', async () => {
+    jest.useFakeTimers();
+    const opacity = () => StyleSheet.flatten(screen.getByTestId('level-result-content').props.style).opacity;
+    await show(FIND, playedOf(FIND, found(4200)));
+    // The fade's start, from the animated style alone.
+    expect(opacity()).toBe(0);
+    await act(async () => void jest.advanceTimersByTime(1000));
+    expect(opacity()).toBe(1);
+    await screen.unmount();
+    // Reduced Motion: its 200 ms fade ends the same way.
+    useSettings.setState({ reduceMotion: 'on' });
+    await show(FIND, playedOf(FIND, found(4200)));
+    await act(async () => void jest.advanceTimersByTime(1000));
+    expect(opacity()).toBe(1);
+  });
+
+  it('once counted, React holds "‎+20 XP" too, not only the count (B11)', async () => {
+    jest.useFakeTimers();
+    const outcome = levelOutcome(FIND, found(7000));
+    await show(FIND, { ...playedOf(FIND, found(7000)), finished: finishedOf(outcome, { xpEstimate: 20 }) });
+    const held = () => screen.getByTestId('level-result-xp-value', hidden).props.defaultValue;
+    // The stars (770 ms for two), then the count from "‎+0 XP": React has only the count's start.
+    await act(async () => void jest.advanceTimersByTime(1000));
+    expect(held()).toBe(`${ltr('+0')} XP`);
+    await act(async () => void jest.advanceTimersByTime(1500));
+    expect(held()).toBe(`${ltr('+20')} XP`);
+    expect(screen.getByTestId('level-result-xp-value', hidden)).toHaveAnimatedProps({
+      text: `${ltr('+20')} XP`,
+    });
+  });
+
   it('a regular stage has no boss medallion and keeps its chapter line', async () => {
     await show(FIND, playedOf(FIND, found(4200)));
     expect(screen.queryByTestId('level-result-boss')).toBeNull();
@@ -329,10 +431,14 @@ describe('a boss’s result', () => {
     expect(outcome.bossBeaten).toBe(true);
     await show(BOSS, { ...playedOf(BOSS, end, { opponent: pip(total - 3, 'won') }) });
     expect(screen.getByTestId('level-result-boss-words')).toHaveTextContent('ניצחת את הבוס!');
-    const crown = screen.getByTestId('level-result-boss-crown', hidden);
-    expect(crown).toHaveAnimatedStyle({ transform: [{ scale: 0.4 }] });
+    const crown = () => screen.getByTestId('level-result-boss-crown', hidden);
+    const held = () => StyleSheet.flatten(crown().props.style).transform;
+    expect(crown()).toHaveAnimatedStyle({ transform: [{ scale: 0.4 }] });
+    expect(held()).toEqual([{ scale: 0.4 }]);
     await act(async () => void jest.advanceTimersByTime(1000));
-    expect(crown).toHaveAnimatedStyle({ transform: [{ scale: 1 }] });
+    expect(crown()).toHaveAnimatedStyle({ transform: [{ scale: 1 }] });
+    // Once popped, React holds the crown at full size too, not only the pop (B11).
+    expect(held()).toEqual([{ scale: 1 }]);
     // Over the title.
     const content = screen.getByTestId('level-result-boss');
     expect(content).toBeOnTheScreen();
@@ -445,6 +551,72 @@ describe('a boss’s result', () => {
   });
 });
 
+describe('a puzzle’s result: the swaps under the time (components.md §19.10; QA levels-puzzle-solved)', () => {
+  const PUZZLE = firstLevelOf('puzzle');
+  const sessions: LevelSession[] = [];
+  afterEach(() => {
+    for (const s of sessions.splice(0)) s.close();
+  });
+
+  /** Plays PUZZLE through its session: one swap there and back (two extra), then the fewest to solve it. */
+  async function solvedPuzzle(): Promise<LevelPlayed> {
+    const clock = new ManualClock(1_000_000);
+    const session = await startLevel(
+      PUZZLE,
+      {},
+      {
+        clock,
+        scheduler: new ManualScheduler(clock),
+        appState: null,
+        finish: async () => null,
+        track: jest.fn(),
+        attemptOf: async () => 1,
+        bestStarsOf: () => 0,
+      },
+    );
+    sessions.push(session);
+    const moving = [...Array(9).keys()].filter((p) => !PUZZLE.targets.fixed.includes(p));
+    const now = PUZZLE.targets.start.slice();
+    const moves: [number, number][] = [
+      [moving[0]!, moving[1]!],
+      [moving[0]!, moving[1]!],
+    ];
+    for (let p = 0; p < 9; p++)
+      while (now[p] !== p) {
+        const q = now.indexOf(p);
+        moves.push([p, q]);
+        [now[p], now[q]] = [now[q]!, now[p]!];
+      }
+    for (const [from, to] of moves) {
+      clock.advance(1000);
+      session.swap(from, to);
+    }
+    const r = await session.result;
+    expect(r.outcome.reason).toBe('completed');
+    return levelPlayedOf(session, r, 'he');
+  }
+
+  it('"N החלפות · המינימום M": the swaps made and the fewest, read off the engine’s end', async () => {
+    const played = await solvedPuzzle();
+    const min = 9 - PUZZLE.targets.fixed.length - 1;
+    expect(played.swaps).toEqual({ used: min + 2, min });
+    await show(PUZZLE, played);
+    expect(screen.getByTestId('level-result-swaps')).toHaveTextContent(`${min + 2} החלפות · המינימום ${min}`);
+    // The time stays the big number; the swaps give no stars.
+    expect(screen.getByTestId('level-result-metric')).toBeOnTheScreen();
+  });
+
+  it('English; and every other kind has no swaps line', async () => {
+    await i18n.changeLanguage('en');
+    const played = await solvedPuzzle();
+    await show(PUZZLE, played);
+    expect(screen.getByTestId('level-result-swaps')).toHaveTextContent(/^\d+ swaps · the fewest: \d+$/);
+    await screen.unmount();
+    await show(FIND, playedOf(FIND, found(4200)));
+    expect(screen.queryByTestId('level-result-swaps')).toBeNull();
+  });
+});
+
 describe('LevelResultView in English', () => {
   it('speaks English: "Stage 7 complete", "Next stage"', async () => {
     await i18n.changeLanguage('en');
@@ -454,13 +626,33 @@ describe('LevelResultView in English', () => {
     expect(screen.getByRole('button', { name: 'Again' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'To the map' })).toBeOnTheScreen();
   });
+
+  it('QA levels-lang-english: the spoken chapter line starts the gate’s sentence with a capital', async () => {
+    await i18n.changeLanguage('en');
+    const played = playedOf(FIND, found(4200));
+    await show(FIND, { ...played, finished: { ...played.finished!, gate: gate(0, true) } });
+    const line = screen.getByTestId('level-result-chapter');
+    expect(line).toHaveProp('accessibilityLabel', 'This chapter: 0 stars of 30. The gate is open');
+    expect(line).toHaveTextContent(`This chapter${ltr('0/30')}· the gate is open`);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------
 // In the route: the result is a state of /levels/play, and "לשלב הבא" starts the next stage through "מוכן?"
 
-/** A stage that ends at once with ★★★ when "finish" is pressed (nothing stored: no account here). */
+/**
+ * A stage that ends at once with ★★★ when "finish" is pressed (nothing stored: no account here); "under dialog"
+ * ends it as a clock that ran out under "לצאת מהשלב?" does (QA N1).
+ */
 function FakeStage({ level, quick, onFinished }: LevelPlayingProps) {
+  const played = (): LevelPlayed => ({
+    outcome: levelOutcome(level, found(3000)),
+    finished: null,
+    mistakes: 0,
+    opponent: null,
+    bestMove: null,
+    why: null,
+  });
   return (
     <View testID="fake-stage">
       <Text testID="fake-stage-id">{`${level.id}${quick ? ' quick' : ''}`}</Text>
@@ -468,16 +660,13 @@ function FakeStage({ level, quick, onFinished }: LevelPlayingProps) {
         accessibilityRole="button"
         accessibilityLabel="finish"
         testID="fake-stage-finish"
-        onPress={() =>
-          onFinished({
-            outcome: levelOutcome(level, found(3000)),
-            finished: null,
-            mistakes: 0,
-            opponent: null,
-            bestMove: null,
-            why: null,
-          })
-        }
+        onPress={() => onFinished(played())}
+      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="under dialog"
+        testID="fake-stage-under-dialog"
+        onPress={() => onFinished(played(), { underDialog: true })}
       />
     </View>
   );
@@ -512,6 +701,82 @@ describe('in the stage’s route', () => {
     expect(screen.getByTestId('level-ready')).toBeOnTheScreen();
     await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
     expect(screen.getByTestId('fake-stage-id')).toHaveTextContent(`${NEXT} quick`);
+  });
+
+  it('"מוכן?" of the next stage stands still when the app left as it came in, before it listened (B28)', async () => {
+    await playFind();
+    let state = 'active';
+    const listeners: ((next: string) => void)[] = [];
+    const original = Object.getOwnPropertyDescriptor(AppState, 'currentState')!;
+    Object.defineProperty(AppState, 'currentState', { get: () => state, configurable: true });
+    // React Native's jest preset makes AppState.addEventListener a mock already: its own answer comes back after.
+    const listen = jest.mocked(AppState.addEventListener);
+    const usual = listen.getMockImplementation();
+    listen.mockImplementation((_type, listener) => {
+      // The app leaves just as the new run starts to listen: no 'change' ever reaches it.
+      state = 'background';
+      listeners.push(listener as (next: string) => void);
+      return { remove: jest.fn() } as unknown as NativeEventSubscription;
+    });
+    try {
+      await fireEvent.press(screen.getByTestId('level-result-next'));
+      await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs * 3));
+      expect(screen.getByTestId('level-ready')).toBeOnTheScreen();
+      expect(screen.queryByTestId('fake-stage')).toBeNull();
+      // Back: the rest of the wait, then the stage.
+      state = 'active';
+      await act(async () => listeners.forEach((listener) => listener('active')));
+      await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+      expect(screen.getByTestId('fake-stage-id')).toHaveTextContent(`${NEXT} quick`);
+    } finally {
+      if (usual) listen.mockImplementation(usual);
+      Object.defineProperty(AppState, 'currentState', original);
+    }
+  });
+
+  it('QA N1: a stage that ended under "לצאת מהשלב?": its result takes no press for LEVEL_UI.resultGuardMs', async () => {
+    expect(LEVEL_UI.resultGuardMs).toBeGreaterThan(0);
+    const app = renderRouter(ROUTES, { initialUrl: `/levels/play?id=${FIND.id}` });
+    await app;
+    await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+    await fireEvent.press(screen.getByTestId('fake-stage-under-dialog'));
+    expect(screen.getByTestId('level-result')).toBeOnTheScreen();
+    // The tap meant for the dialog's "יציאה" lands where "למפה" now is: nothing happens, nor on the others.
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    await fireEvent.press(screen.getByTestId('level-result-again'));
+    await fireEvent.press(screen.getByTestId('level-result-next'));
+    expect(app.getPathname()).toBe('/levels/play');
+    expect(screen.getByTestId('level-result')).toBeOnTheScreen();
+    await act(async () => void jest.advanceTimersByTime(LEVEL_UI.resultGuardMs));
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    expect(app.getPathname()).toBe('/levels');
+  });
+
+  it('a result with no dialog under its end takes presses at once', async () => {
+    const onMap = jest.fn();
+    await show(FIND, playedOf(FIND, found(4200)), { onMap });
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    expect(onMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('armAfterMs: no press before it, every button takes one after it', async () => {
+    jest.useFakeTimers();
+    const props = await show(FIND, playedOf(FIND, found(4200)), { armAfterMs: 1000 });
+    await fireEvent.press(screen.getByTestId('level-result-next'));
+    await fireEvent.press(screen.getByTestId('level-result-again'));
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    await act(async () => void jest.advanceTimersByTime(999));
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    expect(props.onNext).not.toHaveBeenCalled();
+    expect(props.onAgain).not.toHaveBeenCalled();
+    expect(props.onMap).not.toHaveBeenCalled();
+    await act(async () => void jest.advanceTimersByTime(1));
+    await fireEvent.press(screen.getByTestId('level-result-next'));
+    await fireEvent.press(screen.getByTestId('level-result-again'));
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    expect(props.onNext).toHaveBeenCalledTimes(1);
+    expect(props.onAgain).toHaveBeenCalledTimes(1);
+    expect(props.onMap).toHaveBeenCalledTimes(1);
   });
 
   it('"שוב" plays the same stage again, from "מוכן?"', async () => {

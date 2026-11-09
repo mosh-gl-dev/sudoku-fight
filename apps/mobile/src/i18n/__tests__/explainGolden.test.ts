@@ -65,7 +65,37 @@ const golden = JSON.parse(
   readFileSync(join(__dirname, '__fixtures__', 'explainGolden.json'), 'utf8'),
 ) as Golden;
 
-const both = (f: (lang: string) => string): Texts => ({ he: f('he'), en: f('en') });
+/**
+ * Wording corrected on purpose since the engine wrote the corpus, each with its reason. The app's text is turned
+ * back into the engine's words before it is compared, so everything else is still held word for word:
+ * - QA 2026-11-03: a hidden single in a row or a column refers back to it as "בה" ("שורה" and "עמודה" are
+ *   feminine). The engine wrote "בו" for every unit, which is right for "ריבוע" only.
+ */
+const ENGINE_WORDS: readonly (readonly [RegExp, string])[] = [
+  [
+    /(להופיע (?:בשורה|בעמודה) [^.,]+(?:, ו־\S+ היא המשבצת הריקה היחידה|\. כל שאר המשבצות הריקות)) בה(?=[ .])/gu,
+    '$1 בו',
+  ],
+];
+const asEngineWrote = (he: string): string =>
+  ENGINE_WORDS.reduce((s, [pattern, words]) => s.replace(pattern, words), he);
+
+/**
+ * English, likewise:
+ * - QA loop 7 (2026-11-09): "sees a 8" (an 8). A hidden single's blocked cell "sees the 8 in column 5", and a
+ *   blocked cell's row "already has one", with no article that depends on the digit.
+ */
+const ENGINE_WORDS_EN: readonly (readonly [RegExp, string])[] = [
+  [/ sees the (\d) in /g, ' sees a $1 in '],
+  [/can't hold (\d): (row|column|box) (\S+) already has one/g, "can't hold $1: $2 $3 has a $1"],
+];
+const asEngineWroteEn = (en: string): string =>
+  ENGINE_WORDS_EN.reduce((s, [pattern, words]) => s.replace(pattern, words), en);
+
+const both = (f: (lang: string) => string): Texts => ({
+  he: asEngineWrote(f('he')),
+  en: asEngineWroteEn(f('en')),
+});
 
 function explained({ b, c, o }: ExplanationCase): Explanation {
   const [givens, solution] = golden.boards[b]!.split('|') as [string, string];

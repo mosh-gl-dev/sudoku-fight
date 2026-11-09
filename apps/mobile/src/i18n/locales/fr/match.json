@@ -108,6 +108,7 @@
     },
     "code": "Code d’erreur : {{code}}",
     "retry": "Chercher à nouveau",
+    "backToGame": "Retour à la partie",
     "verify": "Vérifier l’e-mail",
     "practice": "Aller à l’entraînement",
     "practiceNote": "L’entraînement en solo ou contre un bot fonctionne aussi hors ligne.",
@@ -128,7 +129,7 @@
     "needsConnection": "Connexion requise",
     "needsConnectionLabel": "Nécessite une connexion Internet",
     "practiceNote": "Disponible sans Internet",
-    "availableOffline": "Fonctionne hors ligne",
+    "availableOffline": "Jouable hors ligne",
     "back": "Te revoilà en ligne. Les parties classées sont disponibles."
   },
   "modes": {

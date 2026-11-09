@@ -65,6 +65,7 @@
     "noLogic": "정답: {{cell}} → {{digit}}",
     "scoreLine": "점수",
     "penaltyLine": "벌점: 맞는 숫자가 받았을 점수",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "선택 취소",
       "timeout": "시간 초과",

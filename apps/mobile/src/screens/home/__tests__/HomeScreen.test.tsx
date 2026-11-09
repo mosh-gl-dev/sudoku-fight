@@ -11,6 +11,7 @@ import { openPracticeRepo, type PracticeRepo } from '../../../game/practiceRepo'
 import { practiceStorageOrNull } from '../../../game/storage';
 import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
+import * as feedback from '../../../services/feedback';
 import { usePracticeHistory } from '../../../state/practiceHistory';
 import { useProfile } from '../../../state/profile';
 import { HomeScreen } from '../HomeScreen';
@@ -91,8 +92,12 @@ describe('Home (spec §4.3)', () => {
 
   it('"שחק" opens the game modes, the settings button the settings', async () => {
     const app = await renderApp();
+    const cue = jest.spyOn(feedback, 'cue');
     await fireEvent.press(screen.getByRole('button', { name: 'שחק' }));
     expect(app.pathname()).toBe('/modes');
+    // The gold button plays its press once; the screen adds none (MOT-4).
+    expect(cue.mock.calls).toEqual([['primaryPress']]);
+    cue.mockRestore();
 
     await act(async () => {
       router.back();

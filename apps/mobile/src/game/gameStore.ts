@@ -70,9 +70,14 @@ export interface GameStoreState {
    * Closes any game in progress and goes online: creates a private room or joins one by its code, with a host
    * from `makeHost` (the phone's: net/device.ts deviceHost; the store's deps by default). Returns at once; the
    * session's `online` says how the joining goes (connecting, the lobby, a refusal), and the game screen
-   * shows it.
+   * shows it. `profiles`: the players' cards as the game had them, for a ranked game joined again by its room's
+   * id (game/rankedResume.ts).
    */
-  startOnline(request: OnlineRequest, makeHost?: () => RemoteGameHost): OnlineSession;
+  startOnline(
+    request: OnlineRequest,
+    makeHost?: () => RemoteGameHost,
+    profiles?: OnlineProfiles | null,
+  ): OnlineSession;
   /**
    * Closes any game in progress and searches for a ranked game (stage 9) in the queue of `request`, with the
    * deps from `makeDeps` (the phone's: net/matchmakingDevice.ts; the store's deps, or the last ones, by
@@ -266,7 +271,7 @@ export function createGameStore(deps: GameStoreDeps = defaultGameStoreDeps) {
 
       startBotPractice: ({ gameType, level }) => start((d) => startBotPractice({ gameType, level }, d)),
 
-      startOnline: (request, makeHost) => goOnline(request, makeHost),
+      startOnline: (request, makeHost, profiles = null) => goOnline(request, makeHost, profiles),
 
       startRanked: (request, makeDeps) => goRanked(request, makeDeps),
 
@@ -292,8 +297,14 @@ export function createGameStore(deps: GameStoreDeps = defaultGameStoreDeps) {
         const code = online.host.roomCode;
         // Back in by its code, with the players' avatars as the match had them (and its game type, for the
         // loading card before the game says it).
-        if (code)
-          return goOnline({ kind: 'join', code, gameType: online.gameType }, undefined, online.profiles);
+        if (code) {
+          const queueKey = online.queueKey ?? undefined;
+          return goOnline(
+            { kind: 'join', code, gameType: online.gameType, queueKey },
+            undefined,
+            online.profiles,
+          );
+        }
         // A match's reservation is good once: without the room's code there is nothing to go back to.
         return online.request.kind === 'match' ? null : goOnline(online.request);
       },

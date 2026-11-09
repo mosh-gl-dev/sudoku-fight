@@ -68,7 +68,8 @@
       "timeout": "Server tidak menjawab tepat waktu. Coba lagi.",
       "signedOut": "Kamu belum masuk. Masuk lagi.",
       "unexpected": "Server mengirim jawaban yang tidak terduga. Coba lagi, atau perbarui aplikasinya."
-    }
+    },
+    "avatarUnavailable": "Avatar ini belum tersedia di server. Pilih yang lain."
   },
   "splash": {
     "tagline": "Satu papan. Semua memecahkannya. Hanya satu yang menang.",
@@ -249,6 +250,9 @@
     "deleteGoogleBody": "Untuk menghapus akun, pilih lagi akun Google {{email}}.",
     "deleteGoogleSubmit": "Konfirmasi dengan Google dan hapus",
     "deleteGoogleAgain": "Menghapus akun memerlukan konfirmasi baru. Coba lagi dan pilih akun Google milikmu.",
-    "deleteWithPassword": "Konfirmasi dengan kata sandi saja"
+    "deleteWithPassword": "Konfirmasi dengan kata sandi saja",
+    "deleteGoogleOffTitle": "Perlu masuk dengan Google",
+    "deleteGoogleOffBody": "Akun ini masuk dengan Google, jadi menghapusnya perlu konfirmasi dengan Google. Versi aplikasi ini tidak punya fitur masuk dengan Google, jadi akun tidak bisa dihapus di sini. Kamu bisa menghapusnya di aplikasi dari toko (Google Play).",
+    "deleteGoogleOffOk": "Mengerti"
   }
 }

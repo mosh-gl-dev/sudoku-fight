@@ -5,6 +5,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 
 import { ProgressApiError } from '../../../api/progressApi';
 import { card, myProgress, rating } from '../../../api/testing/fakeProgress';
+import { avatarIdsIn } from '../../../avatars/testing/avatarTesting';
 import { ltr } from '../../../components/player';
 import { LEVEL_UI } from '../../../config/levels';
 import i18n from '../../../i18n';
@@ -171,6 +172,61 @@ describe('PlayerCardScreen', () => {
     expect(
       screen.getByLabelText('MosheG, הכרטיס שלי, ישראל, במשחק מאז אפריל 2026, ליגת זהב, רמה 10'),
     ).toBeOnTheScreen();
+  });
+
+  it('mine: an edit made after the card came shows at once (my profile over the card read before it)', async () => {
+    const before = card({ id: 'me', avatarId: 'lava-lamp', displayName: 'MosheG', country: 'IL' });
+    const load = async () => before;
+    const view = await show(load, {
+      playerId: 'me',
+      myProfile: { displayName: 'MosheG', avatarId: 'lava-lamp', country: 'IL' },
+    });
+    const identity = () => screen.getByTestId('player-card-identity');
+    expect(avatarIdsIn(identity())).toEqual(['lava-lamp']);
+    // Back from Edit profile: the same card, the new profile.
+    await screen.rerender(
+      <PlayerCardScreen
+        playerId="me"
+        load={load}
+        myId="me"
+        myProfile={{ displayName: 'Moshe', avatarId: 'fox', country: 'DE' }}
+        {...view}
+      />,
+    );
+    expect(avatarIdsIn(identity())).toEqual(['fox']);
+    expect(screen.getByLabelText(/^Moshe, הכרטיס שלי, גרמניה,/)).toBeOnTheScreen();
+    // What the server sent stays as it was (it is what the phone saves for offline).
+    expect(view.onLoaded).toHaveBeenCalledWith(before);
+  });
+
+  it('mine: a server card newer than my profile shows as it came (a name an admin reset)', async () => {
+    await show(async () => card({ id: 'me', displayName: 'Player4821', avatarId: 'fox' }), {
+      playerId: 'me',
+      myProfile: { displayName: 'MosheG', avatarId: 'lava-lamp', country: 'IL' },
+    });
+    expect(avatarIdsIn(screen.getByTestId('player-card-identity'))).toEqual(['fox']);
+    expect(screen.getByTestId('player-card-identity')).toHaveTextContent('Player4821', { exact: false });
+  });
+
+  it('mine offline: my profile over the saved card (saved before an edit)', async () => {
+    await show(
+      async () => {
+        throw new ProgressApiError('network');
+      },
+      {
+        playerId: 'me',
+        cached: card({ id: 'me', avatarId: 'lava-lamp' }),
+        myProfile: { displayName: 'MosheG', avatarId: 'fox', country: 'IL' },
+      },
+    );
+    expect(screen.getByTestId('player-card-note')).toBeOnTheScreen();
+    expect(avatarIdsIn(screen.getByTestId('player-card-identity'))).toEqual(['fox']);
+  });
+
+  it('another player’s card never takes my profile', async () => {
+    await show(async () => NINA, { myProfile: { displayName: 'Moshe', avatarId: 'fox', country: 'IL' } });
+    expect(avatarIdsIn(screen.getByTestId('player-card-identity'))).toEqual([NINA.avatarId]);
+    expect(screen.getByTestId('player-card-identity')).toHaveTextContent('NinaVolt', { exact: false });
   });
 
   it('another player offline: the offline state; not found: says so', async () => {

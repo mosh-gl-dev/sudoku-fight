@@ -12,7 +12,20 @@ export interface InterferenceSent {
   targetName: string;
   /** What it cost me (the event's `cost`). */
   cost: number;
+  /**
+   * Where the chip goes, from the top of the window: under the cards (motion.md `sender.toast`, "under my
+   * card"). QA loop 8: at the top it covered both avatars for its 2 s, so my own wink (`hitSent`) never showed,
+   * nor my score paying for it. Unknown (the cards not laid out yet): the usual top.
+   */
+  top?: number;
 }
+
+/**
+ * The sender's chip takes two lines at most (QA loop 9): it sits under the cards, where two lines at font 1.3
+ * still end above the board; a toast elsewhere takes every line its words need. Its tail is the target's name,
+ * which is what shortens ("…") when even two are not enough, never the kind's words.
+ */
+export const SENDER_TOAST_LINES = 2;
 
 /**
  * What the sender sees once an interference of theirs has started (spec §7.4: "זיקוקים ← NinaVolt", while the
@@ -27,8 +40,13 @@ export interface InterferenceSent {
 export function useSenderFeedback(): (sent: InterferenceSent) => void {
   const { t } = useTranslation('game');
   return useCallback(
-    ({ kind, targetName, cost }: InterferenceSent) => {
-      useToast.getState().show({ variant: 'info', message: senderText(kind, targetName, t) });
+    ({ kind, targetName, cost, top }: InterferenceSent) => {
+      useToast.getState().show({
+        variant: 'info',
+        message: senderText(kind, targetName, t),
+        maxLines: SENDER_TOAST_LINES,
+        ...(top === undefined ? null : { top }),
+      });
       track('interference_sent', { kind, cost });
     },
     [t],

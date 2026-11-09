@@ -2,7 +2,17 @@ import { MATCH_RANGE } from '@sudoku-fight/protocol';
 
 import { MatchmakingFailure, type MatchmakingInfo } from '../../../net/matchmaking';
 import { MATCH_PLAYERS } from '../../../net/testing/fakeMatchmaking';
-import { clockText, countdownStep, headerOf, matchScreenModel, rangeOf, seatsOf } from '../matchModel';
+import {
+  clockText,
+  COUNTDOWN_DRAW_SLACK_MS,
+  countdownShownAt,
+  countdownStep,
+  countdownStepOver,
+  headerOf,
+  matchScreenModel,
+  rangeOf,
+  seatsOf,
+} from '../matchModel';
 
 /** Which match screen, and with what (stage 9, spec §10): pure, from the search and the time. */
 
@@ -160,6 +170,69 @@ describe('matchScreenModel', () => {
     });
   });
 
+  it('a count first shown late runs its three digits over what is left: none skipped, GO at goAt (QA B37)', () => {
+    // Shown at T with 1.8 s to GO: 600 ms a digit.
+    const late = (now: number) => {
+      const m = matchScreenModel(
+        info({ phase: 'countdown', match: { ...match, goAt: T + 1800 } }),
+        self,
+        now,
+        T,
+      );
+      return m.kind === 'countdown' ? m.step : m.kind;
+    };
+    expect([T, T + 599, T + 600, T + 1199, T + 1200, T + 1799, T + 1800].map(late)).toEqual([
+      3,
+      3,
+      2,
+      2,
+      1,
+      1,
+      'go',
+    ]);
+    // Shown in time (or no moment given): by the second, as ever.
+    const whole = (now: number, since: number | null) => {
+      const m = matchScreenModel(
+        info({ phase: 'countdown', match: { ...match, goAt: T + 3000 } }),
+        self,
+        now,
+        since,
+      );
+      return m.kind === 'countdown' ? m.step : m.kind;
+    };
+    expect([whole(T + 999, T), whole(T + 1000, T), whole(T + 2000, null)]).toEqual([3, 2, 1]);
+  });
+
+  it('countdownStepOver: under 250 ms a digit, the first ones are left out', () => {
+    // 600 ms: two digits of 300.
+    expect([600, 301, 300, 1].map((r) => countdownStepOver(r, 600))).toEqual([2, 2, 1, 1]);
+    expect([400, 200].map((r) => countdownStepOver(r, 400))).toEqual([1, 1]);
+    // A span longer than a whole count is a whole count.
+    expect([3500, 2500, 1500].map((r) => countdownStepOver(r, 5000))).toEqual([3, 3, 2]);
+    expect(countdownStepOver(0, 3000)).toBe('go');
+  });
+
+  it('countdownShownAt: not drawn yet, the first digit holds; drawn late, the count runs from its frame (QA B37-still)', () => {
+    // Not drawn: from now, so whatever is left is the first digit's.
+    expect(countdownShownAt(T, null, T + 1200)).toBe(T + 1200);
+    expect(countdownStepOver(1800, T + 3000 - countdownShownAt(T, null, T + 1200))).toBe(3);
+    // Drawn within a frame or two: the server's whole seconds.
+    expect(countdownShownAt(T, T + 40, T + 500)).toBe(T);
+    expect(countdownShownAt(T, T + COUNTDOWN_DRAW_SLACK_MS, T + 500)).toBe(T);
+    // Drawn 1.1 s late: from that frame, three digits over the 1.9 s left.
+    expect(countdownShownAt(T, T + 1100, T + 1500)).toBe(T + 1100);
+    const at = (now: number) => countdownStepOver(T + 3000 - now, T + 3000 - (T + 1100));
+    expect([T + 1100, T + 1733, T + 1734, T + 2366, T + 2367, T + 2999, T + 3000].map(at)).toEqual([
+      3,
+      3,
+      2,
+      2,
+      1,
+      1,
+      'go',
+    ]);
+  });
+
   it('failed and cancelled', () => {
     const error = new MatchmakingFailure('alreadyQueued', 'x', 4215);
     expect(matchScreenModel(info({ phase: 'failed', error }), self, T)).toEqual({
@@ -167,8 +240,23 @@ describe('matchScreenModel', () => {
       header: { gameType: 'normal', players: 2 },
       code: 'alreadyQueued',
       supportCode: 'alreadyQueued-4215',
+      gameRoom: null,
     });
     expect(matchScreenModel(info({ phase: 'cancelled' }), self, T)).toEqual({ kind: 'cancelled' });
+  });
+
+  it('alreadyQueued over a ranked game still running: the room it names, for "back to the game"', () => {
+    // QA density-change-orphans-ranked-game: the server's refusal names the game's room.
+    const error = new MatchmakingFailure(
+      'alreadyQueued',
+      'alreadyQueued: this account is in a ranked game that has not ended (room Xy12ab)',
+      4215,
+    );
+    expect(matchScreenModel(info({ phase: 'failed', error }), self, T)).toMatchObject({
+      kind: 'failed',
+      code: 'alreadyQueued',
+      gameRoom: 'Xy12ab',
+    });
   });
 });
 

@@ -28,10 +28,17 @@ tile (rounded square, palette TILE)
    ├─ layers.back            your art behind the face: body, neck, ears, head, hair, fur, the object
    ├─ gimmicks z 'back'      moving parts over the art, under the face (a drum behind a porthole)
    ├─ [gimmick z 'face'      a moving part that holds the face: a balloon's skin]
-   │   face                  drawn by the rig: cheeks, eyes, brows, mouth, your face art, extras
+   │   face                  drawn by the rig: cheeks, eyes, brows, mouth, your face art
    ├─ layers.front           your art over the face: a fringe, glasses, a hat brim, a patch (optional)
-   └─ gimmicks z 'front'     moving parts over everything (steam, drops, sparks, a lid) — the default
+   ├─ gimmicks z 'front'     moving parts over everything (steam, drops, sparks, a lid) — the default
+   └─ extras                 the rig's tear, sweat drop, anger mark, z's and dizzy stars, over all of it
 ```
+
+The extras are the face's, but the rig draws them last, over your front layer and gimmicks: a hat, a bandana or
+a scarf over the temple beside the right eye would otherwise hide the anger mark and the z's, the main cue of
+`angry` and `sleepy` (the Pirates' 2, 6 and 9, 31.10.2026). A motion that moves the face moves them with it. Only
+when a gimmick holds the face (`z: 'face'`) do they stay inside that gimmick, right after the face, so they ride
+with it.
 
 Expressions: `neutral`, `smile`, `laugh`, `wink`, `surprised`, `sad`, `confused`, `dizzy`, `angry`, `sleepy`.
 Motions: `blink` (idle), `bounce`, `nod`, `tilt`, `shake`, `spin`, `flip`, `squash`, `wobble` (`src/motion.ts`).
@@ -213,6 +220,7 @@ At 24 px one canvas unit is a quarter of a pixel. On a phone (3 px per point) it
    | `creatures.ts` | `CREATURES` | `creature` | made-up beings |
    | `digits.ts` | `DIGITS` | `symbol` | 0–9 (the 8 is in `objects.ts`) |
    | `symbols.ts` | `SYMBOLS` | `symbol` | letters, math signs, sudoku things |
+   | `pirates/` | `PIRATES` | `symbol` | the Pirates digit series, one file per digit: read `docs/avatars/PIRATES.md` |
 
    The kind is set on each character, not by its file, and the picker groups by kind. A few characters live in
    a file of another kind: the broom and the cactus (`food.ts`), the hatchling and three foods (`office.ts`), the ring bell and

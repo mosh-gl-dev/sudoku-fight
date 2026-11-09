@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import ResultsRoute from '../../../../app/results/[id]';
 import { useGameStore } from '../../../game/gameStore';
@@ -34,6 +34,8 @@ const { router, useLocalSearchParams } = jest.requireMock<{
 const settle = () =>
   act(async () => {
     await new Promise((r) => setImmediate(r));
+    // The route hands the results over two frames later (app/results/[id].tsx); a frame is a 0 ms timer here.
+    for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 beforeEach(async () => {
@@ -145,7 +147,8 @@ describe('/results/[id] after an online game', () => {
     await settle();
     expect(screen.getByRole('header', { name: 'ניצחון!' })).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'משחק חדש' }));
-    expect(router.dismissTo).toHaveBeenCalledWith('/dev/online');
+    // A frame or two later: the spinner's commit goes first (K1).
+    await waitFor(() => expect(router.dismissTo).toHaveBeenCalledWith('/dev/online'));
     expect(useGameStore.getState().online).toBeNull();
     expect(game.session.online.status).toBe('closed');
     await view.unmount();

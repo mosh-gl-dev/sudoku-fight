@@ -1,5 +1,5 @@
 import type { Stars } from '@sudoku-fight/engine';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { color, space } from '../../theme';
 import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
@@ -22,7 +23,8 @@ import { curve } from '../ui/motion';
  * element around it says the stars already (a map node, a gate row).
  *
  * `reveal` (the result, motion.md `level.stars.reveal`): the earned stars pop in one by one, 200 ms after the
- * result appears, 420 ms each with a 150 ms stagger (0.6 → 1.12 → 1). Reduced Motion: all at once.
+ * result appears, 420 ms each with a 150 ms stagger (0.6 → 1.12 → 1). Reduced Motion: all at once. A boss's
+ * pedestal on the map (`level.map.stars`) pops only the new ones, `{ from, delayMs }`, as StarCrown does.
  */
 
 /** The star's outline in the 24 grid (the brief's star). */
@@ -68,8 +70,11 @@ export interface StarRowProps {
   size: number;
   /** The screen-reader label of the row; null hides it (the element around it says the stars). */
   label: string | null;
-  /** Pop the earned stars in one by one (the result). */
-  reveal?: boolean;
+  /**
+   * Pop the earned stars in one by one: `true`, all of them (the result); `{ from, delayMs }`, only the stars from
+   * `from` up to the earned ones, `delayMs` from now (a boss's pedestal, back from a stage).
+   */
+  reveal?: boolean | { from: number; delayMs: number } | null;
   /** Between the stars: 2 on a node (the board), more on the result. */
   gap?: number;
   testID?: string;
@@ -78,6 +83,7 @@ export interface StarRowProps {
 export function StarRow({ stars, size, label, reveal = false, gap, testID = 'star-row' }: StarRowProps) {
   const reduce = useReduceMotion();
   const between = gap ?? (size >= STAR_SIZES.result ? space[6] : space[1]);
+  const popping = !reveal || reduce ? null : reveal === true ? { from: 0, delayMs: REVEAL.delayMs } : reveal;
   return (
     <View
       style={[styles.row, { gap: between }]}
@@ -90,8 +96,13 @@ export function StarRow({ stars, size, label, reveal = false, gap, testID = 'sta
     >
       {[0, 1, 2].map((i) => {
         const filled = i < stars;
-        return filled && reveal && !reduce ? (
-          <RevealStar key={i} index={i} size={size} testID={`${testID}-${i}`} />
+        return filled && popping && i >= popping.from ? (
+          <RevealStar
+            key={i}
+            delayMs={popping.delayMs + (i - popping.from) * REVEAL.staggerMs}
+            size={size}
+            testID={`${testID}-${i}`}
+          />
         ) : (
           <View key={i} testID={`${testID}-${i}`}>
             <Star filled={filled} size={size} testID={`${testID}-${i}-${filled ? 'filled' : 'empty'}`} />
@@ -102,28 +113,38 @@ export function StarRow({ stars, size, label, reveal = false, gap, testID = 'sta
   );
 }
 
-/** An earned star of the result, popping in at its turn (the empty outline waits under it). */
-function RevealStar({ index, size, testID }: { index: number; size: number; testID: string }) {
+/**
+ * An earned star, popping in at its turn, `delayMs` from now (the empty outline waits under it). Once popped,
+ * React holds it in too (`popped`): a pop that ended while the app was away is never handed back to React by
+ * Reanimated, and the next commit would empty the star again (B11, as the result's own fade).
+ */
+function RevealStar({ delayMs, size, testID }: { delayMs: number; size: number; testID: string }) {
   const reduce = useReduceMotion();
   const scale = useSharedValue<number>(REVEAL.from);
   const opacity = useSharedValue(0);
+  const [popped, setPopped] = useState(false);
   useEffect(() => {
-    const delay = REVEAL.delayMs + index * REVEAL.staggerMs;
     const grow = REVEAL.popMs * 0.7;
     // `reduce` is false here (StarRow draws the earned stars still under Reduced Motion); the timings say so too.
     opacity.set(
       withDelay(
-        delay,
+        delayMs,
         withTiming(1, { duration: grow, easing: curve('standard'), reduceMotion: NEVER }),
         NEVER,
       ),
     );
     scale.set(
       withDelay(
-        delay,
+        delayMs,
         withSequence(
           withTiming(REVEAL.over, { duration: grow, easing: curve('emphasized'), reduceMotion: NEVER }),
-          withTiming(1, { duration: REVEAL.popMs - grow, easing: curve('standard'), reduceMotion: NEVER }),
+          withTiming(
+            1,
+            { duration: REVEAL.popMs - grow, easing: curve('standard'), reduceMotion: NEVER },
+            (finished) => {
+              if (finished) scheduleOnRN(setPopped, true);
+            },
+          ),
         ),
         NEVER,
       ),
@@ -132,12 +153,12 @@ function RevealStar({ index, size, testID }: { index: number; size: number; test
       cancelAnimation(scale);
       cancelAnimation(opacity);
     };
-  }, [index, reduce, scale, opacity]);
+  }, [delayMs, reduce, scale, opacity]);
   const style = useAnimatedStyle(() => ({ opacity: opacity.get(), transform: [{ scale: scale.get() }] }));
   return (
     <View testID={testID}>
       <Star filled={false} size={size} />
-      <Animated.View style={[StyleSheet.absoluteFill, style]} testID={`${testID}-pop`}>
+      <Animated.View style={[StyleSheet.absoluteFill, style, popped && POPPED]} testID={`${testID}-pop`}>
         <Star filled size={size} testID={`${testID}-filled`} />
       </Animated.View>
     </View>
@@ -146,6 +167,8 @@ function RevealStar({ index, size, testID }: { index: number; size: number; test
 
 /** Our own decision (useReduceMotion) is made by hand: Reanimated must not add the phone's on top. */
 const NEVER = reduceMotionFlag(false);
+/** A popped star, as React holds it once the pop is over. */
+const POPPED = { opacity: 1, transform: [{ scale: 1 }] };
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },

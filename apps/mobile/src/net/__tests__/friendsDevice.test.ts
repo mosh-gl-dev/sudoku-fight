@@ -92,6 +92,30 @@ describe('friendsDevice', () => {
     stop();
   });
 
+  it('past its game (still connected, on the results): no room to come back to at the next start', async () => {
+    // QA (loop 4): a game ended by surrender, force-stop, launch: the app went back to the finished room, whose
+    // held seat refused it ("משהו השתבש בשרת", then "החדר נסגר").
+    const codes: (string | null)[] = [];
+    const stop = subscribeCurrentFriendsRoom((code) => codes.push(code));
+    const table = new FakeFriendsTable({ others: [{ id: DANA, name: 'Dana' }] });
+    const { session } = enter(table);
+    await session.ready;
+    await elapse(table, 50);
+    table.countdown(3000);
+    await elapse(table, 3100, 100);
+    table.startGame();
+    await elapse(table, 100);
+    // The game runs: still my room (the app killed now goes back to it).
+    expect(currentFriendsRoomCode()).toBe(FCODE);
+    session.surrender();
+    await elapse(table, 200);
+    expect(session.getView().status).toBe('over');
+    expect(session.online.status).not.toBe('closed');
+    expect(currentFriendsRoomCode()).toBeNull();
+    expect(codes).toEqual([null, FCODE, null]);
+    stop();
+  });
+
   it('put out of the room: no room any more', async () => {
     const codes: (string | null)[] = [];
     const stop = subscribeCurrentFriendsRoom((code) => codes.push(code));

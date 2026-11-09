@@ -23,7 +23,8 @@ import { unmutedFloats } from './reactions/model';
  * 74 dp from its sender's avatar over 1.6 s, popping 0.3 → 1.3 → 1 with a small wiggle, and fades out at the
  * top. It starts on the card, at the top of the screen, and only goes up, so it never covers the board. At
  * most 3 on screen (the screen keeps the newest). Reduced motion: it appears at the card and fades in place
- * (120 in, 1200 hold, 280 out).
+ * (120 in, 1200 hold, 280 out), still, where the moving one is last seen whole (REDUCED_LIFT above the avatar's
+ * centre): never over the sender's face, so the face it plays (🔥's laugh) shows (QA avatars-motion-on-game).
  *
  * One layer above the cards, never touchable, hidden from screen readers (the live region says who reacted).
  * A float whose sender I muted is not drawn, even one already in the air (spec §8, D19).
@@ -55,10 +56,17 @@ const START_DROP = space[6];
 const BOX = space[14];
 /** Reduced motion: 120 in, 1200 hold, 280 out = 1600 (motion.md §4.5). */
 const REDUCED = { in: 120, hold: 1200, out: 280 } as const;
+/**
+ * Reduced motion: how far above the avatar's centre the still emoji sits, the moving one's height at its last
+ * whole keyframe (58 %, below). On the avatar's centre, the 36 px emoji covered the whole face (a card's avatar
+ * picture is 36 px) for as long as the reaction's face lasted, so 🔥's laugh never showed (QA
+ * avatars-motion-on-game). Every emoji goes the same way.
+ */
+export const REDUCED_LIFT = space[8] * 2;
 
 /** The keyframes of `sf-react`, as fractions of the 1600 ms (motion.md §4.5). */
 const STOPS = [0, 0.18, 0.38, 0.58, 1];
-const Y = [START_DROP, -space[3], -space[8], -space[8] * 2, -RISE];
+const Y = [START_DROP, -space[3], -space[8], -REDUCED_LIFT, -RISE];
 const SCALE = [0.3, 1.3, 1, 1, 0.9];
 const TURN = [0, 0, -6, 6, 0];
 const OPACITY = [0, 1, 1, 1, 0];
@@ -105,6 +113,7 @@ function Float({ float, reduce }: { float: ReactionFloat; reduce: boolean }) {
           withDelay(
             REDUCED.hold,
             withTiming(0, { duration: REDUCED.out, easing: exit, reduceMotion: ReduceMotion.Never }),
+            ReduceMotion.Never,
           ),
         ),
       );
@@ -115,7 +124,14 @@ function Float({ float, reduce }: { float: ReactionFloat; reduce: boolean }) {
 
   const style = useAnimatedStyle(() => {
     const base = [{ translateX: float.from.x - BOX / 2 }, { translateY: float.from.y - BOX / 2 }];
-    if (reduce) return { opacity: fade.get(), transform: base };
+    if (reduce)
+      return {
+        opacity: fade.get(),
+        transform: [
+          { translateX: float.from.x - BOX / 2 },
+          { translateY: float.from.y - BOX / 2 - REDUCED_LIFT },
+        ],
+      };
     const t = progress.get();
     return {
       opacity: interpolate(t, STOPS, OPACITY),

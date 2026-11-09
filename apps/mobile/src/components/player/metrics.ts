@@ -117,12 +117,28 @@ export const metrics = {
     nameGap: 6,
     glyphGap: 4,
     statusGap: 6,
+    /**
+     * B47: how far the status row's words may shrink (my mistakes, the opponent's activity). They wrap first where
+     * they can (two lines of body text fit the 44-dp row in every script) and shrink only past that.
+     */
+    statusMinFontScale: 0.75,
+    /**
+     * My mistakes where their words don't fit at full size (statusFit; QA loop 6): the 'cancel' mark and the count
+     * in Teko 22 (the delta's size), never a word cut or shrunk.
+     */
+    mistakesMarkIcon: 16,
+    mistakesMarkGap: 4,
     hitChipOffset: -6,
     scoreRowGap: tokens.layout.game.playerCard.scoreGap,
     ratingStyle: tekoStyle(16),
     /** A bot's level under its name (Game-Bot), as tall as the provisional chip. */
     levelChipHeight: 18,
     levelChipPaddingX: 5,
+    /**
+     * The least room between the two cards (duelCardWidth): at 360 dp the pair leaves 10, as it always did; on a
+     * narrower screen (320 dp: display zoom at its largest) both cards give way to keep 8 between them.
+     */
+    pairGap: tokens.space[4],
   },
   /** §3.3: the activity timer ring (2P) and §7.2 (compact, with seconds inside). */
   timerRing: { card: 14, compact: 16, stroke: 2, secondsStyle: tekoStyle(11) },
@@ -137,8 +153,16 @@ export const metrics = {
   targetFrame: {
     padding: 6,
     outline: 2,
+    /**
+     * The frame reaches further down than its other sides (padding 6 + half the chip 10 − the outline 2): the
+     * "יעד" chip stays where it was (its top 4 dp over the card) and now ends on the frame's outer edge, so the
+     * scrim's hole, which is the frame, holds all of it (QA loop 6: its lower half was under the scrim).
+     */
+    paddingBottom: 14,
     chipHeight: 20,
     chipPaddingX: 8,
+    /** Room the chip's word gets past its measured width on each side, so layout rounding never cuts it to "…". */
+    chipSlack: 2,
     chipStyle: rubikStyle(12, '700'),
   },
   /** §5.1 rating sizes 22 (lists) and 16 (2P card); 44 and 15 are type tokens. */
@@ -187,8 +211,8 @@ export const metrics = {
   },
   /**
    * §8.1 the "הפרעה" button [D45]: as tall as the reactions button (44; compact 32 with a 44-dp target through
-   * hitSlop), the 'interfere' glyph and the word only, no price. The compact label shrinks to fit a 4-player
-   * opponent card (68 dp of strip) in English.
+   * hitSlop), the 'interfere' glyph and the word only, no price. The label shrinks to fit: the compact one a 4-player
+   * opponent card (68 dp of strip) in English, the 2-player one beside a long activity line (B47).
    */
   interfere: {
     paddingX: 10,
@@ -222,8 +246,11 @@ export const metrics = {
     pauseBarWidth: 2,
     pauseBarHeight: 7,
   },
-  /** §3.5 VS badge. */
-  vs: { width: size.vsBadge.width, height: size.vsBadge.height },
+  /**
+   * §3.5 VS badge. `clear`: the least room between it and either card's name block (its −8° slant reaches about
+   * 2 dp past its box), so it never covers a flag (statusFit vsInset; QA loop 6).
+   */
+  vs: { width: size.vsBadge.width, height: size.vsBadge.height, clear: 4 },
 } as const;
 
 /** The colors of a palette index (0 = me, P1). */
@@ -234,6 +261,17 @@ export const paletteAt = (colorIndex: number): PlayerPalette =>
 export function compactCardWidth(players: number, isMe: boolean): number {
   if (players <= 3) return metrics.compact.widthThree;
   return isMe ? metrics.compact.widthFourMe : metrics.compact.widthFour;
+}
+
+/**
+ * The width of each 2-player card in a row `rowWidth` wide (components.md §3.1): the design's 159 where the pair
+ * fits with `metrics.card.pairGap` between them (any phone 360 dp or wider), else an equal share of the row, so
+ * neither card runs off the screen (QA loop 4: at 320 dp the opponent's card started 14 dp off its left edge).
+ * Its words already give way inside the card (B47: they wrap, then shrink), and the score keeps its size.
+ */
+export function duelCardWidth(rowWidth: number): number {
+  const share = Math.floor((rowWidth - metrics.card.pairGap) / 2);
+  return Math.max(0, Math.min(size.playerCard.width, share));
 }
 
 /** The gap between compact cards (§7.1). */

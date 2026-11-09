@@ -27,7 +27,9 @@ import { isRtlLanguage } from './languages';
  *   "2 or 5" is list.lastOr, and the blocked cells of a hidden single are clauses.sep / clauses.last (Hebrew's
  *   "א, ב, וג"). Intl.ListFormat is not on Hermes.
  * - a unit's kind: a key per kind (naked.missing.row, .col, .box), so "Row D" opening a sentence and "row D"
- *   inside one are each their own words, with no capitalizing in code.
+ *   inside one are each their own words, with no capitalizing in code, and a word that refers back to the unit
+ *   agrees with it (Hebrew "שורה" and "עמודה" take "בה", "ריבוע" takes "בו").
+ * - a list of digits in a sentence: a plural by how many there are (naked.missing, naked.seen: `count`).
  * The board is LTR in every language: cells are named by row letter and column number (D5) and digits are Latin.
  * In a right-to-left language each cell name and formula ("D5 → 7") is an LTR isolate (LRI…PDI), so it never
  * turns around inside the sentence; a left-to-right one needs none.
@@ -106,10 +108,18 @@ function stepText(step: Step, w: Words): string {
         parts.push(t(`naked.onlyMissing.${primary.kind}`, { label, digit }));
         return spaceSentences(parts, t);
       }
-      parts.push(t(`naked.missing.${primary.kind}`, { label, digits: andList(w, missing) }));
+      // By how many digits the list has (`count`): Arabic's "الرقم 6" / "الرقمان 3 و 6" / "الأرقام 3، 6 و 9", a
+      // Polish or Turkish verb for one digit or several, "el 6" in Spanish.
+      parts.push(
+        t(`naked.missing.${primary.kind}`, { label, digits: andList(w, missing), count: missing.length }),
+      );
       for (const s of seen)
         parts.push(
-          t(`naked.seen.${s.unit.kind}`, { label: unitLabel(s.unit), digits: andList(w, s.digits) }),
+          t(`naked.seen.${s.unit.kind}`, {
+            label: unitLabel(s.unit),
+            digits: andList(w, s.digits),
+            count: s.digits.length,
+          }),
         );
       for (const e of eliminated)
         parts.push(t('naked.eliminated', { digit: e.digit, cell: cell(w, c), step: e.step + 1 }));
@@ -187,7 +197,7 @@ export function formatWrong(reason: WrongReason, lang: string): string {
 
 /**
  * Why `digit` can't go in `cell`, as one sentence with no full stop (a level's "why?", a wrong tap):
- * "E6 לא יכול להכיל 7: בשורה E יש 7" / "E6 can't hold 7: row E has a 7".
+ * "E6 לא יכול להכיל 7: בשורה E יש 7" / "E6 can't hold 7: row E already has one".
  */
 export function formatBlock(c: CellIndex, block: Block, digit: Digit, lang: string): string {
   const w = wordsOf(lang);

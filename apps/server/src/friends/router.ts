@@ -1,5 +1,7 @@
 import { isGameType } from '@sudoku-fight/engine';
 import {
+  AVATAR_CATALOG_HEADER,
+  avatarCatalogOf,
   FRIENDS_ERROR_STATUS,
   FRIENDS_PATHS,
   type FriendRoomCreateRequest,
@@ -7,6 +9,7 @@ import {
   type FriendsError,
   type FriendsErrorCode,
   type FriendsField,
+  friendRoomTicketForCatalog,
   normalizeFriendCode,
   parseDeclaredInterferenceKinds,
 } from '@sudoku-fight/protocol';
@@ -263,9 +266,11 @@ export function createFriendsRouter({
     };
   }
 
-  function answer(res: Response, result: FriendRoomsResult, okStatus: 200 | 201): void {
+  function answer(req: Request, res: Response, result: FriendRoomsResult, okStatus: 200 | 201): void {
     if (result.ok) {
-      res.status(okStatus).json(result.ticket);
+      // an older app refuses the ticket over a host's avatar it does not know: it gets none for a newer one
+      const catalog = avatarCatalogOf(req.get(AVATAR_CATALOG_HEADER));
+      res.status(okStatus).json(friendRoomTicketForCatalog(result.ticket, catalog));
       return;
     }
     const { error, message, field, retryAfterMs, code } = result;
@@ -279,7 +284,7 @@ export function createFriendsRouter({
     if (!parsed.ok) return sendFriendsError(res, 'badRequest', parsed);
     const caller = await callerOf(req, res);
     if (caller === undefined) return;
-    answer(res, await friendRooms.create(caller, parsed.value), 201);
+    answer(req, res, await friendRooms.create(caller, parsed.value), 201);
   });
 
   router.post(
@@ -293,7 +298,7 @@ export function createFriendsRouter({
       if (!parsed.ok) return sendFriendsError(res, 'badRequest', parsed);
       const caller = await callerOf(req, res);
       if (caller === undefined) return;
-      answer(res, await friendRooms.join(caller, parsed.value), 200);
+      answer(req, res, await friendRooms.join(caller, parsed.value), 200);
     },
   );
 

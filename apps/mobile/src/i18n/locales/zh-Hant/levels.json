@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "關口需要{{need}}",
     "chapterOpen": "關口已開啟",
+    "chapterNeedSentence": "關口需要{{need}}",
+    "chapterOpenSentence": "關口已開啟",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "本章：{{max}}顆星中得到{{stars}}顆。{{gate}}",
     "mistakes_other": "{{count}}次錯誤",
@@ -315,6 +317,8 @@
     "button": "離開關卡",
     "title": "要離開關卡嗎？",
     "body": "你會得到0顆星，下一關會開啟。",
+    "bodyLocked": "你會得到0顆星，下一關仍不會開啟。",
+    "bodyLast": "你會得到0顆星。",
     "confirm": "離開",
     "cancel": "繼續玩"
   },

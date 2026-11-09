@@ -114,7 +114,8 @@ describe('blocked players (spec §3.5)', () => {
     await i18n.changeLanguage('en');
     await open();
     expect(screen.getByTestId('blocked-error')).toHaveTextContent(/We couldn't load the list/);
-    expect(screen.getByTestId('blocked-error')).toHaveTextContent(/badRequest/);
+    // The support code, plainly a code (connection-error-english-chip).
+    expect(screen.getByTestId('blocked-error')).toHaveTextContent(/ERR_BAD_REQUEST/);
     expect(screen.getByRole('header', { name: 'Blocked players' })).toBeOnTheScreen();
   });
 });

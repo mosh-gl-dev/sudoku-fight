@@ -315,10 +315,11 @@ describe('ReadyView: a boss’s opening [D77]', () => {
     const [faster] = bossTraits(BOSS_2);
     expect(faster).toMatchObject({ key: 'faster', pct: 10 });
     await show(<ReadyView level={BOSS_2} onDone={jest.fn()} />);
-    expect(screen.getByTestId('boss-trait-faster')).toHaveTextContent(`Pip מהיר ב־${ltr('10%')}`);
+    // B27: the chip starts with the bot's Latin name, so with an RLM (right to left on Android).
+    expect(screen.getByTestId('boss-trait-faster')).toHaveTextContent(`‏Pip מהיר ב־${ltr('10%')}`);
     expect(screen.getByTestId('level-ready-content')).toHaveProp(
       'accessibilityLabel',
-      expect.stringContaining(`שלב בוס! שלב 20, מרוץ מול הבוט. הבוס: Pip. Pip מהיר ב־${ltr('10%')}.`),
+      expect.stringContaining(`שלב בוס! שלב 20, מרוץ מול הבוט. הבוס: Pip. ‏Pip מהיר ב־${ltr('10%')}.`),
     );
   });
 

@@ -30,14 +30,26 @@
       "box": "Il ne manque que le {{digit}} dans le carré {{label}}."
     },
     "missing": {
-      "row": "Il manque {{digits}} dans la ligne {{label}}.",
-      "col": "Il manque {{digits}} dans la colonne {{label}}.",
-      "box": "Il manque {{digits}} dans le carré {{label}}."
+      "row_one": "Il manque le {{digits}} dans la ligne {{label}}.",
+      "row_many": "Il manque {{digits}} dans la ligne {{label}}.",
+      "row_other": "Il manque {{digits}} dans la ligne {{label}}.",
+      "col_one": "Il manque le {{digits}} dans la colonne {{label}}.",
+      "col_many": "Il manque {{digits}} dans la colonne {{label}}.",
+      "col_other": "Il manque {{digits}} dans la colonne {{label}}.",
+      "box_one": "Il manque le {{digits}} dans le carré {{label}}.",
+      "box_many": "Il manque {{digits}} dans le carré {{label}}.",
+      "box_other": "Il manque {{digits}} dans le carré {{label}}."
     },
     "seen": {
-      "row": "La ligne {{label}} contient déjà {{digits}}.",
-      "col": "La colonne {{label}} contient déjà {{digits}}.",
-      "box": "Le carré {{label}} contient déjà {{digits}}."
+      "row_one": "La ligne {{label}} contient déjà le {{digits}}.",
+      "row_many": "La ligne {{label}} contient déjà {{digits}}.",
+      "row_other": "La ligne {{label}} contient déjà {{digits}}.",
+      "col_one": "La colonne {{label}} contient déjà le {{digits}}.",
+      "col_many": "La colonne {{label}} contient déjà {{digits}}.",
+      "col_other": "La colonne {{label}} contient déjà {{digits}}.",
+      "box_one": "Le carré {{label}} contient déjà le {{digits}}.",
+      "box_many": "Le carré {{label}} contient déjà {{digits}}.",
+      "box_other": "Le carré {{label}} contient déjà {{digits}}."
     },
     "eliminated": "Le {{digit}} a été éliminé de {{cell}} à la déduction {{step}}.",
     "only": "Il ne reste donc que le {{digit}}."

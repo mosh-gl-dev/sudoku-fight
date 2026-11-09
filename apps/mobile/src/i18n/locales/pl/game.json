@@ -143,10 +143,12 @@
     "error": {
       "title": "Błąd połączenia",
       "offlineTitle": "Brak połączenia z internetem",
+      "expiredTitle": "Brak powrotu na czas",
       "body": {
         "offline": "Twój telefon nie ma teraz sieci. Połącz się z internetem i spróbuj ponownie.",
         "unreachable": "Nie udało się połączyć z serwerem gry. Sprawdź połączenie i spróbuj ponownie.",
         "lost": "Połączenie z serwerem gry zostało zerwane i nie udało się go przywrócić.",
+        "expired": "Połączenie nie wróciło na czas, więc gra liczy się jako porzucona.",
         "refused": "Serwer nie wpuścił nas do pokoju."
       },
       "refusal": {
@@ -182,7 +184,9 @@
       "confirm": "Tak, poddaję się",
       "cancel": "Anuluj",
       "footnote": "Partia toczy się w tle",
-      "dialog": "Potwierdź poddanie"
+      "dialog": "Potwierdź poddanie",
+      "notSent": "Poddanie nie zostało zapisane, a partia toczy się dalej. Możesz spróbować ponownie",
+      "notSentOffline": "Brak połączenia z serwerem, więc poddanie nie zostało zapisane. Spróbuj ponownie, gdy połączenie wróci"
     },
     "lobby": {
       "title": "Pokój prywatny",
@@ -451,9 +455,39 @@
       "label_few": "Ruch partii: {{points}} punkty, {{digit}} w {{cell}}",
       "label_many": "Ruch partii: {{points}} punktów, {{digit}} w {{cell}}",
       "label_other": "Ruch partii: {{points}} punktu, {{digit}} w {{cell}}",
-      "formula": "Jak naliczono punkty",
-      "formulaLabel": "Jak naliczono punkty: {{line}}",
-      "none": "Brak poprawnego ruchu w tym treningu"
+      "before": "Zapełnione przed ruchem",
+      "count": {
+        "row": "w wierszu",
+        "col": "w kolumnie",
+        "box": "w kwadracie",
+        "num": "cyfry {{digit}} na planszy"
+      },
+      "filled": {
+        "row_one": "{{count}} w wierszu",
+        "row_few": "{{count}} w wierszu",
+        "row_many": "{{count}} w wierszu",
+        "row_other": "{{count}} w wierszu",
+        "col_one": "{{count}} w kolumnie",
+        "col_few": "{{count}} w kolumnie",
+        "col_many": "{{count}} w kolumnie",
+        "col_other": "{{count}} w kolumnie",
+        "box_one": "{{count}} w kwadracie",
+        "box_few": "{{count}} w kwadracie",
+        "box_many": "{{count}} w kwadracie",
+        "box_other": "{{count}} w kwadracie",
+        "num_one": "cyfra {{digit}} na planszy {{count}} raz",
+        "num_few": "cyfra {{digit}} na planszy {{count}} razy",
+        "num_many": "cyfra {{digit}} na planszy {{count}} razy",
+        "num_other": "cyfra {{digit}} na planszy {{count}} raza"
+      },
+      "countName": {
+        "row": "wiersz",
+        "col": "kolumna",
+        "box": "kwadrat",
+        "num": "cyfry {{digit}}"
+      },
+      "why": "Im puściej wokół pola, tym więcej wart jest ruch. O punktach decydują dwie najwyższe liczby: {{highest}} z pełną wagą, {{next}} z połową wagi.",
+      "none": "W tej partii nie masz ani jednego poprawnego ruchu"
     },
     "stats": {
       "time": "Czas partii",
@@ -485,6 +519,13 @@
     "actions": {
       "home": "Ekran główny",
       "newGame": "Nowa partia"
+    },
+    "again": {
+      "solo": "Od razu zaczyna kolejny trening solo, {{type}}",
+      "bot": "Od razu zaczyna kolejną partię z botem {{bot}}, {{type}}",
+      "botAny": "Od razu zaczyna kolejną partię z botem, {{type}}",
+      "ranked": "Kolejna partia rankingowa, {{type}}",
+      "friends": "Powrót do gry ze znajomymi"
     },
     "loading": "Wczytywanie wyniku…",
     "missing": "Nie znaleźliśmy tego treningu",

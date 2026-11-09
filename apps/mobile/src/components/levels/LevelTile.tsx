@@ -8,8 +8,9 @@ import { Text } from '../ui/Text';
 import { BossFrame } from './BossFrame';
 
 /**
- * A stage as a tile (components.md §19.1, §19.2): a mini 3 × 3 sudoku box with the stage number in Teko, the
- * map's node (56, the boss's 68) and the new-game row's picture (44).
+ * A stage as a tile (components.md §19.1, §19.2): a mini 3 × 3 sudoku box with the stage number in Teko: the
+ * new-game row's picture (44), the gate sheet's rows, "איך משחקים" and a stage's header (56, the boss's 68). The
+ * level map itself draws coins since 31.10.2026 (LevelCoin).
  *
  * - **played** (and any open stage): the board's light cell, its grid lines, the given's dark number;
  * - **current**: the same, and my pin at the top-start corner (P1 with ●), the one sign of "you are here" that

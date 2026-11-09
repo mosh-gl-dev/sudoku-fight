@@ -1,0 +1,75 @@
+{
+ "checks": [
+  {
+   "id": "rejoin-opponent-avatar-lost (friends kill P3, kill P1, lock, results; ranked kill; reconnect during 3-2-1)",
+   "result": "pass",
+   "evidence": "APK 16 + staging. Friends room 688690 (fast). P3 swiped from Recents (pid gone, new pid 29774), reopened at once: 'מצטרף לחדר…' and then the first board frame already shows אורי's pirate avatar and the IL flag (fix11-RF8Y30L038L-rejoinB-tile.png). P1 killed the same way (new pid 30975): its first board frame shows אחוותא's calculator avatar and flag (fix11-RF8Y60PP2XZ-rejoinA-tile.png). After the rejoin, P1 selected B2 and P3 showed the lock cell with the pirate avatar and 'בוחר B2' (fix11-RF8Y30L038L-lock.png). Played to a full board: both results 'יריב' cards show the real avatars (fix11-both-friends-results.png). The results screen has no flags anywhere, by design (no flag in screens/results). Ranked P1 vs P3: P3 killed from Recents (new pid 1435). Home flashed, then 'נכנסים למשחק' with both avatars, then the game with the pirate, flag and 1255 (fix11-RF8Y30L038L-rankedrejoin-tile.png). Reconnect during 3-2-1: P3 airplane on 0.7 s after the host pressed start, off 3.4 s later. P3's local count went on, then it held GO! ~5.5 s until Wi-Fi came back, then the board came in normally. The host had the board at once. After the reconnect, the P3 cards had both flags and showed 'מחובר' (fix11-*-cd-airplane.mp4).",
+   "qaAction": "none (no run #2 task for this is fail/partial; friends-manage-block-mid-game is already handled)"
+  },
+  {
+   "id": "go-hold-long-on-joiner (cold joiner GO!, 2nd game, sound off)",
+   "result": "fail",
+   "evidence": "Screen-recorded both phones, 100 ms steps. Game 1: P3 cold start, sound ON, joined by code, ~8+ s in the lobby. On the joiner GO! runs from 5.3 s to 6.9 s with the board at 7.0 s, so about 1.6 s. The host shows GO! 4.9–6.0 s, about 1.1–1.2 s. Game 2 (warm, same run): joiner 1.6–1.7 s (5.3→7.0), host about 1.2–1.3 s. Game 3: P3 cold start, sound OFF, ~8 s in the lobby. The joiner held GO! for about 2.1 s (5.4→7.6), the same as before the fix. Good: the cold penalty with sound ON is gone (cold = warm). No faded '1' on the board and no empty frame between GO! and the board in any game. Not good: the joiner's GO! is still well above the 0.5–1.0 s target, and with sound off a cold joiner is back to ~2.1 s. Also seen: a single blank frame (dark background, no avatars or digit) between the lobby and '3' on the joiner in 2 of 4 games (go1 2.5 s, cd-airplane 2.75 s). Reduced Motion was not checked. Files: fix11-RF8Y30L038L-go1-100ms.png, fix11-RF8Y60PP2XZ-go1-100ms.png, fix11-RF8Y30L038L-go2-100ms.png, fix11-RF8Y30L038L-go3-soundoff-100ms.png, and the matching .mp4 files.",
+   "qaAction": "none: friends-game-countdown is already ½ {handled} and its lines (3,2,1,GO! then the board, me blue ●) pass. The GO! length is reported in appBugs."
+  },
+  {
+   "id": "warp-sound-on-dim-before-overlay (first hit, sound on/off, rehearsal)",
+   "result": "fail",
+   "evidence": "Receiver P3, RM off, fresh app start, friends game. The warp from P1 was the first hit, sent more than 5 s after the board appeared. 20 ms frames. Sound ON (game 1): at 1740 ms the banner is already fully in (ring '5'), and the board already starts to tilt. There is no brown overlay and almost no dim: the board luminance goes 202 → 195 over 160 ms. The score keeps counting 11 → 10.5 → 10, but the recording has a new frame only every ~60 ms. At 1920 ms the brown overlay and the full dim pop in together at full strength, with no fade. So there are about 180 ms of banner + tilt alone (fix11-RF8Y30L038L-warp1-soundon-20ms.png, .mp4). Sound OFF (game 3, fresh start): at 1760 ms the full-screen brown overlay with waves appears alone, with no dim and no banner, and the whole frame is frozen (score stuck at 8.5) until 1840. At 1860 the dim and the fully dropped banner come together. So there are about 100 ms of overlay alone (fix11-RF8Y30L038L-warp2-soundoff-20ms.png, .mp4). Rehearsal: no visible flicker or change from 2.5 to 5 s after the board (100 ms frames, steady luminance). Not run: ink and fireworks as the first hit, a second hit, RM on, logcat.",
+   "qaAction": "none: interference-hit-warp-look is already V. The start split is reported in appBugs."
+  },
+  {
+   "id": "misc#1 results rating card visible / count (abandon, surrender, full board)",
+   "result": "pass",
+   "evidence": "A16, Hebrew, RM off, nothing touched on the results. Abandon win (P3 in airplane mode until 'ניצחת בנטישה', then 'לתוצאות'): the view glides about 2.5 s after the results open. The number 1255 is fully above the 'משחק חדש'/'צפייה חוזרת' bar and counts there 1255 → 1259 → 1261 (+6) in about 0.7 s (fix11-RF8Y60PP2XZ-rcard-abandon.mp4, -end.png). Surrender win (P3 surrendered): it glides, then 1261 → 1262 → 1265 → 1266 (+5) in view (fix11-RF8Y60PP2XZ-rcard-surrender.mp4). Full-board loss on P3 against a persona: the card is in view without a glide and counts 982 → 979 → 977 → 975 (−7) (fix11-RF8Y30L038L-rcard-fullboard.mp4). Full-board win (P1 against a persona): the card is in view without scrolling, 1275 +14, but the count was not recorded. The abandon loser's '982 → 982 · 0' is the leave guard: he left before his first move. Side effect: after the glide, the 'לבית' header button sits under the status bar and cannot be tapped (see appBugs).",
+   "qaAction": "qa.ts mark 2 ranked-duel-rating-card partial --actual-file (done): ✓1, the count in view, now seen in abandon, surrender and full-board loss. ✓2/✓3 (K=64 provisional) still need new accounts."
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "warp-start-split-apk16",
+   "title": "עיוות כפגיעה ראשונה: הבאנר וההטיה (צליל דלוק) או השכבה החומה (צליל כבוי) מופיעים 100–180ms לפני ההחשכה",
+   "severity": "minor",
+   "what": "APK 16 (1.1.0, loop-10), staging. טלפון 3 מקבל, הפחתת תנועה כבויה, הפעלה קרה, משחק חברים מהיר, טלפון 1 שולח 'עיוות' כפגיעה ראשונה (יותר מ־5 שנ' אחרי הלוח). בדקתי בהקלטת מסך, בצעדים של 20ms. צליל דלוק: ב־1740ms הבאנר כבר נכנס במלואו והלוח כבר מוטה, אבל אין שכבה חומה וכמעט אין החשכה. ב־1920ms השכבה וההחשכה קופצות יחד בעוצמה מלאה, בלי דהייה (כ־180ms). בזמן הזה יש בהקלטה פריים חדש רק כל ~60ms. צליל כבוי (הפעלה קרה, משחק חדש): ב־1760ms מופיעה רק השכבה החומה עם הגלים, בלי החשכה ובלי באנר. כל המסך קפוא (הניקוד תקוע על 8.5) עד 1840ms. ב־1860ms מגיעים ההחשכה והבאנר יחד (כ־100ms). בשני המקרים שלושת החלקים לא מתחילים יחד, וההחשכה והשכבה קופצות במקום לדעוך פנימה. ה'חזרה' (HitRehearsal) לא נראית על המסך. קבצים: qa-shots/fix11-RF8Y30L038L-warp1-soundon-20ms.png, fix11-RF8Y30L038L-warp1-soundon.mp4, fix11-RF8Y30L038L-warp2-soundoff-20ms.png, fix11-RF8Y30L038L-warp2-soundoff.mp4"
+  },
+  {
+   "id": "go-hold-joiner-still-long-apk16",
+   "title": "אצל המצטרף לחדר חברים GO! נמשך כ־1.6 שנ', וכ־2.1 שנ' בהפעלה קרה עם צליל כבוי",
+   "severity": "cosmetic",
+   "what": "APK 16, חדר חברים מהיר, טלפון 1 מארח, טלפון 3 מצטרף עם קוד וממתין כ־8 שנ' בלובי. הקלטה בשני הטלפונים, בצעדים של 100ms. אצל המצטרף GO! נשאר על המסך: בהפעלה קרה עם צליל, כ־1.6 שנ' (5.3→7.0); במשחק השני, כ־1.6–1.7 שנ'; בהפעלה קרה עם צליל כבוי, כ־2.1 שנ' (5.4→7.6). אצל המארח 1.1–1.3 שנ'. התוספת של ההפעלה הקרה עם צליל נעלמה. אבל עם צליל כבוי היא עדיין שם, וזמן הבסיס רחוק מהיעד של 0.5–1.0 שנ'. אין '1' דהוי ואין פריים ריק לפני הלוח. נוסף: ב־2 מתוך 4 משחקים הופיע אצל המצטרף פריים ריק אחד (רקע כהה, בלי אווטרים ובלי ספרה) בין הלובי ל־'3'. קבצים: qa-shots/fix11-RF8Y30L038L-go1-100ms.png, fix11-RF8Y60PP2XZ-go1-100ms.png, fix11-RF8Y30L038L-go2-100ms.png, fix11-RF8Y30L038L-go3-soundoff-100ms.png (וקובצי ה־mp4 התואמים)"
+  },
+  {
+   "id": "results-home-under-statusbar",
+   "title": "אחרי הגלישה האוטומטית בתוצאות, הכפתור 'לבית' נעלם מתחת לשורת הסטטוס ואי אפשר ללחוץ עליו",
+   "severity": "minor",
+   "what": "APK 16, מסך תוצאות של משחק מדורג (ניצחון בנטישה, ניצחון או הפסד בכניעה). כ־2.5 שנ' אחרי שהתוצאות נפתחות, המסך גולש למעלה כדי להראות את כרטיס הדירוג (התיקון של misc#1). הכותרת 'לבית' / 'משחק מדורג · מהיר · 2 שחקנים' עולה מעל הקצה (uiautomator: results-home @885,27, בתוך שורת הסטטוס). הקשה במקום שלה לא עושה כלום, ובצילום המסך הכפתור לא נראה. רק אחרי גלילה ידנית חזרה (results-home @885,185) אפשר ללחוץ עליו. קבצים: qa-shots/fix11-RF8Y60PP2XZ-home-under-statusbar.png, fix11-RF8Y60PP2XZ-rcard-abandon-end.png"
+  },
+  {
+   "id": "friends-room-type-not-remembered",
+   "title": "חדר חברים חדש נפתח שוב ב'קשה' אחרי שבחרתי 'מהיר' בחדר הקודם",
+   "severity": "minor",
+   "what": "APK 16, טלפון 1. 'צור חדר' פתח חדר עם 'קשה · 1 מתוך 4'. בחרתי 'מהיר' ושיחקנו עד הסוף. אחר כך: לבית ← שחק ← 'צור חדר', והחדר החדש (903345) נפתח שוב עם 'קשה · 1 מתוך 4' ולא עם 'מהיר'. ב־APK 14 נרשם 'מהיר (ברירת המחדל, נזכר)'. ראיתי את זה פעם אחת, ולא בדקתי יותר."
+  },
+  {
+   "id": "connection-error-english-chip",
+   "title": "במסך 'שגיאת חיבור' מוצג השבב 'network' באנגלית",
+   "severity": "cosmetic",
+   "what": "APK 16, טלפון 3 במשחק מדורג. מצב טיסה כ־80 שנ' (נטישה). אחרי שמצב הטיסה כובה וה־Wi-Fi חזר (ping תקין), המשחק נשאר עוד כ־2 דקות על 'ללא חיבור', ואז עבר למסך 'שגיאת חיבור · החיבור לשרת המשחק אבד ולא הצלחנו לחזור אליו.' עם השבב '● network' באנגלית, בתוך ממשק עברי. אולי זה קוד שגיאה מכוון. קובץ: qa-shots/fix11-RF8Y30L038L-after-airplane.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "ranked-duel-rating-card",
+   "issue": "✓2 ו־✓3 (1200 → 1232/1168 עם K=64, ושורת 'דירוג זמני') אפשר לבדוק רק עם שני חשבונות חדשים, אז המשימה תישאר partial ב־Claude runs. כדאי לפצל את ✓1 (הספירה בתוך המסך) למשימה משלו."
+  },
+  {
+   "taskId": "ranked-duel-rating-card",
+   "issue": "עם הבוט הסמוי, 'משחק חדש' בשני הטלפונים באותו זמן לא תמיד מזווג אותם זה לזה. ב־2 מתוך 4 ניסיונות כל טלפון קיבל פרסונה. רק 'מצא יריב' משני הטלפונים באותו זמן זיווג כל פעם. בנוסף, ניצחון בלוח מלא מול פרסונה כמעט לא אפשרי: הבוט הגיע ל־48 ול־77.5 נק' לפני המהלך הראשון."
+  },
+  {
+   "taskId": "friends-game-countdown",
+   "issue": "השורות במשימה עוברות, אבל המשך של GO! לא מוגדר בה. היעד מ־loop 10 (0.5–1.0 שנ' אצל המצטרף) לא נבדק בשום משימה בקטלוג."
+  }
+ ],
+ "phoneState": "Both phones are on Home in Hebrew (system locale he-IL, app in Hebrew), with APK 16 (1.1.0). They were relaunched after adb.ts reset: font scale 1, animations 1, colour correction off, airplane mode off. Phone 3's in-app sound was turned back ON, and Reduced Motion is unchanged (off). No open rooms or games. The temporary recordings in /sdcard were deleted. Ratings changed during the test: אורי fast 1255 → 1266; אחוותא fast 982 → 965. On phone 3, one Recents swipe (the first one) may have closed another app's card from the Recents list. Evidence files: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/fix11-*. Frame tools: C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/mont.py, lum.cjs, mv.sh."
+}

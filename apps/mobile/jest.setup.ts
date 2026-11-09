@@ -11,6 +11,7 @@ jest.mock('expo-sqlite/kv-store', () => {
     removeItem: jest.fn(async (k: string) => void store.delete(k)),
     getItemSync: (k: string) => store.get(k) ?? null,
     setItemSync: (k: string, v: string) => void store.set(k, v),
+    removeItemSync: (k: string) => store.delete(k),
   };
   return { __esModule: true, default: api, Storage: api };
 });
@@ -35,6 +36,12 @@ jest.mock('react-native-svg', () => {
   const actual = jest.requireActual<Record<string, unknown>>('react-native-svg');
   const { createElement } = jest.requireActual<typeof import('react')>('react');
   return { ...actual, __esModule: true, SvgXml: (props: object) => createElement('SvgXml', props) };
+});
+// The avatars draw their SvgXml through SvgMarkup (its markup parsed once): the same host element.
+jest.mock('./src/avatars/svgMarkup', () => {
+  const actual = jest.requireActual<Record<string, unknown>>('./src/avatars/svgMarkup');
+  const { createElement } = jest.requireActual<typeof import('react')>('react');
+  return { ...actual, SvgMarkup: (props: object) => createElement('SvgXml', props) };
 });
 
 // Rendering whole screens takes seconds per test (3–4 s for a game screen while every core is busy): Jest's 5 s

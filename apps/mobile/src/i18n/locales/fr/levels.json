@@ -327,6 +327,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "la porte en demande {{need}}",
     "chapterOpen": "la porte est ouverte",
+    "chapterNeedSentence": "La porte en demande {{need}}",
+    "chapterOpenSentence": "La porte est ouverte",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Ce chapitre : {{stars}} étoile sur {{max}}. {{gate}}",
     "chapterLine_many": "Ce chapitre : {{stars}} d’étoiles sur {{max}}. {{gate}}",
@@ -379,6 +381,8 @@
     "button": "Quitter l’étape",
     "title": "Quitter l’étape ?",
     "body": "Tu auras 0 étoile, et l’étape suivante s’ouvrira.",
+    "bodyLocked": "Tu auras 0 étoile, et l’étape suivante restera verrouillée.",
+    "bodyLast": "Tu auras 0 étoile.",
     "confirm": "Quitter",
     "cancel": "Continuer à jouer"
   },

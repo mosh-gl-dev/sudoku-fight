@@ -264,7 +264,8 @@ describe('the boss’s card: its node, what is harder, the gate at "22/20"', () 
       'how-to-play-trait-faster',
       hidden,
     );
-    expect(chip).toHaveTextContent('Pip מהיר ב־⁦10%⁩');
+    // B27: an RLM first keeps the line right to left (it starts with the bot's Latin name).
+    expect(chip).toHaveTextContent('‏Pip מהיר ב־⁦10%⁩');
     // The gate: enough stars, the boss not played yet.
     const gate = screen.getByTestId('how-to-play-panel-3');
     expect(within(gate).getByTestId('gate-2-count', hidden)).toHaveTextContent('⁦22/20⁩');

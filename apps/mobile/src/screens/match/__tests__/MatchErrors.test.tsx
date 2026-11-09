@@ -1,6 +1,7 @@
 import { ManualClock, ManualScheduler } from '@sudoku-fight/engine';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+import { ltr } from '../../../components/player/format';
 import { MatchmakingClient, MatchmakingFailure } from '../../../net/matchmaking';
 import { FakeMatchEntry, FakeMatchmaking } from '../../../net/testing/fakeMatchmaking';
 import { type Setup, setUp } from '../../game/connection/testing/setup';
@@ -41,6 +42,7 @@ async function show(lang: 'he' | 'en' = 'he') {
     onVerifyEmail: jest.fn(),
     onHome: jest.fn(),
     onSuspended: jest.fn(),
+    onBackToGame: jest.fn(),
   };
   await render(
     <MatchScreen
@@ -79,7 +81,9 @@ describe('matchmaking errors (stage 13)', () => {
     });
     expect(title()).toHaveTextContent('אין חיבור לשרת');
     expect(body()).toHaveTextContent('לא הצלחנו להגיע לשרת המשחק. בדוק את החיבור ונסה שוב.');
-    expect(code()).toHaveAccessibleName(/^קוד שגיאה: network/);
+    // A code, not the English word 'network' in the Hebrew text, and left to right (connection-error-english-chip).
+    expect(code()).toHaveAccessibleName(`קוד שגיאה: ${ltr('ERR_NETWORK')}`);
+    expect(code()).toHaveTextContent(ltr('ERR_NETWORK'));
     expect(env.announced()).toContainEqual(expect.stringMatching(/^אין חיבור לשרת/));
     mm.offline = false;
     await fireEvent.press(screen.getByRole('button', { name: 'חפש שוב' }));
@@ -92,7 +96,7 @@ describe('matchmaking errors (stage 13)', () => {
     await server(() => mm.room.cut(1006));
     expect(title()).toHaveTextContent('אין חיבור לשרת');
     expect(body()).toHaveTextContent('החיבור לשרת המשחק אבד באמצע החיפוש.');
-    expect(code()).toHaveTextContent('lost-1006');
+    expect(code()).toHaveTextContent(ltr('ERR_LOST · 1006'));
     expect(screen.getByRole('button', { name: 'חפש שוב' })).toBeOnTheScreen();
   });
 
@@ -103,7 +107,7 @@ describe('matchmaking errors (stage 13)', () => {
     await server(() => mm.matchCancelled({ requeued: false }));
     expect(title()).toHaveTextContent('החיפוש נעצר');
     expect(body()).toHaveTextContent('לא הצלחנו להתחבר למשחק בזמן, ולכן הוא בוטל.');
-    expect(code()).toHaveTextContent('noShow');
+    expect(code()).toHaveTextContent(ltr('ERR_NO_SHOW'));
   });
 
   it('already searching (or playing) on another device; a closed queue: "חפש שוב" may help later', async () => {
@@ -113,8 +117,24 @@ describe('matchmaking errors (stage 13)', () => {
     expect(screen.getByRole('button', { name: 'חפש שוב' })).toBeOnTheScreen();
     await refuse(FakeMatchmaking.refusal('queueClosed'));
     expect(body()).toHaveTextContent('התור הזה עוד לא פתוח.');
-    expect(code()).toHaveTextContent('queueClosed-4215');
+    expect(code()).toHaveTextContent(ltr('ERR_QUEUE_CLOSED · 4215'));
     expect(screen.getByRole('button', { name: 'חפש שוב' })).toBeOnTheScreen();
+  });
+
+  it('alreadyQueued over my ranked game still running (the server names its room): "חזרה למשחק" goes back in', async () => {
+    // QA density-change-orphans-ranked-game: the game ran on with no screen; another search can't get past it.
+    const { refuse, handlers } = await show();
+    await refuse(
+      new MatchmakingFailure(
+        'alreadyQueued',
+        'alreadyQueued: this account is in a ranked game that has not ended (room Xy12ab)',
+        526,
+      ),
+    );
+    expect(body()).toHaveTextContent('כבר יש לך חיפוש או משחק מדורג פעיל, אולי במכשיר אחר.');
+    expect(screen.queryByRole('button', { name: 'חפש שוב' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'חזרה למשחק' }));
+    expect(handlers.onBackToGame).toHaveBeenCalledWith('Xy12ab');
   });
 
   it('signed out, or an unknown queue: no "חפש שוב"; "עבור לאימון" is the one primary', async () => {
@@ -122,7 +142,7 @@ describe('matchmaking errors (stage 13)', () => {
     await refuse(new MatchmakingFailure('signedOut', 'Ranked games need a signed-in account'));
     expect(title()).toHaveTextContent('החיפוש נעצר');
     expect(body()).toHaveTextContent('צריך להתחבר לחשבון כדי לשחק במדורג.');
-    expect(code()).toHaveTextContent('signedOut');
+    expect(code()).toHaveTextContent(ltr('ERR_SIGNED_OUT'));
     expect(screen.queryByRole('button', { name: 'חפש שוב' })).toBeNull();
     // The gold primary carries its hard shadow.
     expect(screen.getByTestId('match-error-practice-shadow')).toBeOnTheScreen();
@@ -137,7 +157,7 @@ describe('matchmaking errors (stage 13)', () => {
     expect(body()).toHaveTextContent(
       'החשבון שלך מושעה, ולכן אין משחקים מדורגים כרגע. אימון לבד או מול בוט עדיין עובד.',
     );
-    expect(code()).toHaveTextContent('suspended-4215');
+    expect(code()).toHaveTextContent(ltr('ERR_SUSPENDED · 4215'));
     expect(screen.queryByRole('button', { name: 'חפש שוב' })).toBeNull();
     expect(screen.getByTestId('match-error-practice-shadow')).toBeOnTheScreen();
     expect(handlers.onSuspended).toHaveBeenCalledTimes(1);
@@ -161,7 +181,7 @@ describe('matchmaking errors (stage 13)', () => {
     expect(body()).toHaveTextContent(
       'משחק מדורג דורש מייל מאומת, והמייל שלך עוד לא מאומת אצלנו. אם כבר פתחת את קישור האימות, לחץ "אימתתי" במסך הבא.',
     );
-    expect(code()).toHaveTextContent('emailNotVerified-4215');
+    expect(code()).toHaveTextContent(ltr('ERR_EMAIL_NOT_VERIFIED · 4215'));
     // Another search can't help before the email is verified: "אמת את המייל" in place of "חפש שוב".
     expect(screen.queryByRole('button', { name: 'חפש שוב' })).toBeNull();
     expect(screen.getByTestId('match-error-verify-shadow')).toBeOnTheScreen();
@@ -192,7 +212,7 @@ describe('matchmaking errors (stage 13)', () => {
     expect(body()).toHaveTextContent(
       "We couldn't reach the game server. Check your connection and try again.",
     );
-    expect(code()).toHaveAccessibleName(/^Error code: network/);
+    expect(code()).toHaveAccessibleName(`Error code: ${ltr('ERR_NETWORK')}`);
     mm.offline = false;
     await act(async () => {
       await client.retry();

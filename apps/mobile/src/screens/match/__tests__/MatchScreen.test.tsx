@@ -1,15 +1,26 @@
 import { ManualClock, ManualScheduler } from '@sudoku-fight/engine';
 import type { MatchPlayer, QueueKey } from '@sudoku-fight/protocol';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { BackHandler } from 'react-native';
+import { useState } from 'react';
+import { AppState, BackHandler, Platform } from 'react-native';
 
+import { drawnAvatarId, type RenderedNode } from '../../../avatars/testing/avatarTesting';
+import { ltr } from '../../../components/player/format';
+import { afterFrames, RETIRE_MS } from '../../../components/ui/retire';
 import { MatchmakingClient } from '../../../net/matchmaking';
 import { FakeMatchEntry, FakeMatchmaking, MATCH_PLAYERS } from '../../../net/testing/fakeMatchmaking';
 import { cue } from '../../../services/feedback';
+import { latestRootOnly, resetLatestRootForTests } from '../../../services/latestRoot';
 import { color } from '../../../theme';
+import { motion } from '../../../theme/motion';
+import { ANDROID_FADE_MS } from '../../../theme/transitions';
 import { FALLBACK_ACTIONS_MS } from '../../FlowFallback';
-import { iso, type Setup, setUp, styleOf, wait } from '../../game/connection/testing/setup';
-import { MatchScreen } from '../MatchScreen';
+import { hidden, iso, type Setup, setUp, styleOf, wait } from '../../game/connection/testing/setup';
+import { FoundView } from '../FoundView';
+import { handedGoCover } from '../GoCover';
+import type { MatchScreenModel } from '../matchModel';
+import { goHoldMs, MatchScreen, SEARCH_REOPEN_MS } from '../MatchScreen';
+import { metrics } from '../metrics';
 
 /**
  * The match screens (work plan stage 9, spec §10; Match-Search, Match-Found, Match-Countdown, Match-Timeout)
@@ -22,8 +33,55 @@ jest.mock(
   () => jest.requireActual<{ default: object }>('react-native-safe-area-context/jest/mock').default,
 );
 jest.mock('../../../services/feedback', () => ({ cue: jest.fn() }));
+// The UI thread's frames, as the screen waits for them (requestAnimationFrame): real ones, unless a test holds them.
+jest.mock('../../../components/ui/retire', () => {
+  const actual = jest.requireActual<typeof import('../../../components/ui/retire')>(
+    '../../../components/ui/retire',
+  );
+  return { ...actual, afterFrames: jest.fn(actual.afterFrames) };
+});
 
 const cues = jest.mocked(cue);
+const frames = jest.mocked(afterFrames);
+const realFrames = jest.requireActual<typeof import('../../../components/ui/retire')>(
+  '../../../components/ui/retire',
+).afterFrames;
+
+/**
+ * The UI thread busy drawing (QA B37-still: a Galaxy A16 took up to 1.5 s over the count's first frame): no frame
+ * comes until `release()`, while the JS clock and its ticks go on.
+ */
+function holdFrames() {
+  const held: (() => void)[] = [];
+  frames.mockImplementation((_count, run) => {
+    held.push(run);
+    return () => {
+      const k = held.indexOf(run);
+      if (k >= 0) held.splice(k, 1);
+    };
+  });
+  return {
+    release: async () => {
+      frames.mockImplementation(realFrames);
+      await act(async () => held.splice(0).forEach((run) => run()));
+    },
+  };
+}
+/** GO! before the board (motion tokens `sequence.matchFound`: the board at GO + 400). */
+const GO_HOLD_MS = motion.sequence.matchFound.boardRevealAt - motion.sequence.matchFound.goAt;
+
+/** A table of four: the two of MATCH_PLAYERS and two more. */
+const FOUR_PLAYERS: MatchPlayer[] = [
+  ...MATCH_PLAYERS,
+  { id: 'p3', name: 'Ziv', avatarId: 'omer', country: 'FR', rating: 1250, provisional: false },
+  { id: 'p4', name: 'Lea', avatarId: 'sudoku-board', country: 'US', rating: 1190, provisional: false },
+];
+
+/** Every SvgXml under an element, the hidden stacks an avatar keeps a while (LAYERS_RETIRE_MS) included. */
+const svgsIn = (el: RenderedNode): RenderedNode[] => [
+  ...(el.type === 'SvgXml' ? [el] : []),
+  ...el.children.flatMap((c) => (typeof c === 'string' ? [] : svgsIn(c))),
+];
 
 /** The players of a 2-player table in the order they are drawn: the VS tiles (`seat`) or the countdown's (`mini`). */
 const seatIds = (prefix: 'seat' | 'mini') =>
@@ -38,6 +96,7 @@ afterEach(() => {
   backs.mockRestore();
   env.restore();
   cues.mockClear();
+  frames.mockImplementation(realFrames);
 });
 
 async function show(
@@ -178,6 +237,41 @@ describe('Searching (Match-Search)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'לבית' }));
     expect(handlers.onHome).toHaveBeenCalledTimes(1);
   });
+
+  it('a match that fell through brings a new search view, not the one kept under the VS: its entrance, and what it says (review of QA loop 3)', async () => {
+    const { mm, server } = await show();
+    await server(() => mm.searching());
+    const before = screen.getByTestId('match-search');
+    await server(() => mm.found());
+    await server(() => mm.matchCancelled({ requeued: true }));
+    await server(() => mm.searching({ elapsedMs: 8000, requeued: true }));
+    // A new one, as before the stage kept the search: its own entrance and its own line.
+    expect(screen.getByTestId('match-search')).not.toBe(before);
+    expect(screen.getAllByTestId('match-search', hidden)).toHaveLength(1);
+    expect(env.announced().at(-1)).toBe(
+      'השחקן השני לא התחבר בזמן. חזרת לראש התור. מחפש יריב בטווח דירוג 1237 עד 1337',
+    );
+  });
+
+  it.each(['off', 'on'] as const)(
+    'the search the screen opens on is there from its first frame (the stack fades it in); one after a fallen match fades in (QA fixcheck APK 13), reduced motion %s',
+    async (reduceMotion) => {
+      // Results "משחק חדש" → search, 1 of 3: the column's own fade from 0 started late, the stack's fade had
+      // already taken the results away, and only "ביטול חיפוש" (outside the column) was on screen.
+      const { mm, server } = await show('he', reduceMotion);
+      expect(screen.getByTestId('match-search-column')).toHaveAnimatedStyle({ opacity: 1 });
+      await server(() => mm.searching());
+      expect(screen.getByTestId('match-search-column')).toHaveAnimatedStyle({ opacity: 1 });
+
+      await server(() => mm.found());
+      await server(() => mm.matchCancelled({ requeued: true }));
+      await server(() => mm.searching({ elapsedMs: 8000, requeued: true }));
+      // A change inside the screen: the new search view has its own entrance.
+      expect(screen.getByTestId('match-search-column')).toHaveAnimatedStyle({ opacity: 0 });
+      await wait(motion.duration.stateChange + 50);
+      expect(screen.getByTestId('match-search-column')).toHaveAnimatedStyle({ opacity: 1 });
+    },
+  );
 
   it('a match that fell through: back at the head of the queue, and the screen says so', async () => {
     const { mm, server } = await show();
@@ -472,9 +566,405 @@ describe('Found (Match-Found) and 3-2-1-GO (Match-Countdown)', () => {
     expect(handlers.onPlay).not.toHaveBeenCalled();
 
     await server(() => entries[0]!.host.set({ status: 'live', hasGame: true }));
+    // GO! holds 400 ms before the board (motion.md `go`), then stays on screen while the game takes over.
+    expect(handlers.onPlay).not.toHaveBeenCalled();
+    await advance(GO_HOLD_MS, 100);
     expect(handlers.onPlay).toHaveBeenCalledTimes(1);
-    // GO! stays on screen while the game takes over.
     expect(text()).toHaveTextContent('GO!');
+    // GO! as drawn, handed to the game screen before it opens, to stay over the game until it is drawn (GoCover).
+    expect(handedGoCover()).toMatchObject({
+      kind: 'countdown',
+      step: 'go',
+      seats: [{ id: 'me' }, { id: 'opp' }],
+    });
+  });
+
+  it('a count shown late runs its digits faster: 3 · 2 · 1 all seen, GO at the server’s time (QA B37)', async () => {
+    const { mm, server, advance, entries, handlers } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    cues.mockClear();
+    // The count reaches the screen with 1.8 s left (its message late, or the phone busy): three digits of 600 ms.
+    await server(() => void mm.countdown(1800));
+    const text = () => screen.getByTestId('match-countdown-step-text');
+    expect(text()).toHaveTextContent('3');
+    await advance(600, 100);
+    expect(text()).toHaveTextContent('2');
+    await advance(600, 100);
+    expect(text()).toHaveTextContent('1');
+    await advance(500, 100);
+    expect(text()).toHaveTextContent('1');
+    await advance(100, 100);
+    expect(text()).toHaveTextContent('GO!');
+    expect(cues.mock.calls.map((c) => c[0])).toEqual([
+      'countdownBeat',
+      'countdownBeat',
+      'countdownBeat',
+      'go',
+    ]);
+    // The board comes at once after GO: GO! is seen first, and the game opens goHoldMs after GO! was drawn
+    // (QA B37-still); the game screen's own fade in over GO! makes up the rest of its 400 ms (motion.md `go`).
+    await advance(100, 100);
+    await server(() => entries[0]!.host.set({ status: 'live', hasGame: true }));
+    expect(handlers.onPlay).not.toHaveBeenCalled();
+    await advance(200, 100);
+    expect(handlers.onPlay).toHaveBeenCalledTimes(1);
+  });
+
+  it('GO! holds 400 ms less the game screen’s fade over it as each platform runs it, from its first drawn frame (QA B37-still)', () => {
+    // iOS: the flow's own fade, 240 ms (reduced motion 200).
+    expect(goHoldMs(false, 'ios')).toBe(GO_HOLD_MS - motion.duration.stateChange);
+    expect(goHoldMs(true, 'ios')).toBe(GO_HOLD_MS - motion.duration.reducedFade);
+    expect([goHoldMs(false, 'ios'), goHoldMs(true, 'ios')]).toEqual([160, 200]);
+    // Android: react-native-screens fades in its own 150 ms, whatever the duration asked.
+    expect(goHoldMs(false, 'android')).toBe(GO_HOLD_MS - ANDROID_FADE_MS);
+    expect(goHoldMs(true, 'android')).toBe(GO_HOLD_MS - ANDROID_FADE_MS);
+    expect(goHoldMs(false, 'android')).toBe(250);
+    // The screen's own platform by default (Jest's is iOS).
+    expect(goHoldMs(false)).toBe(goHoldMs(false, Platform.OS));
+  });
+
+  it('on Android the game opens 250 ms after GO! was drawn (its 150 ms fade makes up the 400)', async () => {
+    const os = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      const { mm, server, advance, entries, handlers } = await show();
+      await server(() => mm.searching());
+      await server(() => mm.found());
+      await server(() => mm.ready(['me', 'opp']));
+      await server(() => void mm.countdown(3000));
+      await advance(2700, 100);
+      await server(() => entries[0]!.host.set({ status: 'live', hasGame: true }));
+      expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('GO!');
+      // GO! drawn a couple of frames on; then 250 ms, not iOS's 160.
+      await advance(200, 100);
+      expect(handlers.onPlay).not.toHaveBeenCalled();
+      await advance(200, 100);
+      expect(handlers.onPlay).toHaveBeenCalledTimes(1);
+    } finally {
+      Platform.OS = os;
+    }
+  });
+
+  it.each(['off', 'on'] as const)(
+    'a count first drawn late (the phone still drawing it) shows 3 first, then 3 · 2 · 1 evenly to GO (QA B37-still; reduced motion %s)',
+    async (reduceMotion) => {
+      const { mm, server, advance } = await show('he', reduceMotion);
+      await server(() => mm.searching());
+      await server(() => mm.found());
+      await server(() => mm.ready(['me', 'opp']));
+      cues.mockClear();
+      // The count's first frame takes 1.1 s to draw; the JS clock and its ticks go on meanwhile.
+      const ui = holdFrames();
+      await server(() => void mm.countdown(3000));
+      const text = () => screen.getByTestId('match-countdown-step-text');
+      await advance(1100, 100);
+      // Nothing seen yet: the first digit waits for its frame instead of moving on to "2", its beat too.
+      expect(text()).toHaveTextContent('3');
+      expect(cues).not.toHaveBeenCalled();
+      await ui.release();
+      // Drawn with 1.9 s left: three digits of about 633 ms each, GO still at the server's time.
+      expect(text()).toHaveTextContent('3');
+      expect(cues.mock.calls.map((c) => c[0])).toEqual(['countdownBeat']);
+      await advance(600, 100);
+      expect(text()).toHaveTextContent('3');
+      await advance(100, 100);
+      expect(text()).toHaveTextContent('2');
+      await advance(600, 100);
+      expect(text()).toHaveTextContent('1');
+      await advance(500, 100);
+      expect(text()).toHaveTextContent('1');
+      await advance(100, 100);
+      expect(text()).toHaveTextContent('GO!');
+      expect(cues.mock.calls.map((c) => c[0])).toEqual([
+        'countdownBeat',
+        'countdownBeat',
+        'countdownBeat',
+        'go',
+      ]);
+    },
+  );
+
+  it('a frame or two after the render is no late draw: the count keeps the server’s whole seconds', async () => {
+    const { mm, server, advance } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    const ui = holdFrames();
+    await server(() => void mm.countdown(3000));
+    await advance(100, 100);
+    await ui.release();
+    const text = () => screen.getByTestId('match-countdown-step-text');
+    await advance(800, 100);
+    expect(text()).toHaveTextContent('3');
+    await advance(100, 100);
+    expect(text()).toHaveTextContent('2');
+    await advance(1000, 100);
+    expect(text()).toHaveTextContent('1');
+  });
+
+  it.each(['off', 'on'] as const)(
+    'the VS fades in over the search, the same search view fading out under it: no empty frame between them (QA loop 3; reduced motion %s)',
+    async (reduceMotion) => {
+      const { mm, server, advance } = await show('he', reduceMotion);
+      await server(() => mm.searching());
+      const search = screen.getByTestId('match-search');
+      await server(() => mm.found());
+      // The commit that mounts the VS (its entrance at opacity 0) still draws the search: the same view, not deleted.
+      expect(screen.getByTestId('match-found')).toBeOnTheScreen();
+      expect(screen.getByTestId('match-search', hidden)).toBe(search);
+      expect(screen.getByTestId('match-stage-search', hidden)).not.toHaveAnimatedStyle({ opacity: 0 });
+      // Out of reach of touch and screen readers from the start.
+      expect(screen.queryByTestId('match-search')).not.toBeOnTheScreen();
+      expect(screen.getByTestId('match-stage-search', hidden).props.pointerEvents).toBe('none');
+      await advance(300, 100);
+      expect(screen.getByTestId('match-stage-search', hidden)).toHaveAnimatedStyle({ opacity: 0 });
+      // Unseen, it stands still (its radar's sweep stops), and goes once Reanimated let go of it (retire.ts).
+      expect(screen.getByTestId('match-search-radar-arc', hidden)).toHaveAnimatedStyle({
+        transform: [{ rotate: '0deg' }],
+      });
+      expect(screen.getByTestId('match-search', hidden)).toBe(search);
+      await advance(RETIRE_MS, 250);
+      expect(screen.queryByTestId('match-search', hidden)).toBeNull();
+    },
+  );
+
+  it('the count gets ready unseen behind the VS once its slam has swung, before the badges pop, and the same view then counts', async () => {
+    const { mm, server, advance } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    expect(screen.queryByTestId('match-countdown', hidden)).toBeNull();
+    // Not as the VS slams in: the count's first draw would hold the UI thread through the slam (QA K3 review).
+    await advance(200, 100);
+    expect(screen.queryByTestId('match-countdown', hidden)).toBeNull();
+    // The VS drawn and its slam swung (metrics.vs.settleMs): then the count's players and board, behind it, before
+    // the badges and the nod they bring (QA K3: the count's first draw held the UI thread through the nod).
+    await advance(200, 100);
+    expect(screen.queryByTestId('seat-me-ready')).not.toBeOnTheScreen();
+    const count = screen.getByTestId('match-countdown', hidden);
+    expect(screen.queryByTestId('match-countdown')).not.toBeOnTheScreen();
+    expect(screen.getByTestId('match-stage-count', hidden)).toHaveAnimatedStyle({ opacity: 0 });
+    expect(screen.getByTestId('mini-opp', hidden)).toBeTruthy();
+    // No digit yet (each slams in as it is seen), and nothing said.
+    expect(screen.queryByTestId('match-countdown-step', hidden)).toBeNull();
+    expect(env.announced()).not.toContain('המשחק מתחיל בעוד 3 שניות');
+
+    await server(() => void mm.countdown(3000));
+    expect(screen.getByTestId('match-countdown')).toBe(count);
+    expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('3');
+    expect(env.announced().at(-1)).toBe('המשחק מתחיל בעוד 3 שניות');
+    await advance(300, 100);
+    expect(screen.getByTestId('match-stage-count')).toHaveAnimatedStyle({ opacity: 1 });
+  });
+
+  it('the VS stays under the count, unseen and still, until the screen goes: nothing it moved goes as the count is drawn (docs/PERF.md B14/B32)', async () => {
+    const { mm, server, advance, entries, handlers } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    await advance(900, 100);
+    const vs = screen.getByTestId('match-found');
+    await server(() => void mm.countdown(3000));
+    // Hidden from sight, touch and screen readers, and faded out; the same view, not a new one.
+    expect(screen.queryByTestId('match-found')).not.toBeOnTheScreen();
+    expect(screen.getByTestId('match-found', hidden)).toBe(vs);
+    await advance(300, 100);
+    expect(screen.getByTestId('match-stage-vs', hidden)).toHaveAnimatedStyle({ opacity: 0 });
+    expect(screen.getByTestId('match-stage-vs', hidden).props.pointerEvents).toBe('none');
+    await advance(2800, 100);
+    await server(() => entries[0]!.host.set({ status: 'live', hasGame: true }));
+    await advance(GO_HOLD_MS, 100);
+    expect(handlers.onPlay).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('match-found', hidden)).toBe(vs);
+  });
+
+  it.each([
+    ['2 players', 'normal-2p', MATCH_PLAYERS],
+    ['4 players', 'fast-4p', FOUR_PLAYERS],
+  ] as const)(
+    'the VS under the count is frozen: a nod under way never ends in a new picture there (%s; docs/PERF.md B14/B32)',
+    async (_, queueKey, players) => {
+      const { mm, server, advance } = await show('he', 'off', queueKey);
+      await server(() => mm.searching());
+      await server(() => mm.found({ players: [...players] }));
+      await server(() => mm.ready(players.map((p) => p.id)));
+      // The badges pop at 800 ms, each avatar nodding as its "מוכן" shows: its moving layers, no still picture.
+      await advance(900, 100);
+      await server(() => void mm.countdown(3000));
+      const vs = screen.getByTestId('match-found', hidden);
+      for (const p of players)
+        expect(
+          svgsIn(screen.getByTestId(`seat-${p.id}-avatar`, hidden)).some(
+            (x) => drawnAvatarId(x.props.xml) === null,
+          ),
+        ).toBe(true);
+      const before = svgsIn(vs);
+      const xmls = before.map((x) => x.props.xml);
+      // Long past the nod's end (AvatarArt's timer would swap it for a new still picture) and well into the count.
+      await advance(2000, 100);
+      expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('1');
+      const after = svgsIn(screen.getByTestId('match-found', hidden));
+      expect(after).toHaveLength(before.length);
+      after.forEach((x, i) => {
+        expect(x).toBe(before[i]);
+        expect(x.props.xml).toBe(xmls[i]);
+      });
+    },
+  );
+
+  it('the "מוכן" badges pop 800 ms after "found", not after the VS mounted: a VS drawn late still shows them (QA B43)', async () => {
+    env = await setUp();
+    backs = jest.spyOn(BackHandler, 'addEventListener');
+    const clock = new ManualClock(1_000_000);
+    const foundAt = clock.now();
+    const seat = (id: 'me' | 'opp', colorIndex: number) => ({
+      id,
+      name: id === 'me' ? 'Moshe' : 'NinaVolt',
+      avatarId: 'fox' as const,
+      country: 'IL',
+      rating: 1250,
+      provisional: false,
+      isMe: id === 'me',
+      colorIndex,
+      ready: true,
+    });
+    const model: Extract<MatchScreenModel, { kind: 'found' }> = {
+      kind: 'found',
+      header: { gameType: 'fast', players: 2 },
+      seats: [seat('me', 0), seat('opp', 1)],
+      readyCount: 2,
+      allReady: true,
+      rematch: false,
+    };
+    // The phone took 500 ms to draw the VS after "found" (the Galaxy A16 of QA run 2).
+    clock.advance(500);
+    const settled = jest.fn();
+    await render(
+      <FoundView model={model} reduce={false} badgesAt={foundAt + 800} clock={clock} onSettled={settled} />,
+    );
+    expect(screen.queryByTestId('seat-me-ready')).not.toBeOnTheScreen();
+    await wait(299);
+    expect(screen.queryByTestId('seat-opp-ready')).not.toBeOnTheScreen();
+    // The VS is drawn: settled now, before the badges and their nod (QA K3).
+    expect(settled).toHaveBeenCalledTimes(1);
+    await wait(1);
+    expect(screen.getByTestId('seat-me-ready')).toHaveTextContent('מוכן');
+    expect(screen.getByTestId('seat-opp-ready')).toHaveTextContent('מוכן');
+    // Settled once the VS was drawn, long before the badges (QA K3): the count got ready behind it then.
+    expect(settled).toHaveBeenCalledTimes(1);
+    await wait(100);
+    expect(settled).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['with the count, in the same batch', 'mm'],
+    ['after the game room’s count, on the other connection', 'host'],
+  ] as const)(
+    'the last "ready" %s: the VS under the count says everyone is ready, never "מתחבר…" (QA K3, B43 1 of 5)',
+    async (_, via) => {
+      const { mm, server, advance, entries } = await show('he', 'on');
+      await server(() => mm.searching());
+      await server(() => mm.found());
+      await server(() => mm.ready(['me']));
+      await advance(1100, 100);
+      // The whole VS: the opponent still connecting, as they were.
+      expect(screen.getByTestId('seat-opp-connecting')).toHaveTextContent('מתחבר…');
+      expect(screen.getByTestId('match-found-count')).toHaveTextContent('1/2');
+      // The opponent gets in at the VS's very end: the server counts at once.
+      if (via === 'mm') {
+        await server(() => {
+          mm.ready(['me', 'opp']);
+          void mm.countdown(3000);
+        });
+      } else {
+        entries[0]!.host.sync.synced = true;
+        await server(() => entries[0]!.host.set({ startsAt: entries[0]!.host.serverNow() + 3000 }));
+      }
+      expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('3');
+      // The VS fading out under the count: everyone ready, 2/2.
+      expect(screen.queryByTestId('seat-opp-connecting', hidden)).toBeNull();
+      expect(screen.getByTestId('seat-opp-ready', hidden)).toHaveTextContent('מוכן');
+      expect(screen.getByTestId('match-found-count', hidden)).toHaveTextContent('2/2');
+      expect(screen.getByTestId('match-found-status', hidden)).toHaveTextContent(/^כל השחקנים מוכנים/);
+      if (via === 'host') await server(() => mm.ready(['me', 'opp']));
+      expect(screen.getByTestId('seat-opp-ready', hidden)).toBeTruthy();
+    },
+  );
+
+  it('the "מוכן" badges move nothing as they pop: their place is kept from the start, and they pop in (QA K3)', async () => {
+    const { mm, server, advance } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    // Before the pop: an empty place of the badge's height in each tile, so the tiles keep their size.
+    for (const id of ['me', 'opp'])
+      expect(styleOf(screen.getByTestId(`seat-${id}-badge-slot`))).toMatchObject({
+        height: metrics.badgeHeight,
+      });
+    await advance(800, 100);
+    const badge = screen.getByTestId('seat-opp-ready');
+    expect(styleOf(badge)).toMatchObject({ height: metrics.badgeHeight });
+    expect(screen.queryByTestId('seat-opp-badge-slot')).toBeNull();
+    // It pops in (motion.md `vs.slam`, the `pop` spring): from 0.6, fading in, then whole.
+    const pop = screen.getByTestId('seat-opp-badge-pop');
+    expect(pop).toHaveAnimatedStyle({ opacity: 0, transform: [{ scale: metrics.vs.badgePopFrom }] });
+    await advance(1200, 100);
+    expect(pop).toHaveAnimatedStyle({ opacity: 1, transform: [{ scale: 1 }] });
+  });
+
+  it('reduced motion: nothing slams, so the count gets ready behind the VS as soon as the VS is drawn', async () => {
+    const { mm, server, advance } = await show('he', 'on');
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    await advance(100, 100);
+    expect(screen.getByTestId('match-countdown', hidden)).toBeTruthy();
+  });
+
+  it('"ready" changes the status line, never the VS’s height: the other line keeps its place, unseen and unread (QA K3)', async () => {
+    const { mm, server } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me']));
+    const spare = () => screen.getByTestId('match-found-status-spare', hidden);
+    // Both lines, side by side, the spare pulled back over the shown one: the row is as tall as the taller.
+    expect(spare()).toHaveTextContent('כל השחקנים מוכנים · המשחק מתחיל');
+    expect(styleOf(spare())).toMatchObject({ width: '100%', marginStart: '-100%', opacity: 0 });
+    expect(screen.queryByTestId('match-found-status-spare')).toBeNull();
+    await server(() => mm.ready(['me', 'opp']));
+    expect(spare()).toHaveTextContent('מחכים שכולם יתחברו…');
+    expect(screen.getByTestId('match-found-status')).toHaveAccessibleName(
+      /^כל השחקנים מוכנים · המשחק מתחיל\.? 2 מתוך 2 מוכנים$/,
+    );
+  });
+
+  it('reduced motion: the badges are there with the VS, whole, nothing popping', async () => {
+    const { mm, server } = await show('he', 'on');
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    expect(screen.getByTestId('seat-opp-ready')).toBeOnTheScreen();
+    expect(screen.getByTestId('seat-opp-badge-pop')).toHaveAnimatedStyle({
+      opacity: 1,
+      transform: [{ scale: 1 }],
+    });
+  });
+
+  it('the board before the phone’s own GO: GO! still shows, and holds, before the game', async () => {
+    const { mm, server, advance, entries, handlers } = await show();
+    await server(() => mm.searching());
+    await server(() => mm.found());
+    await server(() => mm.ready(['me', 'opp']));
+    await server(() => void mm.countdown(3000));
+    await advance(2700, 100);
+    expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('1');
+    await server(() => entries[0]!.host.set({ status: 'live', hasGame: true }));
+    expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('GO!');
+    expect(handlers.onPlay).not.toHaveBeenCalled();
+    await advance(GO_HOLD_MS, 100);
+    expect(handlers.onPlay).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -575,7 +1065,9 @@ describe('A failure', () => {
     expect(screen.getByTestId('match-error-body')).toHaveTextContent(
       'כבר יש לך חיפוש או משחק מדורג פעיל, אולי במכשיר אחר.',
     );
-    expect(screen.getByTestId('match-error-code')).toHaveAccessibleName('קוד שגיאה: alreadyQueued-4215');
+    expect(screen.getByTestId('match-error-code')).toHaveAccessibleName(
+      `קוד שגיאה: ${ltr('ERR_ALREADY_QUEUED · 4215')}`,
+    );
     await fireEvent.press(screen.getByRole('button', { name: 'חפש שוב' }));
     expect(mm.joins).toHaveLength(3);
     expect(screen.getByRole('header')).toHaveTextContent('מתחבר לתור…');
@@ -623,7 +1115,9 @@ describe('English (LTR)', () => {
     });
     expect(screen.getByRole('header')).toHaveTextContent('The search stopped');
     expect(screen.getByTestId('match-error-body')).toHaveTextContent("This queue isn't open yet.");
-    expect(screen.getByTestId('match-error-code')).toHaveAccessibleName('Error code: queueClosed-4215');
+    expect(screen.getByTestId('match-error-code')).toHaveAccessibleName(
+      `Error code: ${ltr('ERR_QUEUE_CLOSED · 4215')}`,
+    );
     expect(screen.getByRole('button', { name: 'Search again' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Go to practice' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Back home' })).toBeOnTheScreen();
@@ -646,5 +1140,171 @@ describe('reduced motion (spec §22)', () => {
     await server(() => void mm.countdown(3000));
     expect(screen.getByTestId('match-countdown-step-text')).toHaveTextContent('3');
     expect(screen.queryByTestId('match-countdown-step-ring')).not.toBeOnTheScreen();
+  });
+});
+
+describe('the screen going while searching (QA density-change-orphans-ranked-game, the review of its fix)', () => {
+  it('left by the player, the app in front: the search is left (as before)', async () => {
+    const { client, mm, server } = await show();
+    await server(() => mm.searching());
+    await screen.unmount();
+    await wait(0);
+    expect(mm.room.sent).toEqual([{ type: 'cancel' }]);
+    expect(client.info.phase).toBe('cancelled');
+  });
+
+  it('gone with its React root (Android paused, then recreated the activity): the search goes on', async () => {
+    const { client, mm, server } = await show();
+    await server(() => mm.searching());
+    // The activity's pause reached AppState before its surface's stop unmounted the tree.
+    // (The test environment's AppState holds a mock function there: set the value, then put it back.)
+    const appState = AppState as { currentState: unknown };
+    const was = appState.currentState;
+    appState.currentState = 'background';
+    try {
+      await screen.unmount();
+    } finally {
+      appState.currentState = was;
+    }
+    await wait(0);
+    expect(mm.room.sent).toEqual([]);
+    expect(client.info.phase).toBe('searching');
+  });
+
+  it('gone because a newer root took over (latestRootOnly): the search goes on', async () => {
+    env = await setUp('he', 'off');
+    backs = jest.spyOn(BackHandler, 'addEventListener');
+    resetLatestRootForTests();
+    const clock = new ManualClock(1_000_000);
+    const scheduler = new ManualScheduler(clock);
+    const mm = new FakeMatchmaking(clock, scheduler);
+    const client = new MatchmakingClient('normal-2p', {
+      connector: mm,
+      clock,
+      scheduler,
+      enter: (m) => new FakeMatchEntry(() => clock.now(), m.reservation),
+    });
+    const noop = () => undefined;
+    let first = true;
+    const Root = latestRootOnly(function App() {
+      // The first root draws the search; the newer one anything (here: nothing).
+      const [mine] = useState(() => {
+        const was = first;
+        first = false;
+        return was;
+      });
+      if (!mine) return null;
+      return (
+        <MatchScreen
+          match={client}
+          self={{ name: 'Moshe', avatarId: 'lava-lamp' }}
+          clock={clock}
+          onPlay={noop}
+          onLeave={noop}
+          onBot={noop}
+          onPractice={noop}
+          onVerifyEmail={noop}
+          onHome={noop}
+        />
+      );
+    });
+    await render(<Root />);
+    await act(async () => {
+      await client.start();
+    });
+    await act(async () => mm.searching());
+    expect(screen.getByRole('header')).toHaveTextContent('מחפש יריב…');
+    // The recreated activity's root mounts: the older one renders nothing from then on.
+    await render(<Root />);
+    await wait(0);
+    expect(mm.room.sent).toEqual([]);
+    expect(client.info.phase).toBe('searching');
+    resetLatestRootForTests();
+  });
+});
+
+describe('the search through a recreated activity (QA density-change-cancels-ranked-search)', () => {
+  /**
+   * The app's root (latestRootOnly) drawing the real MatchScreen over a real MatchmakingClient, as the app's
+   * entry wraps it: each root drawn while `searchShown()` says so.
+   */
+  async function rooted(searchShown: () => boolean) {
+    env = await setUp('he', 'off');
+    backs = jest.spyOn(BackHandler, 'addEventListener');
+    resetLatestRootForTests();
+    const clock = new ManualClock(1_000_000);
+    const scheduler = new ManualScheduler(clock);
+    const mm = new FakeMatchmaking(clock, scheduler);
+    const client = new MatchmakingClient('normal-2p', {
+      connector: mm,
+      clock,
+      scheduler,
+      enter: (m) => new FakeMatchEntry(() => clock.now(), m.reservation),
+    });
+    const noop = () => undefined;
+    const Root = latestRootOnly(function App() {
+      const [mine] = useState(searchShown);
+      if (!mine) return null;
+      return (
+        <MatchScreen
+          match={client}
+          self={{ name: 'Moshe', avatarId: 'lava-lamp' }}
+          clock={clock}
+          onPlay={noop}
+          onLeave={noop}
+          onBot={noop}
+          onPractice={noop}
+          onVerifyEmail={noop}
+          onHome={noop}
+        />
+      );
+    });
+    await render(<Root />);
+    await act(async () => {
+      await client.start();
+    });
+    await act(async () => mm.searching());
+    expect(screen.getByRole('header')).toHaveTextContent('מחפש יריב…');
+    return { client, mm, Root };
+  }
+
+  afterEach(() => resetLatestRootForTests());
+
+  it('the old surface stopped after the new activity resumed (AppState active, no newer root yet): the search goes on, and the new root shows it', async () => {
+    const { client, mm, Root } = await rooted(() => true);
+    // Android paused, destroyed and created the activity in one go; React got to the old surface's stop (a
+    // scheduled render) only after the resume put AppState back to 'active', before the new root mounted.
+    expect(AppState.currentState).not.toBe('background');
+    await screen.unmount();
+    await wait(0);
+    expect(mm.room.sent).toEqual([]);
+    expect(client.info.phase).toBe('searching');
+    // The new root (game/liveFlow.ts sends it to /match) shows the same search; long after, it still runs.
+    await render(<Root />);
+    expect(screen.getByRole('header')).toHaveTextContent('מחפש יריב…');
+    await wait(SEARCH_REOPEN_MS + 1000);
+    expect(mm.room.sent).toEqual([]);
+    expect(client.info.phase).toBe('searching');
+    // And the player can still call it off there.
+    fireEvent.press(screen.getByRole('button', { name: 'ביטול חיפוש' }));
+    expect(mm.room.sent).toEqual([{ type: 'cancel' }]);
+  });
+
+  it('the root went and no screen shows the search again (the task removed, the process alive): it is left after SEARCH_REOPEN_MS', async () => {
+    let first = true;
+    const { client, mm, Root } = await rooted(() => {
+      const was = first;
+      first = false;
+      return was;
+    });
+    await screen.unmount();
+    await wait(SEARCH_REOPEN_MS - 100);
+    expect(mm.room.sent).toEqual([]);
+    expect(client.info.phase).toBe('searching');
+    // A new root that shows something else (Home, a link) does not keep it alive.
+    await render(<Root />);
+    await wait(200);
+    expect(mm.room.sent).toEqual([{ type: 'cancel' }]);
+    expect(client.info.phase).toBe('cancelled');
   });
 });

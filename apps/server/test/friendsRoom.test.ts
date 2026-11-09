@@ -473,6 +473,64 @@ describe('a friends room in production (1.0.4)', () => {
     await leaveAll(dan, again);
   });
 
+  it('mid-game, the app killed and opened again: a new ticket takes the held seat back (no 4002)', async () => {
+    const ticket = await createRoom('Cy', { gameType: 'hard' });
+    const { code } = ticket.room;
+    const cy = await Seat.enter('Cy', ticket);
+    const fay = await Seat.enter('Fay', await ticketTo('Fay', code));
+    await cy.lobbyWhere((l) => l.players.length === 2, 'Fay in');
+    cy.send('start');
+    await Promise.all([cy.event('gameStarted'), fay.event('gameStarted')]);
+    // Swiped from recents: the socket dies with no goodbye, and the seat is held for a token the new process
+    // does not have. The app's way back is a new ticket from POST /v1/rooms/join.
+    void fay.room.leave(false);
+    await cy.event('playerConnectionLost');
+    const again = await Seat.enter('Fay', await ticketTo('Fay', code));
+    const snapshot = await again.until(() => again.of('snapshot')[0], 'the game again');
+    expect(snapshot.playerId).toBe(fay.id);
+    expect(snapshot.state.config.id).toBe(cy.of('snapshot')[0]!.state.config.id);
+    // The new process kept nothing of the lobby it saw: the seats' cards come again, after the snapshot (a
+    // `lobby` before it would be the waiting room on the phone). QA rejoin-opponent-avatar-lost.
+    const lobby = await again.until(() => again.lobby, 'the cards again');
+    expect(lobby.playerId).toBe(fay.id);
+    expect(lobby.players.find((p) => p.id === cy.id)).toMatchObject({ avatarId: 'noam', country: 'IL' });
+    expect(again.messages.findIndex((m) => m.type === 'lobby')).toBeGreaterThan(
+      again.messages.findIndex((m) => m.type === 'snapshot'),
+    );
+    await cy.event('playerReconnected');
+    await again.fence();
+    expect(again.left).toBeNull();
+    // Still in the game: the other one gives up, and the one who came back wins.
+    cy.act({ type: 'surrender' });
+    const over = await again.event('gameOver');
+    expect(over.ranking.find((r) => r.place === 1)?.playerId).toBe(fay.id);
+    await leaveAll(cy, again);
+  });
+
+  it('mid-game, back before the server saw the old socket drop: refused once, then in on the next try', async () => {
+    const ticket = await createRoom('Ivy', { gameType: 'fast' });
+    const { code } = ticket.room;
+    const ivy = await Seat.enter('Ivy', ticket);
+    const jo = await Seat.enter('Jo', await ticketTo('Jo', code));
+    await ivy.lobbyWhere((l) => l.players.length === 2, 'Jo in');
+    ivy.send('start');
+    await Promise.all([ivy.event('gameStarted'), jo.event('gameStarted')]);
+    // A half-open socket: the server still sees Jo's old connection as open, so a new one is refused (the app
+    // tries again: friendsHeldSeatDelaysMs). The heartbeat (HEARTBEAT, ≤ 4.5 s) then cuts the old one, a drop.
+    await expect(sdk('Jo').consumeSeatReservation((await ticketTo('Jo', code)).reservation)).rejects.toThrow(
+      /alreadyInRoom/,
+    );
+    expect(jo.left).toBeNull();
+    void jo.room.leave(false);
+    await ivy.event('playerConnectionLost');
+    const again = await Seat.enter('Jo', await ticketTo('Jo', code));
+    const snapshot = await again.until(() => again.of('snapshot')[0], 'the game again');
+    expect(snapshot.playerId).toBe(jo.id);
+    await ivy.event('playerReconnected');
+    expect(again.left).toBeNull();
+    await leaveAll(ivy, again);
+  });
+
   it('the host leaves: the earliest of the others is the host [D84b]', async () => {
     const ticket = await createRoom('Gus');
     const { code } = ticket.room;

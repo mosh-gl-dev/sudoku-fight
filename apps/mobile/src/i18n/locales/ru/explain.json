@@ -30,14 +30,32 @@
       "box": "В квадрате {{label}} не хватает только {{digit}}."
     },
     "missing": {
-      "row": "В строке {{label}} не хватает {{digits}}.",
-      "col": "В столбце {{label}} не хватает {{digits}}.",
-      "box": "В квадрате {{label}} не хватает {{digits}}."
+      "row_one": "В строке {{label}} не хватает {{digits}}.",
+      "row_few": "В строке {{label}} не хватает {{digits}}.",
+      "row_many": "В строке {{label}} не хватает {{digits}}.",
+      "row_other": "В строке {{label}} не хватает {{digits}}.",
+      "col_one": "В столбце {{label}} не хватает {{digits}}.",
+      "col_few": "В столбце {{label}} не хватает {{digits}}.",
+      "col_many": "В столбце {{label}} не хватает {{digits}}.",
+      "col_other": "В столбце {{label}} не хватает {{digits}}.",
+      "box_one": "В квадрате {{label}} не хватает {{digits}}.",
+      "box_few": "В квадрате {{label}} не хватает {{digits}}.",
+      "box_many": "В квадрате {{label}} не хватает {{digits}}.",
+      "box_other": "В квадрате {{label}} не хватает {{digits}}."
     },
     "seen": {
-      "row": "В строке {{label}} уже есть {{digits}}.",
-      "col": "В столбце {{label}} уже есть {{digits}}.",
-      "box": "В квадрате {{label}} уже есть {{digits}}."
+      "row_one": "В строке {{label}} уже есть {{digits}}.",
+      "row_few": "В строке {{label}} уже есть {{digits}}.",
+      "row_many": "В строке {{label}} уже есть {{digits}}.",
+      "row_other": "В строке {{label}} уже есть {{digits}}.",
+      "col_one": "В столбце {{label}} уже есть {{digits}}.",
+      "col_few": "В столбце {{label}} уже есть {{digits}}.",
+      "col_many": "В столбце {{label}} уже есть {{digits}}.",
+      "col_other": "В столбце {{label}} уже есть {{digits}}.",
+      "box_one": "В квадрате {{label}} уже есть {{digits}}.",
+      "box_few": "В квадрате {{label}} уже есть {{digits}}.",
+      "box_many": "В квадрате {{label}} уже есть {{digits}}.",
+      "box_other": "В квадрате {{label}} уже есть {{digits}}."
     },
     "eliminated": "На шаге {{step}} цифра {{digit}} исключена из {{cell}}.",
     "only": "Значит, только {{digit}}."

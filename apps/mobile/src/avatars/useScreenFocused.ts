@@ -7,12 +7,15 @@ import { useCallback, useContext, useSyncExternalStore } from 'react';
  *
  * expo-router's useIsFocused throws outside a navigator; this reads the screen's navigation object if there is
  * one, as useIsFocused does.
+ *
+ * `enabled` false: it listens to nothing and says true, so a change of screen never renders the caller (Home once
+ * its entrance has played: a whole render of Home in each change of screen from it and back, B14).
  */
-export function useScreenFocused(): boolean {
+export function useScreenFocused(enabled = true): boolean {
   const navigation = useContext(NavigationContext);
   const subscribe = useCallback(
     (onChange: () => void) => {
-      if (!navigation) return () => {};
+      if (!navigation || !enabled) return () => {};
       const offFocus = navigation.addListener('focus', onChange);
       const offBlur = navigation.addListener('blur', onChange);
       return () => {
@@ -20,8 +23,8 @@ export function useScreenFocused(): boolean {
         offBlur();
       };
     },
-    [navigation],
+    [navigation, enabled],
   );
-  const focused = useCallback(() => navigation?.isFocused() ?? true, [navigation]);
+  const focused = useCallback(() => !enabled || (navigation?.isFocused() ?? true), [navigation, enabled]);
   return useSyncExternalStore(subscribe, focused, focused);
 }

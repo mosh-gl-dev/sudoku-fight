@@ -11,10 +11,8 @@ import {
   gimmickPlans,
   type GimmickState,
   grayOf,
-  idleBlinkDelayMs,
   type MotionPlan,
   motionPlan,
-  MOTIONS,
   NATIVE_PROPERTIES,
   type NativeFrame,
   nativeLayers,
@@ -44,13 +42,14 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { SvgXml } from 'react-native-svg';
 
 import { NEVER_REDUCE } from '../components/player/anim';
 import { useReduceMotion } from '../theme/motion';
 import { avatarDef } from './catalog';
+import { burstRepeats, burstSpanMs, type IdleBeat, useIdleBeat } from './idleBeat';
 import { idleMovers, layerStack, type StackItem, staticXml } from './layerStack';
 import { type AvatarReaction, reactionSpanMs } from './reactions';
+import { SvgMarkup } from './svgMarkup';
 import { useScreenFocused } from './useScreenFocused';
 
 export { type AvatarReaction, REACTION_FACE_MS } from './reactions';
@@ -61,7 +60,8 @@ export { type AvatarReaction, REACTION_FACE_MS } from './reactions';
  * readers, and a caller that stands it alone labels its own container).
  *
  * Still (most of the time): ONE SvgXml of renderStatic(), remembered per avatar, size, crop, face and grey.
- * That is every list, every card at rest and the 22 px avatar in a locked cell.
+ * That is every list, every card at rest and the 22 px avatar in a locked cell. (Each SvgXml here is drawn by
+ * SvgMarkup: the same drawing, its markup parsed once for every mount, ./svgMarkup.tsx.)
  *
  * Moving: the layers of nativeLayers(), stacked in a view of `size` that clips them to the rounded tile; each
  * layer that moves now is an Animated.View that Reanimated 4 turns, scales and fades on the UI thread with the
@@ -74,8 +74,13 @@ export { type AvatarReaction, REACTION_FACE_MS } from './reactions';
  * - while one of its gimmicks plays (its expression or motion starts one; only at 48 px and up, packages/avatars
  *   GIMMICK_MIN_SIZE: the kettle's steam, the rain cloud's drops);
  * - on a stage view (`idle`), while its screen is the one shown (useScreenFocused: Home under the game does not
- *   idle): its idle gimmicks loop and it blinks every few seconds (idleBlinkDelayMs). Where avatars idle:
- *   AVATAR_STAGES (./reactions.ts).
+ *   idle): in beats, a burst of its idle gimmicks or a blink, with a rest between them (./idleBeat.ts). Where
+ *   avatars idle: AVATAR_STAGES (./reactions.ts). A stage keeps its layers, still, while another screen covers it:
+ *   one picture under the new screen and the layers again on the way back cost every change of screen from Home a
+ *   long frame (B14, QA run #2).
+ *
+ * Layers it no longer shows (the motion is over, another avatar or size, other layers move now) are kept a while,
+ * hidden and still, before they go (LAYERS_RETIRE_MS: until Reanimated has let go of their views, B32).
  *
  * Reduced motion (the app's own decision, useReduceMotion): nothing moves, no gimmick, no blink. Faces still
  * change, at once: a reaction shows its face for as long as it would have played, then the base face again.
@@ -92,9 +97,26 @@ export { type AvatarReaction, REACTION_FACE_MS } from './reactions';
  *   (the replay back on a step it showed).
  *   Which reaction plays when, in the game, the results and the replay: ./reactions.ts (AVATAR_REACTIONS).
  *
- * The face shown now is the root view's accessibilityValue text (an expression id): the view is hidden from
- * screen readers, so nobody hears it, and tests read it (testing/avatarTesting.ts shownFace).
+ * The picture is decorative and hidden from screen readers: the name beside it, or its card's label, says who it
+ * is (Avatar's `label` makes a lone one speak the name). Under Jest only, the root view's accessibilityValue text
+ * is the face shown now (an expression id), for tests (testing/avatarTesting.ts shownFace). Never in the app:
+ * Android writes that text into the view's content description, and "neutral" stood there in all 19 languages
+ * (B10, QA run #2).
  */
+
+/**
+ * How long a stack of layers the avatar no longer shows stays, hidden and still, ms. Reanimated 4.5 keeps the
+ * last props of every view it moved until 2 s after its last frame (its settled-props sync, every 500 ms), and on
+ * Android it applies them all again for each layout event a react-native-svg shape sends when it is first drawn.
+ * A view deleted while it is still kept fails each time, with an exception and its stack trace in the log, for
+ * every shape that frame draws (one picture of an avatar has 50 to 130): a long frame wherever a moving avatar
+ * changes for a new picture, a frozen phone in the pirates lab (B32, QA run #2). Deleted after this, nothing
+ * holds them any more.
+ */
+export const LAYERS_RETIRE_MS = 4000;
+
+/** The testID of a stack of layers kept hidden (LAYERS_RETIRE_MS), which tests skip (testing/avatarTesting.ts). */
+export const RETIRED_LAYERS_ID = 'avatar-retired-layers';
 
 export interface AvatarArtProps {
   /**
@@ -120,6 +142,13 @@ export interface AvatarArtProps {
    * switch. Leave it out everywhere else.
    */
   reduceMotion?: boolean;
+  /**
+   * Kept still, unseen, under another view (the VS under the count): it stays exactly as it is drawn now. No
+   * reaction starts or ends (a motion under way runs on to its end on the UI thread, its layers kept, never swapped
+   * for the still picture), no face or grey changes, no idle beat, and no stack of layers goes. Nothing is drawn
+   * anew, so nothing new is drawn in the frames of what covers it (docs/PERF.md B14/B32). Shown again, it goes on.
+   */
+  frozen?: boolean;
   testID?: string;
 }
 
@@ -134,35 +163,56 @@ export const AvatarArt = memo(function AvatarArt({
   inactive = false,
   radius,
   reduceMotion,
+  frozen = false,
   testID,
 }: AvatarArtProps) {
   const appReduce = useReduceMotion();
   const reduce = reduceMotion ?? appReduce;
   const focused = useScreenFocused();
   const def = avatarDef(avatarId);
-  const playing = useReaction(def, reaction, reduce);
-  const face = playing === null || playing.face === 'base' ? expression : playing.face;
-  // A covered screen (Home under the game) stays mounted: it idles only while it is the one shown.
-  const stage = idle && focused && !reduce && def !== null;
-  const blink = useIdleBlink(stage && playing === null);
+  const playing = useReaction(def, reaction, reduce, size, frozen);
+  const face = useHeld(playing === null || playing.face === 'base' ? expression : playing.face, frozen);
+  const gray = useHeld(inactive, frozen);
+  // A stage keeps its layers under another screen (Home under the game stays mounted, B14), and idles only while
+  // it is the one shown (frozen, it is covered).
+  const staged = idle && !reduce && def !== null;
+  const stage = staged && focused && !frozen;
+  const burstMs = useMemo(
+    () =>
+      stage && def
+        ? burstSpanMs(
+            gimmickPlans(def, { expression: face, motion: null, idle: true, size, reducedMotion: false }),
+          )
+        : 0,
+    [stage, def, face, size],
+  );
+  // In beats, never an endless loop (./idleBeat.ts).
+  const beat = useIdleBeat(stage && playing === null, burstMs);
 
   const state: GimmickState = {
     expression: face,
     motion: playing?.plan?.id ?? null,
-    idle: stage,
+    idle: stage && (playing !== null || beat?.kind === 'burst'),
     size,
     reducedMotion: reduce,
   };
-  const plans = def && !reduce ? nodePlans(def, state, playing, blink) : NO_PLANS;
-  // The character, when it moves now (else one still picture).
-  const moving = def !== null && (stage || plans.size > 0) ? def : null;
+  const plans = def && !reduce ? nodePlans(def, state, playing, stage ? beat : null, stage) : NO_PLANS;
+  // The layers, when it moves now (else one still picture): on a stage every layer that may move has its own
+  // view, so the stack stays put while it idles; elsewhere only the layers that move now do.
+  const movers = staged ? STAGE_MOVERS : plans.size > 0 ? [...plans.keys()].sort().join(' ') : null;
+  const shown: Stack | null =
+    def !== null && movers !== null
+      ? { key: `${def.id}:${size}:${crop}:${movers}`, def, size, crop, face, grayscale: gray, movers }
+      : null;
+  const retired = useRetiredStacks(shown, frozen);
+  const moving = shown?.def ?? null;
 
   return (
     <View
       style={[
         styles.clip,
         { width: size, height: size, borderRadius: radius ?? (TILE_RADIUS * size) / CANVAS },
-        moving ? [styles.moving, { backgroundColor: inactive ? grayOf(moving.tile) : moving.tile }] : null,
+        moving ? [styles.moving, { backgroundColor: gray ? grayOf(moving.tile) : moving.tile }] : null,
       ]}
       // Moving, the tile and the layers are separate draws: as one texture, a fading parent fades them as one
       // picture (Android only; iOS composites a group's opacity already).
@@ -170,28 +220,97 @@ export const AvatarArt = memo(function AvatarArt({
       accessible={false}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      // Never read (hidden above): the face shown now, for tests.
-      accessibilityValue={{ text: face }}
+      // Tests only: the face shown now (see the top of this file, B10).
+      accessibilityValue={process.env.NODE_ENV === 'test' ? { text: face } : undefined}
       testID={testID}
     >
-      {moving ? (
-        <LayeredArt
-          // A new avatar, size or crop is a new stack: its layers have other keys and another frame.
-          key={`${moving.id}:${size}:${crop}`}
-          def={moving}
-          size={size}
-          crop={crop}
-          face={face}
-          grayscale={inactive}
-          stage={stage}
-          plans={plans}
-        />
-      ) : (
-        <StaticArt def={def} size={size} crop={crop} face={face} grayscale={inactive} />
-      )}
+      {[
+        // One keyed list, so a stack that goes is the same views, hidden: never deleted with the new picture.
+        ...retired.map((s) => <LayeredArt key={s.key} stack={s} plans={NO_PLANS} retired />),
+        shown ? (
+          // A new avatar, size, crop or set of moving layers is a new stack.
+          <LayeredArt key={shown.key} stack={shown} plans={plans} retired={false} />
+        ) : (
+          <StaticArt key={STILL_KEY} def={def} size={size} crop={crop} face={face} grayscale={gray} />
+        ),
+      ]}
     </View>
   );
 });
+
+// ---------------------------------------------------------------------------------------------------------
+// The stacks of layers: the one shown, and the ones kept hidden a while (LAYERS_RETIRE_MS)
+
+/** `movers` of a stage: every layer that may move (layerStack.ts idleMovers). */
+const STAGE_MOVERS = 'idle';
+/** The key of the one still picture (never a stack's). */
+const STILL_KEY = 'still';
+
+/** A stack of layers: its avatar, size and crop, the face it draws and which layers move in it. */
+interface Stack {
+  /** A new avatar, size, crop or set of moving layers is a new stack. */
+  key: string;
+  def: AvatarDef;
+  size: number;
+  crop: Crop;
+  face: Expression;
+  grayscale: boolean;
+  /** STAGE_MOVERS, or the keys of the layers that move, sorted, space-separated. */
+  movers: string;
+}
+
+/**
+ * `value`, or while `hold`, the one it had when the hold began (a frozen avatar's face and grey). Kept in state,
+ * adjusted while rendering, so it is never a frame late.
+ */
+function useHeld<T extends string | boolean>(value: T, hold: boolean): T {
+  const [held, setHeld] = useState(value);
+  if (!hold && held !== value) setHeld(value);
+  return hold ? held : value;
+}
+
+/**
+ * The stacks this avatar drew and no longer shows, each kept for LAYERS_RETIRE_MS as it was last drawn (hidden and
+ * still). One shown again comes back as it is. While `frozen` none goes: their time starts again once it is not.
+ */
+function useRetiredStacks(shown: Stack | null, frozen: boolean): readonly Stack[] {
+  const [last, setLast] = useState(shown);
+  const [retired, setRetired] = useState<readonly Stack[]>([]);
+  // Derived during render, so the stack that goes and the new picture are one commit (no frame in between).
+  if (shown?.key !== last?.key || shown?.face !== last?.face || shown?.grayscale !== last?.grayscale) {
+    setLast(shown);
+    if (last !== null && shown?.key !== last.key)
+      setRetired((list) => [...list.filter((s) => s.key !== last.key), last]);
+  }
+  // Each kept stack's timer; made on first use, and emptied with the timers it stops (effects that run again
+  // without an unmount, a hidden Activity shown again or Fast Refresh, start them all again).
+  const timers = useRef<Map<Stack, ReturnType<typeof setTimeout>> | null>(null);
+  useEffect(() => {
+    const live = (timers.current ??= new Map());
+    if (frozen) {
+      live.forEach(clearTimeout);
+      live.clear();
+      return;
+    }
+    for (const s of retired)
+      if (!live.has(s))
+        live.set(
+          s,
+          setTimeout(() => {
+            live.delete(s);
+            setRetired((list) => list.filter((x) => x !== s));
+          }, LAYERS_RETIRE_MS),
+        );
+  }, [retired, frozen]);
+  useEffect(
+    () => () => {
+      timers.current?.forEach(clearTimeout);
+      timers.current = null;
+    },
+    [],
+  );
+  return shown === null ? retired : retired.filter((s) => s.key !== shown.key);
+}
 
 // ---------------------------------------------------------------------------------------------------------
 // Reactions and the idle blink: what plays now, in React state (the movement itself runs on the UI thread)
@@ -203,16 +322,25 @@ interface Playing {
   face: Expression | 'base';
 }
 
-/** The reaction playing now (see AvatarReaction), or null. */
+/**
+ * The reaction playing now (see AvatarReaction), or null. Its motion moves farther on a small avatar (under 48
+ * px: packages/avatars motionAmplitude), so a nod still shows on a 28 px card. While `frozen` it stays as it is:
+ * nothing starts, and what plays never ends (its motion runs on to its end on the UI thread; its layers stay).
+ * Shown again, a reaction cut short so ends at once, and one asked for meanwhile plays.
+ */
 function useReaction(
   def: AvatarDef | null,
   reaction: AvatarReaction | null,
   reduce: boolean,
+  size: number,
+  frozen: boolean,
 ): Playing | null {
   const [playing, setPlaying] = useState<Playing | null>(null);
   // The reaction of the first render has played already, as far as this avatar knows.
   const played = useRef(reaction?.key);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // A reaction whose end was put off by a freeze.
+  const cut = useRef(false);
   const key = reaction?.key;
   const expression = reaction?.expression;
   const motionId = reaction?.motion;
@@ -225,6 +353,18 @@ function useReaction(
 
   useEffect(() => {
     const list = timers.current;
+    if (frozen) {
+      if (list.length > 0) cut.current = true;
+      list.forEach(clearTimeout);
+      list.length = 0;
+      return;
+    }
+    if (cut.current && key !== undefined && key === played.current) {
+      cut.current = false;
+      list.push(setTimeout(() => setPlaying(null), 0));
+      return;
+    }
+    cut.current = false;
     if (key === undefined) {
       // No reaction now (the replay between two steps): what plays stops, and any key may play next, even one
       // that played before (the replay back on a step it showed).
@@ -238,7 +378,7 @@ function useReaction(
     played.current = key;
     list.forEach(clearTimeout);
     list.length = 0;
-    const plan = def && motionId ? motionPlan(def, motionId, { reducedMotion: reduce }) : null;
+    const plan = def && motionId ? motionPlan(def, motionId, { reducedMotion: reduce, size }) : null;
     const motionMs = plan?.durationMs ?? 0;
     const total = reactionSpanMs(motionMs, faceMs);
     const faces: FaceChange[] = expression ? [{ atMs: 0, expression }] : (plan?.faceChanges ?? []);
@@ -252,40 +392,10 @@ function useReaction(
     // The face stays on after the motion: one still picture again meanwhile.
     if (plan && total > motionMs) at(motionMs, () => mine((p) => ({ ...p, plan: null })));
     at(total, () => mine(() => null));
-  }, [key, def, expression, motionId, faceMs, reduce]);
+    // The size is read as the reaction starts (a new size alone never replays it: same key).
+  }, [key, def, expression, motionId, faceMs, reduce, size, frozen]);
 
   return playing;
-}
-
-/** One idle blink (motion `blink`). */
-const BLINK_MS = MOTIONS.blink.durationMs;
-
-/** While `active`: a counter that is set for one blink every few seconds (IDLE_BLINK_MS), else null. */
-function useIdleBlink(active: boolean): number | null {
-  const [blink, setBlink] = useState<number | null>(null);
-  const count = useRef(0);
-  useEffect(() => {
-    if (!active) return;
-    // A blink cut short when the avatar stopped idling is over.
-    const reset = setTimeout(() => setBlink(null), 0);
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const wait = () => {
-      timer = setTimeout(() => {
-        count.current += 1;
-        setBlink(count.current);
-        timer = setTimeout(() => {
-          setBlink(null);
-          wait();
-        }, BLINK_MS);
-      }, idleBlinkDelayMs(Math.random()));
-    };
-    wait();
-    return () => {
-      clearTimeout(reset);
-      clearTimeout(timer);
-    };
-  }, [active]);
-  return active ? blink : null;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -295,6 +405,8 @@ interface Planned {
   plan: NodePlan;
   /** A new key starts the plan over; the same key leaves it running. */
   key: string;
+  /** Part of an idle burst: its loops repeat a few times (burstRepeats), not forever. */
+  burst?: boolean;
 }
 
 const NO_PLANS: ReadonlyMap<string, Planned> = new Map();
@@ -308,31 +420,41 @@ const blinkOf = (def: AvatarDef): MotionPlan => {
 
 /**
  * Every layer's plan now: the gimmicks this state plays (one that keeps its anim keeps running, as in CSS; one a
- * motion plays starts over with each reaction), then the reaction's motion, else the idle blink.
+ * motion plays starts over with each reaction), then the reaction's motion, else the idle blink. On a stage,
+ * between reactions, gimmicks play only in an idle burst (useIdleBeat), each burst from the start.
  */
 function nodePlans(
   def: AvatarDef,
   state: GimmickState,
   playing: Playing | null,
-  blink: number | null,
+  beat: IdleBeat | null,
+  stage: boolean,
 ): ReadonlyMap<string, Planned> {
   const out = new Map<string, Planned>();
-  for (const p of gimmickPlans(def, state)) {
+  const burst = stage && playing === null && beat?.kind === 'burst' ? beat.n : null;
+  const gimmicks = stage && playing === null && burst === null ? [] : gimmickPlans(def, state);
+  for (const p of gimmicks) {
     const g = def.gimmicks?.find((x) => x.id === p.gimmick);
     const anim = g ? gimmickAnims(g)[p.index] : undefined;
     const run =
       playing !== null && state.motion && anim && triggeredBy(anim, state.motion) ? playing.key : '';
-    out.set(p.node, { plan: p, key: `g${p.index}:${run}` });
+    out.set(
+      p.node,
+      burst !== null
+        ? { plan: p, key: `g${p.index}:i${burst}`, burst: true }
+        : { plan: p, key: `g${p.index}:${run}` },
+    );
   }
   if (playing?.plan) for (const n of playing.plan.nodes) out.set(n.node, { plan: n, key: `m${playing.key}` });
-  else if (blink !== null) for (const n of blinkOf(def).nodes) out.set(n.node, { plan: n, key: `b${blink}` });
+  else if (beat?.kind === 'blink')
+    for (const n of blinkOf(def).nodes) out.set(n.node, { plan: n, key: `b${beat.n}` });
   return out;
 }
 
 // ---------------------------------------------------------------------------------------------------------
 // Drawing
 
-/** One SvgXml, remembered (layerStack.ts staticXml). */
+/** One SvgXml, its markup remembered (layerStack.ts staticXml) and parsed once (SvgMarkup). */
 const StaticArt = memo(function StaticArt({
   def,
   size,
@@ -350,39 +472,41 @@ const StaticArt = memo(function StaticArt({
     () => staticXml(def, { size, crop, expression: face, grayscale }),
     [def, size, crop, face, grayscale],
   );
-  return <SvgXml xml={xml} width={size} height={size} />;
+  return <SvgMarkup xml={xml} width={size} height={size} />;
 });
 
-function LayeredArt({
-  def,
-  size,
-  crop,
-  face,
-  grayscale,
-  stage,
+/**
+ * A stack of layers over the whole tile, shown, or kept hidden and still (`retired`: its plans none, its views at
+ * rest, not drawn).
+ */
+const LayeredArt = memo(function LayeredArt({
+  stack: { def, size, crop, face, grayscale, movers },
   plans,
+  retired,
 }: {
-  def: AvatarDef;
-  size: number;
-  crop: Crop;
-  face: Expression;
-  grayscale: boolean;
-  stage: boolean;
+  stack: Stack;
   plans: ReadonlyMap<string, Planned>;
+  retired: boolean;
 }) {
   const layers = useMemo(
     () => nativeLayers(def, { expression: face, size, crop, grayscale, pixelRatio: PixelRatio.get() }),
     [def, face, size, crop, grayscale],
   );
-  // On a stage every layer that may move has its own view, so the stack stays put while it idles; elsewhere
-  // only the layers that move now do.
-  const movers = stage ? 'idle' : [...plans.keys()].sort().join(' ');
-  const stack = useMemo(
-    () => layerStack(layers, movers === 'idle' ? idleMovers(layers) : new Set(movers.split(' '))),
+  const items = useMemo(
+    () => layerStack(layers, movers === STAGE_MOVERS ? idleMovers(layers) : new Set(movers.split(' '))),
     [layers, movers],
   );
-  return <>{layerItems(stack, layers.frame, plans, layers.frame.rect)}</>;
-}
+  return (
+    <View
+      style={[styles.stack, retired && styles.retired]}
+      // Kept as a view of its own, shown or hidden (never flattened into the clip and back).
+      collapsable={false}
+      testID={retired ? RETIRED_LAYERS_ID : undefined}
+    >
+      {layerItems(items, layers.frame, plans, layers.frame.rect)}
+    </View>
+  );
+});
 
 /** The items of one level, each placed by its rect inside `outer` (the moving layer that holds them, or the tile). */
 function layerItems(
@@ -402,6 +526,7 @@ function layerItems(
         place={placePx(frame, it.node.rect, outer)}
         plan={plans.get(it.key)?.plan ?? null}
         planKey={plans.get(it.key)?.key ?? null}
+        burst={plans.get(it.key)?.burst ?? false}
       >
         {layerItems(it.items, frame, plans, it.node.rect)}
       </LayerNode>
@@ -410,7 +535,7 @@ function layerItems(
 }
 
 const LayerSvg = memo(function LayerSvg({ xml, left, top, width, height }: PlacePx & { xml: string }) {
-  return <SvgXml xml={xml} width={width} height={height} style={[styles.layer, { left, top }]} />;
+  return <SvgMarkup xml={xml} width={width} height={height} style={[styles.layer, { left, top }]} />;
 });
 
 /** The curves of motion.md §3, built once. */
@@ -418,8 +543,11 @@ const EASE = Object.fromEntries(
   (Object.keys(EASINGS) as EasingName[]).map((name) => [name, Easing.bezier(...EASINGS[name])]),
 ) as Record<EasingName, ReturnType<typeof Easing.bezier>>;
 
-/** One property of a plan, for Reanimated: each loop jumps to `from`, then runs its segments. */
-function propertyAnimation(p: PropertyPlan): number {
+/**
+ * One property of a plan, for Reanimated: each loop jumps to `from`, then runs its segments. A loop runs
+ * forever, or `repeats` times (an idle burst).
+ */
+function propertyAnimation(p: PropertyPlan, repeats = -1): number {
   const timing = (to: number, duration: number, ease: EasingName) =>
     withTiming(to, { duration, easing: EASE[ease], reduceMotion: NEVER_REDUCE });
   const loop = withSequence(
@@ -429,7 +557,7 @@ function propertyAnimation(p: PropertyPlan): number {
   );
   return withDelay(
     p.delayMs,
-    withRepeat(loop, p.loop ? -1 : 1, false, undefined, NEVER_REDUCE),
+    withRepeat(loop, p.loop ? repeats : 1, false, undefined, NEVER_REDUCE),
     NEVER_REDUCE,
   );
 }
@@ -445,6 +573,7 @@ function LayerNode({
   place,
   plan,
   planKey,
+  burst,
   children,
 }: {
   node: NativeNode;
@@ -453,6 +582,8 @@ function LayerNode({
   place: PlacePx;
   plan: NodePlan | null;
   planKey: string | null;
+  /** Part of an idle burst: its loops repeat burstRepeats() times. */
+  burst: boolean;
   children: ReactNode;
 }) {
   const translateX = useSharedValue(0);
@@ -464,9 +595,9 @@ function LayerNode({
   const originX = useSharedValue(0);
   const originY = useSharedValue(0);
   // The plan of the latest render, for the effect below (which runs only when the key changes).
-  const latest = useRef({ node, plan });
+  const latest = useRef({ node, plan, burst });
   useLayoutEffect(() => {
-    latest.current = { node, plan };
+    latest.current = { node, plan, burst };
   });
 
   // Where it turns, from its rect's centre: set whenever it changes, also while a plan plays on (a new face
@@ -486,7 +617,7 @@ function LayerNode({
       scaleY,
       opacity,
     };
-    const { node: n, plan: p } = latest.current;
+    const { node: n, plan: p, burst: inBurst } = latest.current;
     const rest = p?.rest ?? nodeRest(n);
     for (const property of NATIVE_PROPERTIES) {
       cancelAnimation(values[property]);
@@ -495,7 +626,7 @@ function LayerNode({
     for (const pp of p?.properties ?? []) {
       // During a delay the first keyframe shows (CSS's `both`).
       values[pp.property].set(pp.from);
-      values[pp.property].set(propertyAnimation(pp));
+      values[pp.property].set(propertyAnimation(pp, inBurst ? burstRepeats(pp) : -1));
     }
     return () => {
       for (const property of NATIVE_PROPERTIES) cancelAnimation(values[property]);
@@ -520,5 +651,8 @@ const styles = StyleSheet.create({
   // The layers, left to right in either language: React Native turns a `left` into a `start` in an RTL app, and
   // `start` is the left again in an LTR view, so every layer keeps its place in the picture (as the board does).
   moving: { direction: 'ltr' },
+  // A stack fills the tile, left to right on its own too (a hidden one may outlive the moving clip).
+  stack: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, direction: 'ltr' },
+  retired: { opacity: 0 },
   layer: { position: 'absolute' },
 });

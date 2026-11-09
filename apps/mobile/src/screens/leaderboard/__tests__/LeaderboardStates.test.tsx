@@ -1,11 +1,13 @@
 import 'react-native-reanimated';
 
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
 
 import { type ProgressApi, ProgressApiError } from '../../../api/progressApi';
 import { entry, fakeProgressApi, ranked } from '../../../api/testing/fakeProgress';
+import { ltr } from '../../../components/player/format';
 import { SKELETON_OPACITY } from '../../../components/ui';
+import { SKELETON_PULSE } from '../../../components/ui/Skeleton';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { LeaderboardScreen } from '../LeaderboardScreen';
@@ -22,9 +24,10 @@ jest.mock(
   () => jest.requireActual<{ default: object }>('react-native-safe-area-context/jest/mock').default,
 );
 
+// The answers, and the frames another tab waits for (LeaderboardScreen `show`; a frame is a timer under Jest).
 const settle = () =>
   act(async () => {
-    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 /** An API whose answers wait until the test lets them through. */
@@ -94,7 +97,9 @@ describe('leaderboard states (stage 13)', () => {
     expect(screen.getByTestId('leaderboard-offline')).toBeOnTheScreen();
     expect(screen.getByTestId('leaderboard-offline-title')).toHaveTextContent('אין חיבור לשרת');
     expect(screen.getByTestId('leaderboard-offline-body')).toHaveTextContent('הטבלה תתעדכן כשיחזור החיבור.');
-    expect(screen.getByTestId('leaderboard-offline-code')).toHaveAccessibleName('קוד שגיאה: unavailable-503');
+    expect(screen.getByTestId('leaderboard-offline-code')).toHaveAccessibleName(
+      `קוד שגיאה: ${ltr('ERR_UNAVAILABLE · 503')}`,
+    );
     expect(announce).toHaveBeenCalledWith('אין חיבור לשרת. הטבלה תתעדכן כשיחזור החיבור.');
 
     api.leaderboard = fakeProgressApi({ tabs: { general: ranked(5) } }).leaderboard;
@@ -112,7 +117,7 @@ describe('leaderboard states (stage 13)', () => {
     expect(screen.getByTestId('leaderboard-error-body')).toHaveTextContent(
       'השרת לא הצליח לענות כרגע. נסה שוב בעוד רגע.',
     );
-    expect(screen.getByTestId('leaderboard-error-code')).toHaveTextContent('badRequest');
+    expect(screen.getByTestId('leaderboard-error-code')).toHaveTextContent(ltr('ERR_BAD_REQUEST'));
     expect(screen.getByTestId('leaderboard-retry')).toBeOnTheScreen();
   });
 
@@ -159,7 +164,9 @@ describe('leaderboard states (stage 13)', () => {
     offline.failWith = 'timeout';
     await show(offline);
     expect(screen.getByTestId('leaderboard-offline-title')).toHaveTextContent('No connection to the server');
-    expect(screen.getByTestId('leaderboard-offline-code')).toHaveAccessibleName('Error code: timeout');
+    expect(screen.getByTestId('leaderboard-offline-code')).toHaveAccessibleName(
+      `Error code: ${ltr('ERR_TIMEOUT')}`,
+    );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeOnTheScreen();
 
     await show(fakeProgressApi({ friends: { recentOpponents: [], inviteUrl: null } }));
@@ -192,11 +199,11 @@ describe('leaderboard skeleton motion (motion.md skeleton)', () => {
           .getByTestId('leaderboard-loading')
           .queryAll((n) => typeof n.type === 'string' && n.props.jestAnimatedStyle !== undefined);
       expect(blocks().length).toBeGreaterThan(5);
-      expect(blocks()[0]).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.low });
-      await act(async () => {
-        jest.advanceTimersByTime(600);
-      });
-      expect(blocks()[0]).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.high });
+      // The pulse is a CSS animation from the low end (Skeleton.tsx SKELETON_PULSE): its config is all Jest sees.
+      for (const b of blocks()) {
+        expect(b).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.low });
+        expect(StyleSheet.flatten(b.props.jestInlineStyle as ViewStyle)).toMatchObject(SKELETON_PULSE);
+      }
 
       await act(async () => {
         useSettings.setState({ reduceMotion: 'on' });
@@ -204,7 +211,10 @@ describe('leaderboard skeleton motion (motion.md skeleton)', () => {
       await act(async () => {
         jest.advanceTimersByTime(600);
       });
-      for (const b of blocks()) expect(b).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.still });
+      for (const b of blocks()) {
+        expect(b).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.still });
+        expect(StyleSheet.flatten(b.props.jestInlineStyle as ViewStyle).animationName).toBeUndefined();
+      }
     } finally {
       jest.useRealTimers();
     }

@@ -57,6 +57,9 @@
     "title": "新しい対戦",
     "footnote": "ランク戦にはインターネット接続が必要です · 練習はいつでもできます",
     "soon": "近日公開",
+    "needsConnection": {
+      "rankedAndFriends": "ランク戦とフレンド対戦"
+    },
     "groups": {
       "ranked": {
         "title": "ランク戦",

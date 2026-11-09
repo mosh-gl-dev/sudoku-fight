@@ -121,7 +121,7 @@ describe('HitLayer: the effect', () => {
       expect(screen.getByTestId(`hit-${kind}-still`, hidden)).toBeTruthy();
       expect(screen.queryByTestId(`hit-${kind}`, hidden)).toBeNull();
       expect(StyleSheet.flatten(region().props.style)).toEqual(area);
-      expect(screen.getByTestId('hit-layer-banner-ring-seconds')).toHaveTextContent('3');
+      expect(screen.getByTestId('hit-layer-banner-ring-seconds', hidden)).toHaveAnimatedProps({ text: '3' });
       // And back: live again for what is left, still ending at endsAt.
       clock.advance(1_000);
       await act(async () => useSettings.setState({ reduceMotion: 'off' }));
@@ -145,7 +145,7 @@ describe('HitLayer: the effect', () => {
       clock.advance(4_999);
       await rerender(layer(hit, { reduceMotion }));
       expect(region()).toBeTruthy();
-      expect(screen.getByTestId('hit-layer-banner-ring-seconds')).toHaveTextContent('1');
+      expect(screen.getByTestId('hit-layer-banner-ring-seconds', hidden)).toHaveAnimatedProps({ text: '1' });
       clock.advance(1);
       await rerender(layer(hit, { reduceMotion }));
       expect(screen.queryByTestId('hit-layer', hidden)).toBeNull();
@@ -155,10 +155,10 @@ describe('HitLayer: the effect', () => {
   it('stands still while the game is frozen (endsAt null)', async () => {
     const hit = hitOn({ endsAt: null, remainingMs: 3_000 });
     const { rerender } = await render(layer(hit));
-    expect(screen.getByTestId('hit-layer-banner-ring-seconds')).toHaveTextContent('3');
+    expect(screen.getByTestId('hit-layer-banner-ring-seconds', hidden)).toHaveAnimatedProps({ text: '3' });
     clock.advance(60_000);
     await rerender(layer(hit));
-    expect(screen.getByTestId('hit-layer-banner-ring-seconds')).toHaveTextContent('3');
+    expect(screen.getByTestId('hit-layer-banner-ring-seconds', hidden)).toHaveAnimatedProps({ text: '3' });
   });
 
   it('covers the whole screen by default [D35]', async () => {
@@ -191,7 +191,7 @@ describe('HitLayer: the banner (spec §7.4, components.md §15.2)', () => {
     expect(screen.getByTestId('hit-layer-banner-subtitle')).toHaveTextContent(
       'המשחק ממשיך · הטיימר שלך עצור',
     );
-    expect(screen.getByTestId('hit-layer-banner-ring-seconds')).toHaveTextContent('5');
+    expect(screen.getByTestId('hit-layer-banner-ring-seconds', hidden)).toHaveAnimatedProps({ text: '5' });
     expect(banner()).toHaveStyle({ top: 55 });
   });
 

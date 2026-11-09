@@ -96,6 +96,18 @@
 
 ---
 
+## הפיראטים (18 אווטרים, 31.10.2026): השרת לפני ה־APK
+
+**שום קומפילציה, commit, דיפלוי או APK בלי אישור של משה.** ההחלטה על הסגנון: DECISIONS-PENDING 3.27.
+
+| ☐ | # | מה | מי | איפה |
+|---|---|---|---|---|
+| ☐ | 1 | **השרת קודם, עם קוד "קטלוג האווטרים":** אפליקציה ישנה (1.1.0, וה־APK עם 1 ו־7 בלבד) דוחה תשובה שלמה בגלל אווטאר שהיא לא מכירה: היסטוריה שבה מישהו עם פיראט, חדר חברים שהמארח שלו עם פיראט, והפרופיל של מי שבחר פיראט בגרסה חדשה. השרת הזה שולח לבקשה בלי `X-Avatar-Catalog` "בלי אווטאר" במקום פיראט, ולכן הגרסאות הישנות ממשיכות לעבוד. **שרת ישן עם פיראט שמור שובר אותן**, ולכן לא שומרים פיראט לפני הפריסה (השרת הישן גם דוחה את השמירה) | Claude, באישור של משה | DECISIONS-PENDING 3.27 |
+| ☐ | 2 | בדיקה אחרי הפריסה, עם חשבון בדיקה שבחר פיראט: ‏`GET /v1/me` בלי הכותרת מחזיר `"avatarId":"av00"`, ועם `X-Avatar-Catalog: 2` את הפיראט. בטלפון עם 1.1.0: ההיסטוריה של מי ששיחק נגדו נפתחת | Claude | |
+| ☐ | 3 | אחר כך ה־APK: בבוחר, 18 הפיראטים בראש "סימנים"; שמירה של כל אחד מהם עוברת | Claude בונה, משה בודק | [`BUILD-APK.md`](BUILD-APK.md) |
+
+---
+
 ## שלב א: החלטות פתוחות (משה). מתחילים עכשיו
 
 הן משנות מה הבודקים רואים, וחלקן קשות לשינוי אחרי שיש שחקנים ודירוגים.
@@ -110,7 +122,7 @@
 | ☐ | **היקף V1** [D39]: משחק פרטי עם קוד כבר ב־V1? | אפיון, סעיפים 24–25 | |
 | ☐ | **השם בחנויות** ("Sudoku Fight" או עם "PvP Sudoku") | [`store/LISTING-GOOGLE.md`](store/LISTING-GOOGLE.md) סעיף 1, ‏[`store/LISTING-APPLE.md`](store/LISTING-APPLE.md) | |
 | ☐ | **המייל ושם המפעיל בדפים המשפטיים** (`LEGAL_CONTACT_EMAIL`, ‏`LEGAL_OPERATOR_NAME`) | `LISTING-APPLE.md` סעיף 2 | המייל שלך לא מתפרסם בלי החלטה שלך. מומלץ תיבה ייעודית |
-| ☐ | **דומיין לשרת** (`api.<הדומיין>`), או להישאר עם `sudoku-fight-prod.fly.dev` | [`DEPLOY-PRODUCTION.md`](DEPLOY-PRODUCTION.md) סעיף 11 | הכתובת נכנסת לבנייה. להחליט **לפני** הבנייה הראשונה לחנות |
+| ✓ | **דומיין לשרת:** ‏`sudokufight.app` (משה קנה ב־Cloudflare ב־30.10.2026, D128). כבר ב־`eas.json`. נשאר: ‏`fly certs`, רשומות DNS ב־Cloudflare בלי proxy, ‏Authorized domains ב־Firebase | [`DEPLOY-PRODUCTION.md`](DEPLOY-PRODUCTION.md) סעיף 11א | הכתובת נכנסת לבנייה: הבדיקות בדומיין עוברות **לפני** הבנייה הראשונה לחנות |
 | ☐ | **"פתוח למשה"** ב־QA (נוסחים ועיצוב) | [`QA-CHECKLIST.md`](QA-CHECKLIST.md#פתוח-למשה) | לא חוסם בטא, אבל עדיף לפני הצילומים לחנות |
 
 ## שלב ב: חשבונות (משה). מתחילים עכשיו, במקביל
@@ -147,13 +159,13 @@
 | ☐ | בלוג של Production: ‏`Sentry on (production, …)`, ובלי `accounts disabled`, ‏`admin site disabled` או אזהרת `LEGAL_…` | `DEPLOY-PRODUCTION.md` סעיף 6 |
 | ☐ | הודעת בדיקה מגיעה ל־Sentry, ויש התראה במייל | `DEPLOY-PRODUCTION.md` סעיפים 3, ‏6 |
 | ☐ | **Staging מעודכן** לקוד הנוכחי (בניות `preview` מדברות איתו): `fly deploy --ha=false`, ‏`SENTRY_DSN` גם שם, ומאגר מדורג גם במסד שלו | README, "פריסה ל־Fly.io (Staging)" |
-| ☐ | אתר הניהול נפתח ב־`https://sudoku-fight-prod.fly.dev/admin` | `DEPLOY-PRODUCTION.md` סעיף 8 |
+| ☐ | אתר הניהול נפתח ב־`https://sudokufight.app/admin`, ו־`/health`, ‏`/legal/privacy`, ‏`/r/123456` ו־`/.well-known/assetlinks.json` עונים בדומיין | `DEPLOY-PRODUCTION.md` סעיפים 8 ו־11א |
 
 ## שלב ה: רישיונות ותוכן
 
 | ☐ | מה | מי | איפה |
 |---|---|---|---|
-| ✓ | **אווטרים:** הוחלפו ב־101 דמויות משלנו (`packages/avatars`, 12.10.2026). חבילת ה־"freebie" כבר לא באפליקציה, ואין רישיון לבדוק | | [`store/ASSET-LICENSES.md`](store/ASSET-LICENSES.md) סעיף 1 |
+| ✓ | **אווטרים:** הוחלפו ב־101 דמויות משלנו (`packages/avatars`, 12.10.2026), ו־18 הפיראטים נוספו ב־31.10.2026 (119 בסך הכול). חבילת ה־"freebie" כבר לא באפליקציה, ואין רישיון לבדוק | | [`store/ASSET-LICENSES.md`](store/ASSET-LICENSES.md) סעיף 1 |
 | ☐ | צלילים סופיים ב־CC0: לבחור מ־30 המועמדים ב־`/dev/sounds` ולקדם, עם מקור ויוצר בקרדיטים של `assets/sounds/README.md` (הזמניים שנוצרו בקוד מותרים לבטא) | משה בוחר, Claude מכניס | `ASSET-LICENSES.md` סעיף 2 |
 | ☐ | ‏690 הלוחות מ־Kaggle: לאמת את הרישיון בדף המאגר | משה | `ASSET-LICENSES.md` סעיף 4 |
 | ✓ | הלוחות המדורגים (6,000) והאופליין שלנו: נוצרו במחולל | | `ASSET-LICENSES.md` |
@@ -210,7 +222,7 @@ eas init
   גיבוי מומלץ: `eas credentials` ← Android ← production ← Download keystore, למנהל הסיסמאות (לא לריפו).
 - **מספרי הגרסה:** ‏`appVersionSource: remote`. ה־versionCode וה־buildNumber נשמרים ב־EAS ועולים לבד בכל בניית `production` (`autoIncrement`).
   אם EAS שואל על הערך ההתחלתי: ‏1. הגרסה שמוצגת למשתמש (`0.1.0`) היא ב־`app.json`. לפני השקה אפשר לבקש מ־Claude להעלות ל־`1.0.0`.
-- **השרת לפי פרופיל** (`eas.json`): ‏`preview` מול Staging, ‏`production` מול `sudoku-fight-prod.fly.dev`. אם שם האפליקציה ב־Fly או הדומיין שונים, מעדכנים את `EXPO_PUBLIC_SERVER_HOST` בפרופיל `production`.
+- **השרת לפי פרופיל** (`eas.json`): ‏`preview` מול Staging, ‏`production` מול `sudokufight.app` (D128). שם האפליקציה ב־Fly לא משנה את הכתובת הזו. רק אם הדומיין משתנה, מעדכנים את `EXPO_PUBLIC_SERVER_HOST` בפרופיל `production`.
 
 **כל גרסה (משה):**
 
@@ -309,7 +321,7 @@ eas init
 - ☐ כל השורות ב־`QA-CHECKLIST.md` מסומנות ב־Android וב־iOS.
 - ☐ גרסה `1.0.0` ב־`app.json`.
 - ☐ תוכנית בתשלום ב־Neon (חלון שחזור של ימים), אם עדיין בחינמית.
-- ☐ דומיין משלך לשרת ולמיילים של Firebase.
+- ☐ המיילים של Firebase יוצאים מ־`sudokufight.app` (הדומיין לשרת כבר נקבע, D128): ‏Customize domain עם רשומת SPF ממוזגת (`docs/handoff/2026-10-27/play-release/plan.md`, צעד 1ג).
 
 ---
 

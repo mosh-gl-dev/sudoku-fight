@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResumeCountdown } from '../../components/board/ResumeCountdown';
 import { PuzzleBoard, type PuzzleRefusal } from '../../components/levels/PuzzleBoard';
-import { ConfirmModal } from '../../components/ui';
+import { ConfirmModal, useToast } from '../../components/ui';
 import { Text } from '../../components/ui/Text';
 import { gameEndConfig } from '../../config/gameEnd';
 import { LEVEL_UI, PUZZLE_UI } from '../../config/levels';
@@ -18,9 +18,10 @@ import { color, space, text, tokens } from '../../theme';
 import { useReduceMotion } from '../../theme/motion';
 import { FlowFallback } from '../FlowFallback';
 import { boardSide } from '../game/geometry';
+import { useRoomHeight } from '../game/useRoomHeight';
 import { PuzzleHud, puzzleCountsText } from './hud/PuzzleHud';
-import { levelEndDelayMs } from './levelChrome';
-import { safely, useStageShell } from './useStageShell';
+import { levelEndDelayMs, useExitBody } from './levelChrome';
+import { safely, type StageOver, useStageShell } from './useStageShell';
 
 /**
  * The puzzle's screen (levels-ui.md §4; the Lv-Puzzle board; D70, D78): the HUD (PuzzleHud), the nine boxes
@@ -39,8 +40,8 @@ import { safely, useStageShell } from './useStageShell';
 
 export interface PuzzleLevelScreenProps {
   session: LevelSession;
-  /** The stage is over and its last picture held: its result. */
-  onOver: () => void;
+  /** The stage is over and its last picture held: its result (`over` when it came under the dialog). */
+  onOver: (over?: StageOver) => void;
   /** Out of the stage (to the map): the way out when its result does not come (the watchdog's fallback). */
   onLeave: () => void;
   resultsWatchdogMs?: number;
@@ -63,6 +64,7 @@ export function PuzzleLevelScreen({
   testID = 'puzzle-level',
 }: PuzzleLevelScreenProps) {
   const { t } = useTranslation('levels');
+  const exitBody = useExitBody(session.level, session.rules, t);
   const reduce = useReduceMotion();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -71,6 +73,21 @@ export function PuzzleLevelScreen({
   const level = session.played;
   const lv = view.level;
   const puzzle = lv?.puzzle ?? null;
+
+  /**
+   * A fixed box was touched, or a swap onto one refused (boxFixed): "הריבוע הזה קבוע" for everyone, as the toast
+   * (motion.md `level.puzzle.denied`; it fades only under Reduced Motion), and in the live region as before. One
+   * at a time: while the same words are up or waiting, another touch adds none (the lock still shakes).
+   */
+  const sayFixed = useCallback(() => {
+    const message = t('hud.puzzle.fixedTap');
+    announce(message);
+    const toasts = useToast.getState();
+    const up = toasts.current;
+    if ((up && !up.hiding && up.message === message) || toasts.queue.some((q) => q.message === message))
+      return;
+    toasts.show({ variant: 'info', icon: 'lock', message });
+  }, [announce, t]);
 
   // ---- what the engine said ----
   const [penalty, setPenalty] = useState<{ id: number; ms: number } | null>(null);
@@ -93,7 +110,7 @@ export function PuzzleLevelScreen({
       case 'swapRefused':
         refusals.current += 1;
         setRefusal({ key: refusals.current, from: e.from, to: e.to });
-        if (e.reason === 'boxFixed') announce(t('hud.puzzle.fixedTap'));
+        if (e.reason === 'boxFixed') sayFixed();
         return;
       case 'puzzleEnded':
         if (e.over.reason === 'targetReached') {
@@ -124,10 +141,10 @@ export function PuzzleLevelScreen({
     (from: number, to: number) => safely('swap', () => session.swap(from, to)),
     [session],
   );
-  const onFixed = useCallback(() => announce(t('hud.puzzle.fixedTap')), [announce, t]);
 
   // ---- the board ----
-  const [roomHeight, setRoomHeight] = useState<number | null>(null);
+  // Read before the first frame where it can be (QA levels-freeze-ready: no first frame at another size).
+  const { ref: roomRef, height: roomHeight, setHeight: setRoomHeight } = useRoomHeight();
   const side = boardSide(windowWidth, roomHeight);
   const solved = puzzle?.over?.reason === 'targetReached';
   const counts = puzzle ? puzzleCountsText(puzzle, t) : '';
@@ -150,7 +167,7 @@ export function PuzzleLevelScreen({
           onExit={shell.openConfirm}
           style={styles.gutter}
         />
-        <View style={styles.room} onLayout={(e) => setRoomHeight(e.nativeEvent.layout.height)}>
+        <View ref={roomRef} style={styles.room} onLayout={(e) => setRoomHeight(e.nativeEvent.layout.height)}>
           {puzzle ? (
             <PuzzleBoard
               grid={view.grid}
@@ -160,7 +177,7 @@ export function PuzzleLevelScreen({
               enabled={running && pause.kind === 'none' && !puzzle.over}
               onSwap={onSwap}
               refusal={refusal}
-              onFixed={onFixed}
+              onFixed={sayFixed}
               solved={solved}
               tapSwap={LEVEL_UI.puzzleTapSwap}
               label={t('hud.puzzle.boardLabel', { counts })}
@@ -190,7 +207,7 @@ export function PuzzleLevelScreen({
         placement="bottom"
         icon="close"
         title={t('exit.title')}
-        body={t('exit.body')}
+        body={exitBody}
         confirmLabel={t('exit.confirm')}
         cancelLabel={t('exit.cancel')}
         accessibilityLabel={t('exit.button')}
@@ -218,7 +235,7 @@ export function PuzzleLevelScreen({
 const gutter = tokens.layout.gutterGame;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flex: 1, gap: space[6] },
   gutter: { marginHorizontal: gutter },
   room: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center' },

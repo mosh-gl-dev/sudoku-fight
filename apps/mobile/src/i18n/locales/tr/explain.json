@@ -30,14 +30,20 @@
       "box": "{{label}} kutusunda yalnızca {{digit}} eksik."
     },
     "missing": {
-      "row": "{{label}} satırında eksik olanlar: {{digits}}.",
-      "col": "{{label}} sütununda eksik olanlar: {{digits}}.",
-      "box": "{{label}} kutusunda eksik olanlar: {{digits}}."
+      "row_one": "{{label}} satırında {{digits}} eksik.",
+      "row_other": "{{label}} satırında eksik olanlar: {{digits}}.",
+      "col_one": "{{label}} sütununda {{digits}} eksik.",
+      "col_other": "{{label}} sütununda eksik olanlar: {{digits}}.",
+      "box_one": "{{label}} kutusunda {{digits}} eksik.",
+      "box_other": "{{label}} kutusunda eksik olanlar: {{digits}}."
     },
     "seen": {
-      "row": "{{label}} satırında zaten şunlar var: {{digits}}.",
-      "col": "{{label}} sütununda zaten şunlar var: {{digits}}.",
-      "box": "{{label}} kutusunda zaten şunlar var: {{digits}}."
+      "row_one": "{{label}} satırında zaten {{digits}} var.",
+      "row_other": "{{label}} satırında zaten şunlar var: {{digits}}.",
+      "col_one": "{{label}} sütununda zaten {{digits}} var.",
+      "col_other": "{{label}} sütununda zaten şunlar var: {{digits}}.",
+      "box_one": "{{label}} kutusunda zaten {{digits}} var.",
+      "box_other": "{{label}} kutusunda zaten şunlar var: {{digits}}."
     },
     "eliminated": "{{digit}} rakamı {{step}}. adımda {{cell}} hücresinden elendi.",
     "only": "Yani geriye yalnızca {{digit}} kalıyor."

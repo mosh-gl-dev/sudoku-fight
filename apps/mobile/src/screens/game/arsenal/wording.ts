@@ -13,12 +13,26 @@ export type GameT = TFunction<'game'>;
 
 const FSI = '⁨';
 const PDI = '⁩';
+const NBSP = String.fromCharCode(0xa0);
+/** A letter, or a mark on one (Thai, Vietnamese). */
+const LETTER = /[\p{L}\p{M}]/u;
 
 /**
  * A player's name inside a sentence, in a first-strong isolate: a Latin name keeps its order in Hebrew text
  * and a Hebrew name in English text, and the arrow or punctuation next to it stays on its side (CLAUDE.md).
  */
 export const isolate = (name: string): string => `${FSI}${name}${PDI}`;
+
+/**
+ * The price row's "· Next: 4" (arsenal.nextPrice), broken only between two words: a space next to anything but a
+ * letter (the bullet, the number, French's " :") becomes a no-break space, so a wrap never leaves "4" or "·" alone
+ * on a line (QA fixcheck of APK 15: "Next:" over "4" in English at 360 dp and a 1.3 text size). "· Tiếp theo: 4"
+ * may still break between its two words. The row gives the joined words their room (pickerFits.test.ts).
+ */
+export const nextPriceText = (cost: number, t: GameT): string =>
+  t('arsenal.nextPrice', { cost }).replace(/ +/g, (spaces: string, at: number, all: string) =>
+    LETTER.test(all.charAt(at - 1)) && LETTER.test(all.charAt(at + spaces.length)) ? spaces : NBSP,
+  );
 
 /**
  * The kind's title: "זיקוקים" / "Fireworks". A kind this app has no words for (a newer peer's, D47) gets the

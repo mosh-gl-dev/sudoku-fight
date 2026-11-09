@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet } from 'react-native';
 
-import { color, radius, size, tokens } from '../../theme';
+import { color, size, tokens } from '../../theme';
 import { Icon, type IconName } from '../Icon';
+import { TactileSurface } from '../ui/tactile';
 import { metrics } from './metrics';
 
 export interface CardIconButtonProps {
@@ -19,7 +20,12 @@ export interface CardIconButtonProps {
   testID?: string;
 }
 
-/** The 44 × 44 icon button of a card (components.md §1.4), and its compact form (§7.2). */
+/**
+ * The 44 × 44 icon button of a card (components.md §1.4), and its compact form (§7.2). The 44 dp one is the
+ * app's icon button since D125 (components.md §0.7): slate on its 2 dp edge, with the one press, so "כניעה" and
+ * "תגובות" look the same in a game and in a staged practice's HUD (IconButton). The compact strip button stays
+ * flat: its 32 dp row has no room for an edge.
+ */
 export function CardIconButton({
   icon,
   label,
@@ -31,43 +37,66 @@ export function CardIconButton({
   testID,
 }: CardIconButtonProps) {
   const off = disabled || coolingDown;
-  const slop = compact ? { top: metrics.compact.hitSlop, bottom: metrics.compact.hitSlop } : undefined;
+  const resting = off && {
+    opacity: coolingDown && !disabled ? tokens.opacity.inactivePlayer : tokens.opacity.disabled,
+  };
+  const a11y = {
+    onPress,
+    disabled: off,
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: label,
+    accessibilityState: { disabled: off, ...(expanded === undefined ? null : { expanded }) },
+    testID,
+  };
+  const glyph = (pressed: boolean) => (
+    <Icon
+      name={icon}
+      size={compact ? metrics.compact.actionIcon : size.icon.card}
+      color={pressed || expanded ? color.text : color.textMuted}
+    />
+  );
+
+  if (!compact) {
+    return (
+      <TactileSurface
+        {...a11y}
+        kind="icon"
+        expanded={expanded}
+        edgeTestID={testID && `${testID}-edge`}
+        faceTestID={testID && `${testID}-face`}
+        style={[styles.box, resting]}
+        faceStyle={styles.face}
+      >
+        {({ pressed }) => glyph(pressed)}
+      </TactileSurface>
+    );
+  }
+
+  const slop = { top: metrics.compact.hitSlop, bottom: metrics.compact.hitSlop };
   return (
     <Pressable
-      onPress={onPress}
-      disabled={off}
+      {...a11y}
       hitSlop={slop}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: off, ...(expanded === undefined ? null : { expanded }) }}
-      testID={testID}
       style={({ pressed }) => [
-        compact ? styles.compact : styles.regular,
+        styles.compact,
         (pressed || expanded) && styles.active,
         expanded && styles.expanded,
-        off && {
-          opacity: coolingDown && !disabled ? tokens.opacity.inactivePlayer : tokens.opacity.disabled,
-        },
+        resting,
       ]}
     >
-      {({ pressed }) => (
-        <Icon
-          name={icon}
-          size={compact ? metrics.compact.actionIcon : size.icon.card}
-          color={pressed || expanded ? color.text : color.textMuted}
-        />
-      )}
+      {({ pressed }) => glyph(pressed)}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  regular: {
+  box: {
     width: size.iconButton,
     height: size.iconButton,
-    borderRadius: radius.button,
-    borderWidth: tokens.border.hairline,
-    borderColor: color.border,
+  },
+  face: {
+    width: size.iconButton,
+    height: size.iconButton,
     alignItems: 'center',
     justifyContent: 'center',
   },

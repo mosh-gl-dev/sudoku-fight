@@ -119,7 +119,8 @@ describe('GameScreen against a bot (spec §6.8, §9)', () => {
     const name = cellName(a);
     await act(async () => g.bot.select(a));
     const cell = screen.getByTestId(`cell-${name}`);
-    expect(cell).toHaveProp('accessibilityLabel', `${name}, ריקה, נעולה על ידי Mr. Hoot, 8 שניות`);
+    // 8 s left, said in 5-second steps (Q1).
+    expect(cell).toHaveProp('accessibilityLabel', `${name}, ריקה, נעולה על ידי Mr. Hoot, 5 שניות`);
     expect(avatarIdsIn(within(cell).getByTestId('cell-avatar', hidden))).toEqual(['owl']);
     expect(avatarIdsIn(screen.getByTestId('card-opponent'))).toEqual(['owl']);
     expect(
@@ -304,7 +305,7 @@ describe('the bot’s reactions and interferences', () => {
     await act(async () => g.bot.solve(g.cells[0]!)); // the bot needs the points for it (D10)
     const name = cellName(g.cells[1]!);
     await fireEvent.press(screen.getByTestId(`cell-${name}`));
-    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 8 שניות`)).toBeOnTheScreen();
+    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 5 שניות`)).toBeOnTheScreen(); // 8 s (Q1)
     feedback.cue.mockClear();
 
     const before = botScore(g);
@@ -332,7 +333,7 @@ describe('the bot’s reactions and interferences', () => {
     await act(async () => g.scheduler.advance(2_000));
     await frames(250);
     expect(myCard().queryByTestId('hit-chip', hidden)).toBeNull();
-    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 8 שניות`)).toBeOnTheScreen();
+    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 5 שניות`)).toBeOnTheScreen(); // 8 s (Q1)
     await spoken();
     expect(live()).toHaveTextContent('ההפרעה נגמרה, הטיימר שלך ממשיך', { exact: false });
   });

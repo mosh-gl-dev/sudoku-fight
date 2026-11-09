@@ -1,0 +1,180 @@
+{
+  "summary": "Capture the ranked-results \"New game\" black screen on a phone with logcat, then fix it and review the fix",
+  "agentCount": 3,
+  "logs": [],
+  "result": {
+    "cap": {
+      "reproduced": true,
+      "variants": [
+        {
+          "name": "main: ranked 2p 'מהיר', phone vs phone (opponent surrendered); טלפון 1 RF8Y60PP2XZ (winner) taps 'משחק חדש' about 26 s after Results appeared",
+          "dark": true,
+          "detail": "input tap at 16:35:02.84-.93. Native mount exception at 16:35:03.221 (about 0.3 s after the tap). handleHostException plus getOrCreateDestroyTask at 16:35:03.238. Shots at +3 s and +15 s are solid #0f1218 with no ambient layer (k1-p1-run1-3s.png, k1-p1-run1-15s.png). Back left the app. Relaunch opened Home. Log: k1-logcat-RF8Y60PP2XZ-3.txt."
+        },
+        {
+          "name": "main on the other phone: טלפון 3 RF8Y30L038L (the loser, who surrendered) taps 'משחק חדש' on its ranked Results about 2.5 min after Results appeared",
+          "dark": true,
+          "detail": "input tap at 16:37:21.586. The identical exception at 16:37:21.901 (+0.32 s): 'addViewAt: cannot insert view [5674] into parent [5676]: View already has a parent: [5678] ... View: ReactTextView'. handleHostException at 16:37:21.915. Dark at +3 s and +15 s (k1-p3-run1-*.png). Back, then relaunch, opened Home. Log: k1-logcat-RF8Y30L038L-4.txt."
+        },
+        {
+          "name": "(a) tap the moment the buttons appear (טלפון 1, a second ranked game; a shell loop of 40 taps at (774,2087) starting at the surrender)",
+          "dark": false,
+          "detail": "INCONCLUSIVE. Run in the SAME process that had already crashed in the main variant (the relaunch reused pid 16743 with a new React host). At the game-to-Results transition (16:39:16.38) a Reanimated warning flood began: 22,253 'synchronouslyUpdateUIProps failed' entries, each logged with an approx. 80-line stack via Log.w on the UI thread. The trigger was react-native-svg VirtualView.setClientRect → FabricEventDispatcher → NodesManager.onEventDispatch. That caused Choreographer 'Skipped 457 / 1107 frames' and then an ANR at 16:39:34 ('Input dispatching timed out'). The ANR main-thread stack is inside Throwable.printStackTrace ← Log.w ← NativeProxy.synchronouslyUpdateUIProps (k1-anr-RF8Y60PP2XZ.txt). 44 of the 84 failing tags (e.g. 6192, 6196, 6228) match views created in the crashed batch of the first run. This points to Reanimated still animating views of the destroyed host after an in-process relaunch (likely, not proven). The queued taps landed elsewhere (it ended on the leaderboard). No K1 exception in this log. After 'להמתין' it hung again with a second ANR. Recovered with adb.ts stop + launch. Log: k1-logcat-RF8Y60PP2XZ-5.txt.gz (346 MB raw, gzipped) / -5-noflood.txt."
+        },
+        {
+          "name": "(b) control: ranked Results → 'לבית' (טלפון 3, the second ranked game)",
+          "dark": false,
+          "detail": "Home opened normally. No exception or host teardown in the log (209 'synchronouslyUpdateUIProps failed' warnings only). Log: k1-logcat-RF8Y30L038L-6.txt.gz / -6-noflood.txt."
+        },
+        {
+          "name": "(c) control: practice vs bot (Pip, רגיל) → 'סיום אימון' → Results → 'משחק חדש' (טלפון 1, fresh process after stop+launch)",
+          "dark": false,
+          "detail": "The tap at 16:44:47.87 opened a new practice board normally. No exception. This fits the cause: the practice path awaits startAndOpen() before router.replace, so the Results 'loading' re-render commits alone, before the navigation. Log: k1-logcat-RF8Y60PP2XZ-7.txt.gz / -7-noflood.txt."
+        }
+      ],
+      "logFiles": [
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y60PP2XZ-3.txt (ROOT EXCEPTION, phone 1 tap; exception at line 527, mount-state dump 597-1618, handleHostException line 1658)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y30L038L-4.txt (same exception on phone 3, line 539)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y60PP2XZ-1.txt.gz + -1-noflood.txt (phone 1: Home → ranked search → game start)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y30L038L-1.txt.gz + -1-noflood.txt (phone 3: Home → ranked search → game start)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y60PP2XZ-2.txt.gz + -2-noflood.txt (phone 1: surrender → Results)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y30L038L-2.txt.gz + -2-noflood.txt (phone 3: surrender → Results)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y60PP2XZ-5.txt.gz + -5-noflood.txt (variant a: Reanimated flood + ANR)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-anr-RF8Y60PP2XZ.txt (dumpsys dropbox data_app_anr: ANR main-thread stack in Reanimated Log.w)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y30L038L-6.txt.gz + -6-noflood.txt (variant b: Results → לבית, OK)",
+        "C:/Users/mosheg/Documents/ReactNative/sudoku-fight/docs/handoff/2026-11-03/data/k1-logcat-RF8Y60PP2XZ-7.txt.gz + -7-noflood.txt (variant c: practice Results → משחק חדש, OK)",
+        "C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/k1-p1-run1-3s.png, k1-p1-run1-15s.png, k1-p3-run1-3s.png, k1-p3-run1-15s.png, k1-p1-practice-3s.png",
+        "C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/dump3.txt (Fabric mount-state dump extracted from log 3)"
+      ],
+      "rootException": "Native Fabric mount exception on the UI thread. There is NO JS exception and no ReactNativeJS error. File k1-logcat-RF8Y60PP2XZ-3.txt, the 30 lines before (497-526) and the exception (verbatim):\n\n11-06 16:35:03.093  2780  2780 I MediaPlayerList: addMediaPlayer() : com.mosheg.sudokufight\n11-06 16:35:03.093  2780  2780 I MediaPlayerList: Already have a controller for the player: com.mosheg.sudokufight, updating instead\n11-06 16:35:03.094  1172  1671 W audio_sw_mixer: sw_mixer_mix_fp_direct_write(-),   MIXER_PLAYBACK  , path T_DEEP=>T_PRIMARY   , size_out 16384, rb     0, latency/total: 42.666/47.875 (22.085+0.001+25.789) ms\n11-06 16:35:03.094  1225  1689 D AudioFlinger: mixer(0xb4000074048b5980) throttle end: throttle time(18)\n11-06 16:35:03.096  2780  2780 I MediaPlayerWrapper: Controller for com.mosheg.sudokufight was updated. false\n11-06 16:35:03.096  2780  2780 I PlayerSettingsManager: activePlayerChanged : com.mosheg.sudokufight\n11-06 16:35:03.097  2780  2780 I PlayerSettingsManager: activePlayerChanged : com.mosheg.sudokufight\n11-06 16:35:03.098  2780  2780 I PlayerSettingsManager: updateRemoteDevice: repeat (STATE_REPEAT_OFF -> STATE_REPEAT_OFF), shuffle (STATE_SHUFFLE_OFF -> STATE_SHUFFLE_OFF)\n11-06 16:35:03.098  2780  2780 I MediaPlayerWrapper: getCurrentMetadata mCurrentData: { mediaId=\"NowPlayingId0\" title=\"Not Provided\" artist=\"\" album=\"\" genre=\"\" duration=44\" genre= trackPosition=1/1 image=null }\n11-06 16:35:03.098  2780  2780 I MediaPlayerList: sendMediaUpdate\n11-06 16:35:03.098  2780  2780 I MediaPlayerList: sendMediaUpdate: Creating a one item queue for a player with no queue\n11-06 16:35:03.102  2780  2780 I PlayerSettingsManager: updateRemoteDevice: repeat (STATE_REPEAT_OFF -> STATE_REPEAT_OFF), shuffle (STATE_SHUFFLE_OFF -> STATE_SHUFFLE_OFF)\n11-06 16:35:03.148  1176  1383 I hwcomposer: [HWC] (0)fire a callback of refresh to SF[4]\n11-06 16:35:03.148 16743 16743 D ScrollView: initGoToTop\n11-06 16:35:03.160  1225  1602 V APM_AudioPolicyManager: stopOutput portId 42\n11-06 16:35:03.160  1225  1602 V APM_AudioPolicyManager: stopOutput() output 21, stream 3, session 121\n11-06 16:35:03.160  1225  1602 V APM_AudioPolicyManager: setBeaconMute(1) mBeaconMuteRefCount=0 mBeaconPlayingRefCount=0\n11-06 16:35:03.161  1172  1415 D MTKAdapterStreamLayer: updateMetadataCommon(),\n11-06 16:35:03.161  1225  1602 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE\n11-06 16:35:03.161  1225  1602 V APM_AudioPolicyManager: setOutputDevices caller stopSource[[portId:5][io:21, deep-buffer]] device AUDIO_DEVICE_NONE delayMs 170\n11-06 16:35:03.162  1225  1602 V APM_AudioPolicyManager: setOutputDevices caller stopSource[[portId:5][io:21, deep-buffer]] setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6\n11-06 16:35:03.165  1225  1602 W AudioFlinger: moveEffectChain_ll: effect chain for session 0 not on source thread 0xb4000074048fa3b8\n11-06 16:35:03.165  1225  1602 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13\n11-06 16:35:03.169  1176  1188 I hwcomposer: [HWCDisplay] (0 updateFps():4131), (type:1, mode:2) fps:25.862244,dur:1005.33,max:83.51,min:5.06\n11-06 16:35:03.194  1779  2162 D BackgroundInstallControlService: Package event received: 0\n11-06 16:35:03.197  3383  3383 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.measurement.START xflg=0x4 pkg=com.google.android.gms }\n11-06 16:35:03.198  3383  3383 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.measurement.START xflg=0x4 pkg=com.google.android.gms }\n11-06 16:35:03.200  1779  1813 I GestureDetector: handleMessage TAP\n11-06 16:35:03.200  1779  1779 I GestureDetector: handleMessage TAP\n11-06 16:35:03.210 16743 16821 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.\n11-06 16:35:03.221 16743 16743 E unknown:SurfaceMountingManager: Unhandled SoftException\n11-06 16:35:03.221 16743 16743 E unknown:SurfaceMountingManager: java.lang.IllegalStateException: addViewAt: cannot insert view [5834] into parent [5836]: View already has a parent: [5838]  Parent: ReactViewGroup View: ReactTextView\n\tat com.facebook.react.fabric.mounting.SurfaceMountingManager.addViewAt(SurfaceMountingManager.kt:355)\n\tat com.facebook.react.fabric.mounting.mountitems.IntBufferBatchMountItem.execute(IntBufferBatchMountItem.kt:122)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher.executeOrEnqueue(MountItemDispatcher.kt:379)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher.dispatchMountItems$lambda$7$lambda$6(MountItemDispatcher.kt:269)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher.$r8$lambda$4xp_oXLXKRRjXh_WfqmwhGWbzaM(MountItemDispatcher.kt:0)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher$$ExternalSyntheticLambda4.invoke(D8$$SyntheticClass:0)\n\tat com.facebook.react.internal.tracing.PerformanceTracer.trace(PerformanceTracer.kt:46)\n\tat com.facebook.react.internal.tracing.PerformanceTracer.trace(PerformanceTracer.kt:35)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher.dispatchMountItems(MountItemDispatcher.kt:250)\n\tat com.facebook.react.fabric.mounting.MountItemDispatcher.tryDispatchMountItems(MountItemDispatcher.kt:94)\n\tat com.facebook.react.fabric.FabricUIManager$DispatchUIFrameCallback.doFrameGuarded(FabricUIManager.java:1624)\n\tat com.facebook.react.uimanager.GuardedFrameCallback.doFrame(GuardedFrameCallback.kt:42)\n\tat com.facebook.react.modules.core.ReactChoreographer.frameCallback$lambda$1(ReactChoreographer.kt:58)\n\t... android.view.Choreographer.doFrame ... ActivityThread.main ... ZygoteInit.main(ZygoteInit.java:972)\n11-06 16:35:03.222 16743 16743 E unknown:MountItemDispatcher: dispatchMountItems: caught exception, displaying mount state\n11-06 16:35:03.222 16743 16743 E unknown:MountItemDispatcher: java.lang.IllegalStateException: addViewAt: failed to insert view [5834] into parent [5836] at index 0\n\tat com.facebook.react.fabric.mounting.SurfaceMountingManager.addViewAt(SurfaceMountingManager.kt:384)\n\tat com.facebook.react.fabric.mounting.mountitems.IntBufferBatchMountItem.execute(IntBufferBatchMountItem.kt:122)\n\t... (same frames as above) ...\nCaused by: java.lang.IllegalStateException: The specified child already has a parent. You must call removeView() on the child's parent first.\n\tat android.view.ViewGroup.addViewInner(ViewGroup.java:5626)\n\tat android.view.ViewGroup.addView(ViewGroup.java:5445)\n\tat android.view.ViewGroup.addView(ViewGroup.java:5385)\n\tat com.facebook.react.views.view.ReactClippingViewManager.addView(ReactClippingViewManager.kt:36)\n\tat com.facebook.react.views.view.ReactClippingViewManager.addView(ReactClippingViewManager.kt:20)\n\tat com.facebook.react.fabric.mounting.SurfaceMountingManager.addViewAt(SurfaceMountingManager.kt:381)\n\t... 28 more\n11-06 16:35:03.222 E unknown:SurfaceMountingManager: Views created for surface 1: (1000-line dump; relevant part:)\n  <RNSScreen id=4986 parentTag=-1/> (Results) > <RNSScreenContentWrapper id=4982/> > RCTView 5872 > RCTView 5842 > RCTView 5840 (the \"משחק חדש\" button: edge 5826/5824 + face 5838) > RCTView 5838 (face) with children: RCTView 5830 (shape) > 5828, RCTText 5834 (the label), RCTView 5836 (NEW, being inserted at index 0, the text should move into it)\n  The new /match screen RNSScreen 6290, RNSScreenContentWrapper 6286 and its SVG views (6144-6290) are created in the same batch, parentTag=null (never inserted).\n11-06 16:35:03.238 16743 16743 E unknown:FabricUIManager: Exception thrown when executing UIFrameGuarded  (same IllegalStateException + Caused by)\n11-06 16:35:03.238 16743 16743 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = \"addViewAt: failed to insert view [5834] into parent [5836] at index 0\")\n11-06 16:35:03.238 16743 16818 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask()\n11-06 16:35:03.238 16743 16818 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting createReactInstance task ref\n11-06 16:35:03.244 16743 16743 W unknown:FabricUIManager: Not flushing pending UI operations: exception was previously thrown\n\nPhone 3 (k1-logcat-RF8Y30L038L-4.txt:539) has the identical exception with tags 5674 → 5676 (already in 5678, ReactTextView).",
+      "reading": "The cause is confirmed by the log, the mount-state dump and the code.\n\n1. Ranked 'משחק חדש' runs synchronously in one tick. ResultsScreen.newGame() calls setStarting(true), then onNewGame. In app/results/[id].tsx that runs leave() and then startRankedAndOpen(...,'replace'), which calls router.replace(MATCH_PATH) synchronously (src/screens/home/startGame.ts:73-93). React batches two things into one Fabric commit: Results re-rendering with loading=true, and the replace that creates the /match screen. The dump confirms it: the new RNSScreen 6290 and its SVG views were created in the same failing batch.\n\n2. loading=true changes the native tree of the primary Button. Button.tsx (primary branch, ~line 205) renders `<View style={[styles.content, loading && styles.hidden]}>` around the label. styles.content is only flex layout, so without loading this View is FLATTENED away, and the label Text (5834) is a direct child of the face view (5838). With loading, opacity:0 makes it un-flattenable. Fabric must create View 5836, insert it into 5838 at index 0, and REPARENT Text 5834 into it (Remove 5834 from 5838, then Insert into 5836). The Insert ran while 5834 was still in 5838, so the Remove was not applied first. This commit goes through Reanimated 4.5.1's LayoutAnimationsProxy, which pulls Remove mutations out and rebuilds them (parseRemoveMutations / handleRemovals; Results is the only screen with entering= layout animations, and the action pair sits inside Animated.View entering={enter.actions}). So the reparent's Remove was most likely lost or reordered there. I did not trace which Reanimated branch drops it.\n   - The addViewAt throw goes to MountItemDispatcher, then GuardedFrameCallback, then ReactHost.handleHostException.\n   - The host is destroyed immediately (getOrCreateDestroyTask at the same ms, not after 10 s). That leaves the window background #0f1218.\n   - Tap to exception is about 0.3 s, and the screen goes dark right after.\n\n3. Why this is tonight's regression: in HEAD (87760ce) the same wrapper was `<View style={[styles.content, loading && styles.hidden, { transform: [{ skewX: UNSKEW }] }]}>`. The constant transform kept it un-flattened, so loading never reparented the label. Round 1's Button.tsx rewrite dropped the transform, and that made the wrapper flattenable.\n\n4. The controls fit this cause.\n   - Practice 'משחק חדש' works, because startAndOpen is awaited before the replace, so the loading commit lands alone.\n   - 'לבית' works, because nothing sets loading.\n   - The friends branch (router.replace synchronously after setStarting) is exposed to the same crash. The secondary/danger Button branch has the same flattenable `[styles.content, loading && styles.hidden]` wrapper.\n\n5. Fix candidates. A minimal one is to give the content wrapper `collapsable={false}` (or keep a constant non-flattening prop) in both Button branches, so loading only changes opacity and never reparents. Optionally, also defer the navigation one frame after setStarting(true) (afterFrames), so the loading commit and the replace commit are separate. A regression test should assert that toggling loading does not change the wrapper's presence in the host tree.\n\n6. Separate serious finding (variant a). A ranked game's game-to-Results transition in a process that had already had a K1 host teardown and an in-process relaunch produced a flood of 22,253 Reanimated 'synchronouslyUpdateUIProps failed for tag N' warnings ('RetryableMountingLayerException: Unable to find SurfaceMountingManager'). Each one is logged with a full stack by Log.w on the UI thread, triggered from react-native-svg VirtualView.setClientRect → FabricEventDispatcher → NodesManager.onEventDispatch. Many of the failing tags belong to the dead host's last batch. The UI thread is starved: Skipped 457 and 1107 frames, then an ANR twice (dropbox trace has main in Throwable.printStackTrace ← Log.w ← NativeProxy.synchronouslyUpdateUIProps). Smaller floods (1,975 and 896) also happen in healthy processes on screen transitions (rnscreens ScreenFragment.dispatchTransitionProgressEvent), which matches the 'flood' in docs/PERF.md. Fixing K1 removes the teardown that leads to the extreme case. Still worth a Reanimated patch so it does not log a stack per failure.",
+      "phoneState": "Both phones: adb.ts reset done (font scale 1, animations 1, colour correction off, airplane off). The app was force-stopped (adb.ts stop) and relaunched, and is on Home in Hebrew: טלפון 1 RF8Y60PP2XZ shows 'אורי', טלפון 3 RF8Y30L038L shows 'אחוותא'. No search running, no room open, no game in progress (the last practice game was ended and the phone returned to Home). Nothing was installed, uninstalled or cleared, and logcat -c was never used. All logcat captures were stopped.\n\nOn the logs: the big logs were gzipped (k1-logcat-*.txt.gz) next to '-noflood.txt' copies with the Reanimated stack lines removed. The raw variant-a log was 346 MB, and drive C has 20 GB free. The ranked games played: two phone-vs-phone 2p 'מהיר' games, both ended by אחוותא surrendering before the first move, so neither rating changed. One practice game vs Pip (רגיל) was ended immediately."
+    },
+    "fix": {
+      "status": "fixed",
+      "rootCause": "The log pins the failing views. In k1-logcat-RF8Y60PP2XZ-3.txt, the mount-state dump (lines 1471-1475) shows the face of the \"משחק חדש\" button, 5838. Its children are the Slant plate 5830>5828, the label RCTText 5834, and a NEW RCTView 5836. The failing op is \"insert 5834 into 5836 at index 0\" while 5834 is still in 5838.\n\n5836 is Button.tsx's label wrapper, `<View style={[styles.content, loading && styles.hidden]}>`. styles.content is only flex layout, so Fabric flattens the wrapper and the label sits straight on the face. When `loading` turns on, opacity:0 makes the wrapper un-flattenable. That commit must then create 5836, insert it into the face, and reparent the label (Remove 5834 from 5838, then Insert 5834 into 5836).\n\nOn ranked Results, newGame() calls setStarting(true) and then, synchronously, onNewGame. That runs leave() and startRankedAndOpen(...,'replace'), and router.replace('/match') happens in the same tick. So the reparent and the creation of the whole /match screen (RNSScreen 6290 and its SVG views, all parentTag=null in the dump) land in ONE Fabric transaction. That transaction passes through Reanimated 4.5.1's LayoutAnimationsProxy_Legacy (Results has entering= layout animations), which pulls Remove mutations out and re-emits them (parseRemoveMutations/handleRemovals). The label's Remove was not applied before its Insert. The log shows no removeViewAt soft-exception, so the Remove was most likely dropped rather than misindexed. I did not prove which proxy branch drops it.\n\naddViewAt then throws \"View already has a parent\", and ReactHost.handleHostException destroys the host at the same millisecond, leaving the #0f1218 window background.\n\nThis is a regression from round 1's Button rewrite. HEAD 87760ce had a constant `{ transform: [{ skewX: UNSKEW }] }` on the same wrapper, which kept it un-flattened, so loading never reparented the label.\n\nThe controls fit this cause:\n- Practice awaits startAndOpen before replace, so the loading commit lands alone and the same reparent succeeds.\n- 'לבית' never sets loading.",
+      "fix": "1) Root fix (apps/mobile/src/components/ui/Button.tsx): in the primary and the secondary/danger branches, the label wrapper is now always its own native view: `collapsable={false}` plus testID `${testID}-content`. The fix has a comment block that explains K1.\n   - Toggling `loading` is now only an opacity update on an existing view. No view is created and no view changes parent, so the failing Remove/Insert pair never exists.\n   - This covers every Button with `loading` that navigates in the same tick. Besides Results, those are:\n     - HomeScreen, GameTypeScreen and BotSelectScreen (`starting`);\n     - Login, Register, EditProfile and VerifyEmail;\n     - ConfirmModal, among others.\n   - The ghost wrapper never changes style, so it was already safe.\n\n2) Isolation for every Results route (apps/mobile/src/screens/results/ResultsScreen.tsx): newGame() sets the spinner, then waits `framesPassed(SWAP_FRAMES)` (the existing retire.ts helper, 2 rAF frames) before onNewGame. So the Results' last commit is mounted alone, before the next screen's commit.\n   - This applies to ranked, friends (synchronous router.replace), rooms (dismissTo) and practice/bot alike.\n   - A `gone` ref skips the start, and the setStarting(false), if Results unmounts during those frames.\n\nOther routes checked for the same pattern:\n- Practice/bot 'משחק חדש' already awaited before replace; it is now also deferred.\n- Friends 'משחק חדש' (synchronous replace) had the same exposure and is covered by both changes.\n- Levels 'לשלב הבא' uses router.setParams on the same screen, with no Button loading toggle, so it is not affected.\n- There is no separate rematch path. \"Rematch\" is the same Results newGame.\n- No other component toggles a style that flattens a wrapper around content. The only other `cond && styles.hidden` is LevelNode's lock and does not happen at navigation.",
+      "test": "New regression tests (they fail on the old code):\n- apps/mobile/src/components/ui/__tests__/Button.test.tsx: it.each(primary, secondary, danger), \"loading never moves the label to another native parent\". The `b-content` wrapper has collapsable=false both before and after a rerender with loading. It is the same host instance, gets opacity 0, and still contains the label. Old code: there is no such wrapper, so the test fails.\n- apps/mobile/src/screens/results/__tests__/ResultsScreen.test.tsx:\n  - \"commits its spinner frames before it starts the next game\": with fake timers, after the press the button is busy and onNewGame has NOT been called. After 100 ms it has been called once. Old code calls it synchronously, so the test fails.\n  - \"starts nothing once the results are gone before its frames pass\".\n\nAdjusted, because the start is now a frame or two later (waitFor added):\n- the \"buttons\" test and the \"takes no second tap\" test in ResultsScreen.test.tsx;\n- ResultsDuel.test.tsx;\n- resultsOnline.test.tsx;\n- match/__tests__/rankedResults.test.tsx.\n\nRuns:\n- npx jest over src/screens/{home,match,results,levels}, src/components/ui, the practice/bot/ranked/rankedNewGame/history e2e tests and app (399 suites, 6361 tests): all passed.\n- tsc -p apps/mobile --noEmit: clean.\n- eslint and prettier on the 7 changed files: clean.",
+      "deviceCheck": "On the next APK, on both phones (Moshe's OK needed for the build):\n1. Play ranked 2p 'מהיר' phone vs phone, end it with a surrender, and tap 'משחק חדש' on BOTH Results (winner and loser). Expected: the spinner shows briefly, then the /match search opens, with no dark screen.\n2. In logcat: no 'addViewAt: cannot insert view', no handleHostException and no getOrCreateDestroyTask.\n3. Repeat with a tap the moment the buttons appear, and with a friends-room game ('משחק חדש' → /friends/room or /friends/join).\n4. Control: practice/bot 'משחק חדש' and 'לבית' still work.\n5. Optional: Home 'שחק' / GameType / BotSelect starts. They had the same loading-then-navigate exposure.",
+      "filesChanged": [
+        "apps/mobile/src/components/ui/Button.tsx",
+        "apps/mobile/src/screens/results/ResultsScreen.tsx",
+        "apps/mobile/src/components/ui/__tests__/Button.test.tsx",
+        "apps/mobile/src/screens/results/__tests__/ResultsScreen.test.tsx",
+        "apps/mobile/src/screens/results/__tests__/ResultsDuel.test.tsx",
+        "apps/mobile/src/screens/results/__tests__/resultsOnline.test.tsx",
+        "apps/mobile/src/screens/match/__tests__/rankedResults.test.tsx"
+      ],
+      "nativeChange": false,
+      "notes": "- No native change, no Reanimated patch, no docs change. The explanation is in a comment in Button.tsx, next to the fix.\n- Not proven: the exact LayoutAnimationsProxy_Legacy branch that lost the label's Remove. A stale MutationNode for the face as unflattenedParent would drop it from `roots`; this is a hypothesis only.\n  - Both fixes remove the failing condition whatever that branch is: the reparent no longer happens, and the Results update no longer shares a transaction with the new screen.\n  - A Reanimated upstream issue or patch could still be worth filing separately.\n- Variant (a) is separate and not addressed here: the 22k 'synchronouslyUpdateUIProps failed' Log.w flood leading to ANR after an in-process host relaunch. It should go away with K1, since there is no more teardown, but Reanimated still logs a full stack per failure. A patch-package patch to downgrade that log is a possible follow-up; not done.\n- Tests: occasional pre-existing 'An update to AvatarArt ... not wrapped in act' console.error noise in the Results suites. It is not a failure and not from these changes' assertions.\n- Diff vs the b3434ea baseline is limited to the 7 files listed."
+    },
+    "rev": {
+      "verdict": "ok",
+      "issues": [
+        {
+          "severity": "low",
+          "problem": "Nobody has found the Reanimated proxy branch that drops the Remove. The fix removes this one reparent (the Button label), and it splits the Results commit from the navigation commit, but the engine-level condition is still in place. Some other flatten or unflatten reparent that lands in the same transaction as a new screen could still hit it. My read of LayoutAnimationsProxy_Legacy.cpp: a Remove is emitted only if its node is a 'root', meaning nodeForTag_[parent] is not a MutationNode. The practice control (the same Button, the same press, and it works) shows a stale face node cannot be the whole story, so the trigger depends on what the rest of the batch holds.",
+          "evidence": "Mount dump k1-logcat-RF8Y60PP2XZ-3.txt:1472-1475. 5836 had already been inserted into 5838 when 'insert 5834 into 5836' failed, and 5834 was still in 5838, so the Remove was dropped, not reordered. In node_modules/react-native-reanimated/Common/cpp/reanimated/LayoutAnimations/LayoutAnimationsProxy_Legacy.cpp:234-238, `if (!mutationNode->unflattenedParent->isMutationNode()) roots.push_back(...)`: a non-root Remove is emitted only if its parent goes through startAnimationsRecursively. Both changes avoid this path for the logged sequence. Every `loading={...}` in app/src (27 uses) goes through Button, ConfirmModal or StateView, so the Button fix covers all of them.",
+          "suggestion": "On the device run, grep logcat for 'addViewAt'/'removeViewAt'/handleHostException across all navigations, not only Results. Consider an upstream Reanimated issue with the mutation trace (LAYOUT_ANIMATIONS_LOGS). No code change is needed for K1."
+        },
+        {
+          "severity": "low",
+          "problem": "In ResultsScreen, the `gone` ref is set to true in the effect cleanup and never set back to false on mount. If Results is ever remounted under StrictMode, or hidden and shown again inside <Activity> (React 19.2; expo-router's navigation builder already plans for Activity), 'משחק חדש' would do nothing from then on. Neither is used today, so this is latent only.",
+          "evidence": "apps/mobile/src/screens/results/ResultsScreen.tsx: `useEffect(() => () => { gone.current = true; }, [])`. There is no reset to false. No StrictMode or Activity was found in app/src. node_modules/expo-router/build/react-navigation/core/useNavigationBuilder.js:277 handles `<Activity mode=\"hidden\">`.",
+          "suggestion": "Use `useEffect(() => { gone.current = false; return () => { gone.current = true; }; }, [])`."
+        },
+        {
+          "severity": "low",
+          "problem": "The Button spinner (a Reanimated CSS animation) now runs for 2 frames. It is then deleted in the same commit in which /match draws its first SVG. retire.ts describes this pattern as the cause of the 'synchronouslyUpdateUIProps failed' Log.w flood. It is a performance issue, not a crash. Practice already did the same before this change.",
+          "evidence": "src/components/ui/Spinner.tsx uses `Animated.View` with Reanimated `css`. retire.ts:4-18 documents the flood when a worklet-animated view is deleted in the frame that draws new SVG. ResultsScreen.newGame now runs framesPassed(SWAP_FRAMES) and then router.replace.",
+          "suggestion": "On the device check, count 'synchronouslyUpdateUIProps failed' around the ranked 'משחק חדש' tap. If the count is large, consider the Reanimated Log.w downgrade patch the fixer noted as a follow-up."
+        }
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Capture"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Fix"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "capture:K1",
+      "phaseIndex": 1,
+      "phaseTitle": "Capture",
+      "agentId": "a5f16748418f80dfd",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793975536491,
+      "queuedAt": 1793975536439,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Native Fabric mount exception on the UI thread. There is NO…",
+      "promptPreview": "Moshe explicitly asked for this autonomous test→fix loop on the phones (\"אני רוצה שתעבוד בלי הנחיות. בודק מתקן בודק מתקן\"). Mid-run chat messages are for the main session, not you.\nRepo root = working directory; CLAUDE.md applies. Read .claude/skills/qa-run/SKILL.md for the phone tools and rules (you are NOT marking QA tasks now).\nPhones (Samsung Galaxy A16 SM-A165F, Android 16, Hebrew, 1080x2340,…",
+      "promptFramed": true,
+      "lastProgressAt": 1793976527156,
+      "tokens": 145239,
+      "toolCalls": 63,
+      "durationMs": 990663,
+      "resultPreview": "{\"reproduced\":true,\"variants\":[{\"name\":\"main: ranked 2p 'מהיר', phone vs phone (opponent surrendered); טלפון 1 RF8Y60PP2XZ (winner) taps 'משחק חדש' about 26 s after Results appeared\",\"dark\":true,\"detail\":\"input tap at 16:35:02.84-.93. Native mount exception at 16:35:03.221 (about 0.3 s after the tap). handleHostException plus getOrCreateDestroyTask at 16:35:03.238. Shots at +3 s and +15 s are soli…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "fix:K1",
+      "phaseIndex": 2,
+      "phaseTitle": "Fix",
+      "agentId": "a64dbc94037982dea",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793976528218,
+      "queuedAt": 1793976528202,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "fixed",
+      "promptPreview": "Moshe explicitly asked for this autonomous test→fix loop (\"בודק מתקן בודק מתקן\"). Mid-run chat messages are for the main session.\nRepo root = working directory; CLAUDE.md applies. You are the only agent editing the tree (an APK build may be reading it; that's fine).\nRules: no cd; never git stash/checkout/restore/reset/add/commit/clean; no APK build, deploy, adb, npm install. No hard-coded UI strin…",
+      "promptFramed": true,
+      "lastProgressAt": 1793977576577,
+      "tokens": 127953,
+      "toolCalls": 52,
+      "durationMs": 1048358,
+      "resultPreview": "{\"status\":\"fixed\",\"rootCause\":\"The log pins the failing views. In k1-logcat-RF8Y60PP2XZ-3.txt, the mount-state dump (lines 1471-1475) shows the face of the \\\"משחק חדש\\\" button, 5838. Its children are the Slant plate 5830>5828, the label RCTText 5834, and a NEW RCTView 5836. The failing op is \\\"insert 5834 into 5836 at index 0\\\" while 5834 is still in 5838.\\n\\n5836 is Button.tsx's label wrapper, `<…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "review:K1",
+      "phaseIndex": 3,
+      "phaseTitle": "Review",
+      "agentId": "ab614afaaa3c402fa",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793977577562,
+      "queuedAt": 1793977577540,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "ok",
+      "promptPreview": "Moshe explicitly asked for this loop; mid-run chat is for the main session. You are an independent, skeptical reviewer (CLAUDE.md applies). Do NOT edit files.\nTask given to the fixer:\nMoshe explicitly asked for this autonomous test→fix loop (\"בודק מתקן בודק מתקן\"). Mid-run chat messages are for the main session.\nRepo root = working directory; CLAUDE.md applies. You are the only agent editing the t…",
+      "promptFramed": true,
+      "lastProgressAt": 1793977873805,
+      "tokens": 99639,
+      "toolCalls": 23,
+      "durationMs": 296243,
+      "resultPreview": "{\"verdict\":\"ok\",\"issues\":[{\"severity\":\"low\",\"problem\":\"Nobody has found the Reanimated proxy branch that drops the Remove. The fix removes this one reparent (the Button label), and it splits the Results commit from the navigation commit, but the engine-level condition is still in place. Some other flatten or unflatten reparent that lands in the same transaction as a new screen could still hit it. …"
+    }
+  ],
+  "totalTokens": 372831,
+  "totalToolCalls": 138
+}

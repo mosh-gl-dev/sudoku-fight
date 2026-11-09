@@ -353,6 +353,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "для прохода нужно {{need}}",
     "chapterOpen": "проход открыт",
+    "chapterNeedSentence": "Для прохода нужно {{need}}",
+    "chapterOpenSentence": "Проход открыт",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Эта глава: {{stars}} звезда из {{max}}. {{gate}}",
     "chapterLine_few": "Эта глава: {{stars}} звезды из {{max}}. {{gate}}",
@@ -411,6 +413,8 @@
     "button": "Выйти из этапа",
     "title": "Выйти из этапа?",
     "body": "Ты получишь 0 звёзд, и откроется следующий этап.",
+    "bodyLocked": "Ты получишь 0 звёзд, а следующий этап останется закрытым.",
+    "bodyLast": "Ты получишь 0 звёзд.",
     "confirm": "Выйти",
     "cancel": "Играть дальше"
   },

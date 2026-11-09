@@ -30,14 +30,20 @@
       "box": "Block {{label}} braucht nur noch die {{digit}}."
     },
     "missing": {
-      "row": "Zeile {{label}} braucht noch {{digits}}.",
-      "col": "Spalte {{label}} braucht noch {{digits}}.",
-      "box": "Block {{label}} braucht noch {{digits}}."
+      "row_one": "Zeile {{label}} braucht noch die {{digits}}.",
+      "row_other": "Zeile {{label}} braucht noch {{digits}}.",
+      "col_one": "Spalte {{label}} braucht noch die {{digits}}.",
+      "col_other": "Spalte {{label}} braucht noch {{digits}}.",
+      "box_one": "Block {{label}} braucht noch die {{digits}}.",
+      "box_other": "Block {{label}} braucht noch {{digits}}."
     },
     "seen": {
-      "row": "Zeile {{label}} hat schon {{digits}}.",
-      "col": "Spalte {{label}} hat schon {{digits}}.",
-      "box": "Block {{label}} hat schon {{digits}}."
+      "row_one": "Zeile {{label}} hat schon die {{digits}}.",
+      "row_other": "Zeile {{label}} hat schon {{digits}}.",
+      "col_one": "Spalte {{label}} hat schon die {{digits}}.",
+      "col_other": "Spalte {{label}} hat schon {{digits}}.",
+      "box_one": "Block {{label}} hat schon die {{digits}}.",
+      "box_other": "Block {{label}} hat schon {{digits}}."
     },
     "eliminated": "Die {{digit}} wurde in Schritt {{step}} für {{cell}} ausgeschlossen.",
     "only": "Also bleibt nur die {{digit}}."

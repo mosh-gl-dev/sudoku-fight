@@ -1,6 +1,7 @@
 import 'react-native-reanimated';
 
 import { act, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
@@ -53,11 +54,41 @@ describe('StarRow', () => {
     for (const i of [0, 1, 2]) expect(pop(i)).toHaveAnimatedStyle({ opacity: 1, transform: [{ scale: 1 }] });
   });
 
+  it('once popped, React holds each star in too, not only the animation (B11)', async () => {
+    jest.useFakeTimers();
+    await render(<StarRow stars={2} size={STAR_SIZES.result} label="שני כוכבים מתוך שלושה" reveal />);
+    const held = (i: number) =>
+      StyleSheet.flatten(screen.getByTestId(`star-row-${i}-pop`, hidden).props.style);
+    expect(held(0)).toMatchObject({ opacity: 0 });
+    await act(async () => void jest.advanceTimersByTime(revealMs(2) + 100));
+    for (const i of [0, 1]) expect(held(i)).toMatchObject({ opacity: 1, transform: [{ scale: 1 }] });
+  });
+
   it('the reveal under Reduced Motion: every earned star at once, nothing to animate', async () => {
     useSettings.setState({ reduceMotion: 'on' });
     await render(<StarRow stars={3} size={STAR_SIZES.result} label="x" reveal />);
     expect(screen.queryByTestId('star-row-0-pop', hidden)).toBeNull();
     for (const i of [0, 1, 2]) expect(screen.getByTestId(`star-row-${i}-filled`, hidden)).toBeTruthy();
+  });
+
+  it('a boss’s pedestal: only the new stars pop (from `from`), starting `delayMs` from now', async () => {
+    jest.useFakeTimers();
+    await render(
+      <StarRow stars={3} size={STAR_SIZES.chip} label={null} reveal={{ from: 1, delayMs: 350 }} />,
+    );
+    const pop = (i: number) => screen.getByTestId(`star-row-${i}-pop`, hidden);
+    // The star I had stays still and filled; the two new ones pop.
+    expect(screen.queryByTestId('star-row-0-pop', hidden)).toBeNull();
+    expect(screen.getByTestId('star-row-0-filled', hidden)).toBeTruthy();
+    expect(pop(1)).toHaveAnimatedStyle({ opacity: 0 });
+    // Not at REVEAL.delayMs (200) as the result's: at the step's 350.
+    await act(async () => void jest.advanceTimersByTime(340));
+    expect(pop(1)).toHaveAnimatedStyle({ opacity: 0 });
+    await act(async () => void jest.advanceTimersByTime(REVEAL.staggerMs));
+    expect(pop(1)).not.toHaveAnimatedStyle({ opacity: 0 });
+    expect(pop(2)).toHaveAnimatedStyle({ opacity: 0 });
+    await act(async () => void jest.advanceTimersByTime(revealMs(3)));
+    for (const i of [1, 2]) expect(pop(i)).toHaveAnimatedStyle({ opacity: 1, transform: [{ scale: 1 }] });
   });
 
   it('only the earned stars pop; the empty outlines are there from the start', async () => {

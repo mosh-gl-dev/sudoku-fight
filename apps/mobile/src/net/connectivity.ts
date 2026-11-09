@@ -14,8 +14,13 @@ import { httpBaseUrl } from '../config/server';
 export const CONNECTIVITY = {
   /** A check gives up after this long. */
   timeoutMs: 5000,
-  /** While offline, the background check runs this often. */
-  recheckMs: 10_000,
+  /**
+   * While offline, the background check runs this often. 5 s (10 s until loop 5): the connection back is seen
+   * within a few seconds, and with it the stages and practices played offline are sent and Home's XP goes up
+   * (QA levels-xp-offline: a phone's network takes a few seconds to come back after flight mode, so with 10 s
+   * the first check often missed it and Home waited 20 s and more). Offline, a check fails at once: it is cheap.
+   */
+  recheckMs: 5000,
 } as const;
 
 export type FetchLike = (

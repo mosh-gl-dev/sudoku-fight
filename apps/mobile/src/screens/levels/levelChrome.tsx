@@ -13,7 +13,9 @@ import { BossFrame } from '../../components/levels/BossFrame';
 import { regionCellsOf } from '../../components/levels/MiniRegion';
 import { RegionFrame } from '../../components/levels/RegionFrame';
 import { LEVEL_UI } from '../../config/levels';
+import { useUnlockAllLevels } from '../../config/testing';
 import type { LevelFinishResult, LevelSession } from '../../levels/levelSession';
+import { useLevelsProgress, useOpenedChapters } from '../../levels/levelsStore';
 import { tokens } from '../../theme';
 import type { LevelChrome, LevelChromeContext } from '../game/GameScreen';
 import { identityOf } from '../game/identity';
@@ -24,7 +26,9 @@ import { DuelLevelHud } from './hud/DuelLevelHud';
 import { PointHunterHud, PointHunterOverlay } from './hud/PointHunterHud';
 import { levelWhy } from './levelExplain';
 import type { LevelOpponent, LevelPlayed } from './LevelResultView';
-import { fillBoardLabel, type LevelsT } from './levelWording';
+import { exitBodyText, fillBoardLabel, type LevelsT } from './levelWording';
+import { afterQuit, everyChapter } from './mapModel';
+import type { StageOver } from './useStageShell';
 
 /**
  * A digit stage's chrome on the game screen (dev-plan §2ח, components.md §19.7): what turns GameScreen into
@@ -54,15 +58,31 @@ import { fillBoardLabel, type LevelsT } from './levelWording';
  */
 
 export interface LevelChromeOptions {
-  /** The stage is over and held: its result. */
-  onOver: () => void;
+  /** The stage is over and held: its result (`over` when it came under "לצאת מהשלב?"). */
+  onOver: (over?: StageOver) => void;
   /** Over everything: the D65 countdown over the covered board. */
   cover?: ReactNode;
   /** The cover is up (the screen under it is hidden from screen readers). */
   covered?: boolean;
   /** The stage's rules (the session's): a chain's chainNotYet [D64]. LEVEL_RULES by default. */
   rules?: Pick<LevelRules, 'chainNotYet'>;
+  /** "לצאת מהשלב?"'s body as the quit would end (useExitBody); "…, והשלב הבא ייפתח." by default. */
+  exitBody?: string;
 }
+
+/**
+ * [D51] "לצאת מהשלב?"'s body for `level` (the stage as stored) as a quit would really end it now (B39): the
+ * next stage opens, stays locked (a boss whose gate is still shut), or there is none. Read from the same
+ * progress as the result's "לשלב הבא" (levels.db's records, the chapters opened, the testing switch).
+ */
+export function useExitBody(level: Pick<AppLevel, 'id'>, rules: LevelRules, t: LevelsT): string {
+  const records = useLevelsProgress() ?? NO_RECORDS;
+  const opened = useOpenedChapters();
+  const unlockAll = useUnlockAllLevels();
+  return exitBodyText(afterQuit(level.id, records, unlockAll ? everyChapter() : opened, rules), t);
+}
+
+const NO_RECORDS = {};
 
 /** The cells of box `b` (0–8), row by row. */
 export const boxCells = (b: number): CellIndex[] => regionCellsOf({ unit: 'box', index: b });
@@ -104,7 +124,7 @@ function kindChrome(level: AppLevel, t: LevelsT, options: LevelChromeOptions): L
   const base = {
     endDialog: {
       title: t('exit.title'),
-      body: t('exit.body'),
+      body: options.exitBody ?? t('exit.body'),
       confirm: t('exit.confirm'),
       cancel: t('exit.cancel'),
       label: t('exit.button'),
@@ -237,6 +257,11 @@ export function levelPlayedOf(
   }
   const kind = session.played.kind;
   const best = kind === 'duel' || kind === 'pointHunter' ? (me?.bestMove ?? null) : null;
+  // A puzzle: the swaps made (its levelOver's count) and the fewest that solve it, for the line under the time.
+  const puzzle = view.level?.puzzle ?? null;
+  const swaps = puzzle
+    ? { used: 'swaps' in r.end ? r.end.swaps : (puzzle.over?.swaps ?? puzzle.swaps), min: puzzle.minSwaps }
+    : null;
   return {
     outcome: r.outcome,
     finished: r.finished,
@@ -244,6 +269,7 @@ export function levelPlayedOf(
     opponent,
     bestMove: best ? { cell: best.cell, digit: best.digit, points: best.points } : null,
     why: levelWhy(session.played, r, lang),
+    swaps,
   };
 }
 

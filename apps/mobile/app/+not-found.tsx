@@ -5,7 +5,7 @@ import { BackHandler, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StateView } from '../src/components/ui';
-import { color, tokens } from '../src/theme';
+import { tokens } from '../src/theme';
 
 /** Home, with nothing behind it: the unknown link left no screen worth going back to. */
 const goHome = () => {
@@ -54,6 +54,6 @@ export default function NotFoundRoute() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   body: { flex: 1, justifyContent: 'center', paddingHorizontal: tokens.layout.gutterHome },
 });

@@ -1,5 +1,5 @@
 import 'react-native-reanimated';
-import { avatarById, renderStatic } from '@sudoku-fight/avatars';
+import { avatarById, GIMMICK_MIN_SIZE, renderStatic } from '@sudoku-fight/avatars';
 import { act, render, screen } from '@testing-library/react-native';
 
 import { drawnAvatarId, svgXmlsIn } from '../../../avatars/testing/avatarTesting';
@@ -14,7 +14,8 @@ import { FighterPreview, STAGE_SETTLE_MS } from '../FighterPreview';
  */
 
 const hidden = { includeHiddenElements: true };
-const SIZE = AVATAR_SIZES.row.image;
+// 64: big enough for the character's own moving parts (GIMMICK_MIN_SIZE 48; decision 3.19, 30.10.2026).
+const SIZE = AVATAR_SIZES.home.image;
 const xmls = () =>
   svgXmlsIn(screen.getByTestId('fighter-preview-me-avatar-image', hidden)).map((x) => x.props.xml as string);
 
@@ -32,6 +33,18 @@ beforeEach(async () => {
 afterEach(() => jest.useRealTimers());
 
 describe('FighterPreview', () => {
+  it('shows my avatar at 64, where its own moving parts play', async () => {
+    expect(SIZE).toBe(64);
+    expect(SIZE).toBeGreaterThanOrEqual(GIMMICK_MIN_SIZE);
+    useSettings.setState({ reduceMotion: 'on' });
+    await render(<FighterPreview avatarId="noam" name="MosheG" country="IL" />);
+    expect(xmls()).toEqual([renderStatic(avatarById('noam')!, { size: SIZE })]);
+    expect(screen.getByTestId('fighter-preview-me-avatar-image', hidden)).toHaveStyle({
+      width: 64,
+      height: 64,
+    });
+  });
+
   it('my avatar idles once the choice has stayed a moment; a new choice waits again', async () => {
     const view = await render(<FighterPreview avatarId="noam" name="MosheG" country="IL" />);
     await frames(STAGE_SETTLE_MS);

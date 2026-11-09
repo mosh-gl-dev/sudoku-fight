@@ -133,10 +133,12 @@
     "error": {
       "title": "Verbindungsfehler",
       "offlineTitle": "Keine Internetverbindung",
+      "expiredTitle": "Du bist nicht rechtzeitig zurückgekommen",
       "body": {
         "offline": "Dein Handy hat gerade kein Netz. Verbinde dich mit dem Internet und versuch es noch mal.",
         "unreachable": "Wir konnten den Spielserver nicht erreichen. Prüf deine Verbindung und versuch es noch mal.",
         "lost": "Die Verbindung zum Spielserver ist abgebrochen, und wir konnten sie nicht wiederherstellen.",
+        "expired": "Die Verbindung kam nicht rechtzeitig zurück, deshalb zählt das Spiel als Spielflucht.",
         "refused": "Der Server hat uns nicht in den Raum gelassen."
       },
       "refusal": {
@@ -172,7 +174,9 @@
       "confirm": "Ja, aufgeben",
       "cancel": "Abbrechen",
       "footnote": "Das Spiel läuft im Hintergrund weiter",
-      "dialog": "Aufgeben bestätigen"
+      "dialog": "Aufgeben bestätigen",
+      "notSent": "Du hast nicht aufgegeben, das Spiel läuft weiter. Du kannst es noch einmal versuchen",
+      "notSentOffline": "Keine Verbindung zum Server, daher hast du nicht aufgegeben. Versuch es noch einmal, sobald sie zurück ist"
     },
     "lobby": {
       "title": "Privater Raum",
@@ -411,9 +415,31 @@
       "move": "{{cell}} → {{digit}}",
       "label_one": "Zug des Spiels: {{points}} Punkt, {{digit}} in {{cell}}",
       "label_other": "Zug des Spiels: {{points}} Punkte, {{digit}} in {{cell}}",
-      "formula": "So wurde gezählt",
-      "formulaLabel": "So wurde gezählt: {{line}}",
-      "none": "Kein richtiger Zug in diesem Training"
+      "before": "Vor dem Zug belegt",
+      "count": {
+        "row": "in der Zeile",
+        "col": "in der Spalte",
+        "box": "im Block",
+        "num": "{{digit}}er auf dem Spielfeld"
+      },
+      "filled": {
+        "row_one": "{{count}} in der Zeile",
+        "row_other": "{{count}} in der Zeile",
+        "col_one": "{{count}} in der Spalte",
+        "col_other": "{{count}} in der Spalte",
+        "box_one": "{{count}} im Block",
+        "box_other": "{{count}} im Block",
+        "num_one": "die {{digit}} steht einmal auf dem Spielfeld",
+        "num_other": "die {{digit}} steht {{count}}-mal auf dem Spielfeld"
+      },
+      "countName": {
+        "row": "die Zeile",
+        "col": "die Spalte",
+        "box": "der Block",
+        "num": "die {{digit}}er"
+      },
+      "why": "Je leerer es um das Feld ist, desto mehr ist ein Zug wert. Die zwei höchsten Werte bestimmen die Punkte: {{highest}} mit vollem Gewicht, {{next}} mit halbem.",
+      "none": "Du hattest keinen richtigen Zug in diesem Spiel"
     },
     "stats": {
       "time": "Spielzeit",
@@ -445,6 +471,13 @@
     "actions": {
       "home": "Start",
       "newGame": "Neues Spiel"
+    },
+    "again": {
+      "solo": "Startet sofort noch ein Solotraining, {{type}}",
+      "bot": "Startet sofort noch ein Spiel gegen {{bot}}, {{type}}",
+      "botAny": "Startet sofort noch ein Spiel gegen den Bot, {{type}}",
+      "ranked": "Noch ein Ranglistenspiel, {{type}}",
+      "friends": "Zurück zum Spiel mit Freunden"
     },
     "loading": "Ergebnis wird geladen…",
     "missing": "Wir haben dieses Training nicht gefunden",

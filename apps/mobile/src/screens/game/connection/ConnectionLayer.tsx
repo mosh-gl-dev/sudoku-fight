@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AvatarIdOrNone } from '../../../avatars';
 import type { Gender } from '../../../components/player/wording';
+import { color } from '../../../theme';
 import { Announcer } from './Announcer';
 import { ConnectingView } from './ConnectingView';
 import { ConnectionError } from './ConnectionError';
@@ -14,6 +15,7 @@ import { LobbyView } from './LobbyView';
 import { OpponentLeft } from './OpponentLeft';
 import { OpponentReconnecting } from './OpponentReconnecting';
 import { SelfReconnecting } from './SelfReconnecting';
+import { useTimeUpHold } from './useTimeUpHold';
 
 export interface ConnectionLayerProps {
   /** connectionModel(view, status, now), recomputed as time passes (the game screen's tick). */
@@ -42,18 +44,26 @@ export interface ConnectionLayerProps {
   myId?: PlayerId;
   /** Connecting into a ranked match's room: its players, tag, percent and tip (./loadingModel). */
   loading?: MatchLoading | null;
+  /**
+   * Drawn over a live game (GameScreen), not alone: the error screen then paints the ground, so the board,
+   * the cards and the keypad never show through it. Alone (no game yet), it stays see-through, and the app's
+   * wandering digits [D126] are its background like any screen's.
+   */
+  overGame?: boolean;
 }
 
 /**
  * Everything the connection model can show, in one place, drawn over the game screen (or alone before the
  * game has a view): the integrator renders it last, over the screen's content, and hides that content from
- * screen readers and touches while blocksInput(model) is true. The two transient overlays (self and opponent
- * reconnecting) stay mounted so they can fade out; the full screens (connecting, lobby, error, opponent-left)
+ * screen readers and touches while blocksInput(model) is true. The full screens are also modal for VoiceOver
+ * (accessibilityViewIsModal), so nothing of the game under them is reached first. The two transient overlays
+ * (self and opponent reconnecting) stay mounted so they can fade out; the full screens (connecting, lobby, error, opponent-left)
  * come and go with the model. My connection's soft phase [D42] draws nothing at all (the game goes on, my card
- * shows the mark): screen readers hear it once.
+ * shows the mark): screen readers hear it once. The opponent's freeze ends on its time-up state (the ring at
+ * 0, "בודקים מול השרת…") for a moment before "the opponent left", even when the server's verdict was on time.
  */
 export function ConnectionLayer({
-  model,
+  model: given,
   onRetry,
   onHome,
   onResults,
@@ -66,9 +76,12 @@ export function ConnectionLayer({
   countries,
   myId,
   loading = null,
+  overGame = false,
 }: ConnectionLayerProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation('game');
+  // The opponent's countdown ends at 0 and its time-up state, before "the opponent left" (./useTimeUpHold).
+  const model = useTimeUpHold(given);
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none" testID="connection-layer">
       {model.kind === 'selfOffline' ? (
@@ -93,20 +106,28 @@ export function ConnectionLayer({
         />
       ) : null}
       {model.kind === 'error' ? (
-        <View style={StyleSheet.absoluteFill}>
+        <View
+          style={[StyleSheet.absoluteFill, overGame && styles.ground]}
+          accessibilityViewIsModal
+          testID="connection-error-cover"
+        >
           <ConnectionError model={model} onRetry={onRetry} onHome={onHome} onPractice={onPractice} />
         </View>
       ) : null}
       {model.kind === 'connecting' ? (
-        <View style={StyleSheet.absoluteFill}>
+        <View style={StyleSheet.absoluteFill} accessibilityViewIsModal testID="connecting-cover">
           <ConnectingView model={model} match={loading} onCancel={onLeave} />
         </View>
       ) : null}
       {model.kind === 'lobby' ? (
-        <View style={StyleSheet.absoluteFill}>
+        <View style={StyleSheet.absoluteFill} accessibilityViewIsModal testID="lobby-cover">
           <LobbyView model={model} onLeave={onLeave} onCopy={onCopy} avatars={avatars} />
         </View>
       ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  ground: { backgroundColor: color.bg },
+});

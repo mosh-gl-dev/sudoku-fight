@@ -9,6 +9,7 @@ import {
   type AvatarId,
   COUNTDOWN_MS,
   type CountryCode,
+  FOUND_HOLD_MS,
   type GameRoomRuleOverrides,
   KEEP_SEARCHING_WINDOW_MS,
   MATCH_TIMEOUT_MS,
@@ -25,6 +26,7 @@ import {
   queueKey,
   type QueuePlayerCount,
   type QueueSpec,
+  rankedGameRefusalText,
   READY_TIMEOUT_MS,
   roomInterferenceKinds,
 } from '@sudoku-fight/protocol';
@@ -64,7 +66,8 @@ import type { RankedMatchLink, RankedMatchSetup, RankedRoomHooks, RankedRooms } 
  *   allows only the interference kinds every player's app declared on joining [D47] (none declared: the
  *   legacy three), so an older app never gets a kind it can't show.
  * - The ready check (D37: ready = connected to the game room): when everyone is in, the countdown runs and
- *   the game starts at its end (`countdown`, `started`; the game room records the opponents met). If
+ *   the game starts at its end (`countdown`, `started`; the game room records the opponents met). It never
+ *   starts before `foundHoldMs` after "found", so phones that connect at once still show the VS first. If
  *   someone is still missing READY_TIMEOUT_MS after "found", the match is cancelled: the room closes, the
  *   players who were there go back to the head of the queue (original order of service, and the time in the
  *   ready check does not count as searching), and the missing players are dropped.
@@ -155,6 +158,8 @@ export interface MatchmakingConfig {
   tickMs: number;
   /** After "found", everyone must connect to the game room within this (D37: 10 s). */
   readyTimeoutMs: number;
+  /** The countdown starts this long after "found" at the earliest: the VS is seen (FOUND_HOLD_MS). */
+  foundHoldMs: number;
   /** 3… 2… 1… GO. */
   countdownMs: number;
   /** "Keep searching" searches this much longer. */
@@ -174,6 +179,7 @@ export const DEFAULT_MATCHMAKING: MatchmakingConfig = {
   matcher: DEFAULT_MATCHER,
   tickMs: 500,
   readyTimeoutMs: READY_TIMEOUT_MS,
+  foundHoldMs: FOUND_HOLD_MS,
   countdownMs: COUNTDOWN_MS,
   extendedTimeoutMs: MATCH_TIMEOUT_MS,
   keepSearchingWindowMs: KEEP_SEARCHING_WINDOW_MS,
@@ -248,9 +254,13 @@ interface Match {
   matchedAt: number;
   state: MatchState;
   roomId: string | null;
+  /** When `found` went out (0 before). */
+  foundAt: number;
   readyBy: number;
   ready: Set<string>;
   timer: unknown;
+  /** Everyone is in before `foundHoldMs`: the countdown waits for it. */
+  holdTimer: unknown;
   hooks: RankedRoomHooks | null;
 }
 
@@ -259,8 +269,11 @@ export class MatchmakingService implements RankedRooms {
   private readonly bySession = new Map<string, Entry>();
   private readonly queues = new Map<QueueKey, MatchQueue>();
   private readonly matches = new Map<string, Match>();
-  /** Players whose ranked game runs (from GO until it is over or its room closes): user id → match id. */
-  private readonly playing = new Map<string, string>();
+  /**
+   * Players whose ranked game runs (from GO until it is over or its room closes): user id → the match's id and
+   * its room's (an alreadyQueued names the room: the app's way back into the game).
+   */
+  private readonly playing = new Map<string, { matchId: string; roomId: string; queueKey: QueueKey }>();
   private tickTimer: unknown = null;
   private closed = false;
   /** [D94] A stealth bot is being chosen (a database round trip) for this player: one at a time. */
@@ -300,8 +313,9 @@ export class MatchmakingService implements RankedRooms {
         'alreadyQueued',
         'this account is searching already, or its match has not started yet',
       );
-    if (this.playing.has(identity.userId))
-      throw new MatchmakingRefusal('alreadyQueued', 'this account is in a ranked game that has not ended');
+    const game = this.playing.get(identity.userId);
+    if (game)
+      throw new MatchmakingRefusal('alreadyQueued', rankedGameRefusalText(game.roomId, game.queueKey));
     const key = queueKey(spec.gameType, spec.players);
     const stealth = this.deps.stealth?.isStealthQueue(key) ? this.deps.stealth : undefined;
     const entry: Entry = {
@@ -694,9 +708,11 @@ export class MatchmakingService implements RankedRooms {
       matchedAt: now,
       state: 'opening',
       roomId: null,
+      foundAt: 0,
       readyBy: 0,
       ready: new Set(),
       timer: null,
+      holdTimer: null,
       hooks: null,
     };
     for (const m of members) m.phase = 'matched';
@@ -740,6 +756,7 @@ export class MatchmakingService implements RankedRooms {
     const { readyTimeoutMs } = this.deps.config;
     match.state = 'waiting';
     match.roomId = opened.roomId;
+    match.foundAt = now;
     match.readyBy = now + readyTimeoutMs;
     match.timer = this.deps.scheduler.setTimeout(() => this.readyCheck(match), readyTimeoutMs);
     const players = match.members.map((m, i) => this.profile(m, match.tickets[i]!));
@@ -798,6 +815,21 @@ export class MatchmakingService implements RankedRooms {
     for (const m of match.members) m.session?.send({ type: 'ready', matchId: match.id, ready });
   }
 
+  /**
+   * Everyone is in (D37): the countdown, but not before the VS held `foundHoldMs` (motion tokens
+   * `sequence.matchFound`: the count at found + 1200). Whoever drops meanwhile is waited for as before it:
+   * back in time, the count starts; not back by `readyBy`, the ready check calls the match off.
+   */
+  private everyoneIn(match: Match): void {
+    const wait = match.foundAt + this.deps.config.foundHoldMs - this.now();
+    if (wait <= 0) return this.startCountdown(match);
+    if (match.holdTimer !== null) return;
+    match.holdTimer = this.deps.scheduler.setTimeout(() => {
+      match.holdTimer = null;
+      if (match.state === 'waiting' && match.ready.size === match.members.length) this.startCountdown(match);
+    }, wait);
+  }
+
   private startCountdown(match: Match): void {
     this.clearMatchTimer(match);
     match.state = 'countdown';
@@ -814,7 +846,8 @@ export class MatchmakingService implements RankedRooms {
     if (match.state !== 'countdown') return;
     match.state = 'started';
     this.matches.delete(match.id);
-    for (const m of match.members) this.playing.set(m.userId, match.id);
+    for (const m of match.members)
+      this.playing.set(m.userId, { matchId: match.id, roomId: match.roomId!, queueKey: match.queueKey });
     this.callHook(match, (h) => h.onGo());
     for (const m of match.members) {
       const session = m.session;
@@ -890,6 +923,8 @@ export class MatchmakingService implements RankedRooms {
         name: m.identity.name,
         rating: match.tickets[i]!.rating,
         games: m.player?.games ?? 0,
+        // The card "found" showed: the room's `lobby` carries it to an app that comes back with nothing kept.
+        ...(m.player ? { avatarId: m.player.avatarId, country: m.player.country } : {}),
       })),
       readyTimeoutMs: this.deps.config.readyTimeoutMs,
       countdownMs: this.deps.config.countdownMs,
@@ -907,7 +942,7 @@ export class MatchmakingService implements RankedRooms {
         // Before `found` (a persona the room seated quickly): nobody to tell yet; open() tells it with `found`.
         if (match.state === 'opening') return;
         this.sendReady(match);
-        if (match.ready.size === match.members.length) this.startCountdown(match);
+        if (match.ready.size === match.members.length) this.everyoneIn(match);
       },
       leave: (userId) => {
         if (match.state !== 'waiting' && match.state !== 'opening') return;
@@ -942,7 +977,8 @@ export class MatchmakingService implements RankedRooms {
 
   /** The match's game is over (or its room gone): its players may search again. */
   private gameEnded(match: Match): void {
-    for (const m of match.members) if (this.playing.get(m.userId) === match.id) this.playing.delete(m.userId);
+    for (const m of match.members)
+      if (this.playing.get(m.userId)?.matchId === match.id) this.playing.delete(m.userId);
   }
 
   // -- helpers -------------------------------------------------------------------------------------------
@@ -977,5 +1013,7 @@ export class MatchmakingService implements RankedRooms {
   private clearMatchTimer(match: Match): void {
     if (match.timer !== null) this.deps.scheduler.clearTimeout(match.timer);
     match.timer = null;
+    if (match.holdTimer !== null) this.deps.scheduler.clearTimeout(match.holdTimer);
+    match.holdTimer = null;
   }
 }

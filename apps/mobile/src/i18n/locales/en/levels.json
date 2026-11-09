@@ -311,6 +311,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "the gate needs {{need}}",
     "chapterOpen": "the gate is open",
+    "chapterNeedSentence": "The gate needs {{need}}",
+    "chapterOpenSentence": "The gate is open",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "This chapter: 1 star of {{max}}. {{gate}}",
     "chapterLine_other": "This chapter: {{stars}} stars of {{max}}. {{gate}}",
@@ -361,6 +363,8 @@
     "button": "Leave the stage",
     "title": "Leave the stage?",
     "body": "You'll get 0 stars, and the next stage will open.",
+    "bodyLocked": "You'll get 0 stars, and the next stage will stay locked.",
+    "bodyLast": "You'll get 0 stars.",
     "confirm": "Leave",
     "cancel": "Keep playing"
   },

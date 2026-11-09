@@ -52,7 +52,10 @@ const LAND_SCALE = 0.85;
 
 type Curve = readonly [number, number, number, number];
 const bezier = ([x1, y1, x2, y2]: Curve) => Easing.bezier(x1, y1, x2, y2);
-/** The reduced variant is chosen by the screen (it mounts no chip), so Reanimated must not shorten these. */
+/**
+ * The reduced variant is chosen by the screen (it mounts no chip), so Reanimated must not shorten these, nor skip
+ * a withDelay's wait (it follows the phone's setting unless told Never).
+ */
 const timing = (duration: number, curve: Curve = motion.easing.standard): WithTimingConfig => ({
   duration,
   easing: bezier(curve),
@@ -104,12 +107,20 @@ function FlightChip({ flight }: { flight: Flight }) {
           withDelay(
             Math.max(0, landAt - appearAt - 2 * quick),
             withTiming(0, timing(quick, motion.easing.exit)),
+            ReduceMotion.Never,
           ),
         ),
+        ReduceMotion.Never,
       ),
     );
-    scale.set(withDelay(appearAt, withSequence(withTiming(POP_PEAK, timing(quick)), withSpring(1, pop))));
-    progress.set(withDelay(flyAt, withTiming(1, timing(landAt - flyAt))));
+    scale.set(
+      withDelay(
+        appearAt,
+        withSequence(withTiming(POP_PEAK, timing(quick)), withSpring(1, pop)),
+        ReduceMotion.Never,
+      ),
+    );
+    progress.set(withDelay(flyAt, withTiming(1, timing(landAt - flyAt)), ReduceMotion.Never));
   }, [appearAt, flyAt, landAt, opacity, scale, progress]);
 
   const style = useAnimatedStyle(() => {

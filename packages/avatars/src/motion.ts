@@ -9,7 +9,8 @@
  *
  * - CSS, for the preview page and the admin site: `motionCss()` turns every track into @keyframes. Put the
  *   class `sfa-m-{motion id}` on the <svg> to play it. Face changes need a script: `faceChanges()` lists them
- *   with their times; replace g#face's content with renderFace() at each one.
+ *   with their times; replace g#face's content with renderFace() at each one, and g#extras's with
+ *   renderExtras().
  *
  * - Reanimated, in the app: native.ts does it per layer (nativeLayers, motionPlan). Sampling by hand works too,
  *   one shared value per playing avatar:
@@ -349,13 +350,24 @@ export const TARGET_CLASS: Record<MotionTarget, string> = {
 };
 
 /**
+ * Every class a track's target moves: a `face` track moves the face's extras too (render.ts draws them in their
+ * own group, over the front layers).
+ */
+export const TARGET_CLASSES: Record<MotionTarget, readonly string[]> = {
+  body: [TARGET_CLASS.body],
+  face: [TARGET_CLASS.face, 'sfa-extras'],
+  eyes: [TARGET_CLASS.eyes],
+};
+
+/**
  * Every motion as CSS. Play one by adding `sfa-m-{id}` to the avatar's <svg> class (remove it and force a
  * reflow to replay). Transform origins come from the custom properties render.ts puts on the <svg> (and the
  * rig on each eye's group: its own `--sfa-eyes`). `scope` prefixes every selector (e.g. '.avatars-page').
  */
 export function motionCss(scope = ''): string {
   const s = scope ? `${scope} ` : '';
-  const all = Object.values(TARGET_CLASS)
+  const all = Object.values(TARGET_CLASSES)
+    .flat()
     .map((c) => `${s}.sfa .${c}`)
     .join(',');
   const out: string[] = [`${all}{transform-box:view-box;transform-origin:var(--sfa-pivot)}`];
@@ -370,9 +382,8 @@ export function motionCss(scope = ''): string {
         )
         .join('');
       out.push(`@keyframes ${name}{${frames}}`);
-      out.push(
-        `${s}.sfa.sfa-m-${id} .${TARGET_CLASS[tr.target]}{animation:${name} ${m.durationMs}ms both;transform-origin:var(--sfa-${tr.origin})}`,
-      );
+      const parts = TARGET_CLASSES[tr.target].map((c) => `${s}.sfa.sfa-m-${id} .${c}`).join(',');
+      out.push(`${parts}{animation:${name} ${m.durationMs}ms both;transform-origin:var(--sfa-${tr.origin})}`);
     }
   }
   out.push(`@media (prefers-reduced-motion:reduce){${all}{animation:none!important}}`);

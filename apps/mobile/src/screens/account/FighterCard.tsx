@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import type { AvatarReaction } from '../../avatars';
-import { Avatar, countryName, Flag, SeatGlyph } from '../../components/player';
+import { Avatar, type AvatarSize, countryName, Flag, SeatGlyph } from '../../components/player';
 import { Text } from '../../components/ui/Text';
 import { color, radius, space, text, tokens } from '../../theme';
 
@@ -28,6 +28,7 @@ export function FighterCard({
   end,
   idle = false,
   reaction = null,
+  avatarSize = 'row',
   style,
   testID,
 }: {
@@ -39,6 +40,11 @@ export function FighterCard({
   /** The avatar idles (a stage view: AVATAR_STAGES.picker). */
   idle?: boolean;
   reaction?: AvatarReaction | null;
+  /**
+   * The avatar's size: 'row' (52); the registration's preview takes 'home' (72, a 64 picture), where the
+   * character's own moving parts play (packages/avatars GIMMICK_MIN_SIZE, 48).
+   */
+  avatarSize?: AvatarSize;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
@@ -47,7 +53,7 @@ export function FighterCard({
     <View style={[styles.card, style]} testID={testID}>
       <Avatar
         avatarId={avatarId}
-        size="row"
+        size={avatarSize}
         colorIndex={0}
         backdrop={color.surface}
         idle={idle}

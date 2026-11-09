@@ -1,0 +1,435 @@
+{
+ "reps": [
+  {
+   "key": "navigation",
+   "brief": "YOUR ITEMS (bug texts in docs/handoff/2026-11-03/data/loop7-bugs.json appBugs, by title; logcat docs/handoff/2026-11-03/data/crash-RF8Y30L038L-postgame-progress-english.txt):\n1) MAJOR: with the app open (Results of a ranked game, app in English), running 'wm size reset', 'wm density reset' and 'font_scale 1.0' (a configuration change) rebuilds the app on Home. After that, tapping the profile card doesn't open the player card ('My player card' on Achievements doesn't either), and the bottom tabs sometimes ignore the first tap. Each tap logs \"The 'navigation' object hasn't been initialized yet\". A restart fixes it. Find why: does the activity get recreated (configChanges in app.config / AndroidManifest missing density/fontScale/screenSize), does a module-level navigation ref or the root layout remount lose the container, does something call router before the root navigator mounts? Fix the root cause. Android should handle these config changes without recreating the activity, or the app must survive a recreate. Add a regression test where possible, for example on the config plugin output or on the code path that used a stale ref.\n2) minor: an empty frame (only the ambient background) about 1.5 s after confirming a surrender or ending a practice, between the board and the results screen (4/4 ranked, 3/3 practice). Round loop-6 (docs/handoff/2026-11-03/data/fix-loop6.json, area 'transitions') fixed the same race for results→search, by pushing over and dropping when covered, and for GO!→game, by cutting. Apply the right one of those to game→results, keeping the motion.md game.end hold, and respect Reduced Motion.",
+   "rep": {
+    "items": [
+     {
+      "id": "postgame-progress-english (MAJOR): after wm size/density reset + font_scale 1.0 with the app open, profile card / 'My player card' / sometimes a tab do nothing, 'The navigation object hasn't been initialized yet'",
+      "status": "fixed",
+      "rootCause": "The manifest's configChanges do not list density or fontScale, so each of those changes recreates MainActivity. The two commands caused two recreations in a row. Each recreation starts a new React root (surface) in the same JS runtime, and each root holds its own expo-router ExpoRoot and NavigationContainer. But router.push/replace/back all go through ONE module-level queue (expo-router routingQueue), and the first container whose effect runs takes every waiting action and dispatches it into its own tree. A root whose activity was destroyed before it was ever laid out never gets safe-area insets. expo-router's SafeAreaProvider then renders nothing, so that root's container has no navigator. That root was also never unmounted. Its container took the visible app's taps and dropped them with exactly 'The navigation object hasn't been initialized yet' (BaseNavigationContainer.dispatch with no focus listener). A restart cleared the extra root. I reproduced this in Jest: with the old entry and two roots, router.push to the player card logs that exact message and the card never opens. With a stale root that still had its navigator, the action is silently 'not handled' instead. I did not add density/fontScale to configChanges. react-native-svg (SvgView/VirtualView) reads the density once, when a view is created, so the app's SVG icons and avatars would draw at the old scale after an in-place density change. Recreation also comes from other changes (bold text and others), so the app has to survive it.",
+      "fix": "New app entry apps/mobile/index.ts (package.json main: expo-router/entry -> index.ts; Expo resolveEntryPoint verified -> apps/mobile/index.ts). It is expo-router's entry-classic (@expo/metro-runtime first, then renderRootComponent(App)), with App wrapped by latestRootOnly. New apps/mobile/src/services/latestRoot.tsx: each root takes its order in its first render. On mount it becomes the newest and tells the older roots. Every older root then renders null, which unmounts its whole ExpoRoot: its container, its routing-queue subscription, and every screen and effect in it. This happens whether or not Android ever stops that surface, and a stale root never comes back. Only 'main' is wrapped; RN's LogBox surface in dev is not touched (so no setWrapperComponentProvider). No UI strings, no motion.",
+      "test": "New apps/mobile/src/services/__tests__/latestRoot.test.tsx goes through the real index.ts, with renderRootComponent captured and qualified-entry's App rendering ExpoRoot over test routes. (1) After two recreations (Results root; a root never laid out, via a SafeAreaProvider mock with no insets; a new root on Home; then the first unmounted), router.push('/player/[id]') opens the player card in the visible root, no NOT_INITIALIZED error is logged, and the stale root renders null. (2) After one recreation, the old root is null at once, and push and back work in the new one. (3) A single root works as before. (4) package.json main is index.ts. With the old registration (renderRootComponent(App)), tests 1 and 2 fail and log the exact QA error.",
+      "deviceCheck": "Needs a new APK (the entry changed). Phone 3, app in English. 1) adb shell wm size 1080x2340; adb shell wm density 480; adb shell settings put system font_scale 1.3. Open the app, finish a ranked or bot game, stay on Results. 2) Run adb shell wm size reset, adb shell wm density reset and adb shell settings put system font_scale 1.0, one right after the other. 3) The app rebuilds on Home. Tap the profile card: the player card opens on the first tap. Back, then tap each bottom tab once (Leaderboard, History, Achievements, Home): each opens on the first tap. On Achievements, 'My player card' opens. 4) adb logcat -d | grep \"hasn't been initialized\" shows no lines. 5) Repeat once more with the app on Home (font_scale 1.3 then 1.0) and check the same taps. 6) Also from Settings: change Display size, return to the app, then tap the profile card and a tab."
+     },
+     {
+      "id": "ranked-end-i-surrender-my-lock-5x (minor): empty frame (only the ambient digits) ~1.5 s after confirming a surrender / ending a practice, between the board and Results",
+      "status": "fixed",
+      "rootCause": "This is the same race loop 6 fixed for results→search. When the game ended (after its game.end hold), app/game.tsx replaced itself with /results/[id]. On Android, react-native-screens fades the replaced screen out. But its views can be deleted in the mount batch before the posted removal transition starts (NativeProxy.notifyScreenRemoved posts startRemovalTransition). The results then fade in from 0 over nothing but the wandering digits. That matches 4/4 surrenders and 3/3 ended practices, about 0.6 s (the hold) after the board without the dialog.",
+      "fix": "apps/mobile/app/game.tsx: openResults now pushes /results/[id] over the game (it was a replace), then calls dropWhenCovered(navigation, routeKey), the loop-6 helper. The final board stays whole under the results' flow.fade (and its shorter Reduced Motion fade). The game leaves the history on its closing transitionEnd, or after 600 ms at the latest, so back from the results goes where it went before. The game.end hold (when the game screen calls onEnded) is unchanged. Guards: a second onEnded opens nothing (ended ref). While covered, the game route's 'no game in the store -> Home' redirect and the FlowFallback report are off, so clearing the store under the results never replaces them with Home. motion.md game.end and flow.fade rows now describe the push-then-drop.",
+      "test": "New apps/mobile/src/screens/results/__tests__/gameResultsOverlap.test.tsx runs the real app/game.tsx on the real native stack, with the game screen as a stand-in that calls onEnded. After the end there are 3 RNSScreens and the final board is still in the tree. The game's onDisappear drops it (2 screens left), and back goes Home. A second end opens nothing more, and clearing the store while covered keeps /results. On the snap-loop7 game.tsx it fails ('Expected length 3, received 2'). Updated gameRoute.test.tsx (results asserted via router.push, replace never) and ranked.e2e.test.tsx (it lets COVERED_DROP_FALLBACK_MS pass before router.back() to /game-type).",
+      "deviceCheck": "Needs the new APK. Phone 3, motion on (in-app Reduced Motion off), Hebrew. 1) Ranked fast game vs the hidden bot: pick an empty cell, then 'כניעה' → 'כן, להיכנע'. Take screencaps about every 0.1–0.2 s (or a screenrecord) from the confirm until the results show. There should be no frame with only the dark background and digits: the final board fades out while the results fade in over it. Repeat 4 times. 2) The same with a practice against Mr. Hoot: 'סיום אימון' → 'כן, לסיים', 3 times. 3) On Results, press Android back: it goes Home (not back to the game). 4) Turn on in-app Reduced Motion ('הפחתת תנועה'), repeat 1 once: a short fade, still no empty frame."
+     }
+    ],
+    "filesChanged": [
+     "apps/mobile/index.ts",
+     "apps/mobile/package.json",
+     "apps/mobile/src/services/latestRoot.tsx",
+     "apps/mobile/src/services/__tests__/latestRoot.test.tsx",
+     "apps/mobile/app/game.tsx",
+     "apps/mobile/src/screens/results/__tests__/gameResultsOverlap.test.tsx",
+     "apps/mobile/src/screens/game/__tests__/gameRoute.test.tsx",
+     "apps/mobile/src/__tests__/ranked.e2e.test.tsx",
+     "docs/design/motion.md"
+    ],
+    "notes": "Checks run: tsc -p apps/mobile clean. Prettier and ESLint clean on the changed files. Tests pass: latestRoot, gameResultsOverlap, gameRoute, ranked.e2e (10/10), goHandoff, all of screens/results, botPractice(+End).e2e, soloPractice.e2e, historyReplay.e2e, interference.e2e, rankedNewGame.e2e, accounts.e2e, ambientRoot.e2e, startupGraph, ambientEverywhere, noLayoutAnimationsInGame, appConfig, buildApk. No new i18n keys. No adb, no APK, no deploy, no npm install.\n\nFailing before my edits: levelsSpecDocs.test.ts (motion.md row level.node.current has 7 columns, expected 6) and friendsDocs.test.ts (row friends.enter has 7 columns, expected 6). My motion.md diff against refs/qa/snap-loop7 only touches the game.end and flow.fade rows, so those rows are from earlier work. They need someone who owns them.\n\nItem 1:\n- It needs a new APK to verify, because package.json main changed to index.ts. Expo's resolveEntryPoint and the gradle resolveAppEntry both read main; I checked that it resolves.\n- Optional follow-up, not done: add fontScale (not density) to configChanges via a config plugin. RN 0.86 relayouts in place (enableFontScaleChangesUpdatingLayout is on by default, and the app reads fontScale through useWindowDimensions). That would avoid the recreation for font-size changes, but needs a device check.\n- Open question, not changed: an old root's RootLayout cleanup (startBackgroundWork's stopProgress: ranked/levels stop) is module-level and can stop what the new root started. With the latest-root wrapper the old root now unmounts before the new root's idle-deferred start, so that order is the safe one.\n\nItem 2: results/[id].tsx still waits RESULTS_AFTER_FRAMES=2 frames before drawing. That is harmless now, because the board stays under the results during those frames. Its comment ('the results replace the game in one commit') is out of date; I did not touch that shared file."
+   }
+  },
+  {
+   "key": "layout",
+   "brief": "YOUR ITEMS (bug texts in docs/handoff/2026-11-03/data/loop7-bugs.json appBugs, by title; Moshe hates tiny text: never shrink below design sizes. Wrap, reflow or move secondary info instead; never break a word mid-word):\n1) Ranked 4-player search: when the notice 'כרגע אין מספיק שחקנים…' with 'שחק מול בוט בינתיים' appears, it pushes 'יריבים 0/3' down and the three empty seats are cut under the 'ביטול חיפוש' button ('מחפש…' hidden until you scroll). Make the search screen fit with the notice: no overlap with the bottom button.\n2) Leaderboard pinned \"my row\" at the bottom: in English at normal size '· Level 6' and the 'Provisional' chip overlap ('LevelProvisional'). At 360dp with font 1.3 it overlaps in Hebrew too ('זמני' on '6'), 'Bronze' and 'Level 6' break mid-word, and the tabs get cut ('Gene…', 'Nor…', 'Frien…'). Fix the row layout and the tabs: make them scrollable or wrapping, with no cut words.\n3) At 360dp (wm density 480) with font 1.3, many mid-word breaks and cuts across screens (list in the bug 'general-display-small-big-font'): my game card 'No mis'/'takes' (check against loop-6's statusFit in components/player, which may already cover it), player card 'Mistak es per …' and 'Playing since Octobe…', bot select 'Biscu…', 'Mr. H…', 'Think time per m…', replay 'Previous st…', history 'Loss • Ranke…' / 'הפסד • אימו…', achievements 'Bronz…', 'Diam…', 'Lege…', leaderboard Hebrew names cut to one letter, map 'שלב 10 · מרוץ מו…'. Fix each: wrap to 2 lines, or move secondary info to its own line, never mid-word, and keep names readable (at least most of a name). Add tests at 360dp and font 1.3 in en and he for each screen you touch.",
+   "rep": {
+    "items": [
+     {
+      "id": "ranked-four-type-and-search (4-player search: empty seats cut under 'ביטול חיפוש')",
+      "status": "fixed",
+      "rootCause": "SearchView keeps the full layout when the 'nobody else' notice replaces the range card: 220 dp radar, 120 dp seats and 20 dp gaps. The notice card is about 210 dp, roughly 120 dp taller than the range card. On an A16 (384x832, 3-button nav) the column came to about 819 dp against about 704 dp above the footer, so 'יריבים 0/3' and the three seats ended up under the cancel button.",
+      "fix": "Added a compact layout for when the notice is shown (metrics.alone in match/metrics.ts). The radar goes from 220 to 150 dp, with the 72 dp avatar still whole above the rating chip. The seats go from 120 to 88 dp and the column gap from 20 to 10 dp. Text sizes are unchanged and the ScrollView is still there as a fallback. Without the notice nothing changes. Also added a testID to the column.",
+      "test": "apps/mobile/src/screens/match/__tests__/searchFit.test.tsx: table of 4, he and en. Adds up the column height from the rendered sizes on an A16 and checks it against the room above the footer (old sizes give 751 > 640; it fails on the old code). Also checks the avatar does not overlap the chip, the full layout without the notice, and that no font got smaller.",
+      "deviceCheck": "Hebrew, normal font size: Play → Ranked → '4 שחקנים' → 'מהיר' → 'מצא יריבים'. Wait for 'כרגע אין מספיק שחקנים שמחפשים משחק כזה' with 'שחק מול בוט בינתיים'. Without scrolling you should see: the smaller radar with my avatar and rating whole, the notice, 'יריבים 0/3', and all three seats (▲■◆, '?' and 'מחפש…') fully above 'ביטול חיפוש'. Nothing hidden behind the button. Text is not smaller than before."
+     },
+     {
+      "id": "postgame-leaderboard-english (pinned 'my row': 'LevelProvisional', overlap at 360dp/1.3, tabs cut)",
+      "status": "fixed",
+      "rootCause": "The LeagueBadge 'icon' row (hexagon, tier, '· Level N') never wraps. In the narrow pinned row (beside 'Play'), the name column is about 83 dp in English, so the badge overflowed onto the 'Provisional' chip under the rating. At 360dp/1.3 that column shrinks to a few dp: the name went down to one letter and 'Bronze'/'Level 6' broke mid-word, in list rows too because the chip sits beside the number there. The tabs (Segmented) are 5 equal flex:1 segments with numberOfLines 1, so they cut 'General', 'Normal' and 'Friends'.",
+      "fix": "(1) Added a wrap option to LeagueBadge: hexagon and tier stay together, and '· Level N' moves to the next line. The line under the name is now a wrapping row in both list and pinned rows. (2) Added rowFit.ts (useTightRows): when width/fontScale < 340, the provisional chip moves from the number to the line under the name (new ProvisionalChip export in Rating.tsx), the rank gets minWidth instead of a fixed width, and in the pinned row 'Play' goes on its own line under my row. At normal size on 360/384 dp the design is unchanged, apart from the wrap. (3) Segmented measures its labels at full size (statusFit WidthProbes). If a label does not fit an equal share, the segments size to their labels, grow, and wrap to a second line. Otherwise they stay equal. Added a note in docs/design/components.md.",
+      "test": "apps/mobile/src/screens/leaderboard/__tests__/tightRows.test.tsx: English at 384dp normal size ('Bronze · Level 6' is wider than the column, so the badge wraps and each part fits). At 360dp/1.3 in en and he: 'Play' sits under the pinned row, the chip is in the line under the name and appears once, and every part plus the name fits the column. A list row with a Hebrew name fits. The tabs wrap at 1.3 and stay equal at 360/1.0 in English. All of this fails on the old code.",
+      "deviceCheck": "(a) Akhvata account (provisional, Bronze level 6), app in English, normal size: Leaderboard, every tab. In my pinned bottom row, 'Bronze' with '· Level 6' sits under the name (two lines if needed) and never touches 'Provisional' under 1200. No 'LevelProvisional'. (b) wm density 480 + font_scale 1.3, Hebrew and English: the tabs show 'כללי/מהיר/רגיל/קשה/חברים' or 'General/Fast/Normal/Hard/Friends' whole, wrapping to two rows if needed. In my row 'Play'/'שחק' is under the row at full width. The name is whole. 'Bronze', '· Level 6' and 'Provisional'/'זמני' are each whole, none on top of '6'. List rows: Hebrew names (ליהי33, אבי43) readable, not one letter, with 'Provisional' under the name and not beside the number."
+     },
+     {
+      "id": "general-display-small-big-font: my game card 'No mis / takes'",
+      "status": "fixed",
+      "rootCause": "Found on apk11, before loop 6. Loop 6's statusFit (in APK 12) measures the mistake words at the phone's own text size. At 360dp/1.3 'mistakes' is wider than its line, so the card shows the mark and the count instead.",
+      "fix": "No code change: loop 6's statusFit already covers it. Added a confirmation test at 1.3.",
+      "test": "apps/mobile/src/screens/game/__tests__/DuelHudLargeText.test.tsx: 360dp, font 1.3, probes measured at 1.3. In en the widest word is wider than the line, so you get the mark (mistakes-mark) and a count at ≥14. In he: words only when they fit.",
+      "deviceCheck": "APK 12/13, wm density 480 + font_scale 1.3, English: bot practice and ranked 2P. My card shows ✕ and a number in place of 'No mis/takes'. No word broken."
+     },
+     {
+      "id": "general-display-small-big-font: player card 'Mistak es per …' and 'Playing since Octobe…' / 'במשחק מאז אוקטובר 2…'",
+      "status": "fixed",
+      "rootCause": "The 4 stat cells sit at 22% each (about 64 dp inner at 360dp). 'Mistakes' at 1.3 is about 75 dp, so it broke mid-word. 'Joined' had numberOfLines 1.",
+      "fix": "New StatCells.tsx: measures every word of every label at full size (statusFit probes). If a word does not fit a quarter, the cells go two to a row (45%). Labels are centered on 2 lines. CJK and Thai count as fitting, because they can break between characters. In PlayerCardScreen: uses StatCells, and 'Playing since' now has numberOfLines 2.",
+      "test": "apps/mobile/src/__tests__/wrapAt360Large.test.tsx (en, he, 360/1.3): fires layout and probes. In en the widest word is wider than a quarter, so the cells are 45% and each word fits half. 'joined' has numberOfLines 2 and each word fits beside the 96 avatar.",
+      "deviceCheck": "360dp/1.3, English and Hebrew: my player card or another player's. The stats sit two per row, and 'Mistakes per game' is whole (no 'Mistak es'). 'Playing since October 2026' / 'במשחק מאז אוקטובר 2026' wraps onto two lines, with nothing cut."
+     },
+     {
+      "id": "general-display-small-big-font: bot select 'Biscu…', 'Mr. H…', 'Think time per m…' (he: 'Mr. Ho…' with a 2-line chip)",
+      "status": "fixed",
+      "rootCause": "The name and the level chip sat in one row without wrap, so the name shrank to an ellipsis and the chip broke into 2 lines. The fact labels had numberOfLines 1.",
+      "fix": "BotSelectScreen: nameRow gets flexWrap 'wrap', the name gets maxWidth 100%, and the chip moves under the name when they don't fit together. Fact labels get numberOfLines 2. Added a testID for nameRow.",
+      "test": "apps/mobile/src/screens/home/__tests__/botSelectLargeText.test.tsx (en, he, 360/1.3, renderApp): checks the row wraps, each bot name fits the column, and the think-time label has numberOfLines 2 with each word fitting half the card.",
+      "deviceCheck": "360dp/1.3, English and Hebrew: Play → bot practice → bot select. Pip, Biscuit, Mr. Hoot, Maestro and Overlord all whole, with the '3 · Advanced'/'3 · מתקדם' chip under the name where needed. 'Think time per move' on two lines, nothing cut."
+     },
+     {
+      "id": "general-display-small-big-font: replay 'Previous st…'",
+      "status": "fixed",
+      "rootCause": "StepButton had numberOfLines 1. Also, in English at 1.3 even the single word 'Previous' (88 dp) does not fit beside the chevron (84 dp), so plain 2-line wrapping would still have broken it.",
+      "fix": "StepButton: label gets numberOfLines 2, centered, with flexShrink. The label's words are measured at full size, and the button's width comes from onLayout. If the widest word doesn't fit beside the chevron, the chevron is hidden (the accessibility label is unchanged).",
+      "test": "wrapAt360Large.test.tsx: in en the chevron is hidden and the word fits the button, in he the chevron stays. numberOfLines is 2.",
+      "deviceCheck": "360dp/1.3, English: History → a game → Replay. The prev button shows 'Previous' / 'step' on two lines, without the chevron. Hebrew: 'שלב קודם' with the chevron. 'Next step' as before."
+     },
+     {
+      "id": "general-display-small-big-font: history 'Loss • Ranke…' / 'הפסד • אימו…'",
+      "status": "fixed",
+      "rootCause": "The outcome · mode · type line on the history card had numberOfLines 1.",
+      "fix": "HistoryCard: numberOfLines 2 (breaks between words), plus testID history-card-<id>-kind. One-line edit, does not touch another agent's change in the same file.",
+      "test": "wrapAt360Large.test.tsx: numberOfLines 2 and each word fits the middle column at 1.3, in en and he.",
+      "deviceCheck": "360dp/1.3, English and Hebrew: History. 'Loss • Ranked • Normal' / 'הפסד • אימון…' wraps onto two lines with every word whole."
+     },
+     {
+      "id": "general-display-small-big-font: achievements 'Bronz…', 'Diam…', 'Lege…'",
+      "status": "fixed",
+      "rootCause": "The 5 leagues sit in one row with flex:1 (about 56 dp each at 360dp) and numberOfLines 1. At 1.3 'Diamond'/'Bronze' are wider.",
+      "fix": "ProgressScreen LeaguePanel: measures the league names at full size. If a name does not fit a fifth, the steps go 3 per row over two rows, each with a measured width. New exported ladderPerRow, plus testID progress-league-ladder.",
+      "test": "wrapAt360Large.test.tsx: in en the widest name is wider than a fifth, so all 5 steps are a third wide and the names fit. Checked in he as well.",
+      "deviceCheck": "360dp/1.3, English: Achievements tab, league panel. Bronze/Silver/Gold on the first row and Diamond/Legend on the second, all whole. Normal size: one row as before."
+     },
+     {
+      "id": "general-display-small-big-font: map 'שלב 10 · מרוץ מו…'",
+      "status": "fixed",
+      "rootCause": "LevelPanel Head: title and sub had numberOfLines 1.",
+      "fix": "Title and sub get numberOfLines 2 (head has minHeight, so it grows).",
+      "test": "wrapAt360Large.test.tsx: LevelPanel for L010 in en and he. numberOfLines is 2 and each word of the title fits the column at 1.3.",
+      "deviceCheck": "360dp/1.3, Hebrew: New game → map → tap stage 10. The panel shows 'שלב 10 · מרוץ מול הבוט' whole, on two lines if needed."
+     },
+     {
+      "id": "general-display-small-big-font: solo practice 'Solo prac…'",
+      "status": "partial",
+      "rootCause": "In SoloHud the identity has a fixed height (size.buttonModal = 48). At 1.3 the name plus one caption line already fills the 48. The name column is about 100 dp, so 'Solo practice · Normal' needs three lines.",
+      "fix": "Not fixed. A second line would spill out of the identity block onto the score (no-scroll game layout, D124), so I reverted my change. Needs a design decision: either show only the game type when it doesn't fit, or move the title to its own row across the HUD.",
+      "test": "None (no change).",
+      "deviceCheck": "Still as before: 'Solo prac…' at 360dp/1.3."
+     }
+    ],
+    "filesChanged": [
+     "apps/mobile/src/screens/match/SearchView.tsx",
+     "apps/mobile/src/screens/match/metrics.ts",
+     "apps/mobile/src/screens/match/__tests__/searchFit.test.tsx",
+     "apps/mobile/src/components/player/LeagueBadge.tsx",
+     "apps/mobile/src/components/player/Rating.tsx",
+     "apps/mobile/src/components/player/index.ts",
+     "apps/mobile/src/screens/leaderboard/LeaderboardParts.tsx",
+     "apps/mobile/src/screens/leaderboard/rowFit.ts",
+     "apps/mobile/src/screens/leaderboard/__tests__/tightRows.test.tsx",
+     "apps/mobile/src/screens/progress/parts.tsx",
+     "apps/mobile/src/screens/progress/ProgressScreen.tsx",
+     "apps/mobile/src/screens/player/StatCells.tsx",
+     "apps/mobile/src/screens/player/PlayerCardScreen.tsx",
+     "apps/mobile/src/screens/home/BotSelectScreen.tsx",
+     "apps/mobile/src/screens/home/__tests__/botSelectLargeText.test.tsx",
+     "apps/mobile/src/screens/replay/ReplayParts.tsx",
+     "apps/mobile/src/screens/history/HistoryCard.tsx",
+     "apps/mobile/src/screens/levels/LevelPanel.tsx",
+     "apps/mobile/src/screens/game/__tests__/DuelHudLargeText.test.tsx",
+     "apps/mobile/src/__tests__/wrapAt360Large.test.tsx",
+     "docs/design/components.md"
+    ],
+    "notes": "שלושת הפריטים טופלו, חוץ מ-'Solo prac…' (ראו בהמשך). אפס פריטים לא נגעו בשרת. לא נוספו מפתחות i18n.\n\nאימות:\n- ‏eslint נקי על כל הקבצים ששיניתי.\n- ‏tsc של apps/mobile נקי בקבצים שלי. שתי שגיאות קיימות בקבצים של אחרים: src/__tests__/zzExperimentRecreate.test.tsx ו־src/services/__tests__/latestRoot.test.tsx (טיפוסי href). לא נגעתי בהם.\n- הורצו 109 סוויטות (1668 בדיקות) ירוקות: match, leaderboard, player, progress, history, replay, home, levels, components/player, DuelHud, ‏historyReplay.e2e. בנוסף: GameScreen, ‏soloPractice/ranked e2e.\n\nהחלטות שכדאי לדעת:\n- ב־Segmented, מצב ה\"עטיפה\" נקבע לפי מדידה, ולכן נכנס לפעולה רק כשתווית לא נכנסת בפועל. ב־Jest, בלי onLayout, הוא נשאר כמו קודם.\n- הכלל tight בטבלת המובילים מבוסס על width/fontScale < 340. ב־360/1.0 וב־384/1.0 העיצוב נשמר. אם רוצים סף אחר, זה TIGHT_ROWS_ROOM ב־screens/leaderboard/rowFit.ts.\n- ב־StatCells התוויות ממורכזות עכשיו (textAlign center).\n- בכפתור \"שלב קודם\" החץ מוסתר כשהמילה לא נכנסת לידו.\n\nפתוח, צריך החלטת עיצוב: 'Solo prac…' ב־SoloHud. גוש הזהות בגובה קבוע של 48. שורה שנייה הייתה נשפכת על הניקוד, ולכן החזרתי את השינוי. האפשרויות: להציג רק את סוג המשחק כשאין מקום, או להעביר את הכותרת לשורה משלה.\n\nתיקון החיפוש ל־4 שחקנים תוקף בחישוב לפי גובה A16 עם ניווט 3 כפתורים. ב־360dp/1.3 ייתכן שעדיין תידרש גלילה קצרה (הגלילה נשארה כגיבוי).\n\nלא נגעתי ב־HistoryScreen.test ולא בשינוי הנגישות של סוכן אחר ב־HistoryCard. התוספת שלי היא רק שורת ה־kind."
+   }
+  },
+  {
+   "key": "misc",
+   "brief": "YOUR ITEMS (bug texts in docs/handoff/2026-11-03/data/loop7-bugs.json appBugs, by title):\n1) Leaderboard 'Friends' tab ('Your recent opponents'): the ranks are duplicated and not sorted. ליהי33 (1233) and אבי43 (1305) are both '#2', with 1233 before 1305. Eight rows are '#3' in ascending order, and I am '#4' with 1200. Find where friends ranks are computed (server leaderboard query or client) and fix: sort by rating descending, give unique places (ties get the same place, then skip), and place me correctly. Add tests (server or client).\n2) History, ranked card: the opponent's avatar is a Pressable (apps/mobile/src/screens/history/HistoryCard.tsx ~148) with accessible={false}, but it's still clickable/focusable with no label (NAF in uiautomator). TalkBack may stop on it as an unlabeled button. Give it a proper accessibility label (opens the player's card) or hide it from accessibility the way Scrim does, whichever matches the intended UX. Add a test.\n3) English level explanation: 'I5 sees a 8 in column 5' must be 'an 8' (also 'an 11', 'an 18' if they occur). Fix it in the English strings or the explanation builder (i18n, en only; check other languages with articles too, e.g. none needed). Add a test.",
+   "rep": {
+    "items": [
+     {
+      "id": "postgame-leaderboard-english (Friends tab places)",
+      "status": "fixed",
+      "rootCause": "apps/server/src/progress/leaderboard.ts friendsOf() returned the recent opponents in recency order (newest meeting first), and each one carried its GLOBAL 'general' rank (rankAt), which counts only people, never stealth-bot personas [D99]. The opponents on the phone were mostly personas (ליהי33, אבי43...), so two personas at 1305 and 1233 both had 1 person above them (#2), eight at 1217-1223 were all #3, and they came in meeting order (ascending by chance). 'me' was pinned with my global rank (#4), unrelated to the list. Besides being wrong-looking, this also gave the personas away.",
+      "fix": "Server: friendsOf now sorts the opponents by general rating, best first (a stable sort, so with equal ratings the one met last comes first). Places are counted inside the list of opponents plus me, '1224' style: equal ratings share a place and the next one skips. The pinned 'me' on the friends tab gets my place in that same list. The other tabs are unchanged (people only, global ranks). Protocol doc comment updated (packages/protocol/src/progress.ts). Added a sub-bullet to spec §14.2 (docs/01-SPEC.md) describing the friends places. No client change: the screen shows the server order and rank as is.",
+      "test": "apps/server/src/progress/leaderboard.test.ts: new 'loop 7: sorted by rating, unique places among the list and me' reproduces the phone (2 personas 1305/1233, ratings 1217..1223 with a 1220 tie, me 1200) and expects 1,2,3,4,4,6,7 and me #8. It fails on the old code, which gave recency order and global ranks. Updated the two existing friends tests (places among the list, persona placed like any opponent, general board still people-only). 61/61 server progress tests pass.",
+      "deviceCheck": "Needs a server deploy of apps/server (not deployed: no deploy this round). After the deploy: Leaderboard, then the 'Friends' tab ('Your recent opponents'), in Hebrew and English. (1) The rows go from highest rating to lowest. (2) Places are #1, #2, #3... with no repeats, except players with the exact same rating, who share a place, and then the next place is skipped (e.g. #4, #4, #6). (3) The pinned 'me' row shows my place among these opponents (with 1200 below everyone listed, it should be the last place, e.g. #8 if 7 opponents are above). (4) The General / Fast / Normal / Hard tabs are unchanged."
+     },
+     {
+      "id": "general-sr-names (history avatar unlabelled)",
+      "status": "fixed",
+      "rootCause": "apps/mobile/src/screens/history/HistoryCard.tsx: the opponent avatar on a ranked card is a nested Pressable with onPress and accessible={false} only. On Android, Pressable still sets focusable=true unless focusable={false} is passed, and nothing hid it from accessibility. So uiautomator saw a clickable, focusable node with no text (NAF), and TalkBack could stop on it as an unlabelled button. The intended UX: the avatar is a sighted touch target only, and the card itself already offers the 'player:<id>' accessibility action ('כרטיס השחקן של X').",
+      "fix": "The avatar Pressable now has focusable={false}, accessibilityElementsHidden and importantForAccessibility=\"no-hide-descendants\", hidden the same way as Scrim's unlabelled variant. The tap still opens the player's card, and screen readers keep the card's own action.",
+      "test": "apps/mobile/src/screens/history/__tests__/HistoryScreen.test.tsx 'a ranked game's opponent opens their player card': it now asserts focusable=false, importantForAccessibility='no-hide-descendants' and accessibilityElementsHidden on history-card-<id>-player-<pid>, and that the default (accessible-only) query no longer finds it. Tapping it still calls onOpenPlayer. The test fails on the old code (no focusable prop). 50/50 history tests pass.",
+      "deviceCheck": "APK with this change. History, then 'All' or 'Ranked', then a ranked game card. (1) Tapping the opponent's avatar still opens their player card. (2) uiautomator dump: the node history-card-<gameId>-player-<playerId> is gone, or no longer focusable/NAF. (3) TalkBack on: swiping through the card never stops on the avatar alone, the card is read as one item, and its actions menu (TalkBack 'Actions') still has 'Player card of <name>'."
+     },
+     {
+      "id": "postgame-replay-english ('sees a 8')",
+      "status": "fixed",
+      "rootCause": "apps/mobile/src/i18n/locales/en/explain.json had a fixed article before the digit: hidden.clause.unit.* 'sees a {{digit}} in …' and block.unit.* 'row {{label}} has a {{digit}}'. With digit 8 this gives 'a 8'. Digits are 1-9 only, so 8 is the only digit that needs 'an'. Other languages: the articles that occur (de eine, fr/es/it un, pt um, nl een) do not change with the digit, so only English needed a fix.",
+      "fix": "English wording only, with no article that depends on the digit: '{{cell}} sees the {{digit}} in row/column/box {{label}}' (a unit holds exactly one of each digit) and \"{{cell}} can't hold {{digit}}: row/column/box {{label}} already has one\". Doc comment in apps/mobile/src/i18n/explain.ts updated. The golden test (explainGolden.test.ts, 'never regenerate') maps the corrected English back to the engine's words via a new ENGINE_WORDS_EN, the same way the existing Hebrew correction does. Updated the levelExplain snapshot (9 lines, wording only).",
+      "test": "apps/mobile/src/i18n/__tests__/explain.test.ts: new 'QA loop 7: no \"a 8\" in English' checks a hidden single with 8. It expects '…D4 sees the 8 in column 4 and E6 sees the 8 in row E. So D5 = 8.' and checks formatBlock for every digit and unit kind for /\\ba \\d/. It fails on the old strings. Existing English expectations were updated. 790 tests pass in i18n, levels and history. i18n:check: 0 errors.",
+      "deviceCheck": "APK with this change, app language English. Staged practice, Level 4 (Fill the row), let the time run out, then 'Why?' on the result screen. The sentence reads '…I5 sees the 8 in column 5. So I4 = 8.' (no 'a 8'). Also tap a wrong empty cell in a level whose why-text says the cell is blocked: it reads \"… can't hold 8: column 5 already has one\". Hebrew is unchanged."
+     }
+    ],
+    "filesChanged": [
+     "apps/server/src/progress/leaderboard.ts",
+     "apps/server/src/progress/leaderboard.test.ts",
+     "packages/protocol/src/progress.ts",
+     "docs/01-SPEC.md",
+     "apps/mobile/src/screens/history/HistoryCard.tsx",
+     "apps/mobile/src/screens/history/__tests__/HistoryScreen.test.tsx",
+     "apps/mobile/src/i18n/locales/en/explain.json",
+     "apps/mobile/src/i18n/explain.ts",
+     "apps/mobile/src/i18n/__tests__/explain.test.ts",
+     "apps/mobile/src/i18n/__tests__/explainGolden.test.ts",
+     "apps/mobile/src/screens/levels/__tests__/__snapshots__/levelExplain.test.ts.snap"
+    ],
+    "notes": "Checks run: server jest apps/server/src/progress 61/61; mobile jest i18n + screens/levels + screens/history 790/790; npx tsc -p apps/server clean; eslint clean on the changed files; prettier clean; npm run i18n:check 0 errors. npx tsc -p apps/mobile reports errors only in apps/mobile/src/__tests__/zzExperimentRecreate.test.tsx ('/player' route type), a file I did not touch: another agent's work in progress.\nItem 1 is a server change and reaches the phone only after a server deploy, which was not done this round.\nItem 1 also changes behaviour Moshe approved: D99 said a persona on the friends tab shows 'the place it would have had' (its global rank). It now shows its place within the friends list. This does not contradict the original spec, whose §34 asks for 'דירוג חברים', and it removes the persona giveaway that D99 itself lists as a risk. Moshe should be told. I added a sub-bullet under spec §14.2 and did not touch the D99 table row or §9.1 line 1189.\nmyEntry on the friends tab still runs one global-rank query whose result is then replaced by the place in the list. That is a small redundant query, kept so the change stays small.\ndocs/01-SPEC.md already contained a \\u0001 control character before this round (about offset 85024, in the room-code bidi example). I left it as it was."
+   }
+  }
+ ],
+ "rev": {
+  "verdict": "issues",
+  "issues": [
+   {
+    "area": "navigation",
+    "severity": "high",
+    "problem": "latestRootOnly reverses the unmount order. The new root mounts its whole tree first, and only then does its LatestRootOnly effect tell the older roots to render null. So every old-root cleanup that restores a module-level singleton now runs after the new root's setup. Reanimated's ReducedMotionConfig, rendered by MotionPolicy in app/_layout.tsx, restores on unmount the value it captured when it mounted. For the old root, that value is the phone's system Reduced Motion setting. After any activity recreation (density, font, bold text: the exact QA scenario), the global Reanimated reduce-motion flag drops back to the system value instead of the app's policy, for the rest of the run. With in-app Reduced Motion on and the phone's setting off, Reanimated animations that don't set their own reduceMotion run at full motion, which breaks the CLAUDE.md Reduced Motion rule. With the phone's 'remove animations' on and in-app Reduced Motion off (the default), the loops freeze, which is the 1.11 bug MotionPolicy exists to prevent. Secondary: keepAwake's deactivateKeepAwake(KEEP_AWAKE_TAG) in the old root's cleanup races with the new root's take. The take's async deactivate-then-activate chain probably saves it, but this is unverified.",
+    "evidence": "node_modules/react-native-reanimated/src/component/ReducedMotionConfig.tsx: `const wasEnabled = ReducedMotionManager.jsValue; ... return () => { ReducedMotionManager.setEnabled(wasEnabled); }`. apps/mobile/src/services/latestRoot.tsx: the parent's useEffect, which sets newest and notifies, runs after its children's effects (RootLayout → MotionPolicy). The old root then renders null and its cleanups run. Sequence: A mounts (wasA=S, sets P); C mounts (wasC=P, sets P); C's LatestRootOnly effect → A renders null → A's cleanup sets S. The fixer's own test 2 ('after one recreation, the old root is null at once') models exactly this ordering. latestRoot.test.tsx renders test routes, not the real _layout, so MotionPolicy is not covered.",
+    "suggestion": "Unmount the older roots before the new tree mounts. Have LatestRootOnly render null on its first commit, notify the older roots in its effect so they render null and run their cleanups, and render <Root> only once `current === order`. Or make MotionPolicy set ReducedMotionManager on each mode change without restoring on unmount. Add a two-root test that includes MotionPolicy, asserting ReducedMotionManager.jsValue equals the app policy after the old root goes. Check keepAwake in the same test."
+   },
+   {
+    "area": "navigation",
+    "severity": "medium",
+    "problem": "The results watchdog's 'לתוצאות' retry is now dead. GameRoute.openResults returns early once ended.current is true, so the fallback GameScreen shows after RESULTS_WATCHDOG_MS (4 s) has a 'to results' button that does nothing. That fallback exists for exactly the case where the first push was lost, for example the 'navigation object hasn't been initialized' failure from item 1. Before this change, every call did router.replace again.",
+    "evidence": "apps/mobile/app/game.tsx: `const openResults = (id) => { if (ended.current) return; ended.current = true; router.push(...) ...}`. apps/mobile/src/screens/game/GameScreen.tsx ~1741: `<FlowFallback reason=\"game: results did not open\" onResults={() => { setStuck(null); openResults(stuck); }} ...>`, where openResults → onEnded(gameId), which is GameRoute.openResults, now a no-op. gameResultsOverlap.test asserts 'a second end opens nothing'.",
+    "suggestion": "Block only a duplicate while the results are actually above the game. For example, allow a retry when navigation.isFocused() is true (the game is still the shown route), or reset ended.current when the watchdog retries. Then push again and re-arm dropWhenCovered. Add a test: the first push is lost or dropped, the watchdog fallback appears, and tapping 'לתוצאות' opens /results/[id]."
+   },
+   {
+    "area": "misc",
+    "severity": "medium",
+    "problem": "The friends-tab fix changes an approved decision (D99, ✓ Moshe 2026-10-20: a persona on the friends tab shows 'the place it would have had', its global rank) without Moshe's approval. The spec is now self-contradictory: the new sub-bullet sits directly under the §14.2 D99 bullet, which still says 'עם המקום שהיה להן'. §9.1 (line 1189) and the D99 row in the §24 table (line 1962) are unchanged too. CLAUDE.md: what the status column says is what gets built.",
+    "evidence": "docs/01-SPEC.md lines 1189, 1392 and 1962 still describe global ranks for personas. apps/server/src/progress/leaderboard.ts friendsOf now uses placesAmong() within the list. The fixer's own notes: 'This also changes behaviour Moshe approved: D99 ... Moshe should be told.' The server logic and tests themselves are correct (61/61 pass; sorting, '1224' ties and my place all verified).",
+    "suggestion": "Before deploying the server, show Moshe the change in the CLAUDE.md format (the approved D99 text, the new behavior, and why: unique places are impossible with global ranks once personas are in the list, and those ranks give the personas away). After he approves, update the D99 row, §9.1 and the §14.2 bullet so they agree. Until then, mark it 'ממתינה לאישור'."
+   },
+   {
+    "area": "layout",
+    "severity": "medium",
+    "problem": "An item from the general-display-small-big-font bug is still unfixed: SoloHud still shows 'Solo prac…' at 360 dp with font 1.3. That is a cut word, which the brief forbids, and Moshe dislikes cut text. The fixer reverted the attempt and left it open.",
+    "evidence": "In the layout report, the 'solo practice' item has status 'partial' and deviceCheck 'Still as before: Solo prac… at 360dp/1.3'. SoloHud's identity block has a fixed height (size.buttonModal = 48).",
+    "suggestion": "Ask Moshe for the design decision the fixer proposed: show only the game type when the title does not fit (measured with statusFit probes), or move the title to its own row across the HUD. Then add a 360 dp/1.3 test in en and he."
+   },
+   {
+    "area": "layout",
+    "severity": "low",
+    "problem": "The 4-player search fix was verified only at normal font size on an A16 (384 dp). At 360 dp or font 1.3, the notice plus the seats can still end up under 'ביטול חיפוש', with scrolling as the only fallback. The radar (220→150) and the seats (120→88) also change size abruptly, with no transition, when the notice replaces the range card mid-search.",
+    "evidence": "searchFit.test.tsx computes columnHeight() with 1.0 line heights against A16 = {height: 832}. The fixer's notes: 'ב־360dp/1.3 ייתכן שעדיין תידרש גלילה קצרה'. In SearchView.tsx, compact switches style values directly on m.alone.",
+    "suggestion": "Add a 360 dp/1.3 case in the test (he and en). If it doesn't fit, also drop the title-block gap or put the seats in a single compact row. Optionally cross-fade or animate the radar's size change, with a Reduced Motion variant, or accept the jump explicitly in motion.md."
+   },
+   {
+    "area": "navigation",
+    "severity": "low",
+    "problem": "npm test is still red. levelsSpecDocs.test.ts fails on motion.md (the row level.node.current has 7 columns, expected 6), and the fixer reports friendsDocs.test.ts failing the same way (friends.enter). Neither is from this round's diff, but CLAUDE.md requires a green npm test before a stage is declared done.",
+    "evidence": "My jest run of the relevant suites: 67 PASS, 1 FAIL: 'src/__tests__/levelsSpecDocs.test.ts › motion.md §4.11: every level animation has its row'. git diff refs/qa/snap-loop7 -- docs/design/motion.md touches only the game.end and flow.fade rows. tsc (mobile) exit 0, ESLint clean, i18n:check 0 errors, server progress 61/61.",
+    "suggestion": "Have the owner of the level.node.current and friends.enter rows fix their column counts (probably an unescaped '|') before the loop is called done."
+   }
+  ]
+ },
+ "rework": [
+  {
+   "items": [
+    {
+     "id": "postgame-progress-english (MAJOR): after wm size/density reset + font_scale 1.0 with the app open, the profile card, 'My player card' and sometimes a tab do nothing; 'The navigation object hasn't been initialized yet'",
+     "status": "fixed",
+     "rootCause": "The manifest's configChanges do not list density or fontScale, so each of those changes recreates MainActivity, and the two commands recreated it twice in a row. Each recreation starts a new React root (surface) in the same JS runtime, and each root has its own expo-router ExpoRoot and NavigationContainer. But router.push, replace and back all go through ONE module-level queue (expo-router's routingQueue), and the first container whose effect runs takes every waiting action. One root belonged to an activity that was destroyed before it was ever laid out. It never got safe-area insets, so expo-router's SafeAreaProvider rendered nothing and its container had no navigator. That root was also never unmounted. It took the visible app's taps and dropped them with exactly 'The navigation object hasn't been initialized yet'. A restart cleared the extra root. Reproduced in Jest: with the old entry and two roots, router.push to the player card logs that message and the card never opens. I did not add density/fontScale to configChanges. react-native-svg reads the density only when a view is created, so the SVG icons and avatars would draw at the old scale after an in-place density change. Recreation also comes from other changes (bold text and others), so the app has to survive it. Review follow-up (high), confirmed: the first wrapper mounted the new tree and only then told the old roots to render null. The old root's cleanups then ran after the new root's setup. Reanimated's ReducedMotionConfig (in MotionPolicy) restores on unmount the value it found on mount, which for the first root is the phone's setting. So the global reduce-motion flag fell back to the phone's setting instead of the app's, for the rest of the run. I reproduced it with a direct two-root test: Expected true / Received false, and the reverse.",
+     "fix": "New app entry apps/mobile/index.ts (package.json main changed from expo-router/entry to index.ts). It is expo-router's entry-classic (@expo/metro-runtime first, then renderRootComponent), with App wrapped by latestRootOnly in apps/mobile/src/services/latestRoot.tsx. Each root takes its order in its first render. Once a newer root has mounted, every older root renders null, which unmounts its whole ExpoRoot (container, routing-queue subscription, screens and effects). A stale root never comes back. Review fix: the old root is now always unmounted before the new one mounts, the same order Android uses when it stops the old surface first. A root draws the app only when no newer root has mounted AND no older root still draws it. A small <Drawing> marker, rendered after the app, records which roots draw. Its effect cleanup runs after the app's own cleanups and tells the newest root, which then mounts the app. So MotionPolicy's ReducedMotionConfig, the keep-awake tag and startBackgroundWork's start/stop all run old-cleanup-then-new-setup. The first root of a run still draws in its first commit; only after a recreation is the new root empty for one commit. Only the app's 'main' root is wrapped; LogBox is not touched. No UI strings, no motion.",
+     "test": "apps/mobile/src/services/__tests__/latestRoot.test.tsx, 9 tests. (a) Through the real index.ts with ExpoRoot over test routes: after two recreations (Results root, a root never laid out, a new root on Home), router.push('/player/[id]') opens the player card with no NOT_INITIALIZED error; after one recreation the old root is null at once and push/back work; a single root works as before; package.json main is index.ts; the app's Reduced Motion and the keep-awake tag survive a recreation. (b) New strict block, latestRootOnly(RootPieces), where RootPieces is MotionPolicy + useKeepScreenOn mounted in the root's first commit. For setting on + phone off, and setting off + phone on, ReducedMotionManager.jsValue stays the app's value after one and after two recreations, and the keep-awake tags stay [sudoku-fight]. There is also a test that the first root draws in its first commit. With the previous new-before-old ordering, both strict cases fail (Expected true / Received false; Expected false / Received true). With the old entry (plain renderRootComponent(App)), the navigation tests fail and log the exact QA error.",
+     "deviceCheck": "Needs a new APK (the entry changed). Phone 3, app in English. 1) adb shell wm size 1080x2340; adb shell wm density 480; adb shell settings put system font_scale 1.3. Open the app, finish a ranked or bot game, stay on Results. 2) Run adb shell wm size reset, adb shell wm density reset and adb shell settings put system font_scale 1.0, one right after the other. 3) The app rebuilds on Home. Tap the profile card: the player card opens on the first tap. Go back, then tap each bottom tab once (Leaderboard, History, Achievements, Home): each opens on the first tap. On Achievements, 'My player card' opens. 4) adb logcat -d | grep \"hasn't been initialized\" shows no lines. 5) Reduced Motion after a recreation: turn on the app's own Reduced Motion (Settings), keep the phone's 'Remove animations' off, repeat step 2 (font_scale 1.3 then 1.0), then start a practice. The lock pulse and number pops are the reduced versions, not full motion. Then turn the app's setting off and the phone's 'Remove animations' on, repeat the font change, and start a practice: the loops still move (lock band pulses, the 'thinking…' blink blinks). 6) During a game after a font change, the screen does not dim at the phone's timeout (keep-awake). 7) Also via Settings: change Display size, return to the app, then tap the profile card and a tab."
+    },
+    {
+     "id": "ranked-end-i-surrender-my-lock-5x (minor): an empty frame (only the ambient digits) about 1.5 s after confirming a surrender or ending a practice, between the board and Results",
+     "status": "fixed",
+     "rootCause": "The same race loop 6 fixed for results→search. When the game ended (after its game.end hold), app/game.tsx replaced itself with /results/[id]. On Android, react-native-screens fades the replaced screen out, but its views can be deleted in the mount batch before the posted removal transition starts (NativeProxy.notifyScreenRemoved posts startRemovalTransition). The results then fade in from 0 over nothing but the wandering digits. Review follow-up (medium), confirmed: my first fix blocked every later onEnded, so the watchdog fallback's 'לתוצאות' (RESULTS_WATCHDOG_MS = 4 s, shown when the first navigation was lost) did nothing.",
+     "fix": "apps/mobile/app/game.tsx: openResults now pushes /results/[id] over the game instead of replacing it, then calls dropWhenCovered(navigation, routeKey), the loop-6 helper. The final board stays whole under the results' flow.fade (and its shorter Reduced Motion fade). The game leaves the history on its closing transitionEnd, or after 600 ms at the latest, so back from the results goes where it went before. The game.end hold is unchanged. While covered, the 'no game in the store -> Home' redirect and the FlowFallback report are off, so clearing the store under the results never replaces them with Home. Review fix: a repeated onEnded is ignored only while the game is no longer the screen shown (the results are above it): `if (ended.current && navigation?.isFocused() === false) return;`. If the push was lost and the game is still focused, the watchdog's 'לתוצאות' pushes again and re-arms dropWhenCovered. The first push's own dropWhenCovered never drops the game while it is the screen shown. motion.md game.end and flow.fade rows describe the push-then-drop.",
+     "test": "apps/mobile/src/screens/results/__tests__/gameResultsOverlap.test.tsx runs the real app/game.tsx on the real native stack, with the game screen as a stand-in that calls onEnded. (1) After the end there are 3 RNSScreens and the final board is still in the tree. The game's onDisappear drops it (2 screens), and back goes Home. On the snap-loop7 game.tsx this fails ('Expected length 3, received 2'). (2) A second end while the results are up opens nothing more, and clearing the store while covered keeps /results. (3) New: the first router.push is swallowed (a lost push), the game is still shown, onEnded again (the watchdog's 'לתוצאות') opens /results/g1 over the game (3 screens), the game drops when covered, and back goes Home. With the previous `if (ended.current) return` it fails ('Expected number of calls: 2, Received: 1'). gameRoute.test.tsx (results asserted via router.push, never replace) and ranked.e2e.test.tsx (it waits COVERED_DROP_FALLBACK_MS before router.back()) were updated earlier.",
+     "deviceCheck": "Needs the new APK. Phone 3, motion on (in-app Reduced Motion off), Hebrew. 1) Ranked fast game vs the hidden bot: pick an empty cell, then 'כניעה' → 'כן, להיכנע'. Record the screen (adb shell screenrecord) from the confirm until the results show, and step through it. No frame should show only the dark background and digits: the final board fades out while the results fade in over it. Repeat 4 times. 2) The same with a practice against Mr. Hoot: 'סיום אימון' → 'כן, לסיים', 3 times. 3) On Results, press Android back: it goes Home, not back to the game. 4) Turn on in-app Reduced Motion ('הפחתת תנועה') and repeat step 1 once: a short fade, still no empty frame. 5) Results open exactly once each time: back from Results goes Home in one press, never to a second Results screen."
+    }
+   ],
+   "filesChanged": [
+    "apps/mobile/index.ts",
+    "apps/mobile/package.json",
+    "apps/mobile/src/services/latestRoot.tsx",
+    "apps/mobile/src/services/__tests__/latestRoot.test.tsx",
+    "apps/mobile/app/game.tsx",
+    "apps/mobile/src/screens/results/__tests__/gameResultsOverlap.test.tsx",
+    "apps/mobile/src/screens/game/__tests__/gameRoute.test.tsx",
+    "apps/mobile/src/__tests__/ranked.e2e.test.tsx",
+    "docs/design/motion.md"
+   ],
+   "notes": "Review resolution:\n- HIGH (unmount order / ReducedMotionConfig restore): confirmed and fixed in apps/mobile/src/services/latestRoot.tsx. The old root's tree is now fully unmounted, with all its effect cleanups, before the new root mounts the app. A new strict two-root test with MotionPolicy and useKeepScreenOn fails on the previous ordering and passes now. The reviewer's sequence was right in principle, but the expo-router-based test did not show it, because in Jest expo-router mounts the layout a commit later. The strict test mounts the pieces in the root's first commit to cover the worst case. keepAwake: the tag stays held after one and two recreations, and now the release always comes before the take.\n- MEDIUM (dead watchdog retry): confirmed and fixed in apps/mobile/app/game.tsx. A repeated onEnded is ignored only while the game is no longer the screen shown. A new test with a lost first push shows the retry opening the results. Known limit: two onEnded calls in the same JS tick, before the first push applies, would both push. GameScreen calls onEnded once per end, guarded by its own ended ref; the only other callers are the watchdog's button 4 s later and the no-seat fallback's button, both user taps.\n- LOW (npm test red on motion.md column counts): levelsSpecDocs.test.ts and friendsDocs.test.ts both pass now (someone else fixed those rows). I did not touch them.\n\nChecks: tsc -p apps/mobile --noEmit clean. Prettier and ESLint clean on the changed files (latestRoot.tsx, latestRoot.test.tsx, app/game.tsx, gameResultsOverlap.test.tsx, index.ts). Jest: latestRoot (9), all of screens/results, gameRoute, GameScreenEnd, GameScreenOnline, Puzzle/TapLevelScreen, levelStage, goHandoff, model, ranked.e2e, rankedNewGame.e2e, botPractice(+End).e2e, soloPractice.e2e, historyReplay.e2e, interference.e2e, a11yAudit, ambientEverywhere, startupGraph, MotionPolicy, keepAwake, levelsSpecDocs, friendsDocs. All pass (377 + 340 tests across two runs). No new i18n keys. No adb, APK, deploy or npm install.\n\nItem 1 needs a new APK to verify, because package.json main changed to index.ts (Expo's resolveEntryPoint and gradle's resolveAppEntry both read main; verified it resolves). Optional follow-up, not done: add fontScale (not density) to configChanges via a config plugin, to avoid recreation for font-size changes; needs a device check.\n\nItem 2 side notes, not changed:\n- If dropWhenCovered fails (best effort), the game stays under the results, and GameScreen's 4 s watchdog may still fire on the covered screen. That would log a false 'results did not replace the game' Crashlytics report, and the fallback would only be seen if the user goes back. Fixing it means GameScreen checking focus, which is a shared file outside this item.\n- results/[id].tsx still has an out-of-date comment ('the results replace the game in one commit'). Shared file, not touched."
+  },
+  {
+   "items": [
+    {
+     "id": "ranked-four-type-and-search (4-player search: empty seats cut under 'ביטול חיפוש')",
+     "status": "fixed",
+     "rootCause": "When the 'nobody else' notice replaces the range card, SearchView kept its full layout: a 220 dp radar, 120 dp seats and 20 dp gaps. The notice card is about 120 dp taller than the range card. On an A16 (384x832, 3-button nav) the column needed about 819 dp but only about 704 dp is free above the footer, so 'יריבים 0/3' and the seats ended up under the cancel button. Review round: at 360 dp with font 1.3, even the compact layout overflows, in he by about 65 dp and in en by about 156 dp, because the notice text takes more lines.",
+     "fix": "(1) Compact layout while the notice shows (metrics.alone): radar 150 instead of 220, with the 72 avatar still whole above the rating chip. Seats 88 instead of 120, column gap 10 instead of 20. Text sizes are unchanged. (2) New in this round: a measured fallback in SearchView. The ScrollView reports its viewport height (onLayout) and its content height (onContentSizeChange). If the column is still taller than the room while the notice shows, the radar is replaced by my 'אני 1200' chip only, with no avatar, no rings and no sweep. The radar's accessibilityLabel stays the same. This state is kept until the notice goes, so it does not flip back and forth, and when the notice goes the full radar returns. (3) The size change is documented in motion.md under search.alone: it happens at once, with no movement, both with and without Reduced Motion, as the card appears.",
+     "test": "apps/mobile/src/screens/match/__tests__/searchFit.test.tsx. A16 normal size, he and en: the column fits (fails on old code, 751 > 640). New 360x780 at font 1.3 cases, he and en, with line counts computed per word through widthIn: the compact column is taller than the room, so the radar becomes the chip only (no arc, rating 1200, label kept). The resulting column is smaller than before, and in he it fits the room. Once the content fits, it does not flip back. When the notice goes the full radar (220) and arc are back. At normal size, when the column fits, the compact radar (150) stays. No text gets smaller.",
+     "deviceCheck": "(a) A16, Hebrew, normal size: Play → Ranked → '4 שחקנים' → 'מהיר' → 'מצא יריבים'. Wait for 'כרגע אין מספיק שחקנים…' with 'שחק מול בוט בינתיים'. Without scrolling you should see the smaller radar with my avatar and rating, the notice, 'יריבים 0/3', and three seats ('?' + 'מחפש…') all above 'ביטול חיפוש'. (b) wm density 480 + font_scale 1.3, Hebrew, same steps: when the notice appears, the radar becomes just the 'אני 1200' chip. The notice, 'יריבים 0/3' and the three seats are all above the button without scrolling. Text is not smaller. (c) Same in English at 1.3: same chip-only radar. A short scroll of about 30 dp may still be needed to see the seats' bottom edge. Nothing should be drawn on top of the button."
+    },
+    {
+     "id": "postgame-leaderboard-english (pinned 'my row': 'LevelProvisional', overlap at 360dp/1.3, tabs cut)",
+     "status": "fixed",
+     "rootCause": "The LeagueBadge 'icon' row (hexagon, tier, '· Level N') never wrapped. In the narrow pinned row next to 'Play', the English name column is about 83 dp, so the badge ran over the 'Provisional' chip. At 360dp/1.3 that column shrank to a few dp: the name became one letter and 'Bronze'/'Level 6' broke mid-word. The tabs (Segmented) are 5 equal flex:1 segments with numberOfLines 1, so they cut 'General', 'Normal' and 'Friends'.",
+     "fix": "(1) LeagueBadge gets a wrap option: the hexagon and tier stay together, and '· Level N' moves to the next line. The line under the name wraps, in list rows and in the pinned row. (2) rowFit.ts (useTightRows): when width/fontScale < 340, the Provisional chip moves to the line under the name (ProvisionalChip in Rating.tsx), the rank column gets a minWidth, and in the pinned row 'Play' moves under my row. (3) Segmented measures its labels at full size. If one does not fit an equal share, the segments size to their labels and wrap to a second row. Added a note to docs/design/components.md.",
+     "test": "apps/mobile/src/screens/leaderboard/__tests__/tightRows.test.tsx: en at 384dp normal size, the badge wraps and each part fits. At 360dp/1.3 in en and he: 'Play' is under the row, the chip appears once under the name, and every part and the name fit. A list row with a Hebrew name fits. The tabs wrap at 1.3 and stay equal at 1.0. These fail on the old code.",
+     "deviceCheck": "(a) Akhvata account (provisional, Bronze level 6), English, normal size: Leaderboard, every tab. In my pinned row, 'Bronze' and '· Level 6' sit under the name and never touch 'Provisional'. No 'LevelProvisional'. (b) wm density 480 + font_scale 1.3, Hebrew and English: every tab label is whole, wrapping to two rows if needed. In my row, 'Play'/'שחק' is under the row and the name is whole. 'Bronze', '· Level 6' and 'Provisional'/'זמני' are each whole, and none sits on top of '6'. List rows: Hebrew names (ליהי33, אבי43) are readable."
+    },
+    {
+     "id": "general-display-small-big-font: my game card 'No mis'/'takes'",
+     "status": "fixed",
+     "rootCause": "Seen on apk11, before loop 6. Loop 6's statusFit (in APK 12) already measures the mistakes words at the phone's text size.",
+     "fix": "No code change: loop 6's statusFit already covers it. Added a test that confirms it at 1.3.",
+     "test": "apps/mobile/src/screens/game/__tests__/DuelHudLargeText.test.tsx: 360dp, font 1.3, en and he. In en the widest word does not fit, so the card shows the mark and the count at font size ≥14. In he it shows the words only when they fit.",
+     "deviceCheck": "APK 12 or later, wm density 480 + font_scale 1.3, English: bot practice and ranked 2P. My card shows ✕ and a number instead of 'No mis/takes'."
+    },
+    {
+     "id": "general-display-small-big-font: player card 'Mistak es per …' and 'Playing since Octobe…'",
+     "status": "fixed",
+     "rootCause": "The 4 stat cells are 22% wide each (about 64 dp inside at 360dp), and 'Mistakes' at 1.3 is about 75 dp. 'Joined' had numberOfLines 1.",
+     "fix": "New StatCells.tsx measures every word at full size. If a word does not fit a quarter, the cells go 2 per row, with labels centered on 2 lines. 'Playing since' gets numberOfLines 2.",
+     "test": "apps/mobile/src/__tests__/wrapAt360Large.test.tsx (en and he, 360/1.3).",
+     "deviceCheck": "360dp/1.3, English and Hebrew: a player card. Stats are 2 per row and 'Mistakes per game' is whole. 'Playing since October 2026' / 'במשחק מאז אוקטובר 2026' wraps onto two lines."
+    },
+    {
+     "id": "general-display-small-big-font: bot select 'Biscu…', 'Mr. H…', 'Think time per m…'",
+     "status": "fixed",
+     "rootCause": "The name and the level chip were in one row that did not wrap, and the fact labels had numberOfLines 1.",
+     "fix": "BotSelectScreen: nameRow wraps, so the chip moves under the name when they don't fit together. The name gets maxWidth 100%. Fact labels get numberOfLines 2.",
+     "test": "apps/mobile/src/screens/home/__tests__/botSelectLargeText.test.tsx (en and he, 360/1.3).",
+     "deviceCheck": "360dp/1.3, en and he: bot select. All bot names are whole, with the level chip under the name where needed. 'Think time per move' is on two lines."
+    },
+    {
+     "id": "general-display-small-big-font: replay 'Previous st…'",
+     "status": "fixed",
+     "rootCause": "StepButton had numberOfLines 1. In en at 1.3, even 'Previous' (88 dp) does not fit beside the chevron (84 dp).",
+     "fix": "The label gets 2 lines, centered. The words are measured, and if the widest word does not fit beside the chevron, the chevron is hidden. The accessibility label is unchanged.",
+     "test": "wrapAt360Large.test.tsx: in en the chevron is hidden and the word fits. In he the chevron stays.",
+     "deviceCheck": "360dp/1.3, English: History → a game → Replay. The prev button shows 'Previous'/'step' on two lines, without the chevron. Hebrew: 'שלב קודם' with the chevron."
+    },
+    {
+     "id": "general-display-small-big-font: history 'Loss • Ranke…' / 'הפסד • אימו…'",
+     "status": "fixed",
+     "rootCause": "The outcome · mode · type line had numberOfLines 1.",
+     "fix": "HistoryCard: numberOfLines 2, plus testID history-card-<id>-kind.",
+     "test": "wrapAt360Large.test.tsx: each word fits the middle column at 1.3, in en and he.",
+     "deviceCheck": "360dp/1.3, en and he: History. The line wraps onto two lines with every word whole."
+    },
+    {
+     "id": "general-display-small-big-font: achievements 'Bronz…', 'Diam…', 'Lege…'",
+     "status": "fixed",
+     "rootCause": "The 5 leagues sit in one flex:1 row (about 56 dp each) with numberOfLines 1.",
+     "fix": "LeaguePanel measures the names at full size. If one does not fit a fifth, the leagues go 3 per row over two rows (ladderPerRow).",
+     "test": "wrapAt360Large.test.tsx: in en all 5 are a third wide and the names fit. Also checked in he.",
+     "deviceCheck": "360dp/1.3, English: Achievements, league panel. Bronze/Silver/Gold on the first row and Diamond/Legend on the second, all whole. At normal size it is one row."
+    },
+    {
+     "id": "general-display-small-big-font: map 'שלב 10 · מרוץ מו…'",
+     "status": "fixed",
+     "rootCause": "LevelPanel Head: the title and sub had numberOfLines 1.",
+     "fix": "numberOfLines 2 for both (the head has a minHeight, so it grows).",
+     "test": "wrapAt360Large.test.tsx: LevelPanel L010 in en and he. Each word fits at 1.3.",
+     "deviceCheck": "360dp/1.3, Hebrew: map → stage 10. 'שלב 10 · מרוץ מול הבוט' is whole, on two lines if needed."
+    },
+    {
+     "id": "general-display-small-big-font: solo practice 'Solo prac…' (review: medium)",
+     "status": "fixed",
+     "rootCause": "In SoloHud the identity block has a fixed height (size.buttonModal = 48), and at 1.3 the name plus one caption line already fill it. At 360dp the column for the name is about 100 dp, so 'Solo practice · Normal' did not fit on its one line and was cut. It cannot take a second line without spilling over the score: the game screen does not scroll (D124).",
+     "fix": "I chose the option from the earlier report, so no design question for Moshe is left open. SoloHud measures the full title at full caption size (statusFit WidthProbes) against its room. The room is the HUD width, less the 'End practice' column, the gap, the 44 avatar frame and the gap beside it (soloTitleRoom). If the title is wider, the line shows only the game type ('Normal' / 'רגיל'). 'Solo practice' is already said by the 'End practice'/'סיום אימון' button beside it. The font stays at caption size with one line. Until everything is measured, the full title shows, as before. No new i18n keys.",
+     "test": "apps/mobile/src/screens/game/__tests__/SoloHudLargeText.test.tsx: 360dp, font 1.3, en and he. The probe is measured at 1.3 and the end column is sized from the 'End practice' label. When the title is wider than its room, the line shows only the type, and in en that is the case. The shown text fits the room at caption size, with numberOfLines 1. On a wide phone the full title 'Solo practice · Fast' is kept. Fails on the old code: no probe, and the full title always shows.",
+     "deviceCheck": "wm density 480 + font_scale 1.3, English: Play → Solo practice → Normal. Under my name the line reads 'Normal' whole, not 'Solo prac…'. 'End practice' is on the right. Hebrew at the same size: 'אימון יחיד · רגיל' if it fits, otherwise 'רגיל', never cut. At normal size on a 384dp phone, the full 'Solo practice · Normal' as before."
+    }
+   ],
+   "filesChanged": [
+    "apps/mobile/src/screens/match/SearchView.tsx",
+    "apps/mobile/src/screens/match/metrics.ts",
+    "apps/mobile/src/screens/match/__tests__/searchFit.test.tsx",
+    "apps/mobile/src/screens/game/SoloHud.tsx",
+    "apps/mobile/src/screens/game/__tests__/SoloHudLargeText.test.tsx",
+    "apps/mobile/src/components/player/LeagueBadge.tsx",
+    "apps/mobile/src/components/player/Rating.tsx",
+    "apps/mobile/src/components/player/index.ts",
+    "apps/mobile/src/screens/leaderboard/LeaderboardParts.tsx",
+    "apps/mobile/src/screens/leaderboard/rowFit.ts",
+    "apps/mobile/src/screens/leaderboard/__tests__/tightRows.test.tsx",
+    "apps/mobile/src/screens/progress/parts.tsx",
+    "apps/mobile/src/screens/progress/ProgressScreen.tsx",
+    "apps/mobile/src/screens/player/StatCells.tsx",
+    "apps/mobile/src/screens/player/PlayerCardScreen.tsx",
+    "apps/mobile/src/screens/home/BotSelectScreen.tsx",
+    "apps/mobile/src/screens/home/__tests__/botSelectLargeText.test.tsx",
+    "apps/mobile/src/screens/replay/ReplayParts.tsx",
+    "apps/mobile/src/screens/history/HistoryCard.tsx",
+    "apps/mobile/src/screens/levels/LevelPanel.tsx",
+    "apps/mobile/src/screens/game/__tests__/DuelHudLargeText.test.tsx",
+    "apps/mobile/src/__tests__/wrapAt360Large.test.tsx",
+    "docs/design/components.md",
+    "docs/design/motion.md"
+   ],
+   "notes": "שתי הערות הסוקר טופלו.\n\n1. ‏'Solo prac…' (בינונית): תוקן. במקום לחכות להחלטת עיצוב, יישמתי את האפשרות הראשונה מהדוח הקודם: מודדים את הכותרת המלאה בגודל המלא, ואם היא לא נכנסת מציגים רק את סוג המשחק ('Normal' / 'רגיל'). כך לא נשאר מקום שבו מילה נחתכת. 'אימון' כבר מופיע על הכפתור 'סיום אימון' שלידה. גודל הטקסט לא השתנה, וגובה ה־HUD נשאר קבוע (D124). אם משה מעדיף שהכותרת תעבור לשורה משלה, זה שינוי ב־SoloHud.tsx (shortTitle).\n\n2. חיפוש ל־4 שחקנים ב־360dp ובגופן 1.3 (נמוכה): נוספה בדיקה, והיא הראתה שהפריסה המכווצת עדיין גולשת: בעברית בכ־65dp ובאנגלית בכ־156dp. נוסף מצב חירום מבוסס מדידה: כשהעמודה עדיין לא נכנסת בזמן שההודעה מוצגת, הרדאר מוחלף רק בצ'יפ 'אני 1200'. המצב הזה נשמר עד שההודעה נעלמת, כדי שלא יקפוץ הלוך ושוב.\n- בעברית ב־1.3 עכשיו הכל נכנס.\n- באנגלית ב־1.3 עדיין תידרש גלילה קצרה, כ־30dp לפי האומדן. הגלילה נשארה כגיבוי, ושום דבר לא מצויר מעל הכפתור.\n- שינוי הגודל בלי אנימציה מתועד במפורש ב־motion.md (search.alone): קורה מיד, יחד עם הופעת הכרטיס, בלי תנועה, וזהה עם ובלי הפחתת תנועה.\n\nאימות:\n- ‏tsc של apps/mobile: נקי לגמרי. שתי השגיאות שדיווחתי עליהן בסבב הקודם, בקבצים של סוכנים אחרים, כבר לא מופיעות.\n- ‏eslint: נקי על הקבצים ששיניתי בסבב הזה.\n- הורצו 36 סוויטות ירוקות: כל screens/match (10 סוויטות, 109 בדיקות), כל screens/game (כולל SoloHudLargeText החדש), ‏clockLabels, ‏soloPractice.e2e ו־ranked.e2e (26 סוויטות, 277 בדיקות).\n- ב־MatchScreen.test מופיעה אזהרת act של FlowFallback, שקודמת לשינוי ולא קשורה אליו.\n\nלא נוספו מפתחות i18n, השרת לא נגע, ואין APK, ‏adb או deploy. התיקיה הזמנית ‎src/__scratch__‎ שבה חישבתי את הגבהים נמחקה."
+  },
+  {
+   "items": [
+    {
+     "id": "postgame-leaderboard-english (Friends tab places)",
+     "status": "partial",
+     "rootCause": "apps/server/src/progress/leaderboard.ts friendsOf() returned the recent opponents in the order they were met (newest first), not by rating. Each opponent carried its GLOBAL 'general' rank (rankAt), which counts people only and never stealth-bot personas [D99]. On the phone most opponents were personas (ליהי33, אבי43...), so 1305 and 1233 were both #2 (one person above each), eight opponents at 1217-1223 were all #3, and they showed in meeting order, which happened to be ascending. The pinned 'me' is my global rank (#4), which is correct under D99.",
+     "fix": "Reviewer issue fixed: the approved D99 decision stays the default. (a) Sorting, in every mode: the friends tab lists the opponents by general rating, best first, with a stable sort, so on equal ratings the one met last comes first. This fixes 'not sorted' and '1233 before 1305'. D99 says nothing about order, and original §34 says 'דירוג חברים'. (b) Places: by default they stay as D99 approved: each opponent's place on the general board of people, and for a persona the place it would have had there. Once sorted they never go down, but a persona can share a place (#2, #2). (c) The 'unique places' version (places among the listed opponents and me, '1224', with me placed in that list) is now a server setting, FRIENDS_PLACES=among. It is parsed in apps/server/src/config.ts (ProgressConfig.friendsPlaces, DEFAULT_FRIENDS_PLACES='global') and passed through ProgressSettings.friendsPlaces. It is off until Moshe approves it. In spec §14.2 the sub-bullet now describes the sorting (built) and the 'among' option as a proposal 'ממתינה לאישור משה', with the reason. The D99 row, §9.1 and the D99 bullet are unchanged, so the spec agrees with what is built. The protocol doc comment was updated to match.",
+     "test": "apps/server/src/progress/leaderboard.test.ts: castLoop7() reproduces the phone: 7 opponents met newest first at ascending ratings, 2 of them personas (1305/1233), a 1220 tie, me 1200, and an unmet person 1500. 'loop 7: sorted by rating ... places on the general board (D99)' expects order o2,o1,o7,o5,o6,o4,o3 with ranks 2,2,2,3,3,5,6 and me #7. It fails on the old code, which used meeting order. 'loop 7, FRIENDS_PLACES=among' runs on a second test server (httpAmong) and expects 1,2,3,4,4,6,7 with me #8, while the general board is unchanged (me #7). The two existing friends tests are back to their baseline D99 expectations (fay #5; pia #1, ben #1, rex #4, me #2), and each now also checks the 'among' mode. apps/server/src/config.test.ts: a new FRIENDS_PLACES parse test (blank means unset, 'Among' becomes 'among', 'list' is rejected). Server progress + config: 126/126 pass.",
+     "deviceCheck": "Needs a server deploy of apps/server. It was not deployed this round, and FRIENDS_PLACES stays unset. After the deploy: Leaderboard, then the 'Friends' tab ('Your recent opponents'), in Hebrew and in English. (1) The rows go from the highest rating to the lowest (1305 above 1233 above 1223...). (2) Places never go down from one row to the next. Under the approved D99 they may repeat, e.g. #2, #2. (3) The pinned 'me' row shows my place on the General board, the same number as on the General tab. (4) The General/Fast/Normal/Hard tabs are unchanged. Only if Moshe approves and FRIENDS_PLACES=among is set on the server: the places become #1, #2, #3... with no repeats except equal ratings (#4, #4, #6), and 'me' gets my place in that list (e.g. #8 below 7 opponents)."
+    },
+    {
+     "id": "general-sr-names (history avatar unlabelled)",
+     "status": "fixed",
+     "rootCause": "apps/mobile/src/screens/history/HistoryCard.tsx: on a ranked card, the opponent's avatar is a nested Pressable with onPress and only accessible={false}. On Android, Pressable still sets focusable=true unless focusable={false} is passed, and nothing hid it from accessibility. So uiautomator saw a clickable, focusable node with no text (NAF), and TalkBack could stop on it as an unlabelled button. The intended UX: the avatar is a touch target for sighted users only, and the card already offers the 'player:<id>' accessibility action ('כרטיס השחקן של X').",
+     "fix": "The avatar Pressable now has focusable={false}, accessibilityElementsHidden and importantForAccessibility=\"no-hide-descendants\". It is hidden the same way as Scrim's unlabelled variant. A tap still opens the player card, and screen readers keep the card's own action. (The reviewer found no issue here. Re-verified.)",
+     "test": "apps/mobile/src/screens/history/__tests__/HistoryScreen.test.tsx 'a ranked game's opponent opens their player card' asserts focusable=false, importantForAccessibility='no-hide-descendants' and accessibilityElementsHidden on history-card-<id>-player-<pid>. It also checks that the default (accessible-only) query no longer finds the avatar, and that a tap still calls onOpenPlayer. It fails on the old code. It passes on the re-run.",
+     "deviceCheck": "APK with this change. History, then 'All' or 'Ranked', then a ranked game card. (1) Tapping the opponent's avatar still opens their player card. (2) uiautomator dump: the node history-card-<gameId>-player-<playerId> is gone, or no longer focusable/NAF. (3) With TalkBack on, swiping through the card never stops on the avatar alone. The card is read as one item, and its TalkBack 'Actions' menu still has 'Player card of <name>'."
+    },
+    {
+     "id": "postgame-replay-english ('sees a 8')",
+     "status": "fixed",
+     "rootCause": "apps/mobile/src/i18n/locales/en/explain.json put a fixed article before the digit: hidden.clause.unit.* 'sees a {{digit}} in …' and block.unit.* 'row {{label}} has a {{digit}}'. With digit 8 this gives 'a 8'. Digits are only 1-9, so 8 is the only digit that needs 'an'. In the other languages the articles that occur (de eine, fr/es/it un, pt um, nl een) do not change with the digit.",
+     "fix": "English wording only, with no article that depends on the digit: '{{cell}} sees the {{digit}} in row/column/box {{label}}' and \"{{cell}} can't hold {{digit}}: row/column/box {{label}} already has one\". The doc comment in apps/mobile/src/i18n/explain.ts was updated. explainGolden.test.ts maps the corrected English back to the engine's words through ENGINE_WORDS_EN. The levelExplain snapshot was updated (wording only). (The reviewer found no issue here. Re-verified.)",
+     "test": "apps/mobile/src/i18n/__tests__/explain.test.ts 'QA loop 7: no \"a 8\" in English' checks a hidden single with 8, and checks formatBlock for every digit and unit kind against /\\ba \\d/. It fails on the old strings. On the re-run, i18n explain, golden, history and levelExplain all pass: 88 tests, 18 snapshots.",
+     "deviceCheck": "APK with this change, app language English. Staged practice, Level 4 (Fill the row), let the time run out, then 'Why?' on the result screen: the sentence reads '…I5 sees the 8 in column 5. So I4 = 8.' (no 'a 8'). In a level whose why-text says the cell is blocked, the text reads \"… can't hold 8: column 5 already has one\". Hebrew is unchanged."
+    }
+   ],
+   "filesChanged": [
+    "apps/server/src/progress/leaderboard.ts",
+    "apps/server/src/progress/leaderboard.test.ts",
+    "apps/server/src/progress/settings.ts",
+    "apps/server/src/config.ts",
+    "apps/server/src/config.test.ts",
+    "packages/protocol/src/progress.ts",
+    "docs/01-SPEC.md",
+    "apps/mobile/src/screens/history/HistoryCard.tsx",
+    "apps/mobile/src/screens/history/__tests__/HistoryScreen.test.tsx",
+    "apps/mobile/src/i18n/locales/en/explain.json",
+    "apps/mobile/src/i18n/explain.ts",
+    "apps/mobile/src/i18n/__tests__/explain.test.ts",
+    "apps/mobile/src/i18n/__tests__/explainGolden.test.ts",
+    "apps/mobile/src/screens/levels/__tests__/__snapshots__/levelExplain.test.ts.snap"
+   ],
+   "notes": "The reviewer's medium issue (D99 changed without approval) is fixed. The approved D99 behaviour (global places, a persona at 'the place it would have had') is the default again. The only change that is built and on by default is sorting by rating, best first. D99 says nothing about order, and original §34 says 'דירוג חברים'. The unique-places version is ready behind the server setting FRIENDS_PLACES=among (default 'global'), as CLAUDE.md asks for decisions that are not yet approved. It is marked 'ממתינה לאישור משה' in spec §14.2. The D99 row, §9.1 and the D99 bullet were not touched, so the spec matches what is built.\n\nThe proposal for Moshe, in the CLAUDE.md format:\n(1) Approved D99: on the 'Friends' tab, personas appear with 'the place they would have had' on the general board.\n(2) Proposal: places among the recent opponents and me ('1224': equal ratings share a place, the next one skips), with my pinned row placed in that list.\n(3) Why: with global places, unique places are impossible once personas are listed, because personas count in no rank. Many personas sharing one place (e.g. eight at #3) give them away, which is the risk D99 itself names.\nTo turn it on after his OK: set FRIENDS_PLACES=among on the server, then update the D99 row, §9.1 and §14.2.\n\nChecks: server jest progress + config 126/126; mobile jest for spec docs (194) and for items 2/3 (88 tests, 18 snapshots) all pass; npx tsc -p apps/server clean; eslint and prettier clean on all changed files. npx tsc -p apps/mobile has one error, in apps/mobile/src/screens/results/__tests__/gameResultsOverlap.test.tsx (COVERED_DROP_FALLBACK_MS). I did not touch that file: it is another agent's work in progress. No i18n keys were added this round.\n\nItem 1 is server-only and reaches the phone only after a server deploy. No deploy was done."
+  }
+ ]
+}

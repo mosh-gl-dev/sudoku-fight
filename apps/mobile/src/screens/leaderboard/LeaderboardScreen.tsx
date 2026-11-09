@@ -19,7 +19,10 @@ import {
   Spinner,
   StateView,
 } from '../../components/ui';
+import { Enter } from '../../components/ui/Enter';
+import { framesPassed, SWAP_FRAMES } from '../../components/ui/retire';
 import { Text } from '../../components/ui/Text';
+import { type MyProfile, useProfileOver } from '../../progress/myProfile';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { Note, ProgressBar, Segmented } from '../progress/parts';
 import { provisionalGames } from '../progress/progressModel';
@@ -52,6 +55,11 @@ export interface LeaderboardScreenProps {
   /** My public id (me.id): my rows are P1. */
   myId: string | null;
   myAvatar: AvatarIdOrNone;
+  /**
+   * My name, avatar and country as the phone knows them (me): my rows show them over the board's once they
+   * changed after the board came (an edit made since, from my card).
+   */
+  myProfile?: MyProfile | null;
   /** My league and the rating it comes from [D9], from my progress; null while not known. */
   myLeague: { league: League | null; rating: number | null } | null;
   onOpenPlayer: (id: string) => void;
@@ -70,6 +78,7 @@ export function LeaderboardScreen({
   api,
   myId,
   myAvatar,
+  myProfile = null,
   myLeague,
   onOpenPlayer,
   onPlay,
@@ -87,6 +96,9 @@ export function LeaderboardScreen({
   const [snap, setSnap] = useState<FeedSnapshot>(() => feed.peek('general', null));
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // While a tab or a table size swaps in (see `show`): its request. The table (the rows, the podium) shows its
+  // loading state meanwhile; the rest of the screen already shows the tab it swaps to.
+  const [swapping, setSwapping] = useState<number | null>(null);
   const request = useRef(0);
 
   /** The latest request wins: an older answer (another tab) never replaces a newer one. */
@@ -107,12 +119,26 @@ export function LeaderboardScreen({
     });
   }, [feed]);
 
+  /**
+   * Another tab or table size. The rows and the podium shown go at once, in a commit of their own (the table's
+   * loading state, as for a tab not read yet); the board this tab read before, and the answer, come SWAP_FRAMES
+   * later at the earliest. Swapped in one commit, the old rows were deleted in the frame that drew the new rows'
+   * avatars, and on Android each new shape failed on every old row's press and entrance that Reanimated still held
+   * (their first ~2 s; components/ui/retire.ts, QA run #3): a tab and back within two seconds froze it for seconds.
+   * The same tab again ("נסה שוב") keeps its rows, as before.
+   */
   const show = (nextTab: LeaderboardTab, nextPlayers: TableSize | null) => {
+    const swap = nextTab !== tab || nextPlayers !== players;
     setTab(nextTab);
     setPlayers(nextPlayers);
     setLoadingMore(false);
     setSnap(feed.peek(nextTab, nextPlayers));
-    run(() => feed.first(nextTab, nextPlayers));
+    if (!swap) return run(() => feed.first(nextTab, nextPlayers));
+    const gap = framesPassed(SWAP_FRAMES);
+    run(() => Promise.all([feed.first(nextTab, nextPlayers), gap]).then(([next]) => next));
+    const id = request.current;
+    setSwapping(id);
+    void gap.then(() => setSwapping((now) => (now === id ? null : now)));
   };
 
   const refresh = () => {
@@ -126,9 +152,13 @@ export function LeaderboardScreen({
   const board = snap.tab === tab && snap.players === players ? snap.board : null;
   const status = snap.tab === tab && snap.players === players ? snap.status : 'loading';
   const code = snap.tab === tab && snap.players === players ? snap.code : null;
+  const over = useProfileOver(myProfile, board);
+  /** My entry as the phone knows me (the board's as it came while nothing changed since). */
+  const freshOne = (e: LeaderboardEntry) => (over && e.id === myId ? { ...e, ...over } : e);
+  const fresh = (entries: LeaderboardEntry[]) => (over ? entries.map(freshOne) : entries);
 
   const more = () => {
-    if (loadingMore || refreshing || !board?.nextCursor || tab === 'friends') return;
+    if (loadingMore || refreshing || swapping !== null || !board?.nextCursor || tab === 'friends') return;
     setLoadingMore(true);
     run(
       () => feed.more(tab, players),
@@ -138,8 +168,10 @@ export function LeaderboardScreen({
 
   const open = (entry: LeaderboardEntry) => onOpenPlayer(entry.id);
   const friends = tab === 'friends';
-  const { podium, rows } = board && !friends ? splitPodium(board.entries) : { podium: [], rows: [] };
-  const data = friends ? (board?.friends?.recentOpponents ?? []) : rows;
+  // The rows and the podium: none while a tab swaps in (its loading state shows).
+  const table = swapping === null ? board : null;
+  const { podium, rows } = table && !friends ? splitPodium(fresh(table.entries)) : { podium: [], rows: [] };
+  const data = friends ? fresh(table?.friends?.recentOpponents ?? []) : rows;
   const inviteUrl = board?.friends?.inviteUrl ?? null;
   const invite = () => {
     if (inviteUrl) void share(inviteUrl, t('friends.inviteMessage')).catch(() => undefined);
@@ -211,7 +243,7 @@ export function LeaderboardScreen({
 
   let empty: ReactElement | null = null;
   if (data.length === 0 && podium.length === 0) {
-    if (!board && status === 'loading')
+    if (swapping !== null || (!board && status === 'loading'))
       empty = <LeaderboardSkeleton label={t('common.loading')} podium={!friends} />;
     else if (!board && status === 'signedOut')
       empty = <StateView icon="leaderboard" title={t('common.signedOut')} testID="leaderboard-signed-out" />;
@@ -281,8 +313,13 @@ export function LeaderboardScreen({
     <View style={[styles.screen, { paddingTop: top }]} testID={testID}>
       <FlatList
         data={data}
-        keyExtractor={(e) => e.id}
-        renderItem={({ item }) => <LeaderboardRow entry={item} mine={item.id === myId} onOpen={open} />}
+        // Each board's rows are its own: another tab or table size brings its rows in afresh (list.enter).
+        keyExtractor={(e) => `${tab}:${players ?? 0}:${e.id}`}
+        renderItem={({ item, index }) => (
+          <Enter index={index}>
+            <LeaderboardRow entry={item} mine={item.id === myId} onOpen={open} />
+          </Enter>
+        )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         ListFooterComponent={footer}
@@ -300,7 +337,7 @@ export function LeaderboardScreen({
         contentContainerStyle={styles.content}
         testID={`${testID}-list`}
       />
-      {showMe ? <PinnedMe me={board.me} onOpen={open} onPlay={onPlay} /> : null}
+      {showMe ? <PinnedMe me={board.me && freshOne(board.me)} onOpen={open} onPlay={onPlay} /> : null}
       <BottomNav active="leaderboard" onSelect={onTab} testID="nav" />
     </View>
   );
@@ -372,7 +409,7 @@ const DOT = space[5];
 const SKELETON_STEPS = [space[13], space[15], space[11]] as const;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: {
     paddingHorizontal: tokens.layout.gutterGame,
     paddingTop: space[8],

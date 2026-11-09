@@ -82,6 +82,7 @@
     },
     "code": "錯誤代碼：{{code}}",
     "retry": "重新搜尋",
+    "backToGame": "回到對局",
     "verify": "驗證電子郵件",
     "practice": "前往練習",
     "practiceNote": "單人練習和機器人練習離線也能玩。",

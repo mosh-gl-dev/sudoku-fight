@@ -1,9 +1,11 @@
 import type { CellIndex, Digit } from '@sudoku-fight/engine';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type Insets, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
+  css,
+  ReduceMotion,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -19,6 +21,8 @@ import { AvatarArt } from '../../avatars';
 import { color, type PlayerPalette, radius, size, text, tokens } from '../../theme';
 import { Icon } from '../Icon';
 import { motion, useReduceMotion } from '../../theme/motion';
+import { cssCurve } from '../ui/cssMotion';
+import { useRetired } from '../ui/retire';
 import { Text } from '../ui/Text';
 import {
   PENDING_RING_OPACITY,
@@ -30,7 +34,7 @@ import {
   WRONG_DIGIT_SHRINK,
 } from './animation';
 import { type CellLock, type CellModel, type CellPlayer, shownWrongDigits } from './boardModel';
-import { type BoardCorner, type BoardGeometry, fontPx, geometryForCell, px } from './geometry';
+import { type BoardCorner, type BoardGeometry, cellTextPx, fontPx, geometryForCell, px } from './geometry';
 import { cellHint, cellLabel } from './labels';
 
 /**
@@ -120,6 +124,10 @@ const samePill = (a: PillLook, b: PillLook) => a.palette === b.palette && sameLo
 
 /** The JS side gives up waiting for a fade's end this long after it should have ended. */
 const GONE_SAFETY_MS = 100;
+
+/** What tells retired flashes and lock holders apart (useRetired). */
+const flashKey = (f: CellFlash) => f.id;
+const playerKey = (p: CellPlayer) => p.id;
 
 /**
  * A part of the cell (a lock's ring, my pill) that was there a moment ago and no longer is: true from the render
@@ -245,6 +253,14 @@ function CellView({
     cell.kind === 'myLock' && palette && cell.lock ? { lock: cell.lock, palette } : null;
   const [pillLeaving, pillGone] = useLeaving(pillLook !== null);
   const lifted = cell.kind === 'oppLock' && cell.wrong.length > 0;
+  // A flash that is over, and an opponent's avatar whose lock went, stay a while, at rest and unseen: deleted at
+  // once, they went in the frame the movers' avatars drew new shapes, and on Android Reanimated still held them
+  // (../ui/retire.ts; QA run #3, T3-MOVE-UIPROPS). Each keeps its key, so it is the same view, never a new one.
+  const retiredFlashes = useRetired(flash ?? null, flashKey);
+  const flashes = flash ? [...retiredFlashes, flash] : retiredFlashes;
+  const holder = cell.kind === 'oppLock' ? cell.player : null;
+  const retiredHolders = useRetired(holder, playerKey);
+  const holders = holder ? [...retiredHolders, holder] : retiredHolders;
   const wrongShown = shownWrongDigits(cell);
   const interactive = cell.interactive && !!onCellPress;
   // My own lock is not "disabled" for a screen reader: it is the selected cell, and a tap just does nothing.
@@ -268,18 +284,19 @@ function CellView({
         testID={`${id}-face`}
         style={[styles.content, { backgroundColor: tint ?? base }, cornerStyle, shakeStyle]}
       >
-        {flash ? (
+        {flashes.map((f) => (
           <FlashLayer
-            key={`under-${flash.id}`}
+            key={`under-${f.id}`}
             layer="under"
-            flash={flash}
+            flash={f}
+            retired={f.id !== flash?.id}
             palette={palette}
             base={base}
             g={g}
             reduce={reduce}
             cornerStyle={cornerStyle}
           />
-        ) : null}
+        ))}
 
         {cell.kind === 'myLock' && palette && cell.lock && !cell.lock.paused && !reduce ? (
           <PulseBand palette={palette} g={g} cornerStyle={cornerStyle} />
@@ -312,9 +329,16 @@ function CellView({
 
         {cell.kind === 'queued' && palette ? <QueuedMark palette={palette} g={g} /> : null}
 
-        {cell.kind === 'oppLock' && cell.player ? (
-          <MiniAvatar player={cell.player} g={g} lifted={lifted} reduce={reduce} />
-        ) : null}
+        {holders.map((p) => (
+          <MiniAvatar
+            key={`holder-${p.id}`}
+            player={p}
+            g={g}
+            lifted={lifted && p.id === holder?.id}
+            reduce={reduce}
+            retired={p.id !== holder?.id}
+          />
+        ))}
 
         {cell.kind === 'solved' && palette && !cell.correction ? <SeatGlyph palette={palette} g={g} /> : null}
 
@@ -324,12 +348,12 @@ function CellView({
 
         {wrongShown.length ? (
           <Text
+            scale="board"
             style={[
               text('wrongDigit'),
               styles.wrong,
               {
-                fontSize: fontPx(g, tokens.type.wrongDigit.size),
-                lineHeight: fontPx(g, tokens.type.wrongDigit.lineHeight),
+                ...cellTextPx(g, 'wrongDigit'),
                 right: px(g, size.wrongDigitInset.right),
                 bottom: px(g, size.wrongDigitInset.bottom),
               },
@@ -340,24 +364,39 @@ function CellView({
           </Text>
         ) : null}
 
-        {flash ? (
+        {flashes.map((f) => (
           <FlashLayer
-            key={`over-${flash.id}`}
+            key={`over-${f.id}`}
             layer="over"
-            flash={flash}
+            flash={f}
+            retired={f.id !== flash?.id}
             palette={palette}
             base={base}
             g={g}
             reduce={reduce}
             cornerStyle={cornerStyle}
           />
-        ) : null}
+        ))}
       </Animated.View>
     </Pressable>
   );
 }
 
 // ---------------------------------------------------------------------------------------------------------
+
+/**
+ * The pulse's fade: 0 → 1 on the `loop` curve, then back, for ever (1.6 s a round). A Reanimated CSS animation, not
+ * a worklet style (../ui/cssMotion.ts): the band goes with my lock, as my move's result comes and my avatar starts
+ * its reaction with new shapes, and on Android a worklet-moved band deleted in that frame failed once per shape.
+ */
+export const LOCK_PULSE = {
+  animationName: css.keyframes({ from: { opacity: 0 }, to: { opacity: 1 } }),
+  animationDuration: motion.loop.lockPulse / 2,
+  animationTimingFunction: cssCurve('loop'),
+  animationIterationCount: 'infinite',
+  animationDirection: 'alternate',
+} as const;
+const PULSING = { opacity: 0, ...LOCK_PULSE };
 
 /** My lock's pulse (`sf-lock`): a 7 dp inner band at 28% fading in and out over 1.6 s. Never under reduced motion. */
 function PulseBand({
@@ -369,12 +408,6 @@ function PulseBand({
   g: BoardGeometry;
   cornerStyle: ViewStyle | null;
 }) {
-  const level = useSharedValue(0);
-  useEffect(() => {
-    level.set(withRepeat(withTiming(1, timing(motion.loop.lockPulse / 2, 'loop')), -1, true));
-    return () => cancelAnimation(level);
-  }, [level]);
-  const style = useAnimatedStyle(() => ({ opacity: level.get() }));
   return (
     <Animated.View
       pointerEvents="none"
@@ -383,7 +416,7 @@ function PulseBand({
         StyleSheet.absoluteFill,
         { borderWidth: px(g, lockPulse), borderColor: palette.lockPulse },
         cornerStyle,
-        style,
+        PULSING,
       ]}
     />
   );
@@ -482,13 +515,13 @@ function CellDigit({
     }
   }, [popId, reduce, scale, opacity]);
   const style = useAnimatedStyle(() => ({ opacity: opacity.get(), transform: [{ scale: scale.get() }] }));
-  const type = given ? tokens.type.digitCell : tokens.type.digitCellOwned;
   return (
     <Animated.View style={style}>
       <Text
+        scale="board"
         style={[
           text(given ? 'digitCell' : 'digitCellOwned'),
-          { color: digitColor, fontSize: fontPx(g, type.size), lineHeight: fontPx(g, type.lineHeight) },
+          { color: digitColor, ...cellTextPx(g, 'digit') },
         ]}
         testID="cell-digit"
       >
@@ -498,34 +531,77 @@ function CellDigit({
   );
 }
 
-/** The holder's 22 dp avatar in an opponent's lock; it pops in, and rises 3 dp to clear wrong digits (§11.4). */
+/**
+ * The holder's 22 dp avatar in an opponent's lock; it pops in, and rises 3 dp to clear wrong digits (§11.4).
+ * `retired`: their lock went; it stays, unseen at once, until the cell lets it go (useRetired), and pops in again
+ * if they lock the cell again meanwhile.
+ */
 function MiniAvatar({
   player,
   g,
   lifted,
   reduce,
+  retired,
 }: {
   player: CellPlayer;
   g: BoardGeometry;
   lifted: boolean;
   reduce: boolean;
+  retired: boolean;
 }) {
   const scale = useSharedValue(reduce ? 1 : POP_FROM);
+  const seen = useSharedValue(1);
+  const wasRetired = useRef(retired);
   useEffect(() => {
+    if (retired) {
+      wasRetired.current = true;
+      cancelAnimation(scale);
+      seen.set(0);
+      return;
+    }
+    seen.set(1);
+    // Back for a new lock: it pops in as a new one does.
+    if (wasRetired.current && !reduce) scale.set(POP_FROM);
+    wasRetired.current = false;
     scale.set(reduce ? 1 : withSpring(1, springs.pop));
-  }, [scale, reduce]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  }, [scale, seen, reduce, retired]);
+  const style = useAnimatedStyle(() => ({ opacity: seen.get(), transform: [{ scale: scale.get() }] }));
   const side = px(g, size.avatar.cell.size);
   return (
-    <Animated.View style={[style, lifted ? { top: -px(g, AVATAR_LIFT) } : null]} testID="cell-avatar">
-      <AvatarArt
-        avatarId={player.avatar}
-        size={side}
-        crop="head"
-        radius={px(g, size.avatar.cell.radius)}
-        testID="cell-avatar-art"
-      />
-    </Animated.View>
+    <PartSlot retired={retired} testID="cell-slot-avatar">
+      <Animated.View
+        style={[style, lifted ? { top: -px(g, AVATAR_LIFT) } : null]}
+        testID={retired ? 'cell-avatar-retired' : 'cell-avatar'}
+      >
+        <AvatarArt
+          avatarId={player.avatar}
+          size={side}
+          crop="head"
+          radius={px(g, size.avatar.cell.radius)}
+          testID="cell-avatar-art"
+        />
+      </Animated.View>
+    </PartSlot>
+  );
+}
+
+/**
+ * The box of a part the cell may retire (a flash, a lock holder's avatar; useRetired): the whole cell, centred, out of
+ * the cell's flow, so a retired avatar never pushes the digit that came in its place off centre. It is always
+ * there, so retiring never moves the part to a new parent (a new view), and never collapsed into the cell for the
+ * same reason. Retired, it is unseen by its own opacity, in the very commit that retires the part: the part's
+ * animated style is set to rest by an effect, a frame later, and Reanimated may still lay a fade's middle over it.
+ */
+function PartSlot({ retired, testID, children }: { retired: boolean; testID: string; children: ReactNode }) {
+  return (
+    <View
+      collapsable={false}
+      pointerEvents="none"
+      style={[styles.center, retired ? styles.unseen : null]}
+      testID={testID}
+    >
+      {children}
+    </View>
   );
 }
 
@@ -554,6 +630,7 @@ function TargetChip({ digit, g }: { digit: Digit; g: BoardGeometry }) {
       testID="cell-target"
     >
       <Text
+        scale="board"
         style={[
           text('digitCell'),
           {
@@ -586,7 +663,6 @@ function Correction({
   g: BoardGeometry;
   corner: BoardCorner | null | undefined;
 }) {
-  const type = tokens.type.digitCell;
   const disc = px(g, CORRECTION.disc);
   const inset = px(g, CORRECTION.inset);
   return (
@@ -601,14 +677,8 @@ function Correction({
         testID="cell-correction-ring"
       />
       <Text
-        style={[
-          text('digitCell'),
-          {
-            color: color.board.wrongDigit,
-            fontSize: fontPx(g, type.size),
-            lineHeight: fontPx(g, type.lineHeight),
-          },
-        ]}
+        scale="board"
+        style={[text('digitCell'), { color: color.board.wrongDigit, ...cellTextPx(g, 'digit') }]}
         testID="cell-correction-wrong"
       >
         {wrong}
@@ -634,6 +704,7 @@ function Correction({
         testID="cell-correction-right"
       >
         <Text
+          scale="board"
           style={[
             text('wrongDigit'),
             {
@@ -755,6 +826,7 @@ function SecondsPill({
           </Svg>
         ) : (
           <Text
+            scale="board"
             style={[
               text('lockTimer'),
               styles.teko,
@@ -764,6 +836,7 @@ function SecondsPill({
                 lineHeight: fontPx(g, tokens.type.lockTimer.lineHeight),
               },
             ]}
+            testID="cell-pill-seconds"
           >
             {lock.seconds}
           </Text>
@@ -848,10 +921,15 @@ export function flashPart(layer: 'under' | 'over', flash: CellFlash, reduce: boo
   return null;
 }
 
-/** Draws one flash part, and plays it once when it mounts (the cell mounts one per flash id). */
+/**
+ * Draws one flash part, and plays it once when it mounts (the cell mounts one per flash id). `retired`: the cell
+ * shows it no more (cleared, or another flash came); it stays, at 0 at once, until the cell lets it go
+ * (useRetired), so it is never deleted in the frame the movers' avatars draw new shapes.
+ */
 function FlashLayer({
   layer,
   flash,
+  retired,
   palette,
   base,
   g,
@@ -860,6 +938,7 @@ function FlashLayer({
 }: {
   layer: 'under' | 'over';
   flash: CellFlash;
+  retired: boolean;
   palette: PlayerPalette | null;
   base: string;
   g: BoardGeometry;
@@ -876,61 +955,79 @@ function FlashLayer({
   useEffect(() => {
     if (!kind || played.current) return;
     played.current = true;
+    // The hold is part of the chosen variant: withDelay, unlike timing(), follows Reanimated's reduced motion (which
+    // MotionPolicy turns on with the app's setting) unless told Never, and skipped it (B36: the reduced red frame
+    // faded at once, under 130 ms on the phone).
     const fade = withTiming(0, timing(fadeMs, kind === 'digit' ? 'exit' : 'standard'));
-    opacity.set(holdMs ? withDelay(holdMs, fade) : fade);
+    opacity.set(holdMs ? withDelay(holdMs, fade, ReduceMotion.Never) : fade);
     if (kind === 'digit')
-      scale.set(withDelay(holdMs, withTiming(WRONG_DIGIT_SHRINK, timing(motion.duration.stateChange))));
+      scale.set(
+        withDelay(
+          holdMs,
+          withTiming(WRONG_DIGIT_SHRINK, timing(motion.duration.stateChange)),
+          ReduceMotion.Never,
+        ),
+      );
   }, [kind, holdMs, fadeMs, opacity, scale]);
+  // Out of sight at once, as it was when the cell dropped it (a flash replaced mid-fade is cut, not finished).
+  useEffect(() => {
+    if (!retired) return;
+    cancelAnimation(opacity);
+    cancelAnimation(scale);
+    opacity.set(0);
+  }, [retired, opacity, scale]);
   const style = useAnimatedStyle(() => ({ opacity: opacity.get(), transform: [{ scale: scale.get() }] }));
 
   if (!part) return null;
-  const tone = {
-    solver: palette?.ring ?? null,
-    base,
-    wrongFlash: color.board.wrongFlash,
-    danger: color.danger,
-    wrongDigit: color.board.wrongDigit,
-    ring: palette?.ring ?? players[0].ring,
-  }[part.tone];
+  const tone =
+    {
+      solver: palette?.ring ?? null,
+      base,
+      wrongFlash: color.board.wrongFlash,
+      danger: color.danger,
+      wrongDigit: color.board.wrongDigit,
+      ring: palette?.ring ?? players[0].ring,
+    }[part.tone] ?? (retired ? 'transparent' : null);
   if (!tone) return null;
+  const at = (id: string) => (retired ? 'cell-flash-retired' : id);
 
+  let drawn: ReactNode;
   if (part.kind === 'cross') {
     const bar = { width: px(g, CROSS.length), height: px(g, CROSS.bar), backgroundColor: tone };
-    return (
-      <Animated.View pointerEvents="none" style={[styles.center, style]} testID="cell-flash-miss-cross">
+    drawn = (
+      <Animated.View pointerEvents="none" style={[styles.center, style]} testID={at('cell-flash-miss-cross')}>
         <View style={[styles.crossBar, bar, styles.crossA]} />
         <View style={[styles.crossBar, bar, styles.crossB]} />
       </Animated.View>
     );
-  }
-  if (part.kind === 'digit') {
-    const type = tokens.type.digitCell;
-    return (
-      <Animated.View pointerEvents="none" style={[styles.center, style]} testID="cell-flash-digit">
-        <Text
-          style={[
-            text('digitCell'),
-            { color: tone, fontSize: fontPx(g, type.size), lineHeight: fontPx(g, type.lineHeight) },
-          ]}
-        >
+  } else if (part.kind === 'digit') {
+    drawn = (
+      <Animated.View pointerEvents="none" style={[styles.center, style]} testID={at('cell-flash-digit')}>
+        <Text scale="board" style={[text('digitCell'), { color: tone, ...cellTextPx(g, 'digit') }]}>
           {flash.digit}
         </Text>
       </Animated.View>
     );
+  } else {
+    drawn = (
+      <Animated.View
+        pointerEvents="none"
+        testID={at(`cell-flash-${flash.kind}-${part.kind}`)}
+        style={[
+          StyleSheet.absoluteFill,
+          part.kind === 'fill'
+            ? { backgroundColor: tone }
+            : { borderWidth: px(g, part.width ?? focus), borderColor: tone },
+          cornerStyle,
+          style,
+        ]}
+      />
+    );
   }
   return (
-    <Animated.View
-      pointerEvents="none"
-      testID={`cell-flash-${flash.kind}-${part.kind}`}
-      style={[
-        StyleSheet.absoluteFill,
-        part.kind === 'fill'
-          ? { backgroundColor: tone }
-          : { borderWidth: px(g, part.width ?? focus), borderColor: tone },
-        cornerStyle,
-        style,
-      ]}
-    />
+    <PartSlot retired={retired} testID="cell-slot-flash">
+      {drawn}
+    </PartSlot>
   );
 }
 
@@ -1002,6 +1099,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  unseen: { opacity: 0 },
   glyph: { position: 'absolute' },
   wrong: { position: 'absolute', color: color.board.wrongDigit },
   pillSlot: { position: 'absolute' },

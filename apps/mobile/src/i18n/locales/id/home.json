@@ -57,10 +57,13 @@
     "title": "Pertandingan baru",
     "footnote": "Mode ranked perlu koneksi internet · Latihan selalu tersedia",
     "soon": "Segera",
+    "needsConnection": {
+      "rankedAndFriends": "Ranked dan bersama teman"
+    },
     "groups": {
       "ranked": {
         "title": "Mode ranked",
-        "note": "Lawan sungguhan, secara langsung"
+        "note": "Lawan sungguhan, langsung"
       },
       "friends": {
         "title": "Bersama teman",
@@ -113,7 +116,7 @@
       "tagline": "Tahap singkat · hingga 3 bintang",
       "taglineNew_other": "{{total}} tahap singkat · 0–3 bintang",
       "chip": "Tahap {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Bisa offline",
       "chipLabel_other": "Tahap {{stage}} · {{count}} bintang",
       "label": "Latihan bertahap"
     },

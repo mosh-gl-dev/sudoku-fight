@@ -1,0 +1,79 @@
+{
+ "checks": [
+  {
+   "id": "go-hold-joiner (gohold: cold joiner P3, sound OFF x3 / ON x2, both phones recorded)",
+   "result": "pass",
+   "evidence": "APK 18, staging, P1 host, P3 cold-started joiner (force-stop + launch, join by code, >3 s in lobby) every run. Logcat '[friends] GO! shown, game +X ms, game screen opens +Y ms' (X/Y, then line->StatusBarModule gap): P3 sound OFF: 172/266 (+703), 189/265 (+861), 17/258 (+598), and in the later warp game 99/264 (+474). P3 sound ON: 30/262 (+735), 71/256 (+695). P1 host (sound on): 53/275 (+766), 153/264 (+623), 74/262 (+690), 79/264 (+691), 22/266 (+712). Y is always 256-275 ms. GO!->StatusBarModule on P3: 0.97, 1.13, 0.86 s (sound off), 1.00, 0.95 s (sound on), 0.74 s (warp game). It used to be 1.84-2.16 s. GO!->board from the videos (20 ms steps): P3 sound OFF 1.34 s (off2; X=189 was the largest here) and 1.12 s (off3). P3 sound ON 1.20 and 1.15 s. P1 1.10, ~1.1, ~1.12 and 1.15 s. It was 2.2-2.5 s. Run off1 has logcat only: the video pull failed. With sound OFF, P3 has no AudioTrack setVolume at all between GO! and the mount. With sound ON, the count/GO! sounds play (setVolume 0.7 at each step, 0.9 at GO!), the hit-cue warm-up burst comes ~2.4 s after the board, and the first cell tap on P3 made its sound (setVolume 0.5, frames delivered). The first count frame on both phones already shows both avatars and 'התכוננו…'. On P3 the '3' is still invisible in that frame (allowed), and on P1 it is visible. No frame shows only the header. Not measured: the lobby stall before the count (no framestats), (e) levels and (f) Reduced Motion. Files: qa-shots/fix13-<serial>-gohold-off2/off3/on1/on2.mp4; sheets rec/f13-p3-off2-fine.png, f13-p1-off2-fine.png, f13-RF8Y30L038L-off3-fine.png, f13-RF8Y30L038L-on1-sheet.png, f13-RF8Y30L038L-on2-sheet.png",
+   "qaAction": "none: friends-game-countdown is already ½ {handled} and its lines (3,2,1,GO! then the board, me blue ●) pass again."
+  },
+  {
+   "id": "results-home-under-statusbar (surrender win, surrender loss, abandon win x2, manual drag)",
+   "result": "pass",
+   "evidence": "APK 18, ranked fast, P1 vs P3, recorded at 4 fps. Game 1 (P3 surrendered): P1 win and P3 loss. On both phones the cards glide up ~2.5 s after the results appear, and the top row ('לבית' + 'משחק מדורג · מהיר · 2 שחקנים') stays in place in every frame. uiautomator results-home is [757,123][1013,246] (y≈185) on both after the glide. One tap on 'לבית' went Home on both. The rating change here was 0 ('the exit was before your first move'), so nothing counted. Game 2: abandon win on P1 (P3 in airplane mode). The rating is again unchanged, for the same reason. The row stays fixed through a big glide. I dragged the results to the bottom twice: the row stayed at y≈185 and one tap went Home (shot fix13-RF8Y60PP2XZ-results-home-1.png). Game 3 (both had played moves): abandon win, rated. The results appear at +1.4 s, the glide runs at ~+3.0 s, and the number counts in view 1104→1108→1112→1113→1114 (+10). The row stays fixed, and 'לבית' worked on the first tap on P1 and on P3 (P3's own result, 965→955, −10). The glide comes at ~2.5-3.0 s, a little later than the 1.2-2.5 s in the deviceCheck: it waits for the rating card to mount. TalkBack was not tested. Reduced Motion: see appBugs. Files: qa-shots/fix13-RF8Y60PP2XZ-results-surr.mp4, fix13-RF8Y30L038L-results-surr.mp4, fix13-RF8Y60PP2XZ-results-aband.mp4, fix13-RF8Y60PP2XZ-results-aband2.mp4; sheets rec/f13-RF8Y60PP2XZ-rsurr-sheet.png, f13-RF8Y30L038L-rsurr-sheet.png, f13-p1-raband2-sheet.png",
+   "qaAction": "qa.ts mark 2 ranked-duel-rating-card partial --actual-file (done). ✓1 is seen with the count in view (abandon +10, full board −33/−9), and the 'לבית' side effect is gone. ✓2/✓3 (K=64 provisional) still need new accounts."
+  },
+  {
+   "id": "connection-lost-no-recovery (ranked, P3 airplane, screen kept on)",
+   "result": "partial",
+   "evidence": "APK 18, ranked fast P1 vs P3, P3 screen on (10 min timeout), recorded. Countdown on P3: the bottom card counts 'יש לך עוד 15…1 שניות לחזור', then reads 'הזמן נגמר · בודקים מול השרת…'. It never shows '0 שניות'. Run A2: moves on both sides, airplane on P3 for 61.6 s. P1 got 'ניצחת בנטישה' at ~25-30 s. Wi-Fi came back at video ~62 s, the board unlocked at ~68 s, and the results 'הפסד' (P3's own loss, 965→955) came at ~69 s, so 6-7 s after airplane off (Wi-Fi itself takes a few s to rejoin). It was never stuck on 'ללא חיבור'. Run A1: airplane for 93.9 s. The 'לא חזרת למשחק בזמן' screen (body 'החיבור לא חזר בזמן, ולכן המשחק נחשב נטישה.', chip ⁦ERR_NETWORK⁩) appeared at video 94.0 s, about when Wi-Fi came back and ~80 s after the loss was noticed. The generic 'שגיאת חיבור' screen never appeared. Not run: (B) the screen-off variant. Release builds have no '[online]' logcat lines (only [startup]/[friends]). Files: qa-shots/fix13-RF8Y30L038L-net-A.mp4, fix13-RF8Y30L038L-net-B.mp4, fix13-RF8Y60PP2XZ-net-B.mp4, fix13-net-A-now-pair.png; sheets rec/f13-p3-netA-sheet.png, f13-p3-netA2-sheet.png, f13-p3-netB-sheet.png",
+   "qaAction": "none: no run #2 task for this is fail/partial (states-match-abandon-screen-off covers a different order, and its screen-off step was not run here)."
+  },
+  {
+   "id": "connection-error-english-chip (game error, offline History/Leaderboard/player card/search, wrong code)",
+   "result": "pass",
+   "evidence": "APK 18, P3 Hebrew. The game error 'לא חזרת למשחק בזמן' shows the chip '⁦ERR_NETWORK⁩' (text wrapped in LRI…PDI, a11y 'קוד שגיאה: ⁦ERR_NETWORK⁩'), left to right and in one piece. Airplane on: the Leaderboard shows 'אין חיבור לשרת' with the chip '⁦ERR_NETWORK⁩'. History shows only the banner 'אין חיבור לשרת: מוצגים רק האימונים שבמכשיר.', with no chip. My player card shows 'אין חיבור לשרת: מוצג הכרטיס השמור.', with no chip. Ranked search offline is blocked on the modes screen ('אין חיבור לאינטרנט · משחקים מדורגים לא זמינים'), so no chip. A wrong friends code (111119) gives the inline text 'לא מצאנו חדר עם הקוד ⁦111 119⁩', with no chip. No lowercase English word appeared anywhere. Not reached: a code with a number ('ERR_X · 503'). Shots: qa-shots/fix13-RF8Y30L038L-chip-history.png, -chip-leaderboard.png, -chip-player.png, -chip-search.png, -chip-wrongcode.png",
+   "qaAction": "none (no run #2 task for this is fail/partial)"
+  },
+  {
+   "id": "friends-room-type-not-remembered",
+   "result": "pass",
+   "evidence": "APK 18, P1 (אורי). 'צור חדר' opened 'מהיר · 1 מתוך 4'. I tapped 'קשה' (the subtitle changed to 'קשה'), left, and 'צור חדר' again opened 'קשה'. I tapped 'מהיר', P3 joined, the game was played (P3 surrendered), then Home → שחק → 'צור חדר' opened 'מהיר'. Then I started a 'רגיל' bot practice (Pip) and ended it. Home's 'עוד סיבוב' became 'אימון מול בוט · רגיל · Pip', and 'צור חדר' still opened 'מהיר'. The optional inherited-host case was not run.",
+   "qaAction": "none (no run #2 task for this is fail/partial)"
+  },
+  {
+   "id": "fullboard-empty-frame (P1 ranked vs stealth bot, 6 RM OFF + 3 RM ON, recorded)",
+   "result": "pass",
+   "evidence": "APK 18, P1, staging stealth personas (Guy, Ariel, DanielNinja and others). The bot filled the last cell, and every game was a full-board loss. I stepped through each ending at 17 ms in the screenrecord. RM OFF, 6 games (off1 was ranked 'רגיל' by mistake; off2-off6 'מהיר'): in every one, board frames are followed by 4-6 crossfade frames with the hero (avatar + 'הפסד') already visible over the fading board, then the hero alone. There was no plain #0f1218 frame and no frame with the board gone and a faint hero. During the fade only the top bar, the hero and the score show; the cards rise later and the bar comes last. Fade start after the results ScrollView initGoToTop logcat line: +430 to +550 ms. RM ON, 3 games (animator/transition/window scale 0, restored to 1 after): the same clean crossfade (about 130 ms), then the hero alone. No plain-background frame. The rating card counts −33/−12/−11/−9 (1206→1173 … 1030→1021). Not done: framestats comparison with measure12 (no gfxinfo capture), (3) small-phone win, (4) history results. Files: qa-shots/fix13-RF8Y60PP2XZ-fullboard-off1..off6.mp4, -on2/-on3/-on4.mp4 (on1 was a false start); sheets rec/f13-fb-off1-fine.png … f13-fb-off6-fine.png, f13-fb-on2-fine.png, f13-fb-on2b-fine.png, f13-fb-on3-fine.png, f13-fb-on4-fine.png",
+   "qaAction": "none (no run #2 task for this is fail/partial)"
+  },
+  {
+   "id": "warp-start-split (receiver P3 fresh start, friends fast, first hit = warp, sound ON + OFF, second warp)",
+   "result": "partial",
+   "evidence": "APK 18, P3 cold start, friends room, P1 sends 'עיוות' >60 s / ~20 s after the board. Logcat SkiaTextureView on P3: one 1080x2340 onSurfaceTextureAvailable ~2.0 s after the board (StatusBar 19:50:33.68 → 35.74; sound-off game 36.65 → 38.60), then the four HitRehearsal ones at +2.7 to +3.5 s. None at GO!. None at either warp tap (19:52:01.9, 19:53:54.7, 19:57:00.3). Screenrecord at 17 ms: Sound ON, first warp: the grey dim and a faint banner appear at 1502, and the faint brown overlay with waves at 1536 (2 recorded frames apart, no overlay-alone or banner-alone frame). Then the screen is frozen for ~150 ms (identical frames 1553-1689, score animation also stuck), and at 1706 the banner and overlay jump to near full strength. The tilt starts after. The end: the ring shows 5…1 and fades out together with the overlay at ~6.1-6.24 s (total ~4.7 s visible). Second warp in the same game: dim + faint banner at 1765, faint overlay at 1799, then a smooth fade to full over ~150 ms, with no stale full-strength brown frame and no freeze. Sound OFF, first warp (new fresh start): dim, banner and overlay all appear in the same frame (1899), but already at ~40% strength (1882 has only a hint of dim). Then a smooth fade to 2001. No freeze. Not run: fireworks-then-warp (5), early warp (6), Reduced Motion (8). Files: qa-shots/fix13-RF8Y30L038L-warp-on1.mp4, -warp-on2.mp4, -warp-off1.mp4; sheets rec/f13-w-on1f.png, f13-w-on1z.png, f13-w-on1e.png, f13-w-on2f.png, f13-w-off1f.png",
+   "qaAction": "none: interference-hit-warp-look is already V. The first-warp stall is reported in appBugs (deviceCheck step 9)."
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "warp-first-hit-150ms-freeze",
+   "title": "העיוות הראשון אחרי פתיחה נקייה: קפיאה של כ־150 מ\"ש ואז קפיצה לעוצמה מלאה",
+   "severity": "minor",
+   "what": "APK 18 (1.1.0, loop-12), טלפון 3 מקבל, הפעלה נקייה, חדר חברים מהיר, צליל פועל. טלפון 1 שולח 'עיוות' כהפרעה ראשונה, יותר מדקה אחרי שהלוח הופיע. בהקלטה בצעדים של 17 מ\"ש: ב־1502 מתחילים העמעום והבאנר החיוור, וב־1536 שכבת החום עם הגלים. אחר כך המסך קפוא כ־150 מ\"ש: המסגרות 1553 עד 1689 זהות, וגם ספירת הניקוד עומדת. ב־1706 הבאנר והשכבה קופצים בבת אחת לעוצמה כמעט מלאה, בלי דהייה הדרגתית. העיוות השני באותו משחק, וגם עיוות ראשון עם צליל כבוי, דוהים בצורה חלקה בלי קפיאה. ב־logcat אין TextureView חדש בזמן העיוות, כך שזה כנראה עלות הרינדור של הפריים הראשון (שלב 9 ב־deviceCheck). קבצים: qa-shots/fix13-RF8Y30L038L-warp-on1.mp4, rec/f13-w-on1f.png, rec/f13-w-on1z.png"
+  },
+  {
+   "id": "results-reduced-motion-late-cards-and-count",
+   "title": "בהפחתת תנועה: הכרטיסים והסרגל מופיעים מאוחר, המסך קופץ והדירוג סופר",
+   "severity": "minor",
+   "what": "APK 18, טלפון 1, אנימציות המערכת על 0 (animator, transition ו־window), מדורג מהיר מול בוט סמוי, הפסד בלוח מלא. אחרי הדהייה ההירו לבד. כרטיסי היריב והדירוג נכנסים בדהייה רק כ־0.8 שניות אחריו, והסרגל 'משחק חדש' / 'צפייה חוזרת' כ־1.9 שניות אחריו. ה־deviceCheck מצפה שיופיעו מיד אחרי הדהייה, תוך 200 מ\"ש. כ־1.2 שניות אחרי התוצאות התוכן קופץ בבת אחת כ־60 dp למעלה (גלילה בלי אנימציה), והמספר בכרטיס הדירוג סופר 1030 → 1027 → 1025 → 1021 במשך כ־0.7 שניות. לפי ה־deviceCheck של results-home-under-statusbar, בהפחתת תנועה שום דבר לא זז והדירוג החדש מוצג מיד. קבצים: qa-shots/fix13-RF8Y60PP2XZ-fullboard-on2.mp4, rec/f13-fb-on2b-fine.png, rec/f13-fb-on2c.png"
+  },
+  {
+   "id": "a11y-game-nodes-under-error-cover",
+   "title": "מתחת למסך 'לא חזרת למשחק בזמן' כל הלוח עדיין חשוף לקורא מסך",
+   "severity": "minor",
+   "what": "APK 18, טלפון 3, מדורג. אחרי מצב טיסה של כ־94 שניות מוצג המסך 'לא חזרת למשחק בזמן'. ב־uiautomator מופיעים קודם כל הצמתים של מסך המשחק: 'אני · 0 נקודות · … ללא חיבור', 'כניעה', 'תגובות', כל 81 המשבצות (למשל 'A9, 9, רמז') והמקלדת. רק אחריהם מופיעים connection-error-title, '⁦ERR_NETWORK⁩', 'נסה שוב' ו'לבית'. גם בחלון 'אחוותא עזב את המשחק' בטלפון 1 המשבצות והמקשים חשופים מתחת לחלון. סביר שמשתמש TalkBack יגיע ללוח המת לפני הודעת השגיאה. לא בדקתי עם TalkBack עצמו. קובץ: הדמפ נשמר ב־C:\\Users\\mosheg\\AppData\\Local\\Temp\\claude\\b0377245321c840d\\6deeb02e-1cd6-480d-8ffd-14ec3cc5da59\\scratchpad\\p3err.xml"
+  },
+  {
+   "id": "opponent-countdown-stops-at-1",
+   "title": "אצל היריב הספירה נעצרת ב־1 ומיד 'ניצחת בנטישה', בלי 0 ובלי 'הזמן נגמר'",
+   "severity": "cosmetic",
+   "what": "APK 18, מדורג מהיר. טלפון 3 עובר למצב טיסה, וטלפון 1 מוקלט. בטלפון 1 'היריב מתנתק…' סופר 15 → 1. אחרי '1' מופיע ישר החלון 'אחוותא עזב את המשחק · ניצחת בנטישה', בלי '0' ובלי 'הזמן נגמר · בודקים מול השרת…'. זה אותו פער שכבר מתועד במשימה network-abandon-countdown (½, open) מגרסה קודמת, ולא השתנה ב־APK 18. קבצים: qa-shots/fix13-RF8Y60PP2XZ-net-B.mp4, rec/f13-p1-netB-sheet.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "ranked-duel-rating-card",
+   "issue": "The fix's deviceCheck for results-home-under-statusbar asks to see the rating count after a surrender win and loss. When the surrender or abandonment comes before the winner's first move, the server leaves the rating unchanged ('הדירוג לא השתנה: היציאה הייתה לפני המהלך הראשון שלך'), so there is nothing to count. Step 3 of this task already requires a digit from each phone. The deviceChecks for the rating card should say the same."
+  }
+ ],
+ "phoneState": "Both phones are on Home after a relaunch, APK 18 (1.1.0). I ran adb.ts reset on both: font scale 1.0, animations 1/1/1, colour correction off, airplane off. wm size is 1080x2340 and density 450 on both, the system locale is he-IL, and the app language was never changed. P3's sound setting is ON again (it was ON at the start; I turned it OFF only for the sound-off runs). No screenrecord or uiautomator is left running on the phones, and no helper loop is left on the PC. Account side effects from the test games: P1 (אורי) lost about 9 ranked games to stealth bots. Its fast rating went from 1104 (1114 after the rated abandon win) to about 1021, its normal rating from 1206 to 1173, and its league shows ברונזה now (it was כסף). P3 (אחוותא) went 965 → 955 in fast. P1's 'עוד סיבוב' now points to ranked fast, and P1's remembered friends room type is 'מהיר'. Leftover friends rooms closed when their games ended."
+}

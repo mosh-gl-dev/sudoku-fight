@@ -13,9 +13,10 @@ import {
   scoreText,
   signedText,
 } from '../../components/player';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { decimalSeparator } from '../../i18n/compose';
-import { color, radius, size, space, text, tokens } from '../../theme';
+import { color, size, space, text, tokens } from '../../theme';
 import { dayOf, type HistoryEntry, type HistoryOutcome, shortDate } from './historyModel';
 
 /**
@@ -110,8 +111,9 @@ export function HistoryCard({ entry: e, myAvatar, now, onOpen, onOpenPlayer }: H
     label: tProgress('card.openOf', { name: displayName(o, tp) }),
   }));
 
+  // A tappable card (D125): the surface on its base, the one card press and its tick.
   return (
-    <Pressable
+    <PressableCard
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={t('card.hint')}
@@ -125,7 +127,7 @@ export function HistoryCard({ entry: e, myAvatar, now, onOpen, onOpenPlayer }: H
           : undefined
       }
       onPress={() => onOpen(e)}
-      style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
+      style={styles.card}
       testID={`history-card-${e.id}`}
     >
       <View
@@ -142,10 +144,14 @@ export function HistoryCard({ entry: e, myAvatar, now, onOpen, onOpenPlayer }: H
             );
             const overlap = k === 0 ? null : styles.overlap;
             return players.includes(o) ? (
-              // Its own touch target: the card's screen-reader action does the same.
+              // Its own touch target: the card's screen-reader action does the same, so screen readers skip it
+              // (as Scrim does): accessible={false} alone left it focusable, an unlabelled button on Android.
               <Pressable
                 key={o.id}
                 accessible={false}
+                focusable={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
                 onPress={() => onOpenPlayer?.(o.id, e.id)}
                 hitSlop={space[3]}
                 style={overlap}
@@ -168,7 +174,9 @@ export function HistoryCard({ entry: e, myAvatar, now, onOpen, onOpenPlayer }: H
           </Text>
           {opponent?.country ? <Flag country={opponent.country} size="compact" decorative /> : null}
         </View>
-        <Text style={[text('caption'), styles.muted]} numberOfLines={1}>
+        {/* As many lines as the words need, broken between words, never "…" (QA loop 7, font 1.3: "Loss • Ranke…";
+            loop 9, Hebrew practice at 360 dp: "הפסד • אימון / מול בוט • מ…" needs three beside "ללא דירוג"). */}
+        <Text style={[text('caption'), styles.muted]} testID={`history-card-${e.id}-kind`}>
           {[outcome, mode, type].join(tp('sep'))}
         </Text>
       </View>
@@ -213,7 +221,7 @@ export function HistoryCard({ entry: e, myAvatar, now, onOpen, onOpenPlayer }: H
         <Text style={[text('micro'), styles.accent]}>{t('card.replay')}</Text>
         <Icon name="chevronForward" size={size.icon.chevron} color={color.accent} />
       </View>
-    </Pressable>
+    </PressableCard>
   );
 }
 
@@ -225,13 +233,11 @@ const styles = StyleSheet.create({
     minHeight: size.listRow,
     paddingVertical: space[4],
     paddingEnd: space[4],
-    borderRadius: radius.card,
+    // The card surface (PressableCard, D125) gives the fill, the lit border, the radius and the base. The stripe
+    // is clipped to the radius.
     borderWidth: tokens.border.hairline,
-    borderColor: color.border,
-    backgroundColor: color.surface,
     overflow: 'hidden',
   },
-  pressed: { backgroundColor: color.surface2 },
   stripe: { alignSelf: 'stretch', width: space[2] },
   avatars: { flexDirection: 'row', alignItems: 'center' },
   overlap: { marginStart: -space[5] },

@@ -1,0 +1,191 @@
+[
+ {
+  "round": "loop6",
+  "area": "transitions",
+  "id": "1 apk10-go-to-board-no-empty-frame (pregame-found-countdown-reduced): empty frames between the count's GO! and the game route's GO! cover",
+  "status": "fixed",
+  "deviceCheck": "Needs a new APK.\n1) Reduced Motion off. Run 4 ranked games: 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב' against the hidden bot, with screenrecord. Check every frame from GO!'s first frame to the first board frame. Expected: no frame with only the ambient background, and GO!, the strip and the ghost board never dip toward 0. At the route switch, GO! stays put at full brightness; after it, only GoCover's own GO!→board cross-fade (~240 ms) shows.\n2) Reduced Motion on, 2 games: no empty frame and no movement at the switch; GO!→board is a ~200 ms fade.\n3) GO! first frame → first board frame stays about as in apk10 (~1.3 s, or ~1.0 s with Reduced Motion).\n4) Tap a cell right after the board appears: it responds. Android back during GO! does nothing.\n5) After the game, on Results tap 'לבית', and also leave a game via its own exit: never land on an old 'מחפש יריב' or GO! screen. Back stack check: in a game, surrender → Results → Android back goes Home.\n6) logcat: no '[Reanimated]' failure burst about 20–600 ms after the board appears, when the covered match screen is dropped."
+ },
+ {
+  "round": "loop6",
+  "area": "transitions",
+  "id": "2 results-search-gap (pregame-found-countdown-reduced): empty frames between Results 'משחק חדש' and the search",
+  "status": "fixed",
+  "deviceCheck": "Needs a new APK.\n1) Reduced Motion off. Finish a ranked game, then tap Results 'משחק חדש' with screenrecord, 3 times. Expected: no ambient-only frame between the results and 'מחפש יריב…'; at most a normal cross-fade dip.\n2) While searching, Android back (cancel) goes where it went before: the game type screen or Home, not the old results. Do 'משחק חדש' 3 times in a row, then back out step by step: no old results ever show.\n3) Practice: Results 'משחק חדש' → the new board fades in over the results, with no empty frames.\n4) Reduced Motion on: the same, with the shorter fade.\n5) 'לבית', and Android back on Results, still go Home."
+ },
+ {
+  "round": "loop6",
+  "area": "transitions",
+  "id": "3 pregame-found-sound / apk10-sounds-first-ranked: first ui_tap after a cold start and first cell_select of the first game are silent",
+  "status": "fixed",
+  "deviceCheck": "Needs a new APK. Media volume up (phone 3 had media volume 0), sound on.\n1) Force-stop, launch, wait ~3 s on Home, then tap 'שחק'. In `adb shell dumpsys audio` (PlaybackActivityMonitor, the app's uid), expect one muted ui_tap event:started from the warm-up ~1–2 s after Home showed. Then a new event:started at the 'שחק' tap, heard as a soft click.\n2) Continue '2 שחקנים' → 'מהיר' → 'מצא יריב'. A burst of muted warm-up starts is expected. matchFound, the 3 beats and GO are heard whole, with their attack not clipped.\n3) In this first game, tap a cell: cell_select is heard (event:started at the tap). The first correct digit is heard.\n4) A solo practice, and a staged level, right after a cold start: the first cell tap is heard.\n5) NEW: on Home, press the Home button within ~1 s of launch (before the warm-up), wait 5 s, come back and tap 'שחק': the tap is heard. The same for a game: press Home while the board is coming in, return, and tap a cell: heard.\n6) Sound off in Settings: nothing is heard anywhere."
+ },
+ {
+  "round": "loop6",
+  "area": "header",
+  "id": "interference-picker-grid-small (2P header at 320-360 dp, apk10-2p-header-360dp)",
+  "status": "fixed",
+  "deviceCheck": "Phone 3 (SM-A165F), font size 1.0. A) wm density 540 (320 dp), app in English, ranked 2P (the hidden bot is fine). 1) My card: instead of 'No mistakes' it shows a small boxed-X mark and '0' in the big condensed digits. No word is broken ('No mi / stakes' is gone) and nothing is tiny. 2) Make one mistake: the number becomes '1', briefly red, with a small pop (with Remove animations on: red only, no pop). 3) Opponent card: the interfere button is only the lightning icon in a 44-dp square, with no 'Interfere' word and no tiny text. TalkBack, or the content-desc in a ui dump, reads 'Interfere with <name> · costs N pts'. A tap opens the picker as before. 4) The VS badge sits in the gap between the cards and covers neither flag nor my rating. Names may end in '…' a little sooner. B) Same density in German, Russian, Italian and Hebrew: the button is icon-only in all of them. My mistakes: de 'Keine / Fehler' and he 'אין / טעויות' in two full-size lines, ru as mark + number, it as mark + number. Nothing breaks inside a word. C) Normal density (physical 450): in Hebrew the button reads 'הפרעה' at full size (not shrunk) and 'אין טעויות' is two full-size lines. In English the button is icon-only and 'No / mistakes' is two full-size lines. VS does not touch either flag (it may sit very close at about 2 dp). D) Optional, nl or tr at density 540, under an interference (opponent paused): 'Pauze · A8' / 'Durdu · A8' with no mid-word break. Reset the density afterwards."
+ },
+ {
+  "round": "loop6",
+  "area": "header",
+  "id": "interference-picker-opens ('יעד' chip half under the scrim)",
+  "status": "fixed",
+  "deviceCheck": "Phone 3, at density 450 and at 540, in Hebrew, English and Italian: in a 2P ranked or friends game, get 2+ points and tap the interfere button on the opponent card. The yellow frame around the opponent card now reaches about 8 dp lower below the card than on its sides. The 'יעד' / 'Target' / 'Bersaglio' chip sits on the frame's bottom line and is entirely bright, with no darker lower half. The rest of the screen is dimmed as before. Close and reopen 3 times: same result. In a 3–4P room, the chip on the targeted compact card is fully bright too."
+ },
+ {
+  "round": "loop6",
+  "area": "licences",
+  "id": "appBug 6 / account-settings-licenses-expand",
+  "status": "fixed",
+  "deviceCheck": "1. Set the interface to Hebrew. 2. Home, then the settings button, then 'רישיונות'. 3. Tap 'SIL Open Font License 1.1' under 'גופנים'. Expected: the text runs left to right and is left-aligned. Each paragraph fills the full width with no one- or two-word lines mid-paragraph (e.g. the PREAMBLE paragraph runs continuously from 'The goals of the Open Font License...' to 'with others.'). The dashed lines, the title 'SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007', and the headings PREAMBLE / DEFINITIONS / PERMISSION & CONDITIONS / TERMINATION / DISCLAIMER each stay on their own line. Clauses 1) to 5) each start on a new line. 4. Tap again: the text closes. 5. Scroll to 'נוסחי הרישיונות' and tap MIT. Expected: 'MIT License' on its own line, then 'Permission is hereby granted, ... to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal...' as one continuous paragraph (no 'person obtaining' / 'a copy' break and no '(the' / '\"Software\"' break). 6. Open BSD-3-Clause: each '*' bullet starts its own line. Open Apache-2.0: the numbered sections 1. to 9. and (a) to (d) each start on their own line, with no ragged lines inside them."
+ },
+ {
+  "round": "loop7",
+  "area": "navigation",
+  "id": "postgame-progress-english (MAJOR): after wm size/density reset + font_scale 1.0 with the app open, profile card / 'My player card' / sometimes a tab do nothing, 'The navigation object hasn't been initialized yet'",
+  "status": "fixed",
+  "deviceCheck": "Needs a new APK (the entry changed). Phone 3, app in English. 1) adb shell wm size 1080x2340; adb shell wm density 480; adb shell settings put system font_scale 1.3. Open the app, finish a ranked or bot game, stay on Results. 2) Run adb shell wm size reset, adb shell wm density reset and adb shell settings put system font_scale 1.0, one right after the other. 3) The app rebuilds on Home. Tap the profile card: the player card opens on the first tap. Back, then tap each bottom tab once (Leaderboard, History, Achievements, Home): each opens on the first tap. On Achievements, 'My player card' opens. 4) adb logcat -d | grep \"hasn't been initialized\" shows no lines. 5) Repeat once more with the app on Home (font_scale 1.3 then 1.0) and check the same taps. 6) Also from Settings: change Display size, return to the app, then tap the profile card and a tab."
+ },
+ {
+  "round": "loop7",
+  "area": "navigation",
+  "id": "ranked-end-i-surrender-my-lock-5x (minor): empty frame (only the ambient digits) ~1.5 s after confirming a surrender / ending a practice, between the board and Results",
+  "status": "fixed",
+  "deviceCheck": "Needs the new APK. Phone 3, motion on (in-app Reduced Motion off), Hebrew. 1) Ranked fast game vs the hidden bot: pick an empty cell, then 'כניעה' → 'כן, להיכנע'. Take screencaps about every 0.1–0.2 s (or a screenrecord) from the confirm until the results show. There should be no frame with only the dark background and digits: the final board fades out while the results fade in over it. Repeat 4 times. 2) The same with a practice against Mr. Hoot: 'סיום אימון' → 'כן, לסיים', 3 times. 3) On Results, press Android back: it goes Home (not back to the game). 4) Turn on in-app Reduced Motion ('הפחתת תנועה'), repeat 1 once: a short fade, still no empty frame."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "ranked-four-type-and-search (4-player search: empty seats cut under 'ביטול חיפוש')",
+  "status": "fixed",
+  "deviceCheck": "(a) A16, Hebrew, normal size: Play → Ranked → '4 שחקנים' → 'מהיר' → 'מצא יריבים'. Wait for 'כרגע אין מספיק שחקנים…' with 'שחק מול בוט בינתיים'. Without scrolling you should see the smaller radar with my avatar and rating, the notice, 'יריבים 0/3', and three seats ('?' + 'מחפש…') all above 'ביטול חיפוש'. (b) wm density 480 + font_scale 1.3, Hebrew, same steps: when the notice appears, the radar becomes just the 'אני 1200' chip. The notice, 'יריבים 0/3' and the three seats are all above the button without scrolling. Text is not smaller. (c) Same in English at 1.3: same chip-only radar. A short scroll of about 30 dp may still be needed to see the seats' bottom edge. Nothing should be drawn on top of the button."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "postgame-leaderboard-english (pinned 'my row': 'LevelProvisional', overlap at 360dp/1.3, tabs cut)",
+  "status": "fixed",
+  "deviceCheck": "(a) Akhvata account (provisional, Bronze level 6), English, normal size: Leaderboard, every tab. In my pinned row, 'Bronze' and '· Level 6' sit under the name and never touch 'Provisional'. No 'LevelProvisional'. (b) wm density 480 + font_scale 1.3, Hebrew and English: every tab label is whole, wrapping to two rows if needed. In my row, 'Play'/'שחק' is under the row and the name is whole. 'Bronze', '· Level 6' and 'Provisional'/'זמני' are each whole, and none sits on top of '6'. List rows: Hebrew names (ליהי33, אבי43) are readable."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: my game card 'No mis / takes'",
+  "status": "fixed",
+  "deviceCheck": "APK 12/13, wm density 480 + font_scale 1.3, English: bot practice and ranked 2P. My card shows ✕ and a number in place of 'No mis/takes'. No word broken."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: player card 'Mistak es per …' and 'Playing since Octobe…' / 'במשחק מאז אוקטובר 2…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, English and Hebrew: my player card or another player's. The stats sit two per row, and 'Mistakes per game' is whole (no 'Mistak es'). 'Playing since October 2026' / 'במשחק מאז אוקטובר 2026' wraps onto two lines, with nothing cut."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: bot select 'Biscu…', 'Mr. H…', 'Think time per m…' (he: 'Mr. Ho…' with a 2-line chip)",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, English and Hebrew: Play → bot practice → bot select. Pip, Biscuit, Mr. Hoot, Maestro and Overlord all whole, with the '3 · Advanced'/'3 · מתקדם' chip under the name where needed. 'Think time per move' on two lines, nothing cut."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: replay 'Previous st…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, English: History → a game → Replay. The prev button shows 'Previous'/'step' on two lines, without the chevron. Hebrew: 'שלב קודם' with the chevron."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: history 'Loss • Ranke…' / 'הפסד • אימו…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, en and he: History. The line wraps onto two lines with every word whole."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: achievements 'Bronz…', 'Diam…', 'Lege…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, English: Achievements, league panel. Bronze/Silver/Gold on the first row and Diamond/Legend on the second, all whole. At normal size it is one row."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: map 'שלב 10 · מרוץ מו…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, Hebrew: map → stage 10. 'שלב 10 · מרוץ מול הבוט' is whole, on two lines if needed."
+ },
+ {
+  "round": "loop7",
+  "area": "layout",
+  "id": "general-display-small-big-font: solo practice 'Solo prac…'",
+  "status": "partial",
+  "deviceCheck": "Still as before: 'Solo prac…' at 360dp/1.3."
+ },
+ {
+  "round": "loop7",
+  "area": "misc",
+  "id": "postgame-leaderboard-english (Friends tab places)",
+  "status": "partial",
+  "deviceCheck": "Needs a server deploy of apps/server. It was not deployed this round, and FRIENDS_PLACES stays unset. After the deploy: Leaderboard, then the 'Friends' tab ('Your recent opponents'), in Hebrew and in English. (1) The rows go from the highest rating to the lowest (1305 above 1233 above 1223...). (2) Places never go down from one row to the next. Under the approved D99 they may repeat, e.g. #2, #2. (3) The pinned 'me' row shows my place on the General board, the same number as on the General tab. (4) The General/Fast/Normal/Hard tabs are unchanged. Only if Moshe approves and FRIENDS_PLACES=among is set on the server: the places become #1, #2, #3... with no repeats except equal ratings (#4, #4, #6), and 'me' gets my place in that list (e.g. #8 below 7 opponents)."
+ },
+ {
+  "round": "loop7",
+  "area": "misc",
+  "id": "general-sr-names (history avatar unlabelled)",
+  "status": "fixed",
+  "deviceCheck": "APK with this change. History, then 'All' or 'Ranked', then a ranked game card. (1) Tapping the opponent's avatar still opens their player card. (2) uiautomator dump: the node history-card-<gameId>-player-<playerId> is gone, or no longer focusable/NAF. (3) With TalkBack on, swiping through the card never stops on the avatar alone. The card is read as one item, and its TalkBack 'Actions' menu still has 'Player card of <name>'."
+ },
+ {
+  "round": "loop7",
+  "area": "misc",
+  "id": "postgame-replay-english ('sees a 8')",
+  "status": "fixed",
+  "deviceCheck": "APK with this change, app language English. Staged practice, Level 4 (Fill the row), let the time run out, then 'Why?' on the result screen: the sentence reads '…I5 sees the 8 in column 5. So I4 = 8.' (no 'a 8'). In a level whose why-text says the cell is blocked, the text reads \"… can't hold 8: column 5 already has one\". Hebrew is unchanged."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "postgame-progress-english (MAJOR): after wm size/density reset + font_scale 1.0 with the app open, the profile card, 'My player card' and sometimes a tab do nothing; 'The navigation object hasn't been initialized yet'",
+  "status": "fixed",
+  "deviceCheck": "Needs a new APK (the entry changed). Phone 3, app in English. 1) adb shell wm size 1080x2340; adb shell wm density 480; adb shell settings put system font_scale 1.3. Open the app, finish a ranked or bot game, stay on Results. 2) Run adb shell wm size reset, adb shell wm density reset and adb shell settings put system font_scale 1.0, one right after the other. 3) The app rebuilds on Home. Tap the profile card: the player card opens on the first tap. Go back, then tap each bottom tab once (Leaderboard, History, Achievements, Home): each opens on the first tap. On Achievements, 'My player card' opens. 4) adb logcat -d | grep \"hasn't been initialized\" shows no lines. 5) Reduced Motion after a recreation: turn on the app's own Reduced Motion (Settings), keep the phone's 'Remove animations' off, repeat step 2 (font_scale 1.3 then 1.0), then start a practice. The lock pulse and number pops are the reduced versions, not full motion. Then turn the app's setting off and the phone's 'Remove animations' on, repeat the font change, and start a practice: the loops still move (lock band pulses, the 'thinking…' blink blinks). 6) During a game after a font change, the screen does not dim at the phone's timeout (keep-awake). 7) Also via Settings: change Display size, return to the app, then tap the profile card and a tab."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "ranked-end-i-surrender-my-lock-5x (minor): an empty frame (only the ambient digits) about 1.5 s after confirming a surrender or ending a practice, between the board and Results",
+  "status": "fixed",
+  "deviceCheck": "Needs the new APK. Phone 3, motion on (in-app Reduced Motion off), Hebrew. 1) Ranked fast game vs the hidden bot: pick an empty cell, then 'כניעה' → 'כן, להיכנע'. Record the screen (adb shell screenrecord) from the confirm until the results show, and step through it. No frame should show only the dark background and digits: the final board fades out while the results fade in over it. Repeat 4 times. 2) The same with a practice against Mr. Hoot: 'סיום אימון' → 'כן, לסיים', 3 times. 3) On Results, press Android back: it goes Home, not back to the game. 4) Turn on in-app Reduced Motion ('הפחתת תנועה') and repeat step 1 once: a short fade, still no empty frame. 5) Results open exactly once each time: back from Results goes Home in one press, never to a second Results screen."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "general-display-small-big-font: my game card 'No mis'/'takes'",
+  "status": "fixed",
+  "deviceCheck": "APK 12 or later, wm density 480 + font_scale 1.3, English: bot practice and ranked 2P. My card shows ✕ and a number instead of 'No mis/takes'."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "general-display-small-big-font: player card 'Mistak es per …' and 'Playing since Octobe…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, English and Hebrew: a player card. Stats are 2 per row and 'Mistakes per game' is whole. 'Playing since October 2026' / 'במשחק מאז אוקטובר 2026' wraps onto two lines."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "general-display-small-big-font: bot select 'Biscu…', 'Mr. H…', 'Think time per m…'",
+  "status": "fixed",
+  "deviceCheck": "360dp/1.3, en and he: bot select. All bot names are whole, with the level chip under the name where needed. 'Think time per move' is on two lines."
+ },
+ {
+  "round": "loop7",
+  "area": "rework",
+  "id": "general-display-small-big-font: solo practice 'Solo prac…' (review: medium)",
+  "status": "fixed",
+  "deviceCheck": "wm density 480 + font_scale 1.3, English: Play → Solo practice → Normal. Under my name the line reads 'Normal' whole, not 'Solo prac…'. 'End practice' is on the right. Hebrew at the same size: 'אימון יחיד · רגיל' if it fits, otherwise 'רגיל', never cut. At normal size on a 384dp phone, the full 'Solo practice · Normal' as before."
+ }
+]

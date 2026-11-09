@@ -47,6 +47,23 @@ export function cellCenter(board: Rect, cell: CellIndex): Point {
 }
 
 /**
+ * A laid-out view's height, read now (React Native's element API, which a layout effect may read: the tree is
+ * laid out before layout effects run). Null with nothing to read (no element yet, no such API, as in tests) or
+ * no height yet.
+ */
+export function layoutHeightOf(node: unknown): number | null {
+  if (!node || typeof node !== 'object') return null;
+  const read = (node as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+  if (typeof read !== 'function') return null;
+  try {
+    const height = (read.call(node) as { height?: unknown } | null)?.height;
+    return typeof height === 'number' && Number.isFinite(height) && height > 0 ? height : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The board's side (components.md §11.1): the screen width less the two 16 dp gutters, and no taller than the
  * room left between the strip and the keypad. Before that room is measured: the design's 358 dp, if it fits.
  */

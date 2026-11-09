@@ -103,7 +103,13 @@ export function roomScreenPhase(
         step: countdownStep(room.startsAt === null ? 0 : room.startsAt - now),
       };
     case 'game':
-      return { kind: 'starting' };
+      // The board came after a count this connection saw: GO! first, whatever the phone's own count says (QA loop
+      // 8: a joiner whose clock ran a little behind went from "1" straight to the board). The route opens the game
+      // screen at once over this GO!, which it keeps until GO! has been seen (GoCover, goHandoff.ts FriendsGo).
+      // Back into a game already running: no count, no GO!.
+      return room.startsAt === null
+        ? { kind: 'starting' }
+        : { kind: 'countdown', lobby: lobbyOfView(room), myId: room.meId, step: 'go' };
     case 'closed': {
       const closed = room.closed;
       if (closed?.reason) return { kind: 'closed', reason: closed.reason };

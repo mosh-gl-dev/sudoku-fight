@@ -16,6 +16,11 @@ import { serverEndpoint } from './server';
  * Which builds: a staging build (the server label 'staging': `npm run apk`, eas.json's preview profile), and a
  * development build (Metro) unless it points at production. Never a production build: the section is not
  * shown there, and what the phone kept of the switches is not read (every reader goes through here).
+ *
+ * Hidden even there (31.10.2026, Moshe: "ראיתי דברים מוזרים במסך הגדרות שלא הבנתי"): the section shows only once
+ * UNLOCK_TAPS quick taps on the version lines opened it, like Android's developer options; it stays open on the
+ * phone (the store's sectionOpen) until it is hidden again from inside. Hidden or shown, a switch that is on
+ * stays on: activeSwitches reads the switches, not the section.
  */
 
 export interface TestingBuildSources {
@@ -36,6 +41,31 @@ export const thisBuild = (): TestingBuildSources => ({
 export function testingSwitchesAllowed({ server, dev }: TestingBuildSources = thisBuild()): boolean {
   if (server === 'production') return false;
   return server === 'staging' || dev;
+}
+
+/** Does the settings screen show the "בדיקה" section: a build that has it, once the taps opened it. */
+export function testingSectionShown(
+  sectionOpen: boolean = useTestingSwitches.getState().sectionOpen,
+  build: TestingBuildSources = thisBuild(),
+): boolean {
+  return sectionOpen && testingSwitchesAllowed(build);
+}
+
+/** Quick taps on the version lines that open the "בדיקה" section (Android's developer options: 7). */
+export const UNLOCK_TAPS = 7;
+/** A tap is quick when it comes within this long of the one before; a slower one starts the count again. */
+export const UNLOCK_TAP_GAP_MS = 1000;
+
+/** The run of quick taps so far: how many, and when the last one was (ms). */
+export interface TapRun {
+  count: number;
+  at: number;
+}
+
+/** The run after one more tap at `now`: one more if it was quick, else a new run of one. Pure. */
+export function nextTapRun(run: TapRun | null, now: number): TapRun {
+  const quick = run !== null && now - run.at >= 0 && now - run.at <= UNLOCK_TAP_GAP_MS;
+  return { count: quick ? run.count + 1 : 1, at: now };
 }
 
 type Switches = Pick<TestingSwitchesState, 'chainPenalty' | 'unlockAllLevels'>;

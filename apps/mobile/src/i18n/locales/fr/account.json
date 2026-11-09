@@ -68,7 +68,8 @@
       "timeout": "Le serveur n’a pas répondu à temps. Réessaie.",
       "signedOut": "Aucune session ouverte. Reconnecte-toi.",
       "unexpected": "Le serveur a envoyé une réponse inattendue. Réessaie, ou mets l’app à jour."
-    }
+    },
+    "avatarUnavailable": "Cet avatar n’est pas encore disponible sur le serveur. Choisis-en un autre."
   },
   "splash": {
     "tagline": "Une grille. Tout le monde la résout. Un seul gagne.",
@@ -251,6 +252,9 @@
     "deleteGoogleBody": "Pour supprimer le compte, choisis à nouveau le compte Google {{email}}.",
     "deleteGoogleSubmit": "Confirmer avec Google et supprimer",
     "deleteGoogleAgain": "Pour supprimer le compte, une nouvelle confirmation est nécessaire. Réessaie et choisis ton compte Google.",
-    "deleteWithPassword": "Confirmer plutôt avec ton mot de passe"
+    "deleteWithPassword": "Confirmer plutôt avec ton mot de passe",
+    "deleteGoogleOffTitle": "Connexion Google nécessaire",
+    "deleteGoogleOffBody": "Ce compte se connecte avec Google, donc sa suppression doit être confirmée avec Google. Cette version de l’app n’a pas de connexion Google, donc le compte ne peut pas être supprimé ici. Tu peux le supprimer dans l’app du store (Google Play).",
+    "deleteGoogleOffOk": "Compris"
   }
 }

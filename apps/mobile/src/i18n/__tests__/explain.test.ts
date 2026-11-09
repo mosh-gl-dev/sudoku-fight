@@ -85,8 +85,22 @@ describe('explanations: the spec examples (§13.2)', () => {
 
   it('hidden single, in English', () => {
     expect(formatExplanation(explain(HIDDEN, D5), 'en')).toBe(
-      '7 must appear in box 5. All the other empty cells in it are blocked: D4 sees a 7 in column 4 and E6 sees a 7 in row E. So D5 = 7.',
+      '7 must appear in box 5. All the other empty cells in it are blocked: D4 sees the 7 in column 4 and E6 sees the 7 in row E. So D5 = 7.',
     );
+  });
+
+  it('QA loop 7: no "a 8" in English (it said "I5 sees a 8 in column 5")', () => {
+    const hidden8 = gridFrom({ D6: 1, E4: 2, E5: 3, F4: 4, F5: 5, F6: 6, A4: 8, E1: 8 });
+    expect(formatExplanation(explain(hidden8, D5), 'en')).toBe(
+      '8 must appear in box 5. All the other empty cells in it are blocked: D4 sees the 8 in column 4 and E6 sees the 8 in row E. So D5 = 8.',
+    );
+    const e6 = parseCellName('E6');
+    for (const kind of ['row', 'col', 'box'] as const) {
+      const block = { kind: 'unit' as const, unit: { kind, index: 4 }, cell: parseCellName('E1') };
+      for (const digit of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
+        expect(formatBlock(e6, block, digit, 'en')).not.toMatch(/\ba \d/);
+      }
+    }
   });
 
   it('a cell that is both a naked and a hidden single, said as the naked one', () => {
@@ -286,6 +300,79 @@ describe('step sentences', () => {
   });
 });
 
+describe('a word that agrees with its unit or with its list (QA 2026-11-03)', () => {
+  const blockedBy = (c: string) => ({
+    cell: parseCellName(c),
+    block: { kind: 'step', step: 0 } as const,
+  });
+  const hiddenIn = (kind: 'row' | 'col' | 'box', blocked: boolean): Step => ({
+    id: 0,
+    deps: [],
+    technique: 'hiddenSingle',
+    cell: D5,
+    digit: 8,
+    unit: { kind, index: kind === 'box' ? 4 : 3 },
+    blocked: blocked ? [blockedBy(kind === 'col' ? 'A4' : 'D4')] : [],
+  });
+  /** A naked single in row D whose column has `seen` and whose row misses `missing` (with 7 in it). */
+  const nakedWith = (missing: Digit[], seen: Digit[]): Step => ({
+    id: 0,
+    deps: [],
+    technique: 'nakedSingle',
+    cell: D5,
+    digit: 7,
+    primary: { kind: 'row', index: 3 },
+    missing,
+    seen: [{ unit: { kind: 'col', index: 6 }, digits: seen }],
+    eliminated: [],
+  });
+
+  beforeAll(async () => {
+    await i18n.loadLanguages(['ar', 'pl', 'tr', 'es', 'de', 'ru']);
+  });
+
+  it('Hebrew: a row and a column are "בה" (feminine), a box "בו"', () => {
+    const he = (kind: 'row' | 'col' | 'box', blocked: boolean) =>
+      stripIsolates(formatStep(hiddenIn(kind, blocked), 'he'));
+    expect(he('row', true)).toBe(
+      'הספרה 8 חייבת להופיע בשורה D. כל שאר המשבצות הריקות בה חסומות: ב־D4 הספרה 8 כבר נמחקה (צעד 1). לכן D5 = 8.',
+    );
+    expect(he('col', true)).toBe(
+      'הספרה 8 חייבת להופיע בעמודה 4. כל שאר המשבצות הריקות בה חסומות: ב־A4 הספרה 8 כבר נמחקה (צעד 1). לכן D5 = 8.',
+    );
+    expect(he('box', true)).toContain('בריבוע 5. כל שאר המשבצות הריקות בו חסומות');
+    expect(he('row', false)).toBe(
+      'הספרה 8 חייבת להופיע בשורה D, ו־D5 היא המשבצת הריקה היחידה בה. לכן D5 = 8.',
+    );
+    expect(he('col', false)).toContain('בעמודה 4, ו־D5 היא המשבצת הריקה היחידה בה.');
+    expect(he('box', false)).toContain('בריבוע 5, ו־D5 היא המשבצת הריקה היחידה בו.');
+  });
+
+  it('Arabic: one digit, two digits (the dual) and more, each with its own words', () => {
+    const ar = (missing: Digit[], seen: Digit[]) => stripIsolates(formatStep(nakedWith(missing, seen), 'ar'));
+    // QA: "في العمود 7 توجد بالفعل الأرقام 6." said one digit in the plural.
+    expect(ar([3, 7], [6])).toContain('في العمود 7 يوجد بالفعل الرقم 6.');
+    expect(ar([3, 7], [6])).toContain('في الصف D ينقص الرقمان 3 و 7.');
+    expect(ar([3, 7, 9], [3, 9])).toContain('في العمود 7 يوجد بالفعل الرقمان 3 و 9.');
+    expect(ar([3, 7, 9], [3, 9])).toContain('في الصف D تنقص الأرقام 3، 7 و 9.');
+    expect(ar([3, 7, 9], [1, 3, 9])).toContain('في العمود 7 توجد بالفعل الأرقام 1، 3 و 9.');
+  });
+
+  it('the languages whose words change with the number say one digit in the singular', () => {
+    const say = (lang: string, seen: Digit[]) => formatStep(nakedWith([3, 7], seen), lang);
+    expect(say('pl', [6])).toContain('W kolumnie 7 jest już cyfra 6.');
+    expect(say('pl', [3, 6])).toContain('W kolumnie 7 są już: 3 i 6.');
+    expect(say('tr', [6])).toContain('7 sütununda zaten 6 var.');
+    expect(say('tr', [3, 6])).toContain('7 sütununda zaten şunlar var: 3 ve 6.');
+    expect(say('es', [6])).toContain('La columna 7 ya tiene el 6.');
+    expect(say('es', [3, 6])).toContain('La columna 7 ya tiene 3 y 6.');
+    expect(say('de', [6])).toContain('Spalte 7 hat schon die 6.');
+    // Russian "уже есть" takes any number as it is.
+    expect(say('ru', [6])).toContain('В столбце 7 уже есть 6.');
+    expect(say('ru', [3, 6])).toContain('В столбце 7 уже есть 3 и 6.');
+  });
+});
+
 describe('why a digit is wrong', () => {
   it('points at the clash when there is one', () => {
     const r = whyWrong(NAKED, D5, 3);
@@ -342,7 +429,8 @@ describe('the explain namespace', () => {
       'wrong.conflict',
       'block.unit',
     ])
-      for (const kind of ['row', 'col', 'box']) expect(en.has(`${base}.${kind}`)).toBe(true);
+      for (const kind of ['row', 'col', 'box'])
+        expect(en.has(`${base}.${kind}`) || en.has(`${base}.${kind}_other`)).toBe(true);
     for (const base of ['pointing', 'claiming'])
       expect([en.has(`${base}.row`), en.has(`${base}.col`)]).toEqual([true, true]);
   });
@@ -370,7 +458,7 @@ describe('a level’s frame and sentences', () => {
     expect(stripIsolates(he)).toBe('E6 לא יכול להכיל 7: בשורה E יש 7');
     expect(he.startsWith(`${LRI}E6${PDI} `)).toBe(true);
     expect(he).toBe('⁦E6⁩ לא יכול להכיל 7: בשורה E יש 7');
-    expect(formatBlock(e6, block, 7, 'en')).toBe("E6 can't hold 7: row E has a 7");
+    expect(formatBlock(e6, block, 7, 'en')).toBe("E6 can't hold 7: row E already has one");
     const step = { kind: 'step' as const, step: 1 };
     expect(stripIsolates(formatBlock(e6, step, 7, 'he'))).toBe(
       'E6 לא יכול להכיל 7: הספרה 7 נמחקה ממנו בצעד 2',

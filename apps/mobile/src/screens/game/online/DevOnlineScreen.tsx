@@ -241,7 +241,7 @@ export function DevOnlineScreen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { paddingHorizontal: tokens.layout.gutterHome, gap: space[8] },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[6] },
   title: { ...text('screenTitle'), color: color.text, flexShrink: 1 },

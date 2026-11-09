@@ -1,36 +1,35 @@
-import { type AppLevel, botLevel, type BotLevelId } from '@sudoku-fight/engine';
+import { type AppLevel, botLevel, type BotLevelId, chapterOf, type Stars } from '@sudoku-fight/engine';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { normalizeAvatarId } from '../../avatars';
+import { useScreenFocused } from '../../avatars/useScreenFocused';
 import { shake } from '../../components/board/animation';
 import { Icon, type IconName } from '../../components/Icon';
-import { LevelTile } from '../../components/levels/LevelTile';
-import { StarRow, STAR_SIZES } from '../../components/levels/StarRow';
+import { COIN, LevelCoin } from '../../components/levels/LevelCoin';
+import { StarCrown } from '../../components/levels/StarCrown';
+import { StarRow } from '../../components/levels/StarRow';
 import { Avatar } from '../../components/player';
-import { curve } from '../../components/ui/motion';
+import { pressScale, useTactilePress } from '../../components/ui/tactile';
 import { LEVEL_UI } from '../../config/levels';
-import { color, radius, space } from '../../theme';
-import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
+import { color, space, tokens } from '../../theme';
+import { motion, useReduceMotion } from '../../theme/motion';
 import { kindLabel, type LevelsT, starsOf3 } from './levelWording';
-import type { NodeInfo } from './mapModel';
+import { useAppActive, useBeacon } from './mapMotion';
+import { coinLook, MAP, type NodeInfo, toneOf } from './mapModel';
 
 /**
- * A stage on the map (components.md §19.2; the Main board): one button, the tile (LevelTile) with its 3 stars
- * of 11 under it. Played: the stars it got in gold. Current: the gold ring, pulsing (`level.node.current`: the
- * map's only loop, still under Reduced Motion), and my P1 pin. Locked: dark, a lock badge, no stars; a tap shakes
- * it once (`level.node.locked`; Reduced Motion: the lock badge's border lights up instead) and the map says why.
- * A boss is 68 with a crown, the arena's gold corners (LevelTile; never the current node's ring) and its bot's
- * avatar, from chapter 1 (every boss is a bot fight since 1.0.3, D72; a boss with no bot, only under D72 ב, has
- * none). No kind icon (D60), unless LEVEL_UI.nodeKindIcon is turned on.
+ * A stage on the map (components.md §19.2; the board-game road of 31.10.2026): one button, a coin with depth
+ * (LevelCoin) and its crown of three stars over the coin's top edge (StarCrown). Played: the stars it got in gold,
+ * a gold edge, all gold at ★★★. Current: the gold ring and its beacon (`level.node.current`, in beats with rests,
+ * never under Reduced Motion), and my token beside it (the chapter draws it). The next stage after it: a dashed
+ * ring. Locked: in its chapter's tone, a lock badge, no stars; a tap shakes it once (`level.node.locked`; Reduced
+ * Motion: the lock badge's border lights up instead) and the map says why. A press sinks the coin onto its edge
+ * (`level.node.press`, the tactile press of D125). A boss is the 92 fortress with a crown, the arena's gold corners
+ * (never the current stage's ring unless it is the current one), its bot's avatar from chapter 1, and its stars on
+ * a pedestal under it. No kind icon (D60), unless LEVEL_UI.nodeKindIcon is turned on.
  *
  * Its label says it all: "שלב 5, מיקום מדויק, שני כוכבים מתוך שלושה", "שלב 12, נעול".
  */
@@ -42,6 +41,14 @@ export interface LevelNodeProps {
   selected: boolean;
   /** Bumped by the map on each tap on this locked node: the shake (or the flash) plays again. */
   shakeKey: number;
+  /** The locked stage right after the current one (a dashed ring). */
+  next?: boolean;
+  /** The old 1.0.2 pin on the current coin (LEVEL_UI.mapToken off). */
+  pin?: boolean;
+  /** The stars to draw, when the map shows an earlier picture than the true one (back from a stage). */
+  shownStars?: Stars;
+  /** Pop the new stars (back from a stage). */
+  reveal?: { from: number; delayMs: number } | null;
   onPress: (info: NodeInfo) => void;
 }
 
@@ -60,27 +67,61 @@ export const KIND_ICON: Record<AppLevel['kind'], IconName> = {
   puzzle: 'puzzle',
 };
 
-/** The label of a node (pure; the map's tests read it). */
+/**
+ * The label of a node (pure; the map's tests read it). The current node says "השלב הבא" only while it has no
+ * stars: once won it says its stars like any played node, as its coin and the panel show them (QA loop 10: after
+ * the boss L010 won with ★★★ and chapter 2 still closed, L010 stays the current node and said "השלב הבא").
+ */
 export function nodeLabel(info: NodeInfo, level: AppLevel | undefined, t: LevelsT): string {
   if (info.state === 'locked') return t('node.locked', { n: info.n });
   const plain = level ? kindLabel(level, t) : '';
   const kind = info.boss ? t('boss.label', { kind: plain }) : plain;
-  if (info.state === 'current') return t('node.current', { n: info.n, kind });
+  if (info.state === 'current' && info.stars === 0) return t('node.current', { n: info.n, kind });
   if (info.state === 'open') return t('node.open', { n: info.n, kind });
   return t('node.played', { n: info.n, kind, stars: starsOf3(info.stars, t) });
 }
 
-/** The current node's ring (0 0 0 2px bg, 0 0 0 4px accent) and its pulsing band (out to 9). */
-const RING = { gap: 2, width: 2, band: 5 } as const;
+/** The rings around face and edge: "you are here" (gold), chosen (light), next (dashed); 4 out, 2 wide. */
+const RING = { out: 4, width: 2 } as const;
+/** The beacon's band: 10 out, 6 wide. */
+const BAND = { out: 10, width: 6 } as const;
 /** Reduced Motion: the locked badge's border lights for this long instead of the shake. */
 const FLASH_MS = motion.duration.wrongShake;
 
-function LevelNodeBase({ info, level, selected, shakeKey, onPress }: LevelNodeProps) {
+/** The node's button box: the coin, what is over it (crown, or the boss's badge) and under it (edge, pedestal). */
+export const nodeFrame = (boss: boolean) => {
+  const c = boss ? COIN.boss : COIN.node;
+  const above = boss ? MAP.bossAbove : MAP.crown;
+  const below = boss ? MAP.bossBelow : MAP.edge;
+  return {
+    width: c.side,
+    height: above + c.side + below,
+    above,
+    side: c.side,
+    edge: c.edge,
+    radius: c.radius,
+  };
+};
+
+function LevelNodeBase({
+  info,
+  level,
+  selected,
+  shakeKey,
+  next = false,
+  pin = false,
+  shownStars,
+  reveal = null,
+  onPress,
+}: LevelNodeProps) {
   const { t } = useTranslation('levels');
   const reduce = useReduceMotion();
   const { n, state, boss } = info;
-  const tile = boss ? 68 : 56;
+  const frame = nodeFrame(boss);
   const locked = state === 'locked';
+  const stars = shownStars ?? info.stars;
+  const look = coinLook({ state, stars });
+  const tone = toneOf(chapterOf(n));
 
   // The locked tap: one shake of this node only, or (Reduced Motion) the badge's flash until FLASH_MS later.
   const x = useSharedValue(0);
@@ -99,8 +140,20 @@ function LevelNodeBase({ info, level, selected, shakeKey, onPress }: LevelNodePr
   }, [shakeKey, reduce, x]);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }] }));
 
+  // The press: the face onto its edge, the whole node to 0.98 (none under Reduced Motion).
+  const { progress, pressIn, pressOut } = useTactilePress(reduce);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale(progress.get(), reduce) }] }));
+
   const bot = boss && level?.bot ? botLevel(level.bot.level as BotLevelId) : null;
   const kindIcon = LEVEL_UI.nodeKindIcon && level && !locked ? KIND_ICON[level.kind] : null;
+  const ringBox = {
+    top: frame.above - RING.out,
+    start: -RING.out,
+    width: frame.side + 2 * RING.out,
+    height: frame.side + frame.edge + 2 * RING.out,
+    borderRadius: frame.radius + RING.out,
+    borderWidth: RING.width,
+  };
 
   return (
     <Animated.View style={shakeStyle} testID={`node-${n}-shake`}>
@@ -109,50 +162,67 @@ function LevelNodeBase({ info, level, selected, shakeKey, onPress }: LevelNodePr
         accessibilityLabel={nodeLabel(info, level, t)}
         accessibilityState={{ selected }}
         onPress={() => onPress(info)}
-        style={[styles.button, { width: tile, height: tile + STARS_ROW }]}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        style={{ width: frame.width, height: frame.height }}
         testID={`node-${n}`}
       >
-        {({ pressed }) => (
-          <>
-            <View style={pressed ? styles.pressed : undefined}>
-              {state === 'current' ? (
-                <CurrentRing tile={tile} reduce={reduce} testID={`node-${n}-ring`} />
-              ) : selected ? (
-                <View
-                  style={[styles.ring, ringBox(tile), styles.selectedRing]}
-                  testID={`node-${n}-selected`}
-                />
-              ) : null}
-              <LevelTile
-                n={n}
-                size={tile}
-                state={state === 'locked' ? 'locked' : state === 'current' ? 'current' : 'played'}
-                boss={boss}
-                flash={flash}
-                testID={`node-${n}-tile`}
-              />
-              {bot ? (
-                <View style={[styles.bot, { top: tile - BOT_FROM_BOTTOM }]} testID={`node-${n}-bot`}>
-                  <Avatar avatarId={normalizeAvatarId(bot.avatar)} size="cell" colorIndex={1} bot />
-                </View>
-              ) : null}
-              {kindIcon ? (
-                <View style={styles.kind} testID={`node-${n}-kind`}>
-                  <Icon name={kindIcon} size={KIND_ICON_SIZE} color={color.textMuted} />
-                </View>
-              ) : null}
-            </View>
-            <View style={[styles.stars, locked && styles.hidden]}>
+        <Animated.View style={[styles.fill, pressStyle]}>
+          {state === 'current' ? (
+            <CurrentRing frame={frame} ringBox={ringBox} reduce={reduce} testID={`node-${n}-ring`} />
+          ) : selected ? (
+            <View style={[styles.ring, ringBox, styles.selectedRing]} testID={`node-${n}-selected`} />
+          ) : next ? (
+            <View style={[styles.ring, ringBox, styles.nextRing]} testID={`node-${n}-next`} />
+          ) : null}
+          <View style={[styles.coin, { top: frame.above }]}>
+            <LevelCoin
+              n={n}
+              variant={boss ? 'boss' : 'node'}
+              look={look}
+              tone={tone}
+              press={progress}
+              flash={flash}
+              pin={pin && state === 'current'}
+              bot={
+                bot ? (
+                  <View testID={`node-${n}-bot`}>
+                    <Avatar avatarId={normalizeAvatarId(bot.avatar)} size="compact" colorIndex={1} bot />
+                  </View>
+                ) : null
+              }
+              testID={`node-${n}-tile`}
+            />
+            {kindIcon ? (
+              <View style={styles.kind} testID={`node-${n}-kind`}>
+                <Icon name={kindIcon} size={KIND_ICON_SIZE} color={color.textMuted} />
+              </View>
+            ) : null}
+          </View>
+          {boss ? (
+            <View
+              style={[
+                styles.pedestal,
+                { top: frame.above + frame.side - PEDESTAL.overlap },
+                locked && styles.hidden,
+              ]}
+            >
               <StarRow
-                stars={locked ? 0 : info.stars}
-                size={STAR_SIZES.chip}
+                stars={locked ? 0 : stars}
+                size={PEDESTAL.star}
                 label={null}
-                gap={STAR_GAP}
+                gap={space[1]}
+                // Only the new stars pop, at the step's moment, as a coin's crown does.
+                reveal={reveal}
                 testID={`node-${n}-stars`}
               />
             </View>
-          </>
-        )}
+          ) : locked ? null : (
+            <View style={styles.crown}>
+              <StarCrown stars={stars} reveal={reveal} testID={`node-${n}-stars`} />
+            </View>
+          )}
+        </Animated.View>
       </Pressable>
     </Animated.View>
   );
@@ -160,79 +230,86 @@ function LevelNodeBase({ info, level, selected, shakeKey, onPress }: LevelNodePr
 
 export const LevelNode = memo(LevelNodeBase);
 
-/** The gold ring of "you are here", and its band pulsing 0 ↔ 1 over 1600 ms (static under Reduced Motion). */
-function CurrentRing({ tile, reduce, testID }: { tile: number; reduce: boolean; testID: string }) {
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    if (reduce) {
-      cancelAnimation(pulse);
-      pulse.set(0);
-      return;
-    }
-    pulse.set(
-      withRepeat(
-        withTiming(1, {
-          duration: motion.loop.lockPulse / 2,
-          easing: curve('loop'),
-          reduceMotion: reduceMotionFlag(false),
-        }),
-        -1,
-        true,
-        undefined,
-        reduceMotionFlag(false),
-      ),
-    );
-    return () => cancelAnimation(pulse);
-  }, [reduce, pulse]);
-  const bandStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
+/** The gold ring of "you are here", and its band beating (in bursts with rests; none under Reduced Motion). */
+function CurrentRing({
+  ringBox,
+  frame,
+  reduce,
+  testID,
+}: {
+  ringBox: object;
+  frame: ReturnType<typeof nodeFrame>;
+  reduce: boolean;
+  testID: string;
+}) {
+  const focused = useScreenFocused();
+  const active = useAppActive();
+  const band = useBeacon(!reduce && focused && active);
+  const bandStyle = useAnimatedStyle(() => ({ opacity: band.get() }));
   return (
     <>
       {reduce ? null : (
         <Animated.View
-          style={[styles.ring, bandBox(tile), styles.band, bandStyle]}
+          style={[
+            styles.ring,
+            {
+              top: frame.above - BAND.out,
+              start: -BAND.out,
+              width: frame.side + 2 * BAND.out,
+              height: frame.side + frame.edge + 2 * BAND.out,
+              borderRadius: frame.radius + BAND.out,
+              borderWidth: BAND.width,
+            },
+            styles.band,
+            bandStyle,
+          ]}
           testID={`${testID}-band`}
         />
       )}
-      <View style={[styles.ring, ringBox(tile), styles.currentRing]} testID={testID} />
+      <View style={[styles.ring, ringBox, styles.currentRing]} testID={testID} />
     </>
   );
 }
 
-const ringOut = RING.gap + RING.width;
-const ringBox = (tile: number) => ({
-  top: -ringOut,
-  start: -ringOut,
-  width: tile + 2 * ringOut,
-  height: tile + 2 * ringOut,
-  borderRadius: radius.md + ringOut,
-  borderWidth: RING.width,
-});
-const bandOut = ringOut + RING.band;
-const bandBox = (tile: number) => ({
-  top: -bandOut,
-  start: -bandOut,
-  width: tile + 2 * bandOut,
-  height: tile + 2 * bandOut,
-  borderRadius: radius.md + bandOut,
-  borderWidth: RING.band,
-});
-
-/** The stars under the tile: 4 below it, 12 high (STAR_SIZES.chip with its line). */
-const STARS_ROW = 16;
-const STAR_GAP = space[1];
-/** The boss's bot at the bottom-start corner (the Main board: 50 down a 68 tile, 8 out). */
-const BOT_FROM_BOTTOM = 18;
 const KIND_ICON_SIZE = 14;
+const KIND_BADGE = 20;
+/** The boss's stars on a pedestal: a plate 76 × 24 whose top is 8 dp over the face's bottom. */
+const PEDESTAL = { width: 76, height: 24, overlap: 8, star: 14 } as const;
 
 const styles = StyleSheet.create({
-  button: { alignItems: 'center' },
-  pressed: { transform: [{ scale: 0.96 }] },
+  fill: { flex: 1 },
+  coin: { position: 'absolute', start: 0 },
+  crown: { position: 'absolute', top: 0, start: 0, end: 0, alignItems: 'center' },
   ring: { position: 'absolute' },
-  currentRing: { borderColor: color.accent },
+  currentRing: { borderColor: color.levelMap.beacon.ring },
   selectedRing: { borderColor: color.text },
-  band: { borderColor: color.star.pulse },
-  stars: { height: STARS_ROW - space[2], marginTop: space[2], justifyContent: 'center' },
+  nextRing: { borderColor: color.levelMap.next.ring, borderStyle: 'dashed' },
+  band: { borderColor: color.levelMap.beacon.band },
   hidden: { opacity: 0 },
-  bot: { position: 'absolute', start: -space[4] },
-  kind: { position: 'absolute', bottom: space[1], end: space[1] },
+  pedestal: {
+    position: 'absolute',
+    start: (COIN.boss.side - PEDESTAL.width) / 2,
+    width: PEDESTAL.width,
+    height: PEDESTAL.height,
+    borderRadius: PEDESTAL.height / 2,
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
+    borderTopColor: color.tactile.borderLit,
+    backgroundColor: color.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kind: {
+    position: 'absolute',
+    bottom: -space[1],
+    end: -space[1],
+    width: KIND_BADGE,
+    height: KIND_BADGE,
+    borderRadius: KIND_BADGE / 2,
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
+    backgroundColor: color.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

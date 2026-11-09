@@ -4,6 +4,7 @@ import { StyleSheet, type TextStyle } from 'react-native';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { color, size, tokens } from '../../../theme';
+import { opaqueOver } from '../../../theme/blend';
 import { fourPlayerView, NOW, twoPlayerView, withPlayer } from '../__fixtures__/gameView';
 import { cardModel } from '../cardModel';
 import { ltr } from '../format';
@@ -20,6 +21,22 @@ const rgba = (hex: string) => {
 
 const me = (view = twoPlayerView()) => cardModel(view, 'moshe', 0, NOW);
 const nina = (view = twoPlayerView()) => cardModel(view, 'nina', 0, NOW);
+
+/**
+ * The blocked 2-player "הפרעה" (B12, B50): it looks as it did at half opacity over the ground, but the button stays
+ * opaque and a veil of the ground's colour lets half of it through, so the wandering digits behind the card don't
+ * show through it.
+ */
+function expectDimmedOpaque(zap: { props: { style?: unknown } }) {
+  expect(styleOf(zap).opacity).toBeUndefined();
+  expect(styleOf(zap).backgroundColor).toBe(opaqueOver(color.interfere.bg));
+  expect(styleOf(screen.getByTestId('interfere-veil', hidden))).toMatchObject({
+    position: 'absolute',
+    backgroundColor: color.bg,
+    opacity: 1 - tokens.opacity.inactivePlayer,
+  });
+  expect(styleOf(screen.getByTestId('interfere-label', hidden)).color).toBe(color.interfere.label);
+}
 
 describe('PlayerCard (2 players, Dir-C-Game)', () => {
   beforeEach(async () => {
@@ -67,6 +84,23 @@ describe('PlayerCard (2 players, Dir-C-Game)', () => {
     expect(styleOf(reactions).opacity).toBe(tokens.opacity.inactivePlayer);
   });
 
+  it('surrender and reactions are the app’s icon button (D125): slate on a 2 dp edge, as in the levels’ HUD', async () => {
+    await render(<PlayerCard model={me()} reactionsExpanded={false} />);
+    for (const id of ['surrender', 'reactions']) {
+      expect(styleOf(screen.getByTestId(`${id}-edge`))).toMatchObject({
+        top: tokens.elevation.tactile.icon.offsetY,
+        backgroundColor: color.tactile.slateEdge,
+      });
+      expect(styleOf(screen.getByTestId(`${id}-face`))).toMatchObject({
+        backgroundColor: color.surface2,
+        borderColor: color.border,
+      });
+    }
+    // Held open: a flat face with a muted border.
+    await render(<PlayerCard model={me()} reactionsExpanded />);
+    expect(styleOf(screen.getByTestId('reactions-face')).borderColor).toBe(color.textMuted);
+  });
+
   it('shows the last delta next to the score', async () => {
     await render(
       <PlayerCard model={me()} delta={{ id: 1, value: 3.5, kind: 'gain' }} persistentDelta testID="me" />,
@@ -99,10 +133,11 @@ describe('PlayerCard (2 players, Dir-C-Game)', () => {
     expect(screen.getByTestId('icon-interfere', hidden)).toBeTruthy();
     expect(screen.queryByText(/נק׳/)).toBeNull();
     expect(screen.getByTestId('interfere-label', hidden).props.numberOfLines).toBe(1);
-    // As tall as the reactions button (components.md §1.4).
+    // As tall as the reactions button (components.md §1.4). Its fill is the token over the ground, opaque: the
+    // wandering digits pass behind the card, and must not show through the button (B12, B50).
     expect(styleOf(zap)).toMatchObject({
       height: size.touch,
-      backgroundColor: color.interfere.bg,
+      backgroundColor: opaqueOver(color.interfere.bg),
       borderColor: color.interfere.border,
     });
     expect(zap).toHaveProp('accessibilityState', { disabled: false, expanded: false });
@@ -131,7 +166,7 @@ describe('PlayerCard (2 players, Dir-C-Game)', () => {
     const zap = screen.getByRole('button', { name: 'הפרעה ל־NinaVolt · חסרות 3 נק׳' });
     expect(zap).toHaveTextContent('הפרעה', { exact: true });
     expect(zap).toBeDisabled();
-    expect(styleOf(zap).opacity).toBe(tokens.opacity.inactivePlayer);
+    expectDimmedOpaque(zap);
     await fireEvent.press(zap);
     expect(onInterfere).not.toHaveBeenCalled();
     expect(onBlocked).toHaveBeenCalledWith({ kind: 'points', cost: 8, missing: 3 });
@@ -150,7 +185,7 @@ describe('PlayerCard (2 players, Dir-C-Game)', () => {
     await render(<PlayerCard model={nina(view)} onInterfere={onInterfere} onInterfereBlocked={onBlocked} />);
     const zap = screen.getByRole('button', { name: 'הפרעה ל־NinaVolt לא זמינה, כבר תחת הפרעה' });
     expect(zap).toBeDisabled();
-    expect(styleOf(zap).opacity).toBe(tokens.opacity.inactivePlayer);
+    expectDimmedOpaque(zap);
     await fireEvent.press(zap);
     expect(onInterfere).not.toHaveBeenCalled();
     expect(onBlocked).toHaveBeenCalledWith({ kind: 'busy', cost: 2, secondsLeft: 2 });
@@ -277,6 +312,42 @@ describe('PlayerCard (2 players, Dir-C-Game)', () => {
       expect(screen.getByTestId('nina-summary')).toHaveProp('accessibilityHint', 'יעד ההפרעה');
       await unmount();
     }
+  });
+
+  it('the "יעד" chip draws its word wider than measured, so rounding never cuts it to "…" (loop 4, density 540)', async () => {
+    await render(<PlayerCard model={nina()} targeted testID="nina" />);
+    // The chip is sized by a hidden copy of the word; the one seen and read sits over it with 2 dp each side.
+    const sizer = screen.getByTestId('target-chip-sizer', hidden);
+    expect(sizer).toHaveTextContent('יעד');
+    expect(sizer).toHaveProp('aria-hidden', true);
+    expect(styleOf(sizer).opacity).toBe(0);
+    const label = screen.getByTestId('target-chip-label');
+    expect(label).toHaveTextContent('יעד');
+    expect(label).toHaveProp('numberOfLines', 1);
+    expect(styleOf(label).textAlign).toBe('center');
+    const box = styleOf(label.parent!);
+    expect(box).toMatchObject({ position: 'absolute', top: 0, bottom: 0, start: 6, end: 6 });
+    expect(styleOf(screen.getByTestId('target-chip')).paddingHorizontal).toBe(8);
+    // Said once: only the label is in the accessibility tree.
+    expect(screen.getAllByText('יעד')).toHaveLength(1);
+  });
+
+  // QA loop 6: the chip hung 8 dp below the frame, and the frame is the scrim's hole, so its lower half was dimmed.
+  it('the "יעד" chip lies inside its frame, which reaches further down to hold it (the scrim’s hole)', async () => {
+    await render(<PlayerCard model={nina()} targeted testID="nina" />);
+    const frame = styleOf(screen.getByTestId('target-frame'));
+    const chip = screen.getByTestId('target-chip');
+    const wrap = styleOf(chip.parent!);
+    const border = frame.borderWidth as number;
+    // Absolute offsets start inside the border: the chip's bottom is `border + bottom` above the frame's outer edge.
+    const chipBottomAboveEdge = border + (wrap.bottom as number);
+    expect(chipBottomAboveEdge).toBeGreaterThanOrEqual(0);
+    // Its top stays where it was, 4 dp over the card (padding below it, then the card).
+    const chipTopBelowCard = (frame.paddingBottom as number) + border - chipBottomAboveEdge - 20;
+    expect(chipTopBelowCard).toBe(-4);
+    // The card does not move: the frame grows outwards by its padding and border on each side.
+    expect(frame.marginBottom).toBe(-((frame.paddingBottom as number) + border));
+    expect(frame.margin).toBe(-((frame.padding as number) + border));
   });
 
   it('not the target: no frame and no hint', async () => {

@@ -10,6 +10,7 @@ import {
   holdsResults,
   type LobbyInfo,
   lobbyOf,
+  RETURN_QUIET_MS,
   SYNCED_HOLD_MS,
 } from '../connectionModel';
 import { AIKO, AIKO_INFO, ME, MOSHE_INFO, NINA, NINA_INFO, rankedGame, T0 } from '../testing/games';
@@ -204,6 +205,61 @@ describe('connectionModel: my connection (Self-Reconnecting)', () => {
       graceMs: 5000,
     });
     expect(model).toMatchObject({ secondsLeft: 5, remainingMs: 5000, graceMs: 5000 });
+  });
+
+  it('back from the background (the first try): "reconnecting" without the abandonment countdown', () => {
+    // QA stealth-play-bg-long: 15 s in the background, and the first frame back said "יש לך עוד 10 שניות
+    // לחזור" to a player who was already back.
+    const game = rankedGame();
+    const back: ConnectionStatus = {
+      kind: 'reconnecting',
+      attempt: 1,
+      cause: 'background',
+      lostAt: T0,
+      softEndsAt: T0 + 10_000,
+      graceEndsAt: T0 + 25_000,
+      playable: false,
+    };
+    expect(connectionModel(game.view(), back, T0 + 15_000)).toMatchObject({
+      kind: 'selfReconnecting',
+      phase: 'lost',
+      attempt: 1,
+      secondsLeft: null,
+      remainingMs: null,
+      returning: true,
+    });
+    // That try failed (no network after all): the time left counts again.
+    const failed = connectionModel(game.view(), { ...back, attempt: 2 }, T0 + 15_000);
+    expect(failed).toMatchObject({ phase: 'lost', attempt: 2, secondsLeft: 10 });
+    expect(failed).not.toHaveProperty('returning');
+    // A drop with the app in the foreground keeps its countdown from the first try (spec §16.2).
+    const drop = connectionModel(game.view(), { ...back, cause: 'drop' }, T0 + 15_000);
+    expect(drop).toMatchObject({ secondsLeft: 10 });
+    expect(drop).not.toHaveProperty('returning');
+  });
+
+  it('back from the background with little grace left: the countdown shows at once, even on the first try', () => {
+    // A try can take attemptTimeoutMs (5 s): with 3 s left, a failing return must not end unannounced.
+    const game = rankedGame();
+    const back: ConnectionStatus = {
+      kind: 'reconnecting',
+      attempt: 1,
+      cause: 'background',
+      lostAt: T0,
+      softEndsAt: T0 + 10_000,
+      graceEndsAt: T0 + 25_000,
+      playable: false,
+    };
+    const late = connectionModel(game.view(), back, T0 + 22_000);
+    expect(late).toMatchObject({ phase: 'lost', attempt: 1, secondsLeft: 3, remainingMs: 3_000 });
+    expect(late).not.toHaveProperty('returning');
+    // The same first try, still running as the grace runs low: from RETURN_QUIET_MS on it counts.
+    expect(connectionModel(game.view(), back, T0 + 25_000 - RETURN_QUIET_MS - 1)).toMatchObject({
+      secondsLeft: null,
+    });
+    expect(connectionModel(game.view(), back, T0 + 25_000 - RETURN_QUIET_MS)).toMatchObject({
+      secondsLeft: RETURN_QUIET_MS / 1000,
+    });
   });
 
   it('counts attempts from 1', () => {

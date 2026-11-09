@@ -5,7 +5,12 @@ import {
   ManualScheduler,
   type PaceHistory,
 } from '@sudoku-fight/engine';
-import type { MatchmakingServerMessage, MatchPlayer, MatchSeatReservation } from '@sudoku-fight/protocol';
+import {
+  FOUND_HOLD_MS,
+  type MatchmakingServerMessage,
+  type MatchPlayer,
+  type MatchSeatReservation,
+} from '@sudoku-fight/protocol';
 
 import { DEFAULT_STEALTH_BOT, type StealthBotSettings } from '../config';
 import type { RankedMatchLink, RankedRoomHooks } from '../matchmaking/ranked';
@@ -254,9 +259,10 @@ describe('the stealth bot comes in (D94)', () => {
     await t.advance(WAIT);
     const room = t.rooms[0]!;
     expect(room.match.players).toEqual([{ userId: 'ana', name: 'ana' }]);
+    // With the cards "found" showed: the room's `lobby` carries them (QA rejoin-opponent-avatar-lost).
     expect(room.link.setup.players).toEqual([
-      { userId: 'ana', name: 'ana', rating: 1200, games: 3 },
-      { userId: p.userId, name: p.name, rating: 1200, games: 4 },
+      { userId: 'ana', name: 'ana', rating: 1200, games: 3, avatarId: 'lava-lamp', country: 'IL' },
+      { userId: p.userId, name: p.name, rating: 1200, games: 4, avatarId: 'lava-lamp', country: 'IL' },
     ]);
     expect(room.link.setup.rules.interferenceKinds).toEqual([...LEGACY_INTERFERENCE_KINDS, 'ink']);
     expect(room.link.setup.bots).toEqual([
@@ -285,7 +291,10 @@ describe('the stealth bot comes in (D94)', () => {
     expect(ana.last('ready').ready).toEqual([p.userId]);
     room.link.join('ana');
     expect(ana.last('ready').ready).toEqual(['ana', p.userId]);
-    expect(room.calls).toEqual([`countdown@${WAIT + 3000}`]);
+    // Both in at once: the VS holds FOUND_HOLD_MS first, as with a person.
+    expect(room.calls).toEqual([]);
+    await t.advance(FOUND_HOLD_MS);
+    expect(room.calls).toEqual([`countdown@${WAIT + FOUND_HOLD_MS + 3000}`]);
     await t.advance(3000);
     expect(ana.last('started')).toMatchObject({ roomId: 'ROOM1' });
     expect(t.service.isPlaying(p.userId)).toBe(true);
@@ -409,7 +418,7 @@ describe('the stealth bot comes in (D94)', () => {
     const room = t.rooms[0]!;
     room.link.join(p.userId);
     room.link.join('ana');
-    await t.advance(3000);
+    await t.advance(FOUND_HOLD_MS + 3000);
     expect(ana.last('started').roomId).toBe('ROOM1');
     const ben = await t.join('ben');
     await t.advance(30 * S);

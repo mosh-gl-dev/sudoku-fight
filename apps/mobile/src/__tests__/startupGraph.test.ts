@@ -27,6 +27,10 @@ const LATE_FILES: Record<string, string> = {
   'apps/mobile/src/levels/data/levels.json':
     "staged practice's levels: the map and a level's start (levelsData, required on first use)",
   'apps/mobile/src/components/interference/': 'Skia effects: the game screen',
+  'apps/mobile/src/components/ambient/AmbientCanvas':
+    "the ambient digits' Skia canvas (D126): required once the first screen is up and idle",
+  'apps/mobile/src/components/ambient/digitPaths.generated':
+    "the ambient digits' outlines: only the canvas reads them",
   'apps/mobile/src/screens/levels/': "staged practice's map, a stage and its result (their routes)",
   'apps/mobile/src/screens/replay/': 'the replay screen',
   'apps/mobile/src/screens/game/GameScreen.tsx': 'the game screen',
@@ -65,6 +69,12 @@ describe('the start: what the first screen loads (spec §22)', () => {
     expect(STARTUP.packages.has('expo-font')).toBe(true);
     // …and what a later screen needs shows up from that screen.
     expect(importGraph(['app/game.tsx']).packages.has('@shopify/react-native-skia')).toBe(true);
+    // D126: the root layout's ambient layer is on the start, its Skia canvas is not (required in a function, when
+    // idle, after the first screen).
+    expect(STARTUP.files.has('apps/mobile/src/components/ambient/AmbientLayer.tsx')).toBe(true);
+    expect(
+      importGraph(['src/components/ambient/AmbientCanvas.tsx']).packages.has('@shopify/react-native-skia'),
+    ).toBe(true);
   });
 
   it('the dev routes require their screens only behind __DEV__, so release bundles drop them', () => {

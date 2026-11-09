@@ -68,7 +68,8 @@
       "timeout": "服务器没有及时响应。请再试一次。",
       "signedOut": "你还没有登录。请重新登录。",
       "unexpected": "服务器返回了意外的响应。请再试一次，或更新应用。"
-    }
+    },
+    "avatarUnavailable": "服务器暂时还不支持这个头像。请换一个。"
   },
   "splash": {
     "tagline": "同一个盘面，人人都在解，只有一人能赢。",
@@ -249,6 +250,9 @@
     "deleteGoogleBody": "要删除账号，请再次选择 Google 账号{{email}}。",
     "deleteGoogleSubmit": "通过 Google 确认并删除",
     "deleteGoogleAgain": "删除账号需要重新确认。请再试一次，并选择你的 Google 账号。",
-    "deleteWithPassword": "改用密码确认"
+    "deleteWithPassword": "改用密码确认",
+    "deleteGoogleOffTitle": "需要使用 Google 登录",
+    "deleteGoogleOffBody": "此账号使用 Google 登录，因此删除时需要通过 Google 确认。此版本的应用没有 Google 登录，所以无法在这里删除账号。你可以在应用商店（Google Play）版本的应用中删除。",
+    "deleteGoogleOffOk": "知道了"
   }
 }

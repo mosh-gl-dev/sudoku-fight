@@ -14,6 +14,7 @@ import Animated, {
 import { decimalSeparator } from '../../i18n/compose';
 import { color } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
+import { FONT_SCALE_CAPS, type TextScale } from '../ui/Text';
 import { easing, NEVER_REDUCE, springs } from './anim';
 import { CountUpText } from './CountUpText';
 import { scoreFormat, signedText } from './format';
@@ -34,8 +35,21 @@ export interface ScoreNumberProps {
   textStyle: TextStyle;
   /** A new delta (by id) plays its effect on the number: a bump for a gain, a red tint for a penalty. */
   delta?: ScoreDelta | null;
+  /** The system text size's cap (BRD-3); by default from its size (scoreScale). */
+  scale?: TextScale;
   testID?: string;
 }
+
+/** A score this big (scoreXL, 64 dp) is display type: far above reading size already. */
+const DISPLAY_SCORE_DP = 40;
+
+/**
+ * BRD-3: a game card's score follows the system text size up to the HUD's ×1.35 (its compact card gives way to
+ * it: the pips are cut first). The 64 dp score of the 2-player card and the practice stays as designed: its
+ * 56 dp row and its 159 dp card can't hold more, and it reads at any text size.
+ */
+export const scoreScale = (textStyle: TextStyle): TextScale =>
+  (textStyle.fontSize ?? 0) >= DISPLAY_SCORE_DP ? 'board' : 'hud';
 
 /**
  * A card's score (motion.md §4.2–4.3): counts to the new value over 650 ms in 0.5 steps, bumps 1 → 1.08 → 1 on
@@ -45,7 +59,14 @@ export interface ScoreNumberProps {
  * The count, the bump and the tint all run on the UI thread (CountUpText, motion.md §6): no frame of them
  * renders in React. Screen readers hear the final score in the card's summary, never the count.
  */
-export function ScoreNumber({ score, tint, textStyle, delta = null, testID }: ScoreNumberProps) {
+export function ScoreNumber({
+  score,
+  tint,
+  textStyle,
+  delta = null,
+  scale: textScale,
+  testID,
+}: ScoreNumberProps) {
   const { t } = useTranslation('player');
   const decimal = decimalSeparator(t);
   // The count's worklet, with the language's separator in it (made once: its animated props stay set up).
@@ -64,7 +85,11 @@ export function ScoreNumber({ score, tint, textStyle, delta = null, testID }: Sc
       red.set(1);
       red.set(
         reduce
-          ? withDelay(motion.duration.wrongShake, withTiming(0, { duration: 0, reduceMotion: NEVER_REDUCE }))
+          ? withDelay(
+              motion.duration.wrongShake,
+              withTiming(0, { duration: 0, reduceMotion: NEVER_REDUCE }),
+              NEVER_REDUCE,
+            )
           : withTiming(0, {
               duration: motion.duration.scoreCount,
               easing: easing.standard,
@@ -89,7 +114,15 @@ export function ScoreNumber({ score, tint, textStyle, delta = null, testID }: Sc
     transform: [{ scale: scale.get() }],
   }));
 
-  return <CountUpText value={score} format={format} style={[textStyle, anim]} testID={testID} />;
+  return (
+    <CountUpText
+      value={score}
+      format={format}
+      style={[textStyle, anim]}
+      maxFontSizeMultiplier={FONT_SCALE_CAPS[textScale ?? scoreScale(textStyle)]}
+      testID={testID}
+    />
+  );
 }
 
 export interface DeltaLabelProps {
@@ -145,6 +178,7 @@ export function DeltaLabel({
             easing: easing.exit,
             reduceMotion: NEVER_REDUCE,
           }),
+          NEVER_REDUCE,
         ),
       ),
     );
@@ -164,6 +198,9 @@ export function DeltaLabel({
   const fg = delta.kind === 'gain' ? tint : delta.kind === 'penalty' ? color.danger : color.textMuted;
   return (
     <Animated.Text
+      // BRD-3: beside the score, in its row: the HUD's cap.
+      maxFontSizeMultiplier={FONT_SCALE_CAPS.hud}
+      numberOfLines={1}
       style={[textStyle, { color: fg }, style, anim]}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"

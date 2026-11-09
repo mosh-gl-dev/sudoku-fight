@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "gerbang perlu {{need}}",
     "chapterOpen": "gerbang terbuka",
+    "chapterNeedSentence": "Gerbang perlu {{need}}",
+    "chapterOpenSentence": "Gerbang terbuka",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "Bab ini: {{stars}} dari {{max}} bintang. {{gate}}",
     "mistakes_other": "{{count}} kesalahan",
@@ -315,6 +317,8 @@
     "button": "Keluar dari tahap",
     "title": "Keluar dari tahap?",
     "body": "Kamu akan mendapat 0 bintang, dan tahap berikutnya akan terbuka.",
+    "bodyLocked": "Kamu akan mendapat 0 bintang, dan tahap berikutnya tetap terkunci.",
+    "bodyLast": "Kamu akan mendapat 0 bintang.",
     "confirm": "Keluar",
     "cancel": "Lanjut main"
   },

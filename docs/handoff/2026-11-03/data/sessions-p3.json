@@ -1,0 +1,338 @@
+{
+ "batches": [
+  {
+   "lane": "טלפון 3",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L): הותקן apk11 ‏(1.1.0, 08.11 22:20), ונרשם apk11 בקובץ installed-RF8Y30L038L.txt. בסוף הרצתי adb.ts reset: גופן 1, אנימציות 1, תיקון צבעים כבוי, מצב טיסה כבוי. האפליקציה בעברית, הופעלה מחדש ועומדת בבית. 'הפחתת תנועה' נשארה 'כבויה', לא שיניתי אותה. דירוג 'מהיר' של אחוותא ירד 1048→1021: שלוש ירידות של 9, ואחת מהן לא תוכננה, במשחק 3 מול הבוט הסמוי שבו הלוח התמלא לפני שהובלתי. 'קשה' נשאר 1200 זמני, כי נכנעתי לפני מהלך ראשון. החשבון עלה לרמה 6. סרטוני ה־screenrecord הועתקו ל־qa-shots ונמחקו מ־/sdcard. קובצי qa-*.xml ישנים ב־/sdcard לא נגעתי בהם.",
+   "ids": [
+    "ranked-entry-type-ratings",
+    "ranked-four-type-and-search",
+    "ranked-duel-opponent-card",
+    "ranked-duel-surrender-home",
+    "ranked-duel-home-immediate",
+    "ranked-duel-home-progress",
+    "ranked-duel-results-background",
+    "ranked-duel-gametype-new-rating",
+    "ranked-end-i-surrender-my-lock-5x",
+    "game-practice-bot-no-button",
+    "game-practice-background-bot",
+    "game-reactions-bot",
+    "game-reactions-mute",
+    "game-practice-bot-no-hits",
+    "interference-where-bot-select",
+    "interference-where-bot-no-button",
+    "interference-where-bot-never",
+    "avatars-look-sad-sleepy-sizes",
+    "interference-where-bot-from-search",
+    "game-practice-bot-card",
+    "game-practice-bot-lead",
+    "game-moves-no-streak",
+    "game-reactions-picker",
+    "game-reactions-send-self",
+    "game-reactions-cooldown",
+    "game-surrender-bot-confirm"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על הבית בעברית, עם apk11 (תואם ל־installed-RF8Y30L038L.txt, לא הותקן מחדש). הוחזרו: screen_off_timeout 600000, font_scale 1.0, wm size ו־wm density לברירת המחדל (1080x2340, 450), stay_on_while_plugged_in 15 (כובה זמנית ל־0 בבדיקת המסך הדלוק), ו־adb reset. נשאר פתוח ברקע של Samsung Internet טאב עם דף ההזמנה /r/123456?lang=en. Chrome נסגר ממסך ההתחברות הראשון בלי להתחבר. בחשבון אחוותא נוספו כ־6 משחקים: שני אימונים לבד, שני אימונים מול Pip ושלוש כניעות מדורגות לפני מהלך, שלא הורידו דירוג. השלב 4 במפה נגמר בזמן פעמיים, בלי כוכבים. בהגדרות, 'הפחתת תנועה' נשארה על 'כבויה' כמו שהייתה.",
+   "ids": [
+    "general-background-awake-font",
+    "general-background-awake",
+    "general-display-small-big-font",
+    "general-sr-names",
+    "general-lang-no-hebrew",
+    "interference-picker-ltr-en",
+    "game-online-2p-cards-en",
+    "postgame-replay-english",
+    "postgame-history-english",
+    "postgame-leaderboard-english",
+    "postgame-progress-english"
+   ]
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "ranked-end-i-surrender-my-lock-5x",
+   "title": "פריים ריק (רקע בלבד) במעבר מהלוח לתוצאות",
+   "what": "טלפון 3 SM-A165F, ‏1.1.0 apk11 (08.11 22:20), עברית. במדורג מהיר מול הבוט הסמוי: בוחרים משבצת ריקה, ואז 'כניעה' ← 'כן, להיכנע'. אותו דבר באימון מול Mr. Hoot: 'סיום אימון' ← 'כן, לסיים'. מצלמים screencap רצוף, בערך כל 0.6 שניות. כ־0.9 שניות אחרי האישור רואים את הלוח בלי הדיאלוג. בפריים הבא, כ־1.5 שניות אחרי האישור, יש מסך כהה עם הספרות המרחפות בלבד, בלי כרטיסים ובלי כותרת. אחר כך מסך התוצאות נבנה. זה קרה ב־4 מתוך 4 ריצות מדורג שצולמו רצוף וב־3 מתוך 3 ריצות אימון. ייתכן שזה מעבר המסך הרגיל (fade). זה לא מסך שחור שנשאר, ו'המסך לא נטען' לא הופיע. קבצים: qa-shots/RF8Y30L038L-5x2-c2.png ו־RF8Y30L038L-endp2-c2.png",
+   "severity": "minor"
+  },
+  {
+   "taskId": "ranked-four-type-and-search",
+   "title": "חיפוש 4 שחקנים: המקומות הפנויים נחתכים מתחת לכפתור הביטול",
+   "what": "טלפון 3 SM-A165F, ‏1.1.0 apk11, עברית. 'שחק' ← במדורג '4 שחקנים' ← 'מהיר' ← 'מצא יריבים'. מחכים שתופיע ההודעה 'כרגע אין מספיק שחקנים שמחפשים משחק כזה' עם 'שחק מול בוט בינתיים'. ההודעה דוחפת את שורת 'יריבים 0/3' למטה. שלושת המקומות הפנויים נחתכים מאחורי 'ביטול חיפוש': רואים רק ▲■◆ וחצי מה־'?', והטקסט 'מחפש…' לא נראה עד שגוללים. צילום: qa-shots/RF8Y30L038L-ranked-four-type-and-search-1.png (לפני הגלילה) ו־-2.png (אחרי)",
+   "severity": "minor"
+  },
+  {
+   "taskId": "postgame-progress-english",
+   "severity": "major",
+   "title": "אחרי איפוס גודל התצוגה כשהאפליקציה פתוחה, הניווט נשבר: 'navigation object hasn't been initialized'",
+   "what": "Build apk11, 1.1.0 (08.11 22:20), טלפון 3 SM-A165F, Android 16, האפליקציה באנגלית.\nצעדים:\n1. כשהאפליקציה פתוחה (מסך תוצאות של משחק מדורג), להריץ adb shell wm size reset, adb shell wm density reset ו־settings put system font_scale 1.0. קודם הם היו 1080x2340, 480 ו־1.3.\n2. האפליקציה נבנית מחדש על הבית.\nמה קרה:\n- הקשה על כרטיס השחקן בבית (profile-card) לא פותחת את כרטיס השחקן, גם אחרי כמה ניסיונות. גם 'My player card' במסך ההישגים לא פותח אותו.\n- לשוניות הניווט התחתונות לפעמים לא מגיבות להקשה הראשונה.\n- בכל הקשה כזאת logcat מראה: E ReactNativeJS: The 'navigation' object hasn't been initialized yet... (10 פעמים בין 00:35 ל־00:39).\n- אחרי adb stop ו־launch הכל עובד.\nLogcat: docs/handoff/2026-11-03/data/crash-RF8Y30L038L-postgame-progress-english.txt"
+  },
+  {
+   "taskId": "postgame-leaderboard-english",
+   "severity": "minor",
+   "title": "טבלת מובילים באנגלית: בשורה הקבועה שלי 'Level 6' עולה על התג 'Provisional'",
+   "what": "apk11, טלפון 3 SM-A165F, גודל תצוגה ופונט רגילים, האפליקציה באנגלית, חשבון עם דירוג זמני (אחוותא).\nצעדים: Leaderboard, כל לשונית, ולהסתכל על השורה הקבועה שלי בתחתית ('#4 … 1200').\nמה קרה: הטקסט '· Level 6' מתחת למספר והתג 'Provisional' באותו מקום, ולכן רואים 'LevelProvisional'.\nבעברית התג 'זמני' יושב מתחת למספר בלי חפיפה.\nב־360dp ופונט 1.3 החפיפה קיימת גם בעברית ('זמני' על '6'). באנגלית גם 'Bro nze' ו־'Le vel 6' נשברים לשורות, והלשוניות נחתכות ל־'Gene…', 'Nor…' ו־'Frien…'."
+  },
+  {
+   "taskId": "general-display-small-big-font",
+   "severity": "minor",
+   "title": "360dp ופונט 1.3: מילים נשברות באמצע וטקסט חתוך בהרבה מסכים",
+   "what": "apk11, טלפון 3: wm size 1080x2340, wm density 480, font_scale 1.3.\nבאנגלית:\n- בכרטיס שלי במשחק, 'No mistakes' נשבר ל־'No mis' / 'takes' (אימון מול בוט ומדורג).\n- בכרטיס שחקן, 'Mistak es per …'.\n- בבחירת בוט: 'Biscu…', 'Mr. H…' ו־'Think time per m…'.\n- בצפייה חוזרת: 'Previous st…'.\n- באימון לבד: 'Solo prac…'.\n- בהיסטוריה: 'Loss • Ranke…'.\n- בהישגים: 'Bronz…', 'Diam…' ו־'Lege…'.\n- בכרטיס שחקן: 'Playing since Octobe…'.\n- בטבלת מובילים שמות בעברית מקוצרים לאות אחת ('…ל'), ו־'Level 3' יושב מתחת למספר הדירוג.\nבעברית:\n- 'Mr. Ho…' עם תג '3 · מתקדם' בשתי שורות.\n- בהיסטוריה: 'הפסד • אימו…'.\n- 'במשחק מאז אוקטובר 2…'.\n- במפה: 'שלב 10 · מרוץ מו…'.\nצילומים: qa-shots/RF8Y30L038L-walk-*.png ו־RF8Y30L038L-*-en-*.png."
+  },
+  {
+   "taskId": "general-sr-names",
+   "severity": "minor",
+   "title": "היסטוריה: אווטר היריב בכרטיס מדורג לחיץ ובלי שם לקורא מסך",
+   "what": "apk11, טלפון 3. היסטוריה ← הכל או מדורג ← כרטיס של משחק מדורג.\nב־uiautomator dump יש node בשם history-card-<gameId>-player-<playerId> (ViewGroup) עם clickable=true, focusable=true, NAF=true, ו־text ו־content-desc ריקים.\nבקוד (apps/mobile/src/screens/history/HistoryCard.tsx:148) זה Pressable עם accessible={false} בלי importantForAccessibility='no-hide-descendants'. ב־Scrim הבעיה נפתרה כך.\nייתכן ש־TalkBack יעצור עליו ויקריא 'כפתור' או 'ללא תווית'. צריך לאשר עם TalkBack."
+  },
+  {
+   "taskId": "postgame-leaderboard-english",
+   "severity": "minor",
+   "title": "לשונית חברים/Friends: מקומות כפולים ולא לפי הדירוג",
+   "what": "apk11, טלפון 3 (אחוותא). טבלת מובילים ← חברים ('Your recent opponents').\nמה קרה:\n- ליהי33 (1233) ואבי43 (1305) מוצגים שניהם '#2', ו־1233 מופיע לפני 1305.\n- שמונה שורות מוצגות '#3' (1217, 1218, 1219, 1220, 1220, 1221, 1222, 1223), בסדר עולה.\n- אני '#4' עם 1200.\nהמקומות לא ממוינים ולא ייחודיים, גם בעברית וגם באנגלית."
+  },
+  {
+   "taskId": "postgame-replay-english",
+   "severity": "minor",
+   "title": "אנגלית: 'sees a 8' במקום 'sees an 8' בהסבר של תוצאת שלב",
+   "what": "apk11, האפליקציה באנגלית. Staged practice ← שלב 4 (Fill the row) ← לתת לזמן להיגמר ← מסך התוצאה, 'Why?'.\nהטקסט: '8 must appear in row I. All the other empty cells in it are blocked: I5 sees a 8 in column 5. So I4 = 8.'\nכתוב 'a 8' במקום 'an 8'."
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "interference-where-bot-from-search",
+   "issue": "כשהבוט הסמוי פעיל ב־staging הוא מצטרף לחיפוש 2 שחקנים (גם 'קשה') אחרי 8 עד 20 שניות, לפני ההודעה 'כרגע אין שחקנים אחרים…' ולפני מסך הדקה. אפשר לבדוק את המשימה רק כשהבוט הסמוי כבוי. כדאי לכתוב את זה כתנאי מקדים."
+  },
+  {
+   "taskId": "game-practice-bot-card",
+   "issue": "השורה בצפוי אומרת שעל הכרטיס יש 'סיום אימון' ו'תגובות', אבל אלה כפתורי אייקון (דגל ופרצוף) בלי טקסט על המסך. השמות קיימים רק כתוויות נגישות. כדאי לנסח: 'כפתור הדגל (סיום אימון) וכפתור הפרצוף (תגובות)'."
+  },
+  {
+   "taskId": "game-surrender-bot-confirm",
+   "issue": "'אימון: אין שינוי בדירוג' מופיע רק בתחתית מסך התוצאות, אחרי הפרסים, וצריך לגלול כדי לראות אותו. כדאי להוסיף 'גוללים לתחתית' לצעדים."
+  },
+  {
+   "taskId": "ranked-entry-type-ratings",
+   "issue": "דורש חשבון שעוד לא שיחק מדורג מהיר, כלומר חשבון חדש. בלי התחברות אפשר לבדוק את 1200/זמני רק בכרטיסי 'רגיל' ו'קשה'."
+  },
+  {
+   "taskId": "game-reactions-mute",
+   "issue": "מול Overlord ‏(5 · גרנדמאסטר) הבוט ממלא משבצות מהר מאוד, ולפעמים משבצת שבחרתי לטעות בה מתמלאת לפני ההקלדה. בפועל נרשמו 3 טעויות ולא 4. בוט איטי יותר, למשל Mr. Hoot, יתאים לצעד הזה."
+  },
+  {
+   "taskId": "ranked-duel-home-progress",
+   "issue": "אחרי הפסד אחד, אחוז הניצחונות לא משתנה בתצוגה המעוגלת כשיש הרבה משחקים (12/56=21% → 12/57=21%), והרצף כבר 0. ה'משתנים לפי התוצאה' לא נראה לעין. כדאי לנסח 'תואמים לתוצאה'."
+  },
+  {
+   "taskId": "general-background-awake",
+   "issue": "בטלפון שמחובר ב־USB, 'השאר דלוק בזמן טעינה' (stay_on_while_plugged_in=15) משאיר את המסך דלוק גם כשהאפליקציה ברקע, ואז הבדיקה לא בודקת כלום. צריך להוסיף צעד: adb shell settings put global stay_on_while_plugged_in 0, ובסוף להחזיר את הערך הקודם. זה נכון גם ל־general-background-awake-font."
+  },
+  {
+   "taskId": "general-display-small-big-font",
+   "issue": "מסך החיפוש מונפש, ולכן uiautomator לא מצליח לקרוא אותו (could not get idle state), והבוט הסמוי מצטרף אחרי שניות. את מסך החיפוש אפשר לבדוק רק מצילום. חדר עם חברים לא אפשרי בנתיב P3. כדאי לציין זאת בתסריט."
+  },
+  {
+   "taskId": "general-lang-no-hebrew",
+   "issue": "ב־Chrome הפתיחה הראשונה מציגה מסך התחברות לחשבון Google (FRE). צריך לציין שיש לפתוח בדפדפן של סמסונג (com.sec.android.app.sbrowser) או לדלג על ה־FRE בלי להתחבר."
+  },
+  {
+   "taskId": "postgame-replay-english",
+   "issue": "'New game' במסך התוצאות של אימון מול בוט מתחיל מיד משחק חוזר עם אותו בוט, ולא פותח את המסך 'New game'. תסריט שמסתמך על 'New game' כדי להגיע לבחירת מצב צריך לעבור דרך Home ← Play."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "ranked-entry-type-ratings",
+   "result": "partial",
+   "summary": "אין דירוג בשורות 2/3/4 ובטקסט ו'מצא יריב' תקינים; 'רגיל'/'קשה' 1200 זמני, אבל 'מהיר' 1048 בלי זמני (החשבון כבר שיחק). 1200/זמני בכל הכרטיסים דורש חשבון חדש: נשאר למשה"
+  },
+  {
+   "taskId": "ranked-four-type-and-search",
+   "result": "pass",
+   "summary": "הטקסט '…המשחק מתחיל כשהשולחן מלא.' ו'מצא יריבים'; 'מחפש יריבים…', התג, 3 מקומות עם 'מחפש…' ▲■◆, 0/3, והודעת 'כרגע אין מספיק שחקנים' עם 'שחק מול בוט בינתיים' (המקומות נראים במלואם רק בגלילה)"
+  },
+  {
+   "taskId": "ranked-duel-opponent-card",
+   "result": "pass",
+   "summary": "מול הבוט הסמוי: 'נמצא יריב!' Ofek_92, פיראט, 🇮🇱, 1200; בכרטיס במשחק אותו אווטר, דגל ודירוג"
+  },
+  {
+   "taskId": "ranked-duel-surrender-home",
+   "result": "pass",
+   "summary": "כניעה באמצע: בתוצאות 1048→1039, ובבית 'מהיר' 1039"
+  },
+  {
+   "taskId": "ranked-duel-home-immediate",
+   "result": "pass",
+   "summary": "'לבית' מיד: 1039 בבית מהשנייה הראשונה ובמשך 10 שניות, בלי חזרה ל־1048"
+  },
+  {
+   "taskId": "ranked-duel-home-progress",
+   "result": "pass",
+   "summary": "משחקים 56→57, XP ⁦719→739⁩, ניצחונות 21%, רצף 0, בלי הפעלה מחדש"
+  },
+  {
+   "taskId": "ranked-duel-results-background",
+   "result": "pass",
+   "summary": "HOME ל־30 שניות במסך התוצאות (1039→1030), חזרה ו'לבית': בבית 'מהיר' 1030"
+  },
+  {
+   "taskId": "ranked-duel-gametype-new-rating",
+   "result": "pass",
+   "summary": "אחרי המשחק, בכרטיס 'מהיר' במסך סוג משחק: 'הדירוג שלך' 1030"
+  },
+  {
+   "taskId": "ranked-end-i-surrender-my-lock-5x",
+   "result": "pass",
+   "summary": "5 כניעות עם משבצת נעולה: בכל פעם הדיאלוג נעלם, הלוח נשאר, ואז 'הפסד'; 'לבית' עבד ולא הופיע 'המסך לא נטען'. במעבר יש פריים רקע אחת של כ־0.6 שניות"
+  },
+  {
+   "taskId": "game-practice-bot-no-button",
+   "result": "pass",
+   "summary": "אין 'הפרעה' בכרטיס Overlord בהתחלה וגם עם 25 נקודות; הקשה על השורה התחתונה לא פתחה חלון"
+  },
+  {
+   "taskId": "game-practice-background-bot",
+   "result": "pass",
+   "summary": "47 נקודות לפני HOME; בחזרה 'ממשיכים בעוד' 3…; אחר כך אותו ניקוד ואותו לוח, והבוט המשיך לשחק"
+  },
+  {
+   "taskId": "game-reactions-bot",
+   "result": "pass",
+   "summary": "😂 עלה מכרטיס Overlord כ־1.8 שניות אחרי ספרה שגויה"
+  },
+  {
+   "taskId": "game-reactions-mute",
+   "result": "pass",
+   "summary": "בתפריט רק 'השתק תגובות'; אחרי השתקה ו־3 טעויות לא הייתה תגובה; 'בטל השתקה', ואז 😂 חזר"
+  },
+  {
+   "taskId": "game-practice-bot-no-hits",
+   "result": "pass",
+   "summary": "משחק Overlord שלם עד התוצאות, צילום כל 4 שניות: אין באנר, אין החשכה ואין אפקט"
+  },
+  {
+   "taskId": "interference-where-bot-select",
+   "result": "pass",
+   "summary": "5 כרטיסי הבוטים וההסבר נקראו בגלילה: אין 'הפרעה' ואין 'הפרעות'"
+  },
+  {
+   "taskId": "interference-where-bot-no-button",
+   "result": "pass",
+   "summary": "בכרטיס Overlord אין כפתור 'הפרעה'"
+  },
+  {
+   "taskId": "interference-where-bot-never",
+   "result": "pass",
+   "summary": "3 משחקי Overlord עד הסוף בלי באנר ובלי החשכה, כולל כדקה וחצי שבה הובלתי (37 מול ⁦−0.5⁩)"
+  },
+  {
+   "taskId": "avatars-look-sad-sleepy-sizes",
+   "result": "partial",
+   "summary": "בכרטיס של 2 שחקנים: עצב (פה עצוב) אחרי טעות, וישנוניות (עפעפיים כבדים) אחרי 25 שניות. חצי 3 השחקנים דורש fake-client עם טוקן: נשאר למשה"
+  },
+  {
+   "taskId": "interference-where-bot-from-search",
+   "result": "untested",
+   "summary": "הבוט הסמוי מצטרף לחיפוש 'קשה' אחרי כ־10 שניות, לפני ההודעה, ולכן אי אפשר להגיע ל'שחק מול בוט בינתיים'. נשאר למשה (צריך לכבות את הבוט הסמוי)"
+  },
+  {
+   "taskId": "game-practice-bot-card",
+   "result": "pass",
+   "summary": "מימין ● 'אני' 🇮🇱 עם 'סיום אימון' ו'תגובות' (אייקונים), VS, משמאל ינשוף Mr. Hoot עם '3 · מתקדם', בלי דירוג"
+  },
+  {
+   "taskId": "game-practice-bot-lead",
+   "result": "pass",
+   "summary": "'שוויון' בהתחלה; ⁦+1⁩ בתכלת בצד שלי כשהובלתי; כשהבוט עבר, ⁦+5.5⁩ בכתום"
+  },
+  {
+   "taskId": "game-moves-no-streak",
+   "result": "pass",
+   "summary": "4 ספרות נכונות ברצף: אין 'רצף' בשום מקום"
+  },
+  {
+   "taskId": "game-reactions-picker",
+   "result": "pass",
+   "summary": "שורה של 😂 😱 😎 🤦 🔥 👀 מתחת לכרטיס שלי; הקשה שנייה סגרה אותה בלי לשלוח"
+  },
+  {
+   "taskId": "game-reactions-send-self",
+   "result": "pass",
+   "summary": "🔥 עלה מהאווטר שלי ונעלם תוך כ־1.2 שניות, בלי לכסות את הלוח (הפחתת תנועה כבויה)"
+  },
+  {
+   "taskId": "game-reactions-cooldown",
+   "result": "pass",
+   "summary": "אחרי 😎 הכפתור עמום ולא נפתח בהקשה מיידית; אחרי כ־3.5 שניות נפתח"
+  },
+  {
+   "taskId": "game-surrender-bot-confirm",
+   "result": "pass",
+   "summary": "3 ריצות: 'סיום אימון' ← 'כן, לסיים' ← 'הפסד' עם 'סיימת את האימון לפני שהלוח התמלא' ו'אימון: אין שינוי בדירוג' (בתחתית הגלילה); אף פעם לא 'המסך לא נטען'"
+  },
+  {
+   "taskId": "general-background-awake-font",
+   "result": "pass",
+   "summary": "font_scale שונה ל־1.15 כשהאפליקציה ברקע, ואחרי החזרה המסך נשאר Awake כל 30 השניות. 'השאר דלוק בזמן טעינה' כובה זמנית והוחזר."
+  },
+  {
+   "taskId": "general-background-awake",
+   "result": "pass",
+   "summary": "בבית, במשחק חדש, באמצע אימון לבד ובחיפוש מדורג: Awake 30 שניות. ברקע המסך עבר ל־Dozing אחרי 15 שניות. נבדק עם stay_on_while_plugged_in=0 זמנית."
+  },
+  {
+   "taskId": "postgame-replay-english",
+   "result": "pass",
+   "summary": "Replay של אימון מול Pip, 13 שלבים: כל הטקסט באנגלית בלי עברית, הלוח משמאל לימין עם שמות כמו B1, ויש Key moments ו־An explanation for every player."
+  },
+  {
+   "taskId": "postgame-history-english",
+   "result": "pass",
+   "summary": "History עם All, Ranked ו־Practice באנגלית (עברית רק בשמות). במדורג הניקוד שלי משמאל, והשינוי מוצג '−12' עם הסימן במקום."
+  },
+  {
+   "taskId": "game-online-2p-cards-en",
+   "result": "pass",
+   "summary": "מדורג באנגלית מול הבוט הסמוי: Me משמאל, הלוח והמקלדת משמאל לימין, 'Your cell A2' מעל הלוח ו־'Cancel selection' מתחת. אין עברית מלבד שם היריב."
+  },
+  {
+   "taskId": "postgame-leaderboard-english",
+   "result": "partial",
+   "summary": "הטקסט באנגלית ומשמאל לימין, אבל גם בגודל רגיל השורה הקבועה שלי מציגה 'Level 6' מתחת לתג 'Provisional', והם עולים זה על זה."
+  },
+  {
+   "taskId": "postgame-progress-english",
+   "result": "pass",
+   "summary": "Achievements & progress, League, How to earn XP, Player card, Battle stats ו־'Playing since October 2026' באנגלית ומשמאל לימין."
+  },
+  {
+   "taskId": "general-display-small-big-font",
+   "result": "fail",
+   "summary": "ב־360dp ובפונט 1.3 אין גלילה לרוחב, אבל יש הרבה טקסט חתוך ושני מקומות של טקסט על טקסט: בעברית 'זמני' על 'רמה 6', ובאנגלית 'Level' על 'Provisional'. מילים נשברות באמצע ('No mis/takes', 'Mistak es'). חדר עם חברים לא נבדק."
+  },
+  {
+   "taskId": "general-sr-names",
+   "result": "partial",
+   "summary": "לפי ה־dump יש שם ברור כמעט לכל כפתור, באנגלית ובעברית. חריג: אווטר היריב בכרטיס מדורג בהיסטוריה לחיץ ובלי שם (NAF). לא נבדק עם TalkBack, וחדר עם חברים לא נבדק."
+  },
+  {
+   "taskId": "general-lang-no-hebrew",
+   "result": "pass",
+   "summary": "באנגלית יש 'New room' ו־'Join with code'. אין עברית (מלבד שמות) בכל המסכים, החלונות ודף הדפדפן שנבדקו, והכל משמאל לימין. New room לא נפתח, כי זה אסור בנתיב."
+  }
+ ],
+ "deferred": [
+  {
+   "taskId": "interference-picker-ltr-en",
+   "why": "צריך חדר עם חברים ואת טלפון 1 (Phase C עבר ל־netfr-english-room-freeze-abandon). בנתיב הזה אסור ליצור חדר או להצטרף לחדר."
+  }
+ ],
+ "missing": []
+}

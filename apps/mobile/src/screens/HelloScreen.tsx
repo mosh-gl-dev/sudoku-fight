@@ -105,7 +105,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: space[8],
-    backgroundColor: color.bg,
   },
   title: { ...text('screenTitle'), color: color.text },
   canvas: { width: 80, height: 80 },

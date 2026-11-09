@@ -8,7 +8,15 @@ import {
   type PlayerStatus,
 } from '@sudoku-fight/engine';
 
-import { type AvatarId, type CountryCode, isAvatarId, isCountryCode } from './account';
+import {
+  avatarIdForCatalog,
+  type AvatarId,
+  type CountryCode,
+  isAvatarId,
+  isCountryCode,
+  NO_AVATAR_ID,
+  normalizeAvatarId,
+} from './account';
 
 /**
  * Game history and replays over HTTP (spec §13, §14.1, §19, §21; work plan stage 11): the contract between
@@ -201,4 +209,50 @@ export function isReplayAnswer(v: unknown): v is ReplayAnswer {
   if (!isRecord(v) || !isHistoryGame(v.game) || !Array.isArray(v.events)) return false;
   const first: unknown = v.events[0];
   return v.events.every(isEventLike) && isRecord(first) && first.type === 'gameCreated';
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Avatars the app does not know (account.ts AVATAR_CATALOG_HEADER)
+
+/** A seat's avatar as this app can show it: an old one as its replacement, one it does not know as none. */
+const shownAvatar = (v: string): AvatarId | null => {
+  const id = normalizeAvatarId(v);
+  return id === NO_AVATAR_ID ? null : id;
+};
+/** A game as it came, with each seat's avatar id read through shownAvatar (the rest as it was). */
+function withKnownAvatars(game: unknown): unknown {
+  if (!isRecord(game) || !Array.isArray(game.players)) return game;
+  return {
+    ...game,
+    players: game.players.map((p: unknown) =>
+      isRecord(p) && typeof p.avatarId === 'string' ? { ...p, avatarId: shownAvatar(p.avatarId) } : p,
+    ),
+  };
+}
+
+/**
+ * A history page from the server, or null. A seat whose avatar this app does not know (a newer app's, or one
+ * of a newer catalog) shows no avatar: an app before this one refused the whole page over it.
+ */
+export function readHistoryPage(v: unknown): HistoryPage | null {
+  const page = isRecord(v) && Array.isArray(v.games) ? { ...v, games: v.games.map(withKnownAvatars) } : v;
+  return isHistoryPage(page) ? page : null;
+}
+
+/** A replay from the server, or null; its seats' avatars read as readHistoryPage reads them. */
+export function readReplayAnswer(v: unknown): ReplayAnswer | null {
+  const answer = isRecord(v) ? { ...v, game: withKnownAvatars(v.game) } : v;
+  return isReplayAnswer(answer) ? answer : null;
+}
+
+/** A game as an app of that catalog can show it (the server's side): an avatar it does not know as none. */
+export function historyGameForCatalog(game: HistoryGame, catalog: number): HistoryGame {
+  return {
+    ...game,
+    players: game.players.map((p) => {
+      if (p.avatarId === null) return p;
+      const id = avatarIdForCatalog(p.avatarId, catalog);
+      return id === p.avatarId ? p : { ...p, avatarId: id === NO_AVATAR_ID ? null : id };
+    }),
+  };
 }

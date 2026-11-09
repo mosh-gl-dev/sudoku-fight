@@ -63,6 +63,9 @@
     "title": "Nueva partida",
     "footnote": "Las clasificatorias necesitan conexión a internet · La práctica siempre está disponible",
     "soon": "Pronto",
+    "needsConnection": {
+      "rankedAndFriends": "Clasificatorias y con amigos"
+    },
     "groups": {
       "ranked": {
         "title": "Clasificatorias",
@@ -81,7 +84,7 @@
     "chips": {
       "rated": "Con puntuación",
       "unrated": "Sin puntuación",
-      "offline": "Funciona sin conexión"
+      "offline": "Sin conexión"
     },
     "ranked": {
       "name": "Clasificatoria"
@@ -121,7 +124,7 @@
       "taglineNew_many": "{{total}} de fases cortas · 0–3 estrellas",
       "taglineNew_other": "{{total}} fases cortas · 0–3 estrellas",
       "chip": "Fase {{stage}} ·",
-      "offline": "Sin red",
+      "offline": "Sin conexión",
       "chipLabel_one": "Fase {{stage}} · 1 estrella",
       "chipLabel_many": "Fase {{stage}} · {{count}} de estrellas",
       "chipLabel_other": "Fase {{stage}} · {{count}} estrellas",

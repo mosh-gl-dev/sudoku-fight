@@ -26,12 +26,17 @@ import { keysOf, type ProgressSettings } from './settings';
  *   page come from two counts at its first rating, read through the leaderboard indexes
  *   (ratings_board_idx, ratings_general_idx: rated games only, rating descending, then user id).
  * - My row (pinned at the bottom) is my place in the same board, wherever it is, with my exact rank.
- * - The friends tab [D27, V1]: my recent opponents (opponent_history: the last time we met, newest first),
- *   live accounts only, each with their 'general' row; and the invite link (INVITE_URL, null when unset).
+ * - The friends tab [D27, V1] (original §34: "דירוג חברים"): my recent opponents (opponent_history: the
+ *   RECENT_OPPONENTS I met last), live accounts only, each with their 'general' row, by rating, best first
+ *   (equal ratings: the one met last first), and the invite link (INVITE_URL, null when unset). My own
+ *   'general' row is pinned. The places go by settings.friendsPlaces (FRIENDS_PLACES) [D99]:
+ *   - 'global' (the default, D99 as approved): each one's place on the general board of people, and mine there.
+ *   - 'among' (QA loop 7, awaiting Moshe's OK): places among the opponents listed and me, "1224", and mine in
+ *     that list. The global places repeat ("#2, #2, #3 x8") when personas, which count in no rank, are listed.
  * - A stealth bot's personas (stealth-bot.md §6) [D99] are on no board, and count in no rank: the boards are
  *   of people (original §34: "שחקנים מובילים"), and a persona would push them down. On the friends tab a
- *   persona I met is shown like any opponent, with the rank its rating would have among the people (leaving it
- *   out there would give it away).
+ *   persona I met is shown like any opponent (leaving it out there would give it away): under 'global' with
+ *   the place its rating would have among the people.
  */
 
 /** Recent opponents on the friends tab. */
@@ -215,11 +220,19 @@ async function generalRowsOf(
   return found;
 }
 
+/**
+ * Places in a small list, "1224": 1 + the ratings above. Ranks the friends tab: my recent opponents and me.
+ */
+function placesAmong(ratings: readonly number[]): number[] {
+  return ratings.map((rating) => 1 + ratings.filter((other) => other > rating).length);
+}
+
 async function friendsOf(
   db: Db,
   me: string,
+  mine: LeaderboardEntry | null,
   settings: ProgressSettings,
-): Promise<NonNullable<Leaderboard['friends']>> {
+): Promise<{ friends: NonNullable<Leaderboard['friends']>; me: LeaderboardEntry | null }> {
   const opponents = await queryRows<{ userId: string }>(
     db,
     sql`select o.opponent_id as "userId"
@@ -230,21 +243,39 @@ async function friendsOf(
         limit ${RECENT_OPPONENTS}`,
   );
   const ids = opponents.map((o) => o.userId);
-  const keys = keysOf(settings);
-  const board: Board = { kind: 'general', keys };
-  const [players, rows] = await Promise.all([publicPlayers(db, ids, settings), generalRowsOf(db, ids, keys)]);
-  // One rank count per distinct rating, all at once (not one round trip after another for 20 opponents).
-  const ratingsToRank = [...new Set([...rows.values()].map((r) => r.rating))];
-  const rankList = await Promise.all(ratingsToRank.map((rating) => rankAt(db, board, rating)));
-  const rankOf = new Map(ratingsToRank.map((rating, i) => [rating, rankList[i]!]));
-  const recentOpponents: LeaderboardEntry[] = [];
+  const { inviteUrl } = settings;
+  const [players, rows] = await Promise.all([
+    publicPlayers(db, ids, settings),
+    generalRowsOf(db, ids, keysOf(settings)),
+  ]);
+  const listed: { player: PublicPlayer; row: BoardRow }[] = [];
   for (const id of ids) {
     const player = players.get(id);
     const row = rows.get(id);
-    if (player === undefined || row === undefined) continue;
-    recentOpponents.push(entryOf(player, row, rankOf.get(row.rating)!));
+    if (player !== undefined && row !== undefined) listed.push({ player, row });
   }
-  return { recentOpponents, inviteUrl: settings.inviteUrl };
+  // Best first; a stable sort keeps the one met last first among equal ratings.
+  listed.sort((a, b) => b.row.rating - a.row.rating);
+  const ratings = listed.map((o) => o.row.rating);
+  if (settings.friendsPlaces === 'among') {
+    const places = placesAmong([...ratings, ...(mine === null ? [] : [mine.rating])]);
+    return {
+      friends: { recentOpponents: listed.map((o, i) => entryOf(o.player, o.row, places[i]!)), inviteUrl },
+      me: mine === null ? null : { ...mine, rank: places[listed.length]! },
+    };
+  }
+  // 'global': one rank count per distinct rating, all at once (not one round trip after another).
+  const board: Board = { kind: 'general', keys: keysOf(settings) };
+  const distinct = [...new Set(ratings)];
+  const ranks = await Promise.all(distinct.map((rating) => rankAt(db, board, rating)));
+  const rankOf = new Map(distinct.map((rating, i) => [rating, ranks[i]!]));
+  return {
+    friends: {
+      recentOpponents: listed.map((o) => entryOf(o.player, o.row, rankOf.get(o.row.rating)!)),
+      inviteUrl,
+    },
+    me: mine,
+  };
 }
 
 /** GET /v1/leaderboard for the live account `me`. */
@@ -258,10 +289,7 @@ export async function readLeaderboard(
   const { board, key, players } = boardFor(query.tab, query.players, settings);
   if (board === null) {
     const general: Board = { kind: 'general', keys: keysOf(settings) };
-    const [friends, mine] = await Promise.all([
-      friendsOf(db, me, settings),
-      myEntry(db, general, me, settings),
-    ]);
+    const { friends, me: mine } = await friendsOf(db, me, await myEntry(db, general, me, settings), settings);
     return {
       tab: 'friends',
       ratingKey: null,

@@ -234,4 +234,20 @@ describe('WarpFrame', () => {
     await render(frame({ hit: warp, reduce: true }));
     expect(await transform()).toEqual(warpTransform(warpStill(true, 'screen')));
   });
+
+  // QA loop 8 (interference-hit-warp-look): at the start of a warp the content vanished for ~160 ms, then stood
+  // still without banner or dim. The content's transform now stays as it was while the hit mounts and its
+  // banner and dim fade in (HIT_FADE_IN_MS, 240 ms); the tilt comes after them.
+  it('keeps the content straight until the banner and the dim are in, then tilts', async () => {
+    // 100 ms into the hit: the old frame was already tilting (a = 100 / 240).
+    const { rerender } = await render(frame({ hit: { ...warp, endsAt: clock.now() + 4900 } }));
+    expect(await transform()).toEqual(warpTransform(NO_WARP));
+    // The same with reduced motion: its still tilt comes after the (reduced) fade-in too.
+    await rerender(frame({ hit: { ...warp, endsAt: clock.now() + 4900 }, reduce: true }));
+    expect(await transform()).toEqual(warpTransform(NO_WARP));
+    // A hit that reaches me 600 ms into its time (after the one above ended): the tilt is in.
+    await rerender(frame({ hit: null }));
+    await rerender(frame({ hit: { ...warp, endsAt: clock.now() + 4400 } }));
+    await expectPose(600, 'screen');
+  });
 });

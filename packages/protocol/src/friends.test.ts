@@ -15,6 +15,7 @@ import {
   FRIENDS_ROOM_NAME,
   friendsErrorOf,
   friendsJoinResultOf,
+  friendRoomTicketForCatalog,
   friendsLobbyCommandOf,
   type FriendRoomTicket,
   formatFriendCode,
@@ -23,6 +24,7 @@ import {
   gameRoomErrorOf,
   isFriendCode,
   isFriendRoomTicket,
+  readFriendRoomTicket,
   type LobbyPlayer,
   MATCHMAKING_ROOM_NAME,
   normalizeFriendCode,
@@ -281,6 +283,28 @@ describe('the HTTP answers', () => {
       { ...ticket, room: { ...ticket.room, host: null } },
     ])
       expect(isFriendRoomTicket(bad)).toBe(false);
+  });
+
+  it('reads a host whose avatar this app does not know as none, instead of refusing the room', () => {
+    const newer = {
+      ...ticket,
+      room: { ...ticket.room, host: { ...ticket.room.host, avatarId: 'dragons-2-house' } },
+    };
+    expect(isFriendRoomTicket(newer)).toBe(false);
+    expect(readFriendRoomTicket(newer)?.room.host.avatarId).toBe('av00');
+    expect(readFriendRoomTicket(ticket)).toEqual(ticket);
+    expect(readFriendRoomTicket({ ...ticket, room: { ...ticket.room, players: 5 } })).toBeNull();
+    expect(readFriendRoomTicket(null)).toBeNull();
+  });
+
+  it('gives an app of an older avatar catalog none for a host it does not know (the server side)', () => {
+    const pirate: FriendRoomTicket = {
+      ...ticket,
+      room: { ...ticket.room, host: { ...ticket.room.host, avatarId: 'pirates-9-invested' } },
+    };
+    expect(friendRoomTicketForCatalog(pirate, 1).room.host.avatarId).toBe('av00');
+    expect(friendRoomTicketForCatalog(pirate, 2)).toBe(pirate);
+    expect(friendRoomTicketForCatalog(ticket, 1)).toBe(ticket);
   });
 });
 

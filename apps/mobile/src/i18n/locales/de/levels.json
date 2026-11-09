@@ -301,6 +301,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "das Tor braucht {{need}}",
     "chapterOpen": "das Tor ist offen",
+    "chapterNeedSentence": "Das Tor braucht {{need}}",
+    "chapterOpenSentence": "Das Tor ist offen",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Dieses Kapitel: 1 Stern von {{max}}. {{gate}}",
     "chapterLine_other": "Dieses Kapitel: {{stars}} Sterne von {{max}}. {{gate}}",
@@ -347,6 +349,8 @@
     "button": "Etappe verlassen",
     "title": "Etappe verlassen?",
     "body": "Du bekommst 0 Sterne, und die nächste Etappe öffnet sich.",
+    "bodyLocked": "Du bekommst 0 Sterne, und die nächste Etappe bleibt gesperrt.",
+    "bodyLast": "Du bekommst 0 Sterne.",
     "confirm": "Verlassen",
     "cancel": "Weiterspielen"
   },

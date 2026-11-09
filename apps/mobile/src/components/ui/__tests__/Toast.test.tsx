@@ -90,7 +90,7 @@ describe('Toast', () => {
       <Toast variant="success" message="חזרת למשחק. הלוח והניקוד סונכרנו" timer={manualTimer().timer} />,
     );
     const toast = screen.getByRole('status', { name: 'חזרת למשחק. הלוח והניקוד סונכרנו' });
-    expect(styleOf(toast)).toMatchObject({ height: size.toast, borderColor: color.toast.border.success });
+    expect(styleOf(toast)).toMatchObject({ minHeight: size.toast, borderColor: color.toast.border.success });
     expect(screen.getByTestId('icon-check', { includeHiddenElements: true })).toBeOnTheScreen();
   });
 

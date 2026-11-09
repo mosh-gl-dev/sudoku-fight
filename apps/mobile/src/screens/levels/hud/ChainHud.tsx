@@ -7,7 +7,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } fro
 import { boardGeometry, cellRect } from '../../../components/board/geometry';
 import { Icon } from '../../../components/Icon';
 import { StarsBar } from '../../../components/levels/StarsBar';
-import { secondsOf, signedText } from '../../../components/player/format';
+import { clockLabelSeconds, secondsOf, signedText } from '../../../components/player/format';
 import { timing } from '../../../components/ui/motion';
 import { Text } from '../../../components/ui/Text';
 import { useToast } from '../../../components/ui/toastStore';
@@ -176,8 +176,8 @@ export function ChainHud({ level, view, now, notYet, tip, onExit, style }: Chain
             accessible
             accessibilityRole="timer"
             accessibilityLabel={t('hud.chain.timeLabel', {
-              count: secondsOf(elapsedMs),
-              s: secondsOf(elapsedMs),
+              count: clockLabelSeconds(elapsedMs, 'elapsed'),
+              s: clockLabelSeconds(elapsedMs, 'elapsed'),
               limit: secondsOf(limit),
             })}
             testID="chain-clock"

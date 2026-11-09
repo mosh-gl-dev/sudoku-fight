@@ -61,7 +61,7 @@
     "locking_female": "Seçiyor",
     "turn": "Sıra onda",
     "turn_female": "Sıra onda",
-    "paused": "Duraklatıldı",
+    "paused": "Durdu",
     "thinking": "Düşünüyor",
     "thinking_female": "Düşünüyor",
     "reconnecting": "Yeniden bağlanıyor",
@@ -84,7 +84,7 @@
     "reactions": "Tepkiler"
   },
   "interfere": {
-    "button": "Sabote et",
+    "button": "Baltala",
     "label": "{{name}} adlı oyuncuyu sabote et · bedeli {{cost}} puan",
     "labelMissing": "{{name}} adlı oyuncuyu sabote et · {{count}} puan eksik",
     "labelBusy": "{{name}} adlı oyuncu şu an sabote edilemez, zaten sabotaj altında",

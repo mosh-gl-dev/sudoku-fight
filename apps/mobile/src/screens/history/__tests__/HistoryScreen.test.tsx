@@ -38,9 +38,10 @@ const cardIds = () =>
     .map((b) => b.props.testID as string | undefined)
     .filter((id): id is string => !!id && id.startsWith('history-card-'));
 
+// The answers, and the frames a swapped list waits for (HistoryScreen `pick`, `run`; a frame is a timer under Jest).
 const settle = () =>
   act(async () => {
-    await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 const ranked = rankedDuel('ranked-1', T0 + 10 * MIN);
@@ -194,8 +195,15 @@ describe('stage 12: a ranked game’s opponent opens their player card', () => {
       />,
     );
     await settle();
-    await fireEvent.press(screen.getByTestId('history-card-ranked-1-player-nina'));
+    // Loop 7: the avatar is a touch target only. Screen readers skip it (the card's action below does the
+    // same); with accessible={false} alone it stayed focusable, an unlabelled button for TalkBack.
+    const avatar = screen.getByTestId('history-card-ranked-1-player-nina', { includeHiddenElements: true });
+    await fireEvent.press(avatar);
     expect(onOpenPlayer).toHaveBeenCalledWith('nina', 'ranked-1');
+    expect(avatar).toHaveProp('focusable', false);
+    expect(avatar).toHaveProp('importantForAccessibility', 'no-hide-descendants');
+    expect(avatar).toHaveProp('accessibilityElementsHidden', true);
+    expect(screen.queryByTestId('history-card-ranked-1-player-nina')).toBeNull();
     const card = screen.getByTestId('history-card-ranked-1');
     expect(card).toHaveProp('accessibilityActions', [
       { name: 'player:nina', label: 'כרטיס השחקן של NinaVolt' },
@@ -205,7 +213,7 @@ describe('stage 12: a ranked game’s opponent opens their player card', () => {
     });
     expect(onOpenPlayer).toHaveBeenCalledTimes(2);
     expect(onOpenPlayer).toHaveBeenLastCalledWith('nina', 'ranked-1');
-    expect(screen.queryByTestId(/^history-card-bot-1-player-/)).toBeNull();
+    expect(screen.queryByTestId(/^history-card-bot-1-player-/, { includeHiddenElements: true })).toBeNull();
     expect(screen.getByTestId('history-card-bot-1')).not.toHaveProp(
       'accessibilityActions',
       expect.anything(),

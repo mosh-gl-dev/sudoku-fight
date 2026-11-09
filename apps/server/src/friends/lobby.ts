@@ -41,6 +41,12 @@ export interface LobbyMember {
   country: CountryCode | null;
   /** The general rating; null before any rated game. */
   rating: number | null;
+  /**
+   * The rating in each game type the player has a rated game of (the best of its keys under RATING_OPTION
+   * 'A'). With it, a seat shows the rating of the room's game type, and follows the host's `setGameType`;
+   * without it (an older card), the general rating.
+   */
+  ratings?: Partial<Record<GameType, number>>;
 }
 
 interface Seat extends LobbyMember {
@@ -148,7 +154,7 @@ export class FriendsLobby {
       name: s.name,
       avatarId: s.avatarId,
       country: s.country,
-      rating: s.rating,
+      rating: s.ratings === undefined ? s.rating : (s.ratings[this.type] ?? null),
       away: s.awayUntil !== null,
     }));
   }

@@ -273,10 +273,16 @@ export interface AppConfigEnv extends EasBuild {
    */
   allowCleartext?: string | undefined;
   /**
-   * SF_LOCAL_APK: "1" from `npm run apk` (scripts/build-apk.mjs), whose APK is signed with React Native's template
-   * debug key (TEMPLATE_DEBUG_KEY_SHA1). Google sign-in then works only if Firebase lists that key.
+   * SF_LOCAL_APK: "1" from `npm run apk` (scripts/build-apk.mjs), whose APK is signed with this PC's own key
+   * (~/.sudoku-fight/apk-key). Google sign-in then works only if Firebase lists that key.
    */
   localApk?: string | undefined;
+  /**
+   * SF_LOCAL_APK_SHA1, from `npm run apk` too: the SHA-1 of the key the installed app is signed with. That
+   * key's, or the one of the key that signs the APK again after the build (`--resign-sha1`; the QA phones' app
+   * has the template debug key's signature).
+   */
+  localApkSha1?: string | undefined;
 }
 
 /**
@@ -297,7 +303,7 @@ const isLocalBuild = (build: EasBuild): boolean => build.easBuild !== 'true';
 export const allowsCleartext = (env: AppConfigEnv): boolean =>
   env.allowCleartext === '1' && isLocalBuild(env);
 
-/** An APK of `npm run apk` (signed with the template debug key); never a build on EAS's servers. */
+/** An APK of `npm run apk` (signed with this PC's key); never a build on EAS's servers. */
 export const isLocalApk = (env: AppConfigEnv): boolean => env.localApk === '1' && isLocalBuild(env);
 
 /**
@@ -315,10 +321,10 @@ const OAUTH_CLIENT_ID = /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/;
 
 /**
  * The SHA-1 of the debug key in React Native's project template (android/app/debug.keystore, alias
- * androiddebugkey), which signs the APKs of `npm run apk`. That key is public: it is the same in every React
- * Native project. While Firebase lists it for this package, anyone can sign an APK named com.mosheg.sudokufight
- * with it, have someone install it, and receive the Firebase session of every Google sign-in made in it. Fine
- * for test phones; a store build refuses it (assertStoreBuildWithoutDebugKey).
+ * androiddebugkey), which signed the APKs of `npm run apk` until 2026-10-30 (now this PC's own key does). That
+ * key is public: it is the same in every React Native project. While Firebase lists it for this package, anyone
+ * can sign an APK named com.mosheg.sudokufight with it, have someone install it, and receive the Firebase session
+ * of every Google sign-in made in it. A store build refuses it (assertStoreBuildWithoutDebugKey).
  */
 export const TEMPLATE_DEBUG_KEY_SHA1 = '5e8f16062ea3cd2c4a0d547876baa6f38cabf625';
 
@@ -334,11 +340,13 @@ export interface GoogleSignInSetup {
    * app. With none, Google answers every sign-in with DEVELOPER_ERROR, so the app shows no Google button.
    */
   androidClients: number;
+  /** The SHA-1 of each of them (lower-case hex), so a build that knows its key can look for it. */
+  sha1s: string[];
   /** One of them is for the template debug key (TEMPLATE_DEBUG_KEY_SHA1). */
   debugKey: boolean;
 }
 
-const NO_GOOGLE: GoogleSignInSetup = { webClientId: null, androidClients: 0, debugKey: false };
+const NO_GOOGLE: GoogleSignInSetup = { webClientId: null, androidClients: 0, sha1s: [], debugKey: false };
 
 /** A certificate hash as Firebase writes it (40 hex digits, lower case), whatever its case or colons. */
 const sha1Of = (hash: unknown): string =>
@@ -371,10 +379,12 @@ export function readGoogleSignIn(json: unknown, androidPackage: string | undefin
     .filter((c) => c.client_type === 1 && idOf(c) !== null)
     .map((c) => (isObject(c.android_info) ? c.android_info : {}))
     .filter((info) => info.package_name === androidPackage);
+  const sha1s = androidInfo.map((info) => sha1Of(info.certificate_hash));
   return {
     webClientId: web ? idOf(web) : null,
     androidClients: androidInfo.length,
-    debugKey: androidInfo.some((info) => sha1Of(info.certificate_hash) === TEMPLATE_DEBUG_KEY_SHA1),
+    sha1s,
+    debugKey: sha1s.includes(TEMPLATE_DEBUG_KEY_SHA1),
   };
 }
 
@@ -429,9 +439,13 @@ export function resolveAppConfig(
   const google = android ? readGoogleSignIn(readJson(android), base.android?.package) : NO_GOOGLE;
   assertStoreBuildWithoutDebugKey(env, google);
   // The key that signs the build must be one Firebase lists, or every Google sign-in ends in DEVELOPER_ERROR.
-  // An APK of `npm run apk` is signed with the template debug key; other builds (EAS's key, then Play's) can't
-  // be told apart in the file, so any Android client will do.
-  const signingKeyListed = isLocalApk(env) ? google.debugKey : google.androidClients > 0;
+  // An APK of `npm run apk` knows its key (SF_LOCAL_APK_SHA1: the one it is installed with, after any
+  // --resign-sha1); other builds (EAS's key, then Play's) can't be told apart in the file, so any Android
+  // client will do.
+  const localKey = sha1Of(env.localApkSha1);
+  const signingKeyListed = isLocalApk(env)
+    ? localKey !== '' && google.sha1s.includes(localKey)
+    : google.androidClients > 0;
   const googleSignIn: GoogleSignInExtra = {
     android: google.webClientId !== null && signingKeyListed,
     ios: false,
@@ -496,4 +510,5 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     },
     allowCleartext: process.env.SF_ALLOW_CLEARTEXT,
     localApk: process.env.SF_LOCAL_APK,
+    localApkSha1: process.env.SF_LOCAL_APK_SHA1,
   });

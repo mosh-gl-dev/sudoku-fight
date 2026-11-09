@@ -27,7 +27,7 @@ import { GoogleLogo } from './GoogleButton';
 import { errorMessage } from './messages';
 import { DevModeBadge, FormAlert, LinkButton } from './parts';
 
-type Step = null | 'signOut' | 'confirmDelete' | 'password' | 'google';
+type Step = null | 'signOut' | 'confirmDelete' | 'password' | 'google' | 'googleOff';
 
 /** Which "כניסה עם…" line the account gets. */
 const methodKey = (methods: readonly SignInMethod[]): 'both' | SignInMethod =>
@@ -44,6 +44,9 @@ const methodKey = (methods: readonly SignInMethod[]): 'both' | SignInMethod =>
  * Google), and the password otherwise. A Google account has no password to type, change or reset here. An
  * account with both may confirm with its password instead (a link in Google's dialog): Google sign-in can fail on
  * a phone without Play services, or in a build whose key Firebase doesn't list, and deletion must still work.
+ * An account with Google only, in a build without Google sign-in (an APK whose key Firebase doesn't list), has
+ * nothing to confirm with here: "מחיקת חשבון" says so and where it can be done, instead of asking for a password
+ * the account doesn't have (QA loop 3).
  */
 export function AccountSettings() {
   const { t } = useTranslation('account');
@@ -52,6 +55,8 @@ export function AccountSettings() {
   const googleBuild = useAuth((s) => s.google);
   const withGoogle = googleBuild && Boolean(methods?.includes('google'));
   const hasPassword = Boolean(methods?.includes('password'));
+  // Google only, and no Google sign-in in this build: no way to confirm a deletion here.
+  const cannotConfirm = !googleBuild && !hasPassword && Boolean(methods?.includes('google'));
   // Spec §3.5: a suspended account can't change its profile (the server answers 403 `suspended`).
   const suspended = useAuth((s) => isSuspended(s.me));
   const { t: tm } = useTranslation('moderation');
@@ -171,7 +176,7 @@ export function AccountSettings() {
         variant="danger"
         icon="trash"
         label={t('settings.deleteAccount')}
-        onPress={() => setStep('confirmDelete')}
+        onPress={() => setStep(cannotConfirm ? 'googleOff' : 'confirmDelete')}
         testID="settings-delete"
       />
 
@@ -257,6 +262,18 @@ export function AccountSettings() {
           ) : null}
         </View>
       </ConfirmModal>
+      <ConfirmModal
+        visible={step === 'googleOff'}
+        placement="center"
+        notice
+        icon="key"
+        title={t('settings.deleteGoogleOffTitle')}
+        body={t('settings.deleteGoogleOffBody')}
+        confirmLabel={t('settings.deleteGoogleOffOk')}
+        onConfirm={close}
+        onCancel={close}
+        testID="delete-google-off"
+      />
     </View>
   );
 }

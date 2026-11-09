@@ -4,7 +4,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AvatarArt, type AvatarIdOrNone, type AvatarReaction } from '../../avatars';
 import { color, text, tokens } from '../../theme';
-import { Text } from '../ui/Text';
+import { Text, type TextScale } from '../ui/Text';
 import type { Presence } from './cardModel';
 import { AVATAR_SIZES, type AvatarSize, metrics, paletteAt } from './metrics';
 
@@ -25,6 +25,12 @@ export interface AvatarProps {
   /** The colour behind the avatar, for the presence dot's ring. */
   backdrop?: string;
   bot?: boolean;
+  /**
+   * How far the bot chip's word grows with the system text size (BRD-3): the HUD's ×1.35 by default. 'board' on
+   * the compact card, whose chip shares the avatar's top with the place badge and only hid the picture when it
+   * grew (QA 2026-11-03: "בוט" and "#2" over Pip's face in the replay at the largest size).
+   */
+  botScale?: TextScale;
   /** The result badge of Home's recent games. */
   result?: GameResultKind | null;
   /** Reconnecting, left or surrendered: grayscale, dimmed, offline frame. */
@@ -34,6 +40,8 @@ export interface AvatarProps {
   reaction?: AvatarReaction | null;
   /** A stage view (where: avatars AVATAR_STAGES): idle gimmicks and the blink, while its screen is shown. */
   idle?: boolean;
+  /** Kept still, unseen, under another view: the picture stays exactly as it is drawn now (AvatarArt `frozen`). */
+  frozen?: boolean;
   /**
    * Alone on screen, the avatar speaks the player's name. Next to the name (almost always), leave it out and
    * the avatar is decorative.
@@ -51,11 +59,13 @@ export function Avatar({
   presence = null,
   backdrop = color.bg,
   bot = false,
+  botScale = 'hud',
   result = null,
   inactive = false,
   expression,
   reaction,
   idle = false,
+  frozen = false,
   label,
   style,
   testID,
@@ -101,6 +111,7 @@ export function Avatar({
           expression={expression}
           reaction={reaction}
           idle={idle}
+          frozen={frozen}
           inactive={inactive}
           testID={testID ? `${testID}-image` : undefined}
         />
@@ -123,8 +134,14 @@ export function Avatar({
       ) : null}
 
       {bot ? (
-        <View style={styles.botChip} testID="bot-chip">
-          <Text style={[metrics.botChip.text, styles.botText]}>{t('bot')}</Text>
+        // The chip sits in a room of its own, wider than the picture: placed on the avatar itself, it could be no
+        // wider than the avatar, and a longer word wrapped and lost its end ("ボッ", "בו" at a large text size).
+        <View style={styles.botRoom} pointerEvents="none">
+          <View style={styles.botChip} testID="bot-chip">
+            <Text scale={botScale} style={[metrics.botChip.text, styles.botText]} numberOfLines={1}>
+              {t('bot')}
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -136,6 +153,12 @@ export function Avatar({
     </View>
   );
 }
+
+/**
+ * The bot chip's room: its longest word ("机器人") at the HUD's largest text (×1.35, Text `scale="hud"`) with
+ * the chip's padding, and to spare.
+ */
+const BOT_ROOM = 96;
 
 /** The presence dot (components.md §2): green, amber while the connection is lost in its soft phase [D42], grey. */
 const PRESENCE_DOT = {
@@ -151,11 +174,15 @@ const styles = StyleSheet.create({
     end: metrics.presenceDot.offset,
     borderWidth: metrics.presenceDot.border,
   },
-  botChip: {
+  botRoom: {
     position: 'absolute',
     top: metrics.botChip.top,
     start: metrics.botChip.start,
-    height: metrics.botChip.height,
+    width: BOT_ROOM,
+    flexDirection: 'row',
+  },
+  botChip: {
+    minHeight: metrics.botChip.height,
     paddingHorizontal: metrics.botChip.paddingX,
     borderRadius: metrics.botChip.radius,
     backgroundColor: color.bg,

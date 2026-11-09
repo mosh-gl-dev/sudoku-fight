@@ -43,7 +43,9 @@ import { SAMPLE_LOCALES } from '../../testing/localeFiles';
 import i18n from '..';
 import {
   closeSentence,
+  closeSentences,
   dateFormat,
+  endsSentence,
   decimalSeparator,
   intlLocale,
   labelValue,
@@ -150,6 +152,31 @@ describe('the glue keys: Hebrew and English as the code wrote them', () => {
     expect(labelValue('スコア', '8', ja)).toBe('スコア：8');
     expect(parenthetical('NinaVolt', '自分', ja)).toBe('NinaVolt（自分）');
   });
+
+  it('closeSentences: a part that is no sentence yet gets its stop, so two never run together (QA, Japanese)', () => {
+    const ja = japanese();
+    // The replay card's label ran "5ではなく1" into "1が入らない理由…" as "5ではなく11が入らない理由…".
+    expect(
+      closeSentences(['…よって7です。', '5ではなく1', '1が入らない理由：同じ行に1があります。'], ja),
+    ).toBe('…よって7です。5ではなく1。1が入らない理由：同じ行に1があります。');
+    expect(
+      closeSentences([labelValue('得点', ltr('9 − 5 = 4'), ja), labelValue('ペナルティ', '3', ja)], ja),
+    ).toBe(`得点：${ltr('9 − 5 = 4')}。ペナルティ：3。`);
+    expect(
+      closeSentences(
+        ['So only 7.', null, '4 instead of 7', 'Why?', '', labelValue('The score', ltr('6'), en)],
+        en,
+      ),
+    ).toBe(`So only 7. 4 instead of 7. Why? The score: ${ltr('6')}.`);
+    expect(closeSentences(['לכן רק 7.', '4 במקום 7'], he)).toBe('לכן רק 7. 4 במקום 7.');
+  });
+
+  it('endsSentence: the last mark, in any script, past isolates and spaces', () => {
+    for (const text of ['Done.', 'Why?', 'Go!', 'Wait…', '完了。', 'لماذا؟', `D5 = ${ltr('7')}.`, 'Done. '])
+      expect({ text, ends: endsSentence(text) }).toEqual({ text, ends: true });
+    for (const text of ['4 instead of 7', `The score: ${ltr('9 − 5 = 4')}`, '5ではなく1', '', 'A: 3,'])
+      expect({ text, ends: endsSentence(text) }).toEqual({ text, ends: false });
+  });
 });
 
 describe('D108: numbers', () => {
@@ -224,10 +251,46 @@ describe('D108: dates, in the app language with Western digits', () => {
     expect(dateFormat('ar-XB', DAY).format(at)).not.toMatch(/[٠-٩]/);
   });
 
+  it('Thai: the Buddhist year where Intl takes the Gregorian calendar for plain "th" (Hermes on the phone, B2)', () => {
+    const NodeDateTimeFormat = Intl.DateTimeFormat;
+    // As Hermes did on the phone (QA run #2: "2 พฤศจิกายน 2026", "เล่นมาตั้งแต่ ตุลาคม 2026"): the Gregorian
+    // calendar unless the tag or the options name one.
+    const named = (locale: string, options?: Intl.DateTimeFormatOptions) =>
+      /-u-(?:[a-z0-9]+-)*?ca-/.test(locale) || options?.calendar !== undefined;
+    jest
+      .spyOn(Intl, 'DateTimeFormat')
+      .mockImplementation(
+        (locale?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions) =>
+          new NodeDateTimeFormat(
+            locale,
+            named(String(locale), options) ? options : { ...options, calendar: 'gregory' },
+          ),
+      );
+    try {
+      expect(new Intl.DateTimeFormat('th-u-nu-latn', MONTH).format(at)).toMatch(/2026/);
+      expect(intlLocale('th')).toBe('th-u-ca-buddhist-nu-latn');
+      for (const options of [...OPTIONS, { year: 'numeric', month: '2-digit', day: '2-digit' } as const])
+        expect(dateFormat('th', options).resolvedOptions().calendar).toBe('buddhist');
+      expect(dateFormat('th', MONTH).format(at)).toMatch(/2569/);
+      // The player card's "เล่นมาตั้งแต่ …" and the plurals screen's dates, through the same helper.
+      expect(monthYearText(at, 'th')).toMatch(/2569/);
+      expect(dateFormat('th', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(at)).toMatch(
+        /2569/,
+      );
+      // No other language changes calendar.
+      expect(dateFormat('en', MONTH).format(at)).toBe('October 2026');
+      expect(intlLocale('ar')).toBe('ar-u-nu-latn');
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
   it("D108's alternative (westernDigitsEverywhere off): the language alone, the system's digits", () => {
     jest.replaceProperty(I18N_CONFIG, 'westernDigitsEverywhere', false);
     expect(intlLocale('ar-SA')).toBe('ar-SA');
     expect(dateFormat('ar-SA', DAY).format(at)).toMatch(/[٠-٩]/);
+    // Thai keeps its calendar: that is not its digits.
+    expect(intlLocale('th')).toBe('th-u-ca-buddhist');
     jest.restoreAllMocks();
     expect(intlLocale('he')).toBe('he-u-nu-latn');
   });

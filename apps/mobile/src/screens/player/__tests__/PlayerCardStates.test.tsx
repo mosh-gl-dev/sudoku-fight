@@ -6,6 +6,7 @@ import { AccessibilityInfo } from 'react-native';
 
 import { ProgressApiError } from '../../../api/progressApi';
 import { card } from '../../../api/testing/fakeProgress';
+import { ltr } from '../../../components/player/format';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { PlayerCardScreen, type PlayerCardScreenProps } from '../PlayerCardScreen';
@@ -66,7 +67,9 @@ describe('player card states (stage 13)', () => {
     expect(screen.getByTestId('player-card-offline-body')).toHaveTextContent(
       'הכרטיס נטען מהשרת. נסה שוב כשיחזור החיבור.',
     );
-    expect(screen.getByTestId('player-card-offline-code')).toHaveAccessibleName('קוד שגיאה: timeout');
+    expect(screen.getByTestId('player-card-offline-code')).toHaveAccessibleName(
+      `קוד שגיאה: ${ltr('ERR_TIMEOUT')}`,
+    );
     expect(announce).toHaveBeenCalledWith('אין חיבור לשרת. הכרטיס נטען מהשרת. נסה שוב כשיחזור החיבור.');
     fail = false;
     await fireEvent.press(screen.getByRole('button', { name: 'נסה שוב' }));
@@ -82,7 +85,7 @@ describe('player card states (stage 13)', () => {
     expect(screen.getByTestId('player-card-error-body')).toHaveTextContent(
       'השרת לא הצליח לענות כרגע. נסה שוב בעוד רגע.',
     );
-    expect(screen.getByTestId('player-card-error-code')).toHaveTextContent('badRequest-400');
+    expect(screen.getByTestId('player-card-error-code')).toHaveTextContent(ltr('ERR_BAD_REQUEST · 400'));
   });
 
   it('a player who isn’t there: says so, with nothing to retry', async () => {
@@ -118,7 +121,7 @@ describe('player card states (stage 13)', () => {
     });
     expect(screen.getByTestId('player-card-offline-title')).toHaveTextContent('No connection to the server');
     expect(screen.getByTestId('player-card-offline-code')).toHaveAccessibleName(
-      'Error code: unavailable-503',
+      `Error code: ${ltr('ERR_UNAVAILABLE · 503')}`,
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeOnTheScreen();
     await show(async () => {

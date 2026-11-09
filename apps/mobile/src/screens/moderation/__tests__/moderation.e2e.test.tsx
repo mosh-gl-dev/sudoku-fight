@@ -21,6 +21,7 @@ import { installSignedInPlayer, type TestAuth } from '../../../auth/testing/test
 import { useToast } from '../../../components/ui';
 import { memoryDb, type SqlJsDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
+import * as feedback from '../../../services/feedback';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
 import { startRankedAndOpen } from '../../home/startGame';
@@ -126,15 +127,22 @@ describe('a name an admin reset (spec §3.5)', () => {
     await act(async () => router.push('/modes'));
     await waitFor(() => expect(app.pathname()).toBe('/choose-name'));
 
-    // The temporary name is not a choice.
+    // The temporary name is not a choice. A refused save only nudges: the gold button's press cue waits for
+    // a name that can be sent.
+    const cue = jest.spyOn(feedback, 'cue');
     await fireEvent.changeText(screen.getByTestId('choose-name-field'), 'שחקן48213');
     await fireEvent.press(screen.getByTestId('choose-name-save'));
     expect(screen.getByTestId('choose-name-field-error')).toHaveTextContent('זה השם הזמני. בחר שם משלך.');
+    expect(cue.mock.calls).toEqual([['nudge']]);
+    cue.mockClear();
 
     await fireEvent.changeText(screen.getByTestId('choose-name-field'), 'KindName');
     await wait(300);
     await screen.findByTestId('choose-name-field-status-available', hidden);
     await fireEvent.press(screen.getByTestId('choose-name-save'));
+    expect(cue.mock.calls[0]).toEqual(['primaryPress']);
+    expect(cue.mock.calls.filter(([name]) => name === 'primaryPress')).toHaveLength(1);
+    cue.mockRestore();
     await waitFor(() => expect(app.pathname()).toBe('/'));
     expect(useAuth.getState().me).toMatchObject({ displayName: 'KindName', nameResetRequired: false });
     expect(latestToast()).toBe('השם החדש נשמר.');

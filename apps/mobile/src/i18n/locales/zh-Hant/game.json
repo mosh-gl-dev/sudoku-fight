@@ -128,10 +128,12 @@
     "error": {
       "title": "連線錯誤",
       "offlineTitle": "沒有網路連線",
+      "expiredTitle": "你沒有及時回來",
       "body": {
         "offline": "你的手機目前沒有網路。請連上網路後再試一次。",
         "unreachable": "無法連上對局伺服器。請檢查連線後再試一次。",
         "lost": "與對局伺服器的連線中斷，而且無法恢復。",
+        "expired": "連線沒有及時恢復，因此本局以棄局處理。",
         "refused": "伺服器不讓我們進入房間。"
       },
       "refusal": {
@@ -167,7 +169,9 @@
       "confirm": "確定認輸",
       "cancel": "取消",
       "footnote": "對局會在背景繼續",
-      "dialog": "確認認輸"
+      "dialog": "確認認輸",
+      "notSent": "你沒有認輸，對局繼續。可以再試一次",
+      "notSentOffline": "無法連線到伺服器，所以你沒有認輸。連線恢復後可以再試一次"
     },
     "lobby": {
       "title": "私人房間",
@@ -391,9 +395,27 @@
       "title": "本局最佳一步",
       "move": "{{cell}} → {{digit}}",
       "label_other": "本局最佳一步：{{points}}分，{{cell}}填{{digit}}",
-      "formula": "得分方式",
-      "formulaLabel": "得分方式：{{line}}",
-      "none": "這次練習沒有答對的一步"
+      "before": "這一步之前已填",
+      "count": {
+        "row": "本橫列",
+        "col": "本直行",
+        "box": "本宮",
+        "num": "盤面上的{{digit}}"
+      },
+      "filled": {
+        "row_other": "本橫列{{count}}格",
+        "col_other": "本直行{{count}}格",
+        "box_other": "本宮{{count}}格",
+        "num_other": "{{digit}}在盤面上出現{{count}}次"
+      },
+      "countName": {
+        "row": "橫列",
+        "col": "直行",
+        "box": "宮",
+        "num": "盤面上的{{digit}}"
+      },
+      "why": "格子周圍越空，這一步越有價值。得分由最滿的兩項決定：{{highest}}算全額，{{next}}算一半。",
+      "none": "本局你沒有答對任何一步"
     },
     "stats": {
       "time": "對局時間",
@@ -425,6 +447,13 @@
     "actions": {
       "home": "首頁",
       "newGame": "新對局"
+    },
+    "again": {
+      "solo": "立即再開始一局單人練習，{{type}}",
+      "bot": "立即再和{{bot}}對戰一局，{{type}}",
+      "botAny": "立即再和機器人對戰一局，{{type}}",
+      "ranked": "再來一局排位對局，{{type}}",
+      "friends": "回到和好友一起玩"
     },
     "loading": "正在載入結果…",
     "missing": "找不到這次練習",

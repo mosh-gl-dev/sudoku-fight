@@ -1,3 +1,4 @@
+import type { MyProgress } from '@sudoku-fight/protocol';
 import Storage from 'expo-sqlite/kv-store';
 import { AppState } from 'react-native';
 
@@ -11,6 +12,7 @@ import { rankedEndOf, rankedLeftOf } from '../game/rankedEnd';
 import { openLevelsStorage } from '../levels/levelsStorage';
 import { forgetLevels, refreshLevels, useLevels } from '../levels/levelsStore';
 import { LevelsSync } from '../levels/levelsSync';
+import { useConnectivity } from '../net/connectivity';
 import { crashReporter } from '../services/crashlytics';
 import { createPracticeQueue } from './practiceQueue';
 import { type FinishedPractice, practiceResultOf } from './practiceResult';
@@ -29,7 +31,8 @@ import {
  * Progress wired to the phone (work plan stage 12): the progress API with the sign-in's ID token, the practice
  * XP queue in the key-value store [D41], and its triggers. startProgress() (the root layout, once per run)
  * sends what waits and reads my progress when a player is signed in (app start, a sign-in), and again each
- * time the app comes back to the foreground (with the account, GET /v1/me, at most every refresh.minIntervalMs);
+ * time the app comes back to the foreground (with the account, GET /v1/me, at most every refresh.minIntervalMs)
+ * or the connection comes back (syncProgressNow: past the backoff);
  * practiceFinished() (the game store, when a practice ends) queues the practice and sends it;
  * onlineGameEnded() (the game store, when a ranked game ends or is left) shows its rating and reads the account
  * and my progress until the server has stored it (rankedRefresh.ts). Signed out, nothing is sent and nothing is
@@ -94,7 +97,7 @@ export function practiceSync(): PracticeSync {
     queue: createPracticeQueue(Storage),
     owner: currentOwner,
     api: signedInProgressApi,
-    onProgress: (owner, progress) => adoptProgress(owner, progress, Date.now()),
+    onProgress: adoptSyncedProgress,
     onPending: setPending,
     timers: {
       setTimeout: (callback, ms) => setTimeout(callback, ms),
@@ -124,7 +127,7 @@ export function levelsSync(): LevelsSync {
     owner: currentOwner,
     api: signedInProgressApi,
     now: () => Date.now(),
-    onProgress: (owner, progress) => adoptProgress(owner, progress, Date.now()),
+    onProgress: adoptSyncedProgress,
     // The server's levels changed some rows (a restore, the other phone): the screens' numbers again.
     onMerged: (owner) => void refreshLevels({ owner }),
     onRejected: (owner, refused) =>
@@ -213,6 +216,28 @@ function forgetProgressReads(): void {
 }
 
 /**
+ * A sync's answer (the practices' or the stages' PUT, which pays their XP): my progress as the server has it
+ * now. A read of my progress sent before it (Home's focus while the stages still waited) is older: dropped, so
+ * it never puts back the XP from before them (QA levels-xp-offline).
+ */
+function adoptSyncedProgress(owner: string, progress: MyProgress): void {
+  if (currentOwner() === owner) forgetProgressReads();
+  adoptProgress(owner, progress, Date.now());
+}
+
+/**
+ * Sends what waits now, past the backoff of a stretch offline (up to 5 minutes): the practices and the stages,
+ * whose answers bring my new XP (QA levels-xp-offline: after the connection came back, Home showed the stages'
+ * XP only after a restart). When the connection is back (startProgress) and when Home comes into view; nothing
+ * while the app knows it is offline, or nobody is signed in.
+ */
+export function syncProgressNow(): void {
+  if (!currentOwner() || useConnectivity.getState().status === 'offline') return;
+  void practiceSync().retryNow();
+  void levelsSync().retryNow();
+}
+
+/**
  * Once per run: follows the sign-in (a new player: their numbers, never the last one's; a player ready:
  * send and read) and the app's foreground. Returns the stop function (tests).
  */
@@ -260,8 +285,15 @@ export function startProgress(): () => void {
     // The account too (a ranked game may have been stored meanwhile), at most every refresh.minIntervalMs.
     void refreshMeIfStale();
   });
+  // The connection back (net/connectivity: the server answers again): what waits goes at once, then my numbers.
+  const connection = useConnectivity.subscribe((now, before) => {
+    if (now.status !== 'online' || before.status !== 'offline' || !currentOwner()) return;
+    syncProgressNow();
+    void refreshMyProgress();
+  });
   return () => {
     unsubscribe();
+    connection();
     foreground.remove();
     ranked?.stop();
     levels?.stop();

@@ -66,6 +66,9 @@
     "title": "New game",
     "footnote": "Ranked needs an internet connection · Practice is always available",
     "soon": "Soon",
+    "needsConnection": {
+      "rankedAndFriends": "Ranked & friends"
+    },
     "groups": {
       "ranked": {
         "title": "Ranked",

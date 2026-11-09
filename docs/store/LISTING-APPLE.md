@@ -111,13 +111,13 @@ Available in 19 languages. The board always reads left to right.
 
 | שדה | חובה? | ערך |
 |---|---|---|
-| Privacy Policy URL | **כן** | `https://<שרת ה־Production>/legal/privacy?lang=en` (עברית: `?lang=he`) |
-| Support URL | **כן** | `https://<שרת ה־Production>/legal/privacy?lang=en#contact`. עדיף בהמשך דף תמיכה של המשחק |
+| Privacy Policy URL | **כן** | `https://sudokufight.app/legal/privacy?lang=en` (עברית: `?lang=he`) |
+| Support URL | **כן** | `https://sudokufight.app/legal/privacy?lang=en#contact`. עדיף בהמשך דף תמיכה של המשחק |
 | Marketing URL | לא | — |
 
 - הדפים מוגשים מהשרת (`apps/server/src/legal`): ‏`/legal/privacy`, ‏`/legal/terms` ו־`/legal/delete-account`, ב־19 השפות של האפליקציה (עברית היא ברירת המחדל). הגרסאות המתורגמות נפתחות בשורה שהגרסה האנגלית גוברת (D112).
 - **לפני שנותנים את הכתובות:** להגדיר בשרת `LEGAL_CONTACT_EMAIL` ו־`LEGAL_OPERATOR_NAME` (`fly secrets set`). בלעדיהם הדפים מציגים placeholder אדום ופס "טיוטה".
-  **כתובת המייל של משה לא מתפרסמת בלי אישורו.** ההצעה: תיבה ייעודית, למשל `privacy@<הדומיין>` או `support@<הדומיין>`.
+  **כתובת המייל של משה לא מתפרסמת בלי אישורו.** מייל התמיכה: ‏`support@sudokufight.app`, מנותב ל־Gmail של משה (Cloudflare Email Routing; ‏`docs/handoff/2026-10-27/play-release/plan.md` צעד 1ג). ‏`LEGAL_CONTACT_EMAIL` הוא היום המייל מ־C2, ומחליפים אותו ל־`support@sudokufight.app` רק באישור משה.
 - **Copyright:** ‏`2026 <שם המפעיל>` (אותו שם כמו ב־`LEGAL_OPERATOR_NAME`).
 - **License Agreement:** ה־EULA הרגיל של Apple. תנאי השימוש שלנו מפנים אליו (סעיף "חנויות האפליקציות").
 

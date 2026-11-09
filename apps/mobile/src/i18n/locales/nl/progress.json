@@ -164,7 +164,7 @@
     "facts": {
       "seconds": "seconden per stuk",
       "cost": "de prijs verdubbelt bij elke lancering",
-      "launch": "tikken: “Verstoren” op de kaart van een tegenstander, dan de verstoring",
+      "launch": "tikken: “Storen” op de kaart van een tegenstander, dan de verstoring",
       "launchValue": "2"
     },
     "arsenal": "Je arsenaal",
@@ -178,7 +178,7 @@
     "soon": "Binnenkort",
     "atLevel": "Gaat open op niveau {{level}}",
     "lockedLabel": "{{name}}, op slot, {{when}}",
-    "howTo": "In een spel: tik op “Verstoren” op de kaart van een tegenstander en kies dan een verstoring.",
+    "howTo": "In een spel: tik op “Storen” op de kaart van een tegenstander en kies dan een verstoring.",
     "future": {
       "earthquake": "Aardbeving",
       "fog": "Mist",

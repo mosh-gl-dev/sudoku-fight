@@ -128,10 +128,12 @@
     "error": {
       "title": "Lỗi kết nối",
       "offlineTitle": "Không có kết nối Internet",
+      "expiredTitle": "Bạn đã không quay lại kịp",
       "body": {
         "offline": "Điện thoại của bạn hiện không có mạng. Hãy kết nối Internet rồi thử lại.",
         "unreachable": "Không kết nối được máy chủ trò chơi. Hãy kiểm tra kết nối rồi thử lại.",
         "lost": "Kết nối với máy chủ trò chơi bị ngắt và không thể khôi phục.",
+        "expired": "Kết nối không quay lại kịp, nên trận đấu được tính là bạn bỏ trận.",
         "refused": "Máy chủ không cho bạn vào phòng."
       },
       "refusal": {
@@ -167,7 +169,9 @@
       "confirm": "Có, đầu hàng",
       "cancel": "Hủy",
       "footnote": "Trận đấu vẫn chạy ở phía sau",
-      "dialog": "Xác nhận đầu hàng"
+      "dialog": "Xác nhận đầu hàng",
+      "notSent": "Bạn chưa đầu hàng, và ván đấu vẫn tiếp tục. Bạn có thể thử lại",
+      "notSentOffline": "Không có kết nối đến máy chủ nên bạn chưa đầu hàng. Hãy thử lại khi có kết nối"
     },
     "lobby": {
       "title": "Phòng riêng",
@@ -391,9 +395,27 @@
       "title": "Nước đi xuất sắc nhất",
       "move": "{{cell}} → {{digit}}",
       "label_other": "Nước đi xuất sắc nhất: {{points}} điểm, {{digit}} ở ô {{cell}}",
-      "formula": "Cách tính điểm",
-      "formulaLabel": "Cách tính điểm: {{line}}",
-      "none": "Không có nước đi đúng nào trong buổi luyện tập này"
+      "before": "Đã điền trước nước đi",
+      "count": {
+        "row": "trong hàng",
+        "col": "trong cột",
+        "box": "trong khối",
+        "num": "số {{digit}} trên bảng"
+      },
+      "filled": {
+        "row_other": "{{count}} trong hàng",
+        "col_other": "{{count}} trong cột",
+        "box_other": "{{count}} trong khối",
+        "num_other": "số {{digit}} đã có {{count}} lần trên bảng"
+      },
+      "countName": {
+        "row": "hàng",
+        "col": "cột",
+        "box": "khối",
+        "num": "số {{digit}}"
+      },
+      "why": "Quanh ô càng trống, nước đi càng có giá trị. Điểm do hai con số cao nhất quyết định: {{highest}} tính trọn, {{next}} tính một nửa.",
+      "none": "Bạn không có nước đi đúng nào trong trận đấu này"
     },
     "stats": {
       "time": "Thời gian trận",
@@ -425,6 +447,13 @@
     "actions": {
       "home": "Trang chủ",
       "newGame": "Trận mới"
+    },
+    "again": {
+      "solo": "Bắt đầu ngay một buổi tự luyện tập nữa, {{type}}",
+      "bot": "Bắt đầu ngay một trận nữa với {{bot}}, {{type}}",
+      "botAny": "Bắt đầu ngay một trận nữa với máy, {{type}}",
+      "ranked": "Thêm một trận xếp hạng, {{type}}",
+      "friends": "Quay lại chơi với bạn bè"
     },
     "loading": "Đang tải kết quả…",
     "missing": "Không tìm thấy buổi luyện tập này",

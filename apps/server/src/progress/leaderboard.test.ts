@@ -27,23 +27,29 @@ let tokens: TestTokens;
 let http: TestHttp;
 let httpA: TestHttp;
 let httpInvite: TestHttp;
+/** FRIENDS_PLACES=among (QA loop 7, awaiting Moshe's OK): places on the friends tab among the list and me. */
+let httpAmong: TestHttp;
 const clock = fakeClock(T0 + 3_600_000);
 const INVITE = 'https://sudokufight.example/invite';
 
 beforeAll(async () => {
   [t, tokens] = await Promise.all([createTestDb(), testTokens()]);
   const base = { db: t.db, now: clock.now, tokens: tokens.verifier(clock.now), adminSiteDir: null };
-  [http, httpA, httpInvite] = await Promise.all([
+  [http, httpA, httpInvite, httpAmong] = await Promise.all([
     startHttp({ ...base, config: testConfig() }),
     startHttp({ ...base, config: testConfig({ ratingOption: 'A' }) }),
     startHttp({
       ...base,
       config: testConfig({ progress: { practiceXpDailyCap: 1500, inviteUrl: INVITE } }),
     }),
+    startHttp({
+      ...base,
+      config: testConfig({ progress: { practiceXpDailyCap: 1500, inviteUrl: null, friendsPlaces: 'among' } }),
+    }),
   ]);
 }, 30_000);
 afterAll(async () => {
-  await Promise.all([http.close(), httpA.close(), httpInvite.close()]);
+  await Promise.all([http.close(), httpA.close(), httpInvite.close(), httpAmong.close()]);
   await t.close();
 });
 beforeEach(() => t.reset());
@@ -307,7 +313,7 @@ describe('pages (keyset on rating, then user id)', () => {
 });
 
 describe('the friends tab (D27, V1: recent opponents and the invite button)', () => {
-  it('lists my recent opponents, newest meeting first, live ones only, each with their general row', async () => {
+  it('lists my recent opponents, live ones only, each with their general row, best first, at their place on the general board', async () => {
     await cast();
     await addOpponent(t.db, 'ana', 'ben', T0 + 1000, 'normal');
     await addOpponent(t.db, 'ana', 'cid', T0 + 3000, 'fast');
@@ -331,9 +337,85 @@ describe('the friends tab (D27, V1: recent opponents and the invite button)', ()
     ).toEqual([
       ['ben', 1400, 1, 20, false],
       ['cid', 1350, 2, 15, false],
-      ['fay', 1200, 5, 0, true],
+      ['fay', 1200, 5, 0, true], // the general board: ben, ana, cid and dan (1250) above her
     ]);
     expect(answer.friends!.recentOpponents[0]).toMatchObject({ displayName: 'Ben', league: 'diamond' });
+
+    // FRIENDS_PLACES=among: places among ben, cid, fay and me. I tie with cid at 1350, so fay is 4th.
+    const among = await board('ana', '?tab=friends', httpAmong);
+    expect(among.me).toMatchObject({ id: 'ana', rank: 2, rating: 1350 });
+    expect(rows(among.friends!.recentOpponents)).toEqual([
+      ['ben', 1400, 1],
+      ['cid', 1350, 2],
+      ['fay', 1200, 4],
+    ]);
+  });
+
+  /**
+   * QA loop 7, as on the phone: opponents met newest first at ascending ratings, two of them personas (o1 1233,
+   * o2 1305), and me (1200) below them all; 'top' (1500) is a person I have not met.
+   */
+  async function castLoop7() {
+    const ids = ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7'];
+    await addAccounts(
+      t.db,
+      [...ids, 'me', 'top'].map((id) => ({ id, name: id })),
+    );
+    await t.db
+      .update(users)
+      .set({ kind: 'persona' })
+      .where(inArray(users.id, ['o1', 'o2']));
+    await t.db
+      .insert(personas)
+      .values(
+        ['o1', 'o2'].map((userId) => ({ userId, temperament: 'quiet' as const, createdAt: new Date(T0) })),
+      );
+    const ratingOf: Record<string, number> = {
+      o1: 1233,
+      o2: 1305,
+      o3: 1217,
+      o4: 1218,
+      o5: 1220,
+      o6: 1220,
+      o7: 1223,
+      me: 1200,
+      top: 1500,
+    };
+    for (const [id, r] of Object.entries(ratingOf)) await setRating(t.db, id, 'normal', r, 10);
+    for (const [i, id] of ids.entries()) await addOpponent(t.db, 'me', id, T0 + 10_000 - i * 1000);
+  }
+
+  it('loop 7: sorted by rating, best first, not in meeting order; places on the general board (D99)', async () => {
+    await castLoop7();
+    const answer = await board('me', '?tab=friends');
+    // The people: top, o7, o5, o6, o4, o3 and me. A persona has the place its rating would have among them.
+    expect(rows(answer.friends!.recentOpponents)).toEqual([
+      ['o2', 1305, 2],
+      ['o1', 1233, 2],
+      ['o7', 1223, 2],
+      ['o5', 1220, 3], // met after o6: first of the two
+      ['o6', 1220, 3],
+      ['o4', 1218, 5],
+      ['o3', 1217, 6],
+    ]);
+    expect(answer.me).toMatchObject({ id: 'me', rating: 1200, rank: 7 });
+  });
+
+  it('loop 7, FRIENDS_PLACES=among: places among the list and me (equal ratings share one, then skip)', async () => {
+    await castLoop7();
+    const answer = await board('me', '?tab=friends', httpAmong);
+    expect(rows(answer.friends!.recentOpponents)).toEqual([
+      ['o2', 1305, 1],
+      ['o1', 1233, 2],
+      ['o7', 1223, 3],
+      ['o5', 1220, 4],
+      ['o6', 1220, 4],
+      ['o4', 1218, 6],
+      ['o3', 1217, 7],
+    ]);
+    expect(answer.me).toMatchObject({ id: 'me', rating: 1200, rank: 8 });
+    // The general board is not changed by it.
+    expect((await board('me', '', httpAmong)).me).toMatchObject({ id: 'me', rank: 7 });
   });
 
   it('the empty state: no opponents yet, and the invite link from INVITE_URL', async () => {
@@ -429,11 +511,21 @@ describe('a stealth bot’s personas (stealth-bot.md §6) [D99]', () => {
     const answer = await board('ana', '?tab=friends');
     expect(answer.friends!.recentOpponents.map((e) => [e.id, e.rating, e.rank, e.games])).toEqual([
       ['pia', 1450, 1, 14], // above ben: 1 + the people rated higher (none)
-      ['rex', 1250, 4, 9], // tied with dan: dan's rank
       ['ben', 1400, 1, 20], // ben's rank is not pushed down by pia
+      ['rex', 1250, 4, 9], // tied with dan: dan's rank
     ]);
     expect(answer.friends!.recentOpponents[0]).toMatchObject({ displayName: 'Pia' });
     expect(answer.me).toMatchObject({ id: 'ana', rank: 2 });
+
+    // FRIENDS_PLACES=among: the persona is placed like any opponent in the list; the board is still people only.
+    const among = await board('ana', '?tab=friends', httpAmong);
+    expect(rows(among.friends!.recentOpponents)).toEqual([
+      ['pia', 1450, 1],
+      ['ben', 1400, 2],
+      ['rex', 1250, 4], // below me (1350)
+    ]);
+    expect(among.me).toMatchObject({ id: 'ana', rank: 3 });
+    expect((await board('ana', '', httpAmong)).me).toMatchObject({ id: 'ana', rank: 2 });
   });
 });
 

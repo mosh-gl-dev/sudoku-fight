@@ -68,7 +68,8 @@
       "timeout": "Máy chủ không phản hồi kịp. Hãy thử lại.",
       "signedOut": "Bạn chưa đăng nhập. Hãy đăng nhập lại.",
       "unexpected": "Máy chủ gửi phản hồi không mong đợi. Hãy thử lại, hoặc cập nhật ứng dụng."
-    }
+    },
+    "avatarUnavailable": "Ảnh đại diện này chưa có trên máy chủ. Hãy chọn ảnh khác."
   },
   "splash": {
     "tagline": "Một bảng. Ai cũng giải. Chỉ một người thắng.",
@@ -249,6 +250,9 @@
     "deleteGoogleBody": "Để xóa tài khoản, hãy chọn lại tài khoản Google {{email}}.",
     "deleteGoogleSubmit": "Xác nhận bằng Google và xóa",
     "deleteGoogleAgain": "Xóa tài khoản cần xác nhận lại. Hãy thử lại và chọn tài khoản Google của bạn.",
-    "deleteWithPassword": "Thay vào đó, xác nhận bằng mật khẩu"
+    "deleteWithPassword": "Thay vào đó, xác nhận bằng mật khẩu",
+    "deleteGoogleOffTitle": "Cần đăng nhập bằng Google",
+    "deleteGoogleOffBody": "Tài khoản này đăng nhập bằng Google, nên việc xóa cần xác nhận bằng Google. Phiên bản ứng dụng này không có đăng nhập bằng Google, nên không thể xóa tài khoản ở đây. Bạn có thể xóa trong ứng dụng tải từ cửa hàng (Google Play).",
+    "deleteGoogleOffOk": "Đã hiểu"
   }
 }

@@ -118,7 +118,8 @@ describe('GameScreen (solo practice)', () => {
     const name = cellName(a);
     await press(`cell-${name}`);
     expect(cues()).toEqual(['cellSelect']);
-    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 8 שניות`)).toBeOnTheScreen();
+    // 8 s left, said in 5-second steps (Q1).
+    expect(screen.getByLabelText(`המשבצת שלך ${name}, נותרו 5 שניות`)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: `ביטול בחירה, ${name}` })).toBeEnabled();
 
     await press('cancel-selection');

@@ -82,6 +82,7 @@
     },
     "code": "Mã lỗi: {{code}}",
     "retry": "Tìm lại",
+    "backToGame": "Quay lại trận đấu",
     "verify": "Xác minh email",
     "practice": "Đi luyện tập",
     "practiceNote": "Luyện tập một mình hoặc với máy vẫn chơi được khi không có mạng.",
@@ -98,11 +99,11 @@
     "retry": "Kiểm tra lại",
     "retrying": "Đang kiểm tra kết nối…",
     "stillOffline": "Vẫn chưa có kết nối · lần thử {{count}}",
-    "rankedNote": "Khả dụng khi có mạng",
+    "rankedNote": "Cần có mạng",
     "needsConnection": "Cần kết nối",
     "needsConnectionLabel": "Cần kết nối Internet",
-    "practiceNote": "Dùng được khi không có Internet",
-    "availableOffline": "Không cần mạng",
+    "practiceNote": "Không cần mạng",
+    "availableOffline": "Không mạng",
     "back": "Bạn đã có mạng trở lại. Trận xếp hạng đã khả dụng."
   },
   "modes": {

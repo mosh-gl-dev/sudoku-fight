@@ -1,0 +1,75 @@
+{
+ "checks": [
+  {
+   "id": "cancel-after-recreate-skips-type-screen (deviceCheck A-D, APK 19)",
+   "result": "pass",
+   "evidence": "APK 19 (1.1.0), staging, Hebrew. A) Phone 3: Home → שחק → 2 שחקנים → מהיר → מצא יריב, `wm density 540` during the search. The search came back bigger, and the clock carried on from 0:01 to 0:02. There was no second slide-in. The only glitch was ~0.6 s with no ambient digits while the SurfaceView restarted (fix14-RF8Y30L038L-A2.mp4, 100 ms sheet 9.9-10.5 s). 'ביטול חיפוש' landed on 'סוג משחק' with מהיר ✓ (fix14-RF8Y30L038L-A-4.png). Back gave 'משחק חדש', and back again gave Home. I did this twice: once with Android back, and once with the header arrow. 20 s later no stray match came, so the search was really cancelled. B) Found after a recreation, twice. First, P3 searched, its density changed, and the stealth bot was found: VS, the game and the results each opened once, and back from the results went Home. Back on Home left the app, so nothing was hidden under it. Second, P3 searched, its density was reset during the search, and Phone 1 searched the same queue. They matched (fix14-*-B-1.png), and P1 surrendered after moves on both sides. On P3 'לבית' went Home, and Home back left the app. C) P3 at density 540 on Home → 'צור חדר' (550 531) → `wm density reset`: P3 came back into the same room with the same code, 'יציאה מהחדר' went to 'משחק חדש', and back went Home. D) In a ranked game vs the stealth bot I changed the density mid-game. The game came back (fix14-RF8Y30L038L-D-1.png), the surrender ended it normally, and Home → שחק worked. Note: a lone search on staging finds the stealth bot in ~20-30 s, so the cancel has to come within ~10 s of the recreation.",
+   "qaAction": "none (no run #2 task for this is fail/partial)"
+  },
+  {
+   "id": "go-hold-joiner (P3 cold joiner, sound OFF x2 / ON x1, plus Reduced Motion and Back, both phones recorded)",
+   "result": "partial",
+   "evidence": "APK 19. P1 hosts and P3 force-stops, opens and joins by code, with >3 s in the lobby. Both phones recorded with screenrecord; I measured in 20 ms steps. GO!→board, first board frame / board fully in: off1: P3 1.08/1.18 s, P1 0.78/0.86 s. off2: P3 1.00/1.08 s, P1 1.08/1.14 s. on1 (sound ON; P1 was at density 540 for the spinner check C): P3 ~1.3/1.4 s, P1 ~1.3/1.4 s (100 ms steps). rm2 (Reduced Motion ON on P3, sound on): P3 1.30/1.38 s. back2: P3 1.05 s. The ≤1.0 s target was met only by P1 off1. On P3 it is about the same as APK 18 (1.12-1.34 s), and slower with sound on. The cross-fade into the board takes ~80-100 ms. (d) No '[friends] GO! shown' line in logcat on either phone (lc-*.txt, 0 hits). I also saw no StatusBarModule line in this build. (g) Sound ON: count 0.7 ×3 and GO! 0.9 in AudioTrack, then the hit-cue warm-up burst ~2.5 s after GO. The first cell tap was a mistake; its sound line was not separated out. (e) Phone 3 got 3 Android back presses (device-side, at tap+3.2/3.5/3.8 s) during GO! and the fade: nothing happened, the board opened normally, and no surrender sheet appeared (rec/f14-gohold-back2-sheet.png). Back from the results went Home on both phones and never to a room screen. The first count frame already shows both avatars with '3'. There is no '1' after GO! and no header-only frame. Between '1' and GO! there are 1-2 frames (20-40 ms) with the avatars and no digit (P3 off1 7680 ms, P1 off1 8280-8310 ms). (b)/(f) FAIL: the cut is visible. 220-280 ms after GO! appears, on both phones and in every run, GO! jumps to a bigger, doubled (two offset layers) size for 3-5 frames and then snaps back. With Reduced Motion ON it still happens (rm2 8400-8440 ms), even though the room's own GO! correctly faded in at scale 1. See appBugs go-cover-slam-jump.",
+   "qaAction": "none: friends-game-countdown is ½ {handled} and its expected lines (3,2,1,GO! then the board; me blue ●) were seen again; the GO! jump is a new appBug"
+  },
+  {
+   "id": "friends-room-spinner-after-game (deviceCheck A-D)",
+   "result": "pass",
+   "evidence": "APK 19. A) P1 'צור חדר' (434 713) → 'יציאה מהחדר', recorded: a room → 'משחק חדש' cross-fade in one frame (6300→6400 ms), with no 'החדר נסגר.' frame (fix14-RF8Y60PP2XZ-goneA.mp4). B) Friends game, P1 hosts and P3 joins. P3 surrendered and went Home at 21:28:40. A ui poll every ~17 s on P1 read results-title until 21:32:19 (3.5 min), with no room screen and no spinner (fix14-RF8Y60PP2XZ-spinner-B-results.png). Then 'משחק חדש' opened a NEW room, 520 380, with a code and the host seat. C) In that new room I ran `wm density 540` on P1 in the lobby. P1 came back into the same room 996 639 once, the game was played (P3 surrendered at 21:56:00), and P1 stayed on the results until 21:58:13 (2:13). 'לבית' went Home, and Home back left the app (no hidden room). D) A bare spinner never appeared, so the 'החדר נסגר.' fallback was not reached.",
+   "qaAction": "none (no run #2 task for this is fail/partial)"
+  },
+  {
+   "id": "regression-sweep navigation (both phones, Hebrew)",
+   "result": "partial",
+   "evidence": "APK 19. Home tabs on P3 (היסטוריה, טבלת מובילים, הישגים → back → Home), the player card (back → Home) and Settings (back → Home): OK. Practice vs bot on P3: Overlord played to the end ('הלוח התמלא', הפסד). Home 'עוד סיבוב · אימון מול בוט · מהיר · Overlord' started a new game, and the end → results → back gave Home. 'משחק חדש' on the practice results starts the same bot again. Solo practice on P1: started, Android back opened 'לסיים את האימון?', the end → results, and back gave Home. Levels on P1: the map → level 79 (played, 3★) opened. Android back opened the exit sheet, the 30 s ran out under it ('הזמן נגמר'), and 'למפה' went back to the map. Ranked 2P P1 vs P3 with moves on both sides, P1 surrendered: results → 'צפייה חוזרת' opened → back to the results → 'משחק חדש' searched → 'ביטול חיפוש' gave 'סוג משחק' → back 'משחק חדש' → back Home. Friends game → results → 'לבית' → Home (several times, both phones). No exit from the app mid-flow and no double screens anywhere. Density change on Home (P3, twice): Home came back fine. FAIL: density change on the levels map (P1, 3 times) came back on Home, not on the map, and Home back left the app (see appBugs levels-map-recreate-lands-home).",
+   "qaAction": "none (no run #2 task for these is fail/partial; levels-to-map ½ is about 'למפה' from the result, which worked here but its stars/next-level focus was not checked)"
+  },
+  {
+   "id": "stale-dark-box-after-countdown-reconnect (investigation)",
+   "result": "fail",
+   "evidence": "It reproduces every time without airplane and without a density change. It belongs to the friends-game JOINER role. Seen on P3 as the joiner in all 7 runs: off1, off2, on1 (density 450, no airplane), air1 (540 + airplane 2 s during '3', cold), air2warm (540 + airplane, warm joiner), rm1 (Reduced Motion) and the HW-layers run. It also showed when P1 was the joiner. It never showed on the host (P1 in 6 runs, P3 as host once), in ranked or in bot games on the same phones. On P3 the box is subtle (14,16,22 inside vs 15,18,24 outside). At density 450 it covers x 588-1034, y 111-420 px (159×110 dp), exactly the 'אני' card frame. At 540 it is 139×110 dp, as the fixer measured. On P1 as the joiner it is clearly visible grey (54,56,61 vs 15,18,24), and the card's avatar, 'אני' and '0' draw on top of it (fix14-RF8Y60PP2XZ-darkbox-p1joiner.png, -amp.png). Timing (air1 video, pixel sampled): absent through the lobby, the count and the GO! cover. It appears in the first board frame and stays. It survived 40+ s, and also the opponent's move (P1 scored, P3's opponent card changed: box still there). It went away when the joiner tapped any cell (a selection only, no move) and when the joiner made a move. Overlays on P3: with 'Show view updates' the whole window flashes red on almost every frame, so the window is fully redrawn while the box persists. That means it is drawn content (a view/background), not stale pixels the window failed to redraw. 'Show surface updates' flashed the whole screen magenta, and 'Show hardware layer updates' showed no green over the card. dumpsys SurfaceFlinger --list: only the app window plus the ambient SurfaceView (z=-2) and its Background layer, with no extra layer. gfxinfo: 1 GlLayer 1080x2340 and a TextureView 1080x2340, the same on the host without a box, so they do not discriminate. ReactNativeJS had no lines in these windows. Files: qa-shots/fix14-RF8Y30L038L-darkbox-on1-1/-2/-3.png (-3: gone after the move), -darkbox-on1-amp.png, -darkbox-off1-amp.png, -darkbox-air1-shot/-amp.png, -darkbox-air1-afterselect.png, -darkbox-air2warm-clean.png, fix14-RF8Y60PP2XZ-darkbox-p1joiner*.png, videos fix14-RF8Y30L038L-darkbox-air1/air2warm/hwlayers/on1-dbg.mp4. dumps in C:\\Users\\mosheg\\AppData\\Local\\Temp\\claude\\b0377245321c840d\\6deeb02e-1cd6-480d-8ffd-14ec3cc5da59\\scratchpad\\q14 (sf-*.txt, gfx-*.txt, gfx-p1joiner.txt). I did 2 airplane runs, not 3; the airplane step proved irrelevant.",
+   "qaAction": "none (no run #2 task for this; reported as appBug joiner-me-card-box)"
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "joiner-me-card-box",
+   "title": "במשחק חברים, אצל מי שהצטרף: מלבן בצבע אחר מעל כרטיס 'אני' עד הלחיצה הראשונה",
+   "severity": "minor",
+   "what": "APK 19 (1.1.0, loop-13), staging. חדר חברים מהיר: מארח לוחץ 'התחל משחק', והמצטרף רואה 3-2-1-GO! ואת הלוח. מהפריים הראשון של הלוח מופיע אצל המצטרף מלבן חד בדיוק על המסגרת של כרטיס 'אני' (בצפיפות 450: x 588–1034, y 111–420 px, כלומר 159×110 dp). התוכן של הכרטיס (אווטר, 'אני', 0) מצויר מעליו. בטלפון 1 כמצטרף המלבן אפור ובולט (54,56,61 לעומת רקע 15,18,24), ובטלפון 3 הוא כהה בדרגה אחת. הוא קורה בכל ריצה כמצטרף: 7 מתוך 7 בטלפון 3, וגם בטלפון 1 כשהתחלפו התפקידים. זה לא תלוי בניתוק או בצפיפות: הוא מופיע גם בצפיפות 450 בלי מצב טיסה, עם הפעלה קרה או חמה, ועם הפחתת תנועה. אצל המארח, במדורג ובאימון מול בוט הוא לא מופיע. הוא נשאר יותר מ־40 שניות, וגם אחרי מהלך של היריב. הוא נעלם כשהמצטרף נוגע במשבצת כלשהי. עם 'הצגת עדכונים של התצוגה' כל החלון מהבהב בכל פריים והמלבן נשאר, כלומר הוא מצויר ולא פיקסלים ישנים. ב־SurfaceFlinger אין שכבה נוספת. קבצים: qa-shots/fix14-RF8Y60PP2XZ-darkbox-p1joiner.png, fix14-RF8Y60PP2XZ-darkbox-p1joiner-amp.png, fix14-RF8Y60PP2XZ-darkbox-p1joiner-afterselect.png, fix14-RF8Y30L038L-darkbox-on1-2.png, fix14-RF8Y30L038L-darkbox-on1-amp.png, fix14-RF8Y30L038L-darkbox-on1-3.png (אחרי מהלך, בלי מלבן)"
+  },
+  {
+   "id": "go-cover-slam-jump",
+   "title": "ב־GO! של חברים: בזמן המעבר ל־GoCover ה־GO! קופץ לגודל גדול וכפול לכ־60–100 מ\"ש, גם בהפחתת תנועה",
+   "severity": "minor",
+   "what": "APK 19, חדר חברים, הקלטה בשני הטלפונים בצעדים של 10–20 מ\"ש. ה־GO! של החדר נכנס (מ־1.4 ל־1 בלי הפחתת תנועה, או דהייה בגודל 1 עם הפחתת תנועה). אחרי 220–280 מ\"ש, בדיוק במעבר למסך המשחק, ה־GO! קופץ ל־3 עד 5 פריימים לגודל גדול יותר עם שכבה כפולה מוזזת, ואז חוזר בבת אחת לגודל 1. זה קורה במארח ובמצטרף, בכל הריצות (off1, off2, on1, rm2). עם הפחתת תנועה (rm2, אנימציות המערכת על 0) הקפיצה עדיין שם, אף שה־GO! של החדר דהה נכון בלי שינוי גודל. זה סותר את (b) ו־(f) ב־deviceCheck: 'GO! keeps slamming smoothly where it was, no restart from big', ו'Reduce Motion: GO! has no scale'. נראה שה־GO! של הכיסוי מתחיל את ה־slam מחדש, או לא מכבד את reduce. קבצים: qa-shots/fix14-RF8Y30L038L-gohold-off1-ghost.png, rec/f14-off2-RF8Y30L038L-zoom.png, rec/f14-off2-RF8Y60PP2XZ-zoom.png, rec/f14-rm2-RF8Y30L038L-zoom.png (8400–8440), ובסרטונים qa-shots/fix14-*-gohold-off1/off2/on1/rm2.mp4"
+  },
+  {
+   "id": "levels-map-recreate-lands-home",
+   "title": "שינוי צפיפות (Activity חדש) במפת השלבים מחזיר לבית, ו'חזרה' יוצאת מהאפליקציה",
+   "severity": "minor",
+   "what": "APK 19, טלפון 1. בית ← שחק ← אימון בשלבים: המפה פתוחה על שלב 78. מריצים `adb shell wm density 540` (או `wm density reset`). האפליקציה חוזרת למסך הבית ולא למפה, ו'חזרה' באנדרואיד יוצאת מהאפליקציה, כי 'משחק חדש' והמפה לא שוחזרו. זה חזר 3 מתוך 3 פעמים. ב־loop 13 flowStack משחזר את הערימה רק כשה־root התחיל על משחק חי, ולכן מסכים רגילים (מפה, 'משחק חדש', הגדרות) הולכים לאיבוד בכל שינוי גודל גופן או תצוגה. בבית עצמו זה בסדר. קבצים: qa-shots/fix14-RF8Y60PP2XZ-reg-levels-pair.png (לפני ואחרי), fix14-RF8Y60PP2XZ-reg-levels-density.png"
+  },
+  {
+   "id": "nav-bar-light-on-some-screens",
+   "title": "סרגל הניווט של המערכת בהיר (אפור בהיר) בחלק מהמסכים הכהים",
+   "severity": "cosmetic",
+   "what": "APK 19. בחלק מהמסכים סרגל הניווט התחתון של אנדרואיד (3 הכפתורים) מוצג על רקע אפור בהיר במקום כהה. זה ראיתי במשחק מדורג בטלפון 1 (fix14-RF8Y60PP2XZ-B-1.png), כשבאותו רגע בטלפון 3 הוא כהה (fix14-RF8Y30L038L-B-1.png). גם בחיפוש יריב (fix14-RF8Y60PP2XZ-reg-newgame.png), במשחק מול בוט ובמשחק חברים בטלפון 3 (fix14-RF8Y30L038L-reg-bot-1.png, fix14-RF8Y30L038L-on1-board.png) ובמסך השגיאה (fix14-RF8Y30L038L-tmp4.png). באימון לבד ובשלבים הוא כהה (fix14-RF8Y60PP2XZ-reg-solo-1.png). לא מצאתי חוקיות. אולי הצבע נקבע לפי המסך שהיה לפני."
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "go-hold-joiner (deviceCheck b)",
+   "issue": "The deviceCheck says the header during GO! is 'משחק עם חברים' with the subtitle. On the phones the header during the count and GO! is 'חדר עם חברים' with 'מהיר · 2 מתוך 4'. That header stays in place, so only the expected text is wrong."
+  },
+  {
+   "taskId": "go-hold-joiner (deviceCheck a)",
+   "issue": "It asks for GO!→StatusBarModule. APK 19 logs no StatusBarModule line, and no ReactNativeJS line around the game mount, so this can only be measured from the videos."
+  },
+  {
+   "taskId": "tool:adb.ts tap by text",
+   "issue": "For a list item hidden under a sticky footer (bot-5 'Overlord' on the bot-select screen, bounds [45,1928][1035,1859] with bottom < top), `adb.ts tap \"<text>\"` computes a center inside the footer and taps there, so the default bot (Mr. Hoot) started instead. It should scroll, or refuse when the bounds are empty."
+  }
+ ],
+ "phoneState": "Both phones are on APK 19 (1.1.0); installed-*.txt = apk19 = latest-build.json, so no install was needed. Both are left on the app's Home screen after adb.ts reset and a relaunch: font scale 1, animations 1/1/1, colour correction off, airplane 0, wm density reset to 450 (Physical), size 1080x2340, persist.sys.locale he-IL, app language Hebrew (never changed), show_touches unchanged. On Phone 3 in Developer options, 'הצגת עדכונים על פני השטח', 'הצגת עדכונים של התצוגה' and 'הצגת עדכונים של שכבות חומרה' are all back OFF (switches read checked=false; debug.hwui.show_dirty_regions and show_layers_updates are empty). In-app sound on Phone 3 was ON at the start, turned OFF for off1/off2, and is back ON. No uninstall, clear-data, logcat -c, sign-out or account changes. Staging rooms/games were played between the two accounts, so the ratings changed: Phone 1 fast 1005→987, Phone 3 fast 955→973."
+}

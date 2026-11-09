@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { formatScoreLine } from '@sudoku-fight/engine';
 import type { PlayerStats, RecentResult } from '@sudoku-fight/protocol';
 import { act, render, screen } from '@testing-library/react-native';
 import { createInstance, type i18n as I18n, type Resource, type TFunction } from 'i18next';
@@ -364,16 +363,15 @@ describe('a comma language: every site writes "39,5"', () => {
       wrongText: null,
       points: 3.5,
       penalty: null,
-      scoreLine: 'points = 9 − 7 + (9 − 6) / 2 = 3.5',
-      penaltyLine: null,
+      score: { row: 7, col: 5, box: 6, num: 3, X: 7, Y: 6, points: 3.5 },
+      penaltyScore: null,
       releaseReason: null,
     } as PlayerExplanation;
     await inComma(<ExplanationCard player={player} explanation={explanation} testID="x" />);
     expect(screen.getByTestId('x-status', hidden)).toHaveTextContent(ltr('+3,5'), { exact: false });
-    expect(screen.getByTestId('x-score', hidden)).toHaveTextContent(
-      ltr('points = 9 − 7 + (9 − 6) / 2 = 3,5'),
-      { exact: true },
-    );
+    expect(screen.getByTestId('x-score', hidden)).toHaveTextContent(ltr('9 − 7 + (9 − 6) / 2 = 3,5'), {
+      exact: true,
+    });
     expect(screen.getByTestId('x').props.accessibilityLabel).toContain('= 3,5');
     expect(screen.getByTestId('x').props.accessibilityLabel).not.toMatch(/\d\.\d/);
   });
@@ -393,10 +391,8 @@ describe('a comma language: every site writes "39,5"', () => {
     expect(screen.getByTestId('results-score', hidden)).toHaveTextContent(scoreText(me.score, ','), {
       exact: true,
     });
-    expect(screen.getByTestId('results-best-line', hidden)).toHaveTextContent(
-      ltr(withDecimal(formatScoreLine(best.breakdown), ',')),
-      { exact: true },
-    );
+    // The move of the game is told by its counts (whole numbers): no engine line with a "." to convert.
+    expect(screen.queryByTestId('results-best-line', hidden)).toBeNull();
     expect(screen.getByTestId('results-best', hidden)).toHaveTextContent(signedText(best.points, ','), {
       exact: false,
     });

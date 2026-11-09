@@ -301,6 +301,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "de poort vraagt {{need}}",
     "chapterOpen": "de poort is open",
+    "chapterNeedSentence": "De poort vraagt {{need}}",
+    "chapterOpenSentence": "De poort is open",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Dit hoofdstuk: {{stars}} ster van {{max}}. {{gate}}",
     "chapterLine_other": "Dit hoofdstuk: {{stars}} sterren van {{max}}. {{gate}}",
@@ -347,6 +349,8 @@
     "button": "Etappe verlaten",
     "title": "Etappe verlaten?",
     "body": "Je krijgt 0 sterren, en de volgende etappe gaat open.",
+    "bodyLocked": "Je krijgt 0 sterren, en de volgende etappe blijft op slot.",
+    "bodyLast": "Je krijgt 0 sterren.",
     "confirm": "Verlaten",
     "cancel": "Doorspelen"
   },

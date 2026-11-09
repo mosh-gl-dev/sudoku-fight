@@ -22,7 +22,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { AVATAR_REACTIONS, type AvatarIdOrNone } from '../../../avatars';
-import { Avatar, Flag, formatScore, paletteAt, scoreText, signedText } from '../../../components/player';
+import {
+  Avatar,
+  Flag,
+  formatScore,
+  paletteAt,
+  scoreText,
+  SeatGlyph,
+  signedText,
+} from '../../../components/player';
 import { dragClosesSheet, IconButton } from '../../../components/ui';
 import { usePresence } from '../../../components/ui/motion';
 import { Text } from '../../../components/ui/Text';
@@ -35,8 +43,8 @@ import { useLiveAnnouncer } from '../useLiveAnnouncer';
 import {
   type ArsenalModel,
   arsenalModel,
+  fittedPicker,
   launchable,
-  pickerLayout,
   relativeTo,
   scrimPieces,
   targetFrameOf,
@@ -44,10 +52,10 @@ import {
 import { ARSENAL_CONFIG } from './config';
 import { KindButton } from './KindButton';
 import { LaunchRipple } from './LaunchRipple';
-import { arsenalMetrics as m } from './metrics';
+import { type ArsenalMetrics, arsenalMetrics as m } from './metrics';
 import { RouteLine } from './RouteLine';
 import type { ArsenalController } from './useArsenal';
-import { blockedSentence, isolate, kindWord } from './wording';
+import { blockedSentence, isolate, kindWord, nextPriceText } from './wording';
 
 /** Who the target is on this phone (the screen knows names and avatars; the engine's view does not). */
 export interface ArsenalTargetInfo {
@@ -288,11 +296,14 @@ export function ArsenalOverlay({
       ? { from: describe(view.me), to: target }
       : null;
   const showSheet = (mounted || visible) && model !== null && target !== null;
-  const layout = pickerLayout({
+  // At the system text size: the words grow up to the picker's cap (as far as every kind still fits at once), and
+  // the boxes that hold them (metrics.ts).
+  const { metrics: sized, layout } = fittedPicker({
     width: windowSize.width,
     height: windowSize.height,
     bottomInset: insets.bottom,
     count: model?.tokens.length ?? 0,
+    fontScale: windowSize.fontScale,
   });
 
   return (
@@ -349,7 +360,7 @@ export function ArsenalOverlay({
                 </View>
               </View>
             </GestureDetector>
-            <PriceRow model={model} />
+            <PriceRow model={model} sized={sized} />
             <View style={styles.grid} testID={`${testID}-grid`}>
               {model.tokens.map((token) => (
                 <KindButton
@@ -357,13 +368,19 @@ export function ArsenalOverlay({
                   token={token}
                   targetName={targetName}
                   width={layout.columnWidth}
+                  metrics={sized}
                   reduce={reduce}
                   bubble={bubble?.kind === token.kind ? bubble.text : null}
                   onPress={onKind}
                 />
               ))}
             </View>
-            <Text style={styles.info} numberOfLines={1}>
+            <Text
+              style={styles.info}
+              numberOfLines={sized.info.lines}
+              maxFontSizeMultiplier={sized.textScale}
+              testID={`${testID}-info`}
+            >
               {t('arsenal.info', { count: model.seconds, seconds: model.seconds })}
             </Text>
           </Animated.View>
@@ -439,7 +456,11 @@ function Scrim({
   );
 }
 
-/** "יעד: [avatar] NinaVolt 🇩🇪" (components.md §13 header, 2 players). */
+/**
+ * "יעד: [avatar ▲] NinaVolt 🇩🇪" (components.md §13 header, 2 players): the avatar ringed in their seat colour and
+ * their seat shape, as on their card and in the 3–4 player route, so the target is never told by colour alone
+ * (CLAUDE.md; QA loop 4: the 2-player line had no ▲).
+ */
 function TargetLine({ target, label }: { target: ArsenalTargetInfo; label: string }) {
   const { t } = useTranslation('game');
   const ring = paletteAt(target.colorIndex).ring;
@@ -452,6 +473,7 @@ function TargetLine({ target, label }: { target: ArsenalTargetInfo; label: strin
         expression={AVATAR_REACTIONS.moods.target}
         style={[styles.miniAvatar, { borderColor: ring }]}
       />
+      <SeatGlyph colorIndex={target.colorIndex} size={m.subtitle.glyph} />
       <Text style={[styles.subtitle, styles.targetName]} numberOfLines={1}>
         {target.name}
       </Text>
@@ -464,9 +486,26 @@ function TargetLine({ target, label }: { target: ArsenalTargetInfo; label: strin
  * The price row (components.md §13): "מחיר ⁦−2⁩ נק׳ · הבאה: 4" at the start, my score before and after at the
  * end ("53 ← 51"). Short of points (my score dropped while the picker was open) the end says how many are
  * missing instead of a score after a launch that can't happen. One element for screen readers.
+ *
+ * Where both halves don't fit one line (Thai, German), the two share the row and their words wrap to a second
+ * line inside its 48 dp, then shrink a little; the numbers never move (B45: Thai's "· ครั้งถัดไป: 4" ran over
+ * "คะแนนของคุณ").
+ *
+ * With a grown system text the halves don't share one line in any language, so the row puts them on two (metrics
+ * price.stacked): the start's words get the row's width, and "· Next: 4" is kept in one piece (nextPriceText), never
+ * "Next:" over "4" (QA fixcheck of APK 15). At the design's size it is the one line it was.
  */
-function PriceRow({ model }: { model: ArsenalModel }) {
+function PriceRow({ model, sized }: { model: ArsenalModel; sized: ArsenalMetrics }) {
   const { t } = useTranslation('game');
+  // Its words grow with the system text up to the picker's cap; the row then holds its halves on two lines.
+  const stacked = sized.price.stacked;
+  const cap = { maxFontSizeMultiplier: sized.textScale };
+  // Grown words fit at the design's size (pickerFits.test.ts), so a shrink to fit stops there (Android ignores
+  // minimumFontScale; its search keeps the largest size that fits). At the design's size, WRAP's 3/4 as before.
+  const wrap = {
+    ...WRAP,
+    minimumFontScale: Math.max(WRAP.minimumFontScale, sized.textScale > 1 ? 1 / sized.textScale : 0),
+  };
   const short = model.missing > 0;
   const decimal = decimalSeparator(t);
   // costLabel is a plural of the cost; costLabelShort nests one plural per number (cost, missingCount).
@@ -481,28 +520,45 @@ function PriceRow({ model }: { model: ArsenalModel }) {
   };
   const label = t(short ? 'arsenal.costLabelShort' : 'arsenal.costLabel', values);
   return (
-    <View style={styles.priceRow} accessible accessibilityLabel={label} testID="arsenal-cost">
+    <View
+      style={[styles.priceRow, stacked ? styles.priceStacked : null, { height: sized.price.height }]}
+      accessible
+      accessibilityLabel={label}
+      testID="arsenal-cost"
+    >
       <View style={styles.priceStart}>
-        <Text style={styles.subtitle}>{t('arsenal.price')}</Text>
-        <Text style={[m.price.priceStyle, styles.accent]} testID="arsenal-price">
+        <Text {...cap} style={styles.subtitle}>
+          {t('arsenal.price')}
+        </Text>
+        <Text {...cap} style={[m.price.priceStyle, styles.accent]} testID="arsenal-price">
           {signedText(-model.cost, decimal)}
         </Text>
-        <Text style={[styles.unit, styles.accent]}>{t('arsenal.unit')}</Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {t('arsenal.nextPrice', { cost: model.nextCost })}
+        <Text {...cap} style={[styles.unit, styles.accent]}>
+          {t('arsenal.unit')}
+        </Text>
+        <Text {...cap} style={[styles.subtitle, styles.wrap]} {...wrap} testID="arsenal-next">
+          {stacked ? nextPriceText(model.nextCost, t) : t('arsenal.nextPrice', { cost: model.nextCost })}
         </Text>
       </View>
-      <View style={styles.priceEnd} testID="arsenal-after">
+      <View style={[styles.priceEnd, stacked && styles.priceEndStacked]} testID="arsenal-after">
         {short ? (
-          <Text style={styles.subtitle}>{t('arsenal.missing', { count: model.missing })}</Text>
+          <Text {...cap} style={[styles.subtitle, styles.wrap]} {...wrap}>
+            {t('arsenal.missing', { count: model.missing })}
+          </Text>
         ) : (
           <>
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text {...cap} style={[styles.subtitle, styles.wrap]} {...wrap} testID="arsenal-score-label">
               {t('arsenal.score')}
             </Text>
-            <Text style={[m.price.scoreStyle, styles.myScore]}>{values.score}</Text>
-            <Text style={styles.subtitle}>{t('arsenal.routeArrow')}</Text>
-            <Text style={[m.price.scoreStyle, styles.myScore]}>{values.after}</Text>
+            <Text {...cap} style={[m.price.scoreStyle, styles.myScore]}>
+              {values.score}
+            </Text>
+            <Text {...cap} style={styles.subtitle}>
+              {t('arsenal.routeArrow')}
+            </Text>
+            <Text {...cap} style={[m.price.scoreStyle, styles.myScore]}>
+              {values.after}
+            </Text>
           </>
         )}
       </View>
@@ -511,6 +567,9 @@ function PriceRow({ model }: { model: ArsenalModel }) {
 }
 
 const ME = paletteAt(0);
+
+/** The price row's words: two lines at most (two label lines fit its 48 dp in every script), then a little smaller. */
+const WRAP = { numberOfLines: 2, adjustsFontSizeToFit: true, minimumFontScale: 0.75 } as const;
 
 const styles = StyleSheet.create({
   // Layers drawn in measured window coordinates are LTR, so `left` stays physical.
@@ -568,8 +627,19 @@ const styles = StyleSheet.create({
     borderColor: color.border,
     backgroundColor: color.surface2,
   },
-  priceStart: { flexDirection: 'row', alignItems: 'baseline', gap: space[2], flexShrink: 1 },
-  priceEnd: { flexDirection: 'row', alignItems: 'baseline', gap: space[2] },
+  priceStart: { flexDirection: 'row', alignItems: 'baseline', gap: space[2], flexShrink: 1, minWidth: 0 },
+  priceEnd: { flexDirection: 'row', alignItems: 'baseline', gap: space[2], flexShrink: 1, minWidth: 0 },
+  // A grown text: the start over the end, each its own line of the row's width; the end keeps to its side.
+  priceStacked: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    gap: m.price.rowGap,
+    paddingVertical: m.price.paddingY,
+  },
+  priceEndStacked: { alignSelf: 'flex-end' },
+  // The words give way inside their half (the numbers beside them keep their size).
+  wrap: { flexShrink: 1 },
   accent: { color: color.accent },
   unit: { ...text('badge') },
   myScore: { color: ME.ring },
@@ -583,7 +653,7 @@ const styles = StyleSheet.create({
     ...text('micro'),
     color: color.textMuted,
     marginTop: m.info.top,
-    lineHeight: m.info.height,
+    lineHeight: m.info.line,
     textAlign: 'center',
   },
   live: {

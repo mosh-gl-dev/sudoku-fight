@@ -129,7 +129,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
-    backgroundColor: color.bg,
   },
   stretch: { alignSelf: 'stretch' },
   checkRow: {

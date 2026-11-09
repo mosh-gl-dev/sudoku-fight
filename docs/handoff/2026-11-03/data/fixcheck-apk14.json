@@ -1,0 +1,135 @@
+{
+ "checks": [
+  {
+   "id": "interference#1 CRITICAL interference-new-ink-look (INK crash)",
+   "result": "pass",
+   "evidence": "APK 14, ranked fast 2P, אורי vs אחוותא. 4 ink hits: 2 phone1→phone3 (08:01:16, 08:02:25), 2 phone3→phone1 (08:02:53, 08:03:40), both phone-1 hits with system animations 0 and app motion 'כמו במכשיר' (Reduced Motion). Each time: banner 'X התיז/ה עליך דיו!' with sender avatar + ring 5→4→3, 5 blots over part of the board, fade over the last ~1.5 s, app keeps running, digits entered under/near blots. logcat -d (both phones, since 07:58) has no \"doesn't exist\", handleHostException, ReferenceError or ReactNativeJS error. Negative score shows '−6' (minus in front) on the receiver. Shots: qa-shots/fix9-RF8Y30L038L-ink1-1..6.png, fix9-RF8Y30L038L-ink2-1..4.png, fix9-RF8Y60PP2XZ-ink3rm-1..2.png, fix9-RF8Y60PP2XZ-inktap4-a..d.png",
+   "qaAction": "qa.ts fix 2 interference-new-ink-look --fixed-in apk14 (done)"
+  },
+  {
+   "id": "interference-new-ink-tap (run #2 task)",
+   "result": "pass",
+   "evidence": "Phone 1 (receiver, Reduced Motion on): during the ink hit a script picked the empty cell whose centre was under a blot (B5, lum 19); the strip showed 'המשבצת שלך B5', digit 5 went in, score 8→12.5. fix9-RF8Y60PP2XZ-inktap4-a/b/c.png",
+   "qaAction": "qa.ts fix 2 interference-new-ink-tap --fixed-in apk14 (done)"
+  },
+  {
+   "id": "interference#2 MAJOR interference-hit-warp-look (start frames)",
+   "result": "partial",
+   "evidence": "Step A (sound OFF, phone 3 cold-started, first hit of the run, screenrecord + 20 ms stepping): no frame without game content. The brown overlay comes at 1340 ms, the banner fades in (solid by 1460), the board dim comes at 1420, about 80 ms after the overlay. The clock and score keep moving. fix9-RF8Y30L038L-warpA-soundoff-20ms.png, fix9-RF8Y30L038L-warpA.mp4. Step B (sound ON, first hit of a new game): no black frame, but the board dim appears at 1220 ms and the overlay plus banner only at 1390 ms. That is about 170 ms of plain dim before the warp starts. The HUD score still updates during the gap, so it is not a frozen frame. fix9-RF8Y30L038L-warpB-dim-first-10ms.png, fix9-RF8Y30L038L-warpB-soundon-20ms.png, fix9-RF8Y30L038L-warpB.mp4. Step C (2nd hit of a game = fireworks after warp): dim, particles and banner fade in from the start, with no pop. fix9-RF8Y30L038L-secondhit-fadein.png. Step E (sender picker): the picker closes in about 200 ms, with no 0.4 s hold seen. Tilt timing (~0.24 s straight, then tilt in) and Step D (Reduced Motion) were not checked at this resolution.",
+   "qaAction": "none (task interference-hit-warp-look is already V)"
+  },
+  {
+   "id": "interference#3 minor interference-hit-banner ring number",
+   "result": "pass",
+   "evidence": "Friends room. Phone 1 sent 'זיקוקים' and phone 3 entered a digit about 2.5 s into the hit (screenrecord, 100 ms steps). Ring: 5 for ~0.7 s, then 4, 3 and 2 for ~1.0–1.1 s each, then 1 for ~0.8 s, in step with the arc. No 2 hold. Gold digit centred. fix9-RF8Y30L038L-ring-100ms.png, fix9-RF8Y30L038L-ring.mp4. English, 360dp/1.3 and TalkBack were not checked.",
+   "qaAction": "qa.ts fix 2 interference-hit-banner --fixed-in apk14 (done)"
+  },
+  {
+   "id": "interference#4 minor avatars-react-hit-sender (toast + wink)",
+   "result": "pass",
+   "evidence": "Sender phone 1, Hebrew: the chip 'דיו ← אחוותא' / 'מספרים מתערבלים ← אחוותא' sits under the two cards, over the lead bar, and does not touch the board's top row. Both avatars and scores stay visible, my avatar winks (one eye closed), and the score counts down with the '−2'/'−8' chip. With a lock running (C1 selected first), the strip 'המשבצת שלך C1 · 6/5/4 שניות' stays visible under the chip and the countdown on the cell keeps running, so nothing is hidden. Receiver banner: the sender's avatar winks. fix9-RF8Y60PP2XZ-ink1sender-1..3.png, fix9-RF8Y60PP2XZ-lockchip-1..5.png. English and 360dp/1.3 were not checked.",
+   "qaAction": "qa.ts fix 2 avatars-react-hit-sender --fixed-in apk14 (done)"
+  },
+  {
+   "id": "rooms friends-manage-block-mid-game (rejoin after swipe-away)",
+   "result": "pass",
+   "evidence": "Friends game, fast. Test 1: B (phone 3) swiped away and relaunched about 3 s later. It showed 'חדר עם חברים · מצטרף לחדר…' and then the same board and score (−6). Phone 1 showed 'היריב מתנתק… 11' and then went back to normal, with no 'נטש'. Test 2, with the block: אורי blocked אחוותא mid-game, then B was killed and relaunched, then A (host) was killed and relaunched. Both came back to the same game. No 4002 in logcat on either phone. The game was played to a normal end ('הלוח התמלא'), and the block was removed at the end. Caveat: the first host attempt stayed ~28 s in the Recents screen before the swipe and ended in 'הפסד · לא חזרת למשחק בזמן'. A backgrounded app counts as disconnected, so that is the 25 s rule, not a bug. fix9-*-frkillB-*.png, fix9-*-frkillA2-*.png, fix9-both-block-rejoin-A.png, fix9-both-hostkill-after-28s-recents.png",
+   "qaAction": "qa.ts fix 2 friends-manage-block-mid-game --fixed-in apk14 (done)"
+  },
+  {
+   "id": "rooms ranked kill mid-game (two phones)",
+   "result": "partial",
+   "evidence": "Ranked fast, phone 3 swiped away at 08:09:58 and relaunched about 3 s later. The app opened on Home with no resume, and phone 1 got 'אחוותא עזב את המשחק · ניצחת בנטישה' (+6). Phone 3 lost 6 rating. This is the documented 'expected for now' behaviour; loop 9 is working on the ranked cold-start resume. fix9-RF8Y30L038L-rankkill-*.png, fix9-RF8Y60PP2XZ-rankkill-opp.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "rooms seat ratings per room type",
+   "result": "pass",
+   "evidence": "Phone 1 host. On both phones and in the seat labels: 'מהיר' (the default, remembered) showed 1286 / 1010, 'רגיל' showed 1206 / 1200, 'קשה' showed 1232 / 1200. אחוותא does have a rated hard game (she is #2 on the Hard leaderboard), so 1200 is correct there. A seat with no number was not seen (no such player available). TalkBack not checked. fix9-RF8Y30L038L-seats-normal.png, fix9-RF8Y30L038L-seats-hard.png",
+   "qaAction": "none (interference-picker-double-tap and friends-game-play are already V)"
+  },
+  {
+   "id": "rooms friends-game-countdown GO! on joiner",
+   "result": "pass",
+   "evidence": "3 rooms, screenrecord on both phones, 100 ms steps. Both phones showed 3, 2, 1, then GO! with 'מכינים את הלוח…', then the board, with no '1' faded onto the board. Back pressed on both during '2' did nothing. With Reduced Motion on (phone 1 by system setting, phone 3 by app setting 'מופעלת'), GO! still showed before the board. Note: GO! lasts longer than the planned 0.25–0.5 s: host ~0.9 s, joiner ~1.0 s, and ~2.1 s on a cold-started joiner. fix9-RF8Y30L038L-go-cold-100ms.png, fix9-both-go-back-100ms.png, fix9-both-go-reducedmotion-100ms.png",
+   "qaAction": "qa.ts fix 2 friends-game-countdown --fixed-in apk14 (done)"
+  },
+  {
+   "id": "misc#1 results rating card visible / count",
+   "result": "partial",
+   "evidence": "Abandon win while ahead (1280→1286, +6): about 4 s after the results appeared, only the card title 'שינוי דירוג · מהיר' was visible. The number was under the 'משחק חדש'/'צפייה חוזרת' bar, and after a slow scroll it already showed 1286. Surrender win (1291, +5): the whole card was visible without scrolling. The old→new count was not caught in any recording, because the results came in late in my recording window. Whether the count waits until the card is visible remains unverified. fix9-RF8Y60PP2XZ-rcard-1..5.png",
+   "qaAction": "qa.ts mark 2 ranked-duel-rating-card partial (actual updated)"
+  },
+  {
+   "id": "misc#3 lead-bar label",
+   "result": "pass",
+   "evidence": "Normal play: lead-bar desc 'אחוותא מוביל ב־2 נקודות' with tag +2 (11 vs 9), then 'אני מוביל ב־4 נקודות', 'אחוותא מוביל ב־4 נקודות' with tag +4, and 'אני מוביל ב־10.5 נקודות'. Each label matches the tag. After the abandon win (phone 3 in airplane mode, ahead 8.5 vs 4.5), phone 1's lead-bar still reads 'אחוותא מוביל ב־4 נקודות' with tag ⁦+4⁩, not 'שוויון'. Friends abandon: 'אורי מוביל ב־9.5 נקודות'. Tag colour under the abandon dialog not seen.",
+   "qaAction": "none"
+  },
+  {
+   "id": "misc#2 'Reconnecting... N' English (ranked-end-opp-closes-app)",
+   "result": "fail",
+   "evidence": "Unchanged, as expected while it waits for Moshe: 'Reconnecting... 12' / 'Reconnecting... 7' under the ring in 'היריב מתנתק…'. The ring goes to 1 and then straight to the abandon screen; 'בודקים מול השרת…' was not seen. fix9-RF8Y60PP2XZ-abandon-*.png",
+   "qaAction": "qa.ts mark 2 ranked-end-opp-closes-app partial (actual updated)"
+  },
+  {
+   "id": "loop7 misc Friends tab places (deployed)",
+   "result": "pass",
+   "evidence": "Hebrew, both phones. Rows go from the highest rating down (1343, 1329, 1315, 1305, 1301, 1292). Places never go down: on phone 3 they read 1, 1, 1, 2, 3, 3. The pinned 'me' row has the General place: אורי #1 = General #1, אחוותא #4 = General #4. The General and Hard tabs look normal. Stealth personas rated above the #1 player all show 'מקום 1' (allowed under D99). English not checked.",
+   "qaAction": "none (postgame-leaderboard-english is already handled)"
+  },
+  {
+   "id": "network-abandon-countdown (not-a-bug)",
+   "result": "pass",
+   "evidence": "Seen incidentally: about 10 s of the marker only, then the ring from 15 down to 1, then the abandon screen within ~1 s.",
+   "qaAction": "none"
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "rejoin-opponent-avatar-lost",
+   "title": "אחרי חזרה למשחק חברים (סגירה מהאחרונות) האווטר והדגל של היריב נעלמים",
+   "severity": "minor",
+   "what": "APK 14 (1.1.0), staging, טלפון 1 (אורי) וטלפון 3 (אחוותא), חדר חברים מהיר. בטלפון שנסגר מרשימת האחרונות ונפתח מחדש וחזר לאותו משחק, בכרטיס של היריב מוצג אווטר אפור גנרי (צללית) במקום האווטר שלו, והדגל 🇮🇱 ליד השם חסר. זה נשאר עד סוף המשחק, וגם בכרטיס 'יריב' במסך התוצאות. נראה בשלוש חזרות: טלפון 3 אחרי kill (08:30), טלפון 1 אחרי kill (08:37) ושני הטלפונים במשחק החסימה (09:03). קבצים: qa-shots/fix9-RF8Y30L038L-rejoin-grey-avatar.png, fix9-both-block-rejoin-A.png, fix9-RF8Y60PP2XZ-friends-end.png"
+  },
+  {
+   "id": "warp-sound-on-dim-before-overlay",
+   "title": "עיוות עם צליל: ההחשכה מופיעה כ־170ms לפני שכבת העיוות והבאנר",
+   "severity": "minor",
+   "what": "APK 14, טלפון 3 מקבל, צליל דלוק, הפגיעה הראשונה במשחק חברים חדש (08:41), הקלטת מסך בצעדים של 10–20ms. הלוח מוחשך ב־1220ms, אבל השכבה החומה, הגלים והבאנר מתחילים רק ב־1390ms, כלומר כ־170ms של החשכה בלבד. הניקוד בראש המסך ממשיך להתעדכן באותו זמן, כך שזו לא מסגרת קפואה. אין מסגרת שחורה. עם צליל כבוי (פגיעה ראשונה אחרי הפעלה קרה) השכבה מופיעה ראשונה וההחשכה כ־80ms אחריה. קבצים: qa-shots/fix9-RF8Y30L038L-warpB-dim-first-10ms.png, fix9-RF8Y30L038L-warpB-soundon-20ms.png, fix9-RF8Y30L038L-warpB.mp4, ולהשוואה fix9-RF8Y30L038L-warpA-soundoff-20ms.png"
+  },
+  {
+   "id": "go-hold-long-on-joiner",
+   "title": "GO! מוצג הרבה יותר מ־0.25–0.5 שנ' (עד 2.1 שנ' אצל מצטרף אחרי הפעלה קרה)",
+   "severity": "cosmetic",
+   "what": "APK 14, חדר חברים מהיר, הקלטת מסך בצעדים של 100ms. אצל המצטרף (טלפון 3, אפליקציה שהופעלה עכשיו) 'GO!' עם 'מכינים את הלוח…' מוצג כ־2.1 שנ' לפני הלוח. במשחקים הבאים GO! מוצג כ־1.0 שנ', וכ־0.9 שנ' אצל המארח. GO! מופיע בכל מקרה, לפני הלוח. קבצים: qa-shots/fix9-RF8Y30L038L-go-cold-100ms.png, fix9-both-go-back-100ms.png"
+  },
+  {
+   "id": "surrender-end-empty-frame-still (known, loop 9)",
+   "title": "עדיין רקע ריק לפני התוצאות אחרי שהיריב נכנע",
+   "severity": "minor",
+   "what": "APK 14, טלפון 1 מנצח אחרי שטלפון 3 נכנע (מדורג מהיר, 08:53), הקלטה בצעדים של 250ms. הלוח דוהה, ואחריו כ־0.5–0.75 שנ' עם רקע כהה וספרות בלבד, ורק אז 'ניצחון!'. זה הבאג הידוע שתיקונו ב־loop 9. קובץ: qa-shots/fix9-RF8Y60PP2XZ-surrender-win-empty-frame.png"
+  },
+  {
+   "id": "reconnecting-english (known, pending Moshe)",
+   "title": "'Reconnecting... N' באנגלית בחלון 'היריב מתנתק…'",
+   "severity": "minor",
+   "what": "APK 14: עדיין באנגלית, ממתין לאישור משה על הנוסח העברי. קבצים: qa-shots/fix9-RF8Y60PP2XZ-abandon-09.png, fix9-RF8Y60PP2XZ-abandon-15.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "friends-manage-block-mid-game",
+   "issue": "Step 5/6 says to close the app from Recents and reopen it, but gives no time limit. A backgrounded app counts as disconnected, so a tester who stays more than ~25 s on the Recents screen gets 'לא חזרת למשחק בזמן'. That is correct behaviour, but the step reads like a failure. Add: 'reopen within ~10 s'."
+  },
+  {
+   "taskId": "interference-new-ink-look",
+   "issue": "The steps need a Development Build and fake-client --rules, but two phones on the staging APK reproduce it fine: ranked 2P fast, sender level 3+ with 2 points → 'הפרעה' → 'דיו'. Same for interference-new-ink-tap, interference-new-fps and avatars-react-hit-target."
+  },
+  {
+   "taskId": "ranked-duel-rating-card",
+   "issue": "Whether the rating card is visible without scrolling depends on the end type. After an abandon win the extra 'ניצחת בנטישה' line pushes the number under the bottom bar on the A16, while after a surrender it fits. The task should say which end type to use, or check both."
+  }
+ ],
+ "phoneState": "Both phones (RF8Y60PP2XZ טלפון 1 אורי, RF8Y30L038L טלפון 3 אחוותא) on APK 14 1.1.0, nothing installed or uninstalled. adb.ts reset was run on both (font 1.0, animations 1, airplane off, colour correction off). wm size is 1080x2340 and density 450, both unchanged. App locale is Hebrew. The app was relaunched and both phones are on Home. The in-app settings I changed are back: phone 3 sound on, phone 3 'הפחתת תנועה' back to 'כבויה', and phone 1 'כמו במכשיר' was never changed. The block on אחוותא (by אורי) was removed: 'אין שחקנים חסומים'. Ratings now: אורי fast 1291 (was 1280), אחוותא fast 1005 (was 1016). Temporary files on the phones (/data/local/tmp/qb, b2.sh, /sdcard/fix9-*.mp4) were deleted. Run #2 updated: fix (apk14) for interference-new-ink-look, interference-new-ink-tap, interference-hit-banner, avatars-react-hit-sender, friends-game-countdown and friends-manage-block-mid-game; partial again with the current behaviour for ranked-duel-rating-card and ranked-end-opp-closes-app. Evidence is in C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots (fix9-*). Not done: English, 360dp/font 1.3 and TalkBack for items 3 and 4, warp Step D (Reduced Motion) and the tilt timing, and the rating-card count timing."
+}

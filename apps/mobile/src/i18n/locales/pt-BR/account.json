@@ -63,7 +63,8 @@
       "timeout": "O servidor não respondeu a tempo. Tente de novo.",
       "signedOut": "Sua sessão não está ativa. Entre de novo.",
       "unexpected": "O servidor enviou uma resposta inesperada. Tente de novo ou atualize o app."
-    }
+    },
+    "avatarUnavailable": "Este avatar ainda não está disponível no servidor. Escolha outro."
   },
   "splash": {
     "tagline": "Um tabuleiro. Todos resolvem. Só um vence.",
@@ -246,6 +247,9 @@
     "deleteGoogleBody": "Para excluir a conta, escolha de novo a conta do Google {{email}}.",
     "deleteGoogleSubmit": "Confirmar com o Google e excluir",
     "deleteGoogleAgain": "Excluir a conta exige uma nova confirmação. Tente de novo e escolha sua conta do Google.",
-    "deleteWithPassword": "Confirmar com a senha, em vez disso"
+    "deleteWithPassword": "Confirmar com a senha, em vez disso",
+    "deleteGoogleOffTitle": "É preciso entrar com o Google",
+    "deleteGoogleOffBody": "Esta conta entra com o Google, então para excluí-la é preciso confirmar com o Google. Esta versão do app não tem login com o Google, então não é possível excluir a conta aqui. Você pode excluí-la no app da loja (Google Play).",
+    "deleteGoogleOffOk": "Entendi"
   }
 }

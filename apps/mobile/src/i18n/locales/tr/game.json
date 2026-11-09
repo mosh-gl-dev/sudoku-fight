@@ -133,10 +133,12 @@
     "error": {
       "title": "Bağlantı hatası",
       "offlineTitle": "İnternet bağlantısı yok",
+      "expiredTitle": "Zamanında geri dönmedin",
       "body": {
         "offline": "Telefonunda şu an ağ yok. İnternete bağlanıp tekrar dene.",
         "unreachable": "Oyun sunucusuna ulaşamadık. Bağlantını kontrol edip tekrar dene.",
         "lost": "Oyun sunucusuyla bağlantı koptu ve geri getiremedik.",
+        "expired": "Bağlantı zamanında geri gelmedi, bu yüzden hükmen kaybettin.",
         "refused": "Sunucu odaya girmemize izin vermedi."
       },
       "refusal": {
@@ -172,7 +174,9 @@
       "confirm": "Evet, pes et",
       "cancel": "İptal",
       "footnote": "Maç arka planda sürüyor",
-      "dialog": "Pes etmeyi onayla"
+      "dialog": "Pes etmeyi onayla",
+      "notSent": "Teslim olmadın, oyun devam ediyor. Yeniden deneyebilirsin",
+      "notSentOffline": "Sunucuya bağlantı yok, bu yüzden teslim olmadın. Bağlantı dönünce yeniden dene"
     },
     "lobby": {
       "title": "Özel oda",
@@ -411,9 +415,31 @@
       "move": "{{cell}} → {{digit}}",
       "label_one": "Maçın hamlesi: {{points}} puan, {{cell}} hücresinde {{digit}}",
       "label_other": "Maçın hamlesi: {{points}} puan, {{cell}} hücresinde {{digit}}",
-      "formula": "Puan nasıl hesaplandı",
-      "formulaLabel": "Puan nasıl hesaplandı: {{line}}",
-      "none": "Bu antrenmanda doğru hamle yok"
+      "before": "Hamleden önce dolu",
+      "count": {
+        "row": "satırda",
+        "col": "sütunda",
+        "box": "kutuda",
+        "num": "tabloda {{digit}} rakamı"
+      },
+      "filled": {
+        "row_one": "satırda {{count}} hücre",
+        "row_other": "satırda {{count}} hücre",
+        "col_one": "sütunda {{count}} hücre",
+        "col_other": "sütunda {{count}} hücre",
+        "box_one": "kutuda {{count}} hücre",
+        "box_other": "kutuda {{count}} hücre",
+        "num_one": "{{digit}} rakamı tabloda {{count}} kez",
+        "num_other": "{{digit}} rakamı tabloda {{count}} kez"
+      },
+      "countName": {
+        "row": "satır",
+        "col": "sütun",
+        "box": "kutu",
+        "num": "{{digit}} rakamları"
+      },
+      "why": "Hücrenin çevresi ne kadar boşsa hamle o kadar değerli. Puanı en yüksek iki sayı belirler: {{highest}} tam ağırlıkla, {{next}} yarım ağırlıkla.",
+      "none": "Bu maçta hiç doğru hamlen olmadı"
     },
     "stats": {
       "time": "Maç süresi",
@@ -445,6 +471,13 @@
     "actions": {
       "home": "Ana sayfa",
       "newGame": "Yeni maç"
+    },
+    "again": {
+      "solo": "Hemen bir tek başına antrenman daha başlatır, {{type}}",
+      "bot": "{{bot}} karşısında hemen bir maç daha başlatır, {{type}}",
+      "botAny": "Bota karşı hemen bir maç daha başlatır, {{type}}",
+      "ranked": "Bir dereceli maç daha, {{type}}",
+      "friends": "Arkadaşlarla oynamaya dönüş"
     },
     "loading": "Sonuç yükleniyor…",
     "missing": "Bu antrenmanı bulamadık",

@@ -2,8 +2,12 @@ import {
   ACCOUNT_PATHS,
   type AccountError,
   type AccountField,
+  AVATAR_CATALOG_HEADER,
+  avatarCatalogOf,
+  avatarIdForCatalog,
   isAvatarId,
   isCountryCode,
+  type Me,
   type NameAvailability,
 } from '@sudoku-fight/protocol';
 import { json, type Request, type RequestHandler, type Response, Router } from 'express';
@@ -70,6 +74,15 @@ export interface AccountsRouterDeps {
   accountLimits?: AccountLimits;
   /** Default: apps/server/data/blocked-words.json. */
   blockedWords?: BlockedWords;
+}
+
+/**
+ * A Me as the asking app can show it (protocol AVATAR_CATALOG_HEADER): an app before the avatar catalog it was
+ * chosen in (chosen on a newer app) refuses its whole Me over it, so it gets "no avatar" instead.
+ */
+function meFor(req: Request, me: Me): Me {
+  const avatarId = avatarIdForCatalog(me.avatarId, avatarCatalogOf(req.get(AVATAR_CATALOG_HEADER)));
+  return avatarId === me.avatarId ? me : { ...me, avatarId };
 }
 
 function send(res: Response, status: number, body: AccountError): void {
@@ -312,16 +325,16 @@ export function createAccountsRouter({
           ? send(res, 409, { error: 'taken', message: 'the name is taken' })
           : send(res, 409, { error: 'alreadyRegistered', message: 'this sign-in already has an account' });
       }
-      res.status(201).json(await toMe(db, created.user, token, config.ratingOption, t));
+      res.status(201).json(meFor(req, await toMe(db, created.user, token, config.ratingOption, t)));
     },
   );
 
-  router.get(ACCOUNT_PATHS.me, ...before, auth(tokens, true), limit(reads, accountKey), async (_req, res) => {
+  router.get(ACCOUNT_PATHS.me, ...before, auth(tokens, true), limit(reads, accountKey), async (req, res) => {
     const token = requiredToken(res);
     const user = await findLiveUser(db, token.uid);
     if (user === undefined)
       return send(res, 404, { error: 'notRegistered', message: 'no account: register' });
-    res.json(await toMe(db, await syncEmail(db, user, token), token, config.ratingOption, now()));
+    res.json(meFor(req, await toMe(db, await syncEmail(db, user, token), token, config.ratingOption, now())));
   });
 
   router.patch(
@@ -365,7 +378,7 @@ export function createAccountsRouter({
         if (updated.error === 'suspended') return suspended(res);
         return send(res, 404, { error: 'notRegistered', message: 'no account: register' });
       }
-      res.json(await toMe(db, updated.user, token, config.ratingOption, t));
+      res.json(meFor(req, await toMe(db, updated.user, token, config.ratingOption, t)));
     },
   );
 

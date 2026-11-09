@@ -4,7 +4,9 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../../components/Icon';
+import { ltr } from '../../components/player/format';
 import { Button } from '../../components/ui/Button';
+import { supportCodeLabel } from '../../components/ui/stateModel';
 import { Text } from '../../components/ui/Text';
 import type { MatchmakingFailureCode } from '../../net/matchmaking';
 import { color, radius, space, text, tokens } from '../../theme';
@@ -27,6 +29,11 @@ export interface MatchErrorViewProps {
   onVerifyEmail: () => void;
   /** "חזרה לבית". */
   onHome: () => void;
+  /**
+   * "Back to the game": `alreadyQueued` over this account's ranked game still running, whose room the server named
+   * (`model.gameRoom`): into it again with the same account (QA density-change-orphans-ranked-game).
+   */
+  onBackToGame?: (roomId: string) => void;
   testID?: string;
 }
 
@@ -59,6 +66,7 @@ export function MatchErrorView({
   onPractice,
   onVerifyEmail,
   onHome,
+  onBackToGame,
   testID = 'match-error',
 }: MatchErrorViewProps) {
   const { t } = useTranslation('match');
@@ -67,10 +75,14 @@ export function MatchErrorView({
   const connection = CONNECTION.includes(m.code);
   const title = connection ? t('error.offlineTitle') : t('error.title');
   const body = t(`error.body.${m.code}`);
+  // Plainly a code, left to right in Hebrew too ('network' → "ERR_NETWORK") (connection-error-english-chip).
+  const supportCode = ltr(supportCodeLabel(m.supportCode));
   const verify = m.code === VERIFY;
-  const canRetry = !verify && !FINAL.includes(m.code);
+  // The game this account is still in: going back to it is the way (its room is named), not another search.
+  const gameRoom = onBackToGame ? (m.gameRoom ?? null) : null;
+  const canRetry = !verify && !FINAL.includes(m.code) && gameRoom === null;
   // Practice is the primary only when nothing else can help.
-  const practiceFirst = !canRetry && !verify;
+  const practiceFirst = !canRetry && !verify && gameRoom === null;
 
   return (
     <View style={styles.root} testID={testID}>
@@ -98,13 +110,23 @@ export function MatchErrorView({
           <View
             style={styles.code}
             accessible
-            accessibilityLabel={t('error.code', { code: m.supportCode })}
+            accessibilityLabel={t('error.code', { code: supportCode })}
             testID={`${testID}-code`}
           >
             <View style={styles.codeDot} />
-            <Text style={styles.codeText}>{m.supportCode}</Text>
+            <Text style={styles.codeText}>{supportCode}</Text>
           </View>
           <View style={styles.actions}>
+            {gameRoom !== null ? (
+              <Button
+                label={t('error.backToGame')}
+                onPress={() => onBackToGame?.(gameRoom)}
+                size="lg"
+                icon="swords"
+                style={styles.stretch}
+                testID={`${testID}-back-to-game`}
+              />
+            ) : null}
             {verify ? (
               <Button
                 label={t('error.verify')}
@@ -151,7 +173,7 @@ export function MatchErrorView({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: tokens.layout.gutterHome },
   column: { alignItems: 'center', gap: space[6] },
   illustration: {

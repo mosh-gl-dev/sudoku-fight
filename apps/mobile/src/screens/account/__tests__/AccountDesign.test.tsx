@@ -95,10 +95,11 @@ describe('Login board', () => {
 });
 
 describe('Login arena', () => {
+  // Each rival sits in the slot that pops it in (MOT-3); the seat in the middle has no tilt.
   const tilts = () =>
     screen
       .getByTestId('login-arena', hidden)
-      .children.map((child) => rotation(child as Node))
+      .children.map((child) => rotation(child as Node) ?? rotation((child as Node).children[0] as Node))
       .filter(Boolean);
 
   it('fans out from the seat: the outer pair 12°, the inner pair 6°', async () => {
@@ -148,7 +149,8 @@ describe('Register-Fighter board: my card in the preview (Moshe, 14.10.2026)', (
         2 * GUTTER.screen -
         2 * (card.padding as number) -
         2 * (card.borderWidth as number) -
-        AVATAR_SIZES.row.frame -
+        // The preview's avatar is 'home' since 30.10.2026 (a 64 picture, where its moving parts play: 3.19).
+        AVATAR_SIZES.home.frame -
         (card.gap as number) -
         NAME_LEAD;
       for (const longest of ['MosheGlazman_123', 'MOSHEGLAZMAN2026', 'משה.גלזמן_הגדול1']) {

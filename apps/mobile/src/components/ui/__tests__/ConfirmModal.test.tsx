@@ -2,16 +2,20 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, I18nManager, StyleSheet, type ViewStyle } from 'react-native';
 
 import i18n from '../../../i18n';
+import { cue } from '../../../services/feedback';
 import { useSettings } from '../../../state/settings';
 import { color } from '../../../theme';
 import { motion } from '../../../theme/motion';
 import { ConfirmModal, type ConfirmModalProps } from '../ConfirmModal';
+import { SLANT } from '../slant';
 import { directionProblems, hostStyles } from '../testing/layout';
 
 jest.mock(
   'react-native-safe-area-context',
   () => jest.requireActual<{ default: object }>('react-native-safe-area-context/jest/mock').default,
 );
+jest.mock('../../../services/feedback', () => ({ cue: jest.fn() }));
+const cueOf = jest.mocked(cue);
 
 const styleOf = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as ViewStyle) ?? {};
 
@@ -68,7 +72,12 @@ describe('ConfirmModal', () => {
     expect(screen.getByTestId('surrender-cancel-shadow')).toBeOnTheScreen();
     expect(screen.queryByTestId('surrender-confirm-shadow')).not.toBeOnTheScreen();
     expect(styleOf(first!).flex).toBeGreaterThan(styleOf(second!).flex ?? 0);
-    expect(styleOf(second!)).toMatchObject({ borderColor: color.dangerBorder });
+    // Side by side, the red one skews with the gold one (the pair rule, D130): a slanted plate and edge (slant.tsx).
+    expect(styleOf(screen.getByTestId('surrender-confirm-face-shape'))).toMatchObject({
+      borderColor: color.dangerBorder,
+      transform: SLANT.inner,
+    });
+    expect(styleOf(screen.getByTestId('surrender-confirm-edge')).transform).toEqual(SLANT.outer);
   });
 
   it('confirms only from the confirm button; everything else cancels', async () => {
@@ -79,11 +88,60 @@ describe('ConfirmModal', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
 
     await fireEvent.press(screen.getByRole('button', { name: 'ביטול' }));
+    await act(async () => void jest.advanceTimersByTime(motion.duration.sheetIn));
     await fireEvent.press(screen.getByTestId('surrender-scrim', { includeHiddenElements: true }));
     await fireEvent(screen.getByTestId('surrender'), 'requestClose');
     await fireEvent(screen.getByLabelText('אישור כניעה'), 'accessibilityEscape');
     expect(onCancel).toHaveBeenCalledTimes(4);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  // QA loop 2: "כן, להיכנע" tapped ~1 s after "כניעה" on a slow phone closed the dialog with no surrender. The
+  // panel was still sliding up, so the tap at the button's place landed on the scrim, which cancelled.
+  it.each([
+    ['bottom', 'off'],
+    ['bottom', 'on'],
+    ['center', 'off'],
+    ['center', 'on'],
+  ] as const)(
+    '%s placement (reduce motion %s): a scrim tap while the dialog enters cancels nothing; the confirm works at once',
+    async (placement, reduceMotion) => {
+      useSettings.setState({ reduceMotion });
+      const onConfirm = jest.fn();
+      const onCancel = jest.fn();
+      await render(surrender({ placement, onConfirm, onCancel }));
+      const scrim = () => screen.getByTestId('surrender-scrim', { includeHiddenElements: true });
+
+      await fireEvent.press(scrim());
+      await act(async () => void jest.advanceTimersByTime(motion.duration.reducedFade / 2));
+      await fireEvent.press(scrim());
+      expect(onCancel).not.toHaveBeenCalled();
+      expect(screen.getByText('המשחק ייחשב כהפסד')).toBeOnTheScreen();
+      // The confirm needs no wait.
+      await fireEvent.press(screen.getByRole('button', { name: 'כן, להיכנע' }));
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+
+      // In all the way: the scrim cancels, as components.md §14 says.
+      await act(async () => void jest.advanceTimersByTime(motion.duration.sheetIn));
+      await fireEvent.press(scrim());
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('"ביטול" is silent even as the gold primary; the neutral confirm plays the primary press', async () => {
+    cueOf.mockClear();
+    await render(surrender());
+    await fireEvent.press(screen.getByRole('button', { name: 'ביטול' }));
+    // The caller plays the confirm's own cue (e.g. "surrender"); the danger confirm and the cancel play none.
+    await fireEvent.press(screen.getByRole('button', { name: 'כן, להיכנע' }));
+    expect(cueOf).not.toHaveBeenCalled();
+
+    await screen.rerender(surrender({ tone: 'neutral' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'ביטול' }));
+    expect(cueOf).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'כן, להיכנע' }));
+    expect(cueOf.mock.calls).toEqual([['primaryPress']]);
   });
 
   it('starts screen-reader focus on the safe action', async () => {

@@ -1,0 +1,564 @@
+{
+ "batches": [
+  {
+   "lane": "טלפון 1",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי): הותקן apk11, ‏1.1.0 (08.11 22:20, loop-5 fixes, startup log), ו־installed-RF8Y60PP2XZ.txt עודכן ל־apk11. גודל המסך והצפיפות הוחזרו (1080x2340, ‏450) ונבדקו. הורץ adb.ts reset: גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. האפליקציה בעברית ונשארה במסך הבית. לא חיפשתי משחק מדורג ולא פתחתי חדר. הצילומים וה־dumps נמצאים ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/.",
+   "ids": [
+    "pregame-type-bot-next",
+    "pregame-bot-table",
+    "pregame-bot-no-extras",
+    "pregame-bot-all-types",
+    "pregame-bot-start",
+    "pregame-bot-results-robot",
+    "pregame-type-givens-solo-fast",
+    "pregame-type-givens-solo-normal",
+    "pregame-type-givens-solo-hard",
+    "pregame-modes-fit-he",
+    "pregame-modes-practice-chips",
+    "pregame-modes-rows",
+    "pregame-modes-no-ranked-chip",
+    "pregame-modes-header-me",
+    "pregame-modes-bot-robot",
+    "pregame-modes-navigation",
+    "pregame-type-cards",
+    "pregame-type-ranked-rating",
+    "pregame-type-ranked-notes",
+    "game-lock-opponent-look",
+    "game-lock-taken",
+    "postgame-replay-open",
+    "postgame-replay-steps",
+    "postgame-replay-explain-wrong",
+    "postgame-replay-moments",
+    "postgame-replay-missing",
+    "postgame-history-filter-practice",
+    "postgame-leaderboard-main",
+    "postgame-leaderboard-no-rating",
+    "postgame-leaderboard-open-card",
+    "postgame-progress-ladder",
+    "postgame-progress-xp-rules",
+    "postgame-progress-card-content"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי): apk11 הותקן כבר (installed = latest, בלי התקנה מחדש). האימון לבד הושלם (70 נק׳). הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה he. האפליקציה הופעלה מחדש ונמצאת בבית. לא שיניתי שום הגדרה אחרת.",
+   "ids": [
+    "game-practice-solo-hud",
+    "game-moves-keypad-ltr",
+    "game-lock-cancel",
+    "game-moves-needs-lock",
+    "game-lock-select",
+    "game-moves-formula",
+    "game-moves-negative",
+    "game-moves-wrong",
+    "game-moves-count",
+    "game-moves-tried",
+    "game-moves-penalty-same",
+    "game-moves-penalty-value",
+    "game-moves-wrong-stays",
+    "game-moves-correct",
+    "game-moves-sign-hebrew",
+    "game-lock-one",
+    "game-lock-relock-wait",
+    "game-lock-timeout",
+    "game-practice-solo-stats",
+    "game-practice-background-solo",
+    "game-surrender-practice-dialog",
+    "game-surrender-lock-runs",
+    "game-surrender-practice-back",
+    "game-moves-exhausted",
+    "game-moves-last-cell",
+    "game-practice-solo-complete",
+    "general-perf-startup"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ): עדיין apk11 (latest-build.json ו־installed-RF8Y60PP2XZ.txt הם apk11, אז לא הותקן כלום). מצב הטיסה כבוי, ה־Wi-Fi דלוק והרשת זמינה (Active default network קיימת, ואין באנר אופליין). הרצתי adb.ts reset: גופן 1, אנימציות 1, תיקון צבע כבוי. שפת האפליקציה עברית ([he]). האפליקציה פתוחה במסך הבית. קובצי ה־screenrecord שיצרתי ב־/sdcard נמחקו. הערה: בניסיון הראשון להחליק את האפליקציה מהאחרונות, ההחלקה במרכז המסך כנראה סגרה כרטיס של אפליקציה אחרת ברשימה, אולי Samsung Browser (רק הכרטיס, בלי נתונים). אחר כך מירכזתי את כרטיס Sudoku Fight והחלקתי אותו. לא ביצעתי שום חיפוש מדורג ולא יצרתי או הצטרפתי לחדר. ההצטרפות עם הקוד 903157 הייתה רק במצב טיסה, ונכשלה מיד עם 'אין חיבור לאינטרנט.'.",
+   "ids": [
+    "general-background-freeze-stage",
+    "general-background-no-black-levels",
+    "pregame-offline-gametype",
+    "pregame-offline-gametype-back-online",
+    "pregame-offline-gametype-practice",
+    "pregame-offline-banner",
+    "pregame-offline-bottom",
+    "pregame-offline-practice-open",
+    "pregame-offline-go-practice",
+    "pregame-offline-bot-practice",
+    "game-surrender-practice-confirm",
+    "game-practice-solo-offline",
+    "game-practice-bot-offline",
+    "friends-link-not-found",
+    "friends-link-web-invalid-code",
+    "friends-manage-create-cancel",
+    "friends-error-other-device",
+    "friends-error-network-join",
+    "network-offline-game-type",
+    "network-offline-attempts",
+    "network-offline-home"
+   ]
+  }
+ ],
+ "appBugs": [],
+ "catalogIssues": [
+  {
+   "taskId": "postgame-leaderboard-no-rating",
+   "issue": "התנאי המוקדם (חשבון שלא שיחק מדורג 'קשה' או 'רגיל') לא קיים אצל אורי: יש לו דירוג בשלושת הסוגים. הסשן postgame-screens-he תוכנן לטלפון 3, והועבר לטלפון 1 לפי הערות המתכנן. כדאי לשבץ את המשימה בטלפון 3 או אצל משה."
+  },
+  {
+   "taskId": "postgame-replay-explain-wrong",
+   "issue": "אי אפשר לאמת ב־adb את 'המשבצת מהבהבת באדום': זו שכבה שדועכת (wrongFlash), קצרה ממרווח הצילום (כ־0.3–0.5 ש׳). כדאי לסמן את השורה כבדיקת עין של משה, או לנסח צפוי שנשאר על המסך (למשל ה־2 האדום הקטן במשבצת)."
+  },
+  {
+   "taskId": "postgame-replay-open",
+   "issue": "השלב 'מכניסים 2 ספרות נכונות ואחר כך ספרה שגויה' לא תמיד אפשרי מול Pip במהיר: הבוט תפס את A5 לפני שהספקתי, ולכן הסדר יצא נכון, שגוי, נכון. לא משפיע על הצפוי, אבל כדאי לכתוב 'לפחות ספרה נכונה אחת וספרה שגויה אחת, בכל סדר'."
+  },
+  {
+   "taskId": "postgame-replay-steps",
+   "issue": "הצפוי '<שם> · נכון ב־D5' מתקיים, אבל במהלך שלי השם מוצג כ'אני' ולא 'אורי'. כדאי לציין בצפוי ש'אני' מופיע במקום השם במהלכים שלי."
+  },
+  {
+   "taskId": "game-lock-one",
+   "issue": "התסריט מבקש להקיש על 'F2 ריקה', אבל בלוח שהוגרל F2 הייתה מלאה (1). השתמשתי ב־F1. כדאי לכתוב 'משבצת ריקה אחרת' בלי שם קבוע."
+  },
+  {
+   "taskId": "general-perf-startup",
+   "issue": "הצעדים בקטלוג (v6) עדיין כוללים 'adb logcat -c' ו־findstr, וזה אסור בטלפונים האלה. עדיף לכתוב: קוראים את שעת המכשיר, ואז logcat -d -T '<time>' -s ReactNativeJS. גם צעד הבנייה בקטלוג (expo run:android --variant release) לא תואם לדרך הנוכחית: EXPO_PUBLIC_STARTUP_LOG=1 npm run apk."
+  },
+  {
+   "taskId": "game-lock-relock-wait",
+   "issue": "התסריט אומר 'D5, ביטול בחירה, ומיד D5', אבל אם עברו יותר מ־8 שניות מהנעילה, ה'ביטול' לא עושה כלום והנעילה החוזרת תקינה. כדאי לכתוב: נועלים, ואחרי פחות מ־T שניות מבטלים ומקישים מיד, באותה פקודה."
+  },
+  {
+   "taskId": "general-background-freeze-stage",
+   "issue": "השורה הצפויה מצטטת את הכיסוי 'המשחק עצור', אבל בחזרה לאפליקציה מוצג 'ממשיכים בעוד' עם 3, 2, 1 על כיסוי שמסתיר את הלוח. המחרוזת board.paused 'המשחק עצור' לא נראתה. כדאי לנסח: 'הלוח מכוסה, ומעליו ממשיכים בעוד 3, 2, 1'."
+  },
+  {
+   "taskId": "pregame-offline-bottom",
+   "issue": "השורה אומרת שהבדיקה האוטומטית רצה 'כל 10 שניות'. מאז loop 5 היא רצה כל 5 שניות (CONNECTIVITY.recheckMs = 5000 ב־apps/mobile/src/net/connectivity.ts), ולכן N עולה ב־2 בכל 10 שניות. צריך לעדכן ל'כל כ־5 שניות'."
+  },
+  {
+   "taskId": "network-offline-attempts",
+   "issue": "גם כאן כתוב 'עולה כל כ־10 שניות', ובפועל N עולה כל 5 שניות (25→27→29→31 בכל 10 שניות), לפי recheckMs = 5000 מ־loop 5. צריך לעדכן את הנוסח."
+  },
+  {
+   "taskId": "general-background-no-black-levels",
+   "issue": "בשלב 74 שעון השלב סופר זמן שעבר (0:00 עד 1:00) ולא זמן שנשאר. בצעד 6 'כשהשעון מראה 0–1' מתאים לשעון שסופר לאחור (שלב 2, שלב 75). בשלב 74 הרגע הנכון הוא 0:59 עד 1:00."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "pregame-modes-fit-he",
+   "result": "pass",
+   "summary": "ב־720x1560 בצפיפות 320 כל שש השורות עד 'אימון בשלבים' נראות בלי גלילה. 'צור חדר' ו'הצטרף עם קוד' זה לצד זה מתחת לקו, ושום טקסט לא נחתך."
+  },
+  {
+   "taskId": "pregame-modes-practice-chips",
+   "result": "pass",
+   "summary": "בטלפון הצר 'ללא דירוג' ו'עובד גם בלי אינטרנט' באותה שורה (אותו y) גם בשורת הבוט וגם בשורת אימון לבד, בלי חיתוך."
+  },
+  {
+   "taskId": "pregame-modes-rows",
+   "result": "pass",
+   "summary": "'מדורג' עם 'יריבים אמיתיים, בזמן אמת': שורות 2, 3 ו־4 שחקנים עם התיאורים הנכונים. אחריה 'אימון' עם 'בלי לחץ, בלי דירוג': בוט ('5 רמות'), לבד ('בקצב שלך') ושלבים, לפי הסדר."
+  },
+  {
+   "taskId": "pregame-modes-no-ranked-chip",
+   "result": "pass",
+   "summary": "בשורות המדורג רק כותרת ותיאור, בלי צ'יפ דירוג. אין את השורה 'מדורג דורש חיבור…', ובתחתית רק 'צור חדר' ו'הצטרף עם קוד'."
+  },
+  {
+   "taskId": "pregame-modes-header-me",
+   "result": "pass",
+   "summary": "'משחק חדש' עם חץ חזרה. בצד שמאל 'אורי' והאווטר במסגרת תכלת, כמו בכרטיס בבית."
+  },
+  {
+   "taskId": "pregame-modes-bot-robot",
+   "result": "pass",
+   "summary": "רובוט כתום במסגרת כתומה. המסגרת 123x124 פיקסלים, בדיוק כמו מסגרת האווטר בשורת אימון לבד (לפי bounds)."
+  },
+  {
+   "taskId": "pregame-modes-navigation",
+   "result": "pass",
+   "summary": "'מדורג · 2 שחקנים' עם 'מצא יריב'. 3 ו־4 שחקנים עם 'מצא יריבים'. 'אימון מול בוט' עם 'בחירת יריב', 'אימון לבד' עם 'התחל אימון', ו'אימון בשלבים' פותח את מפת השלבים."
+  },
+  {
+   "taskId": "pregame-type-cards",
+   "result": "pass",
+   "summary": "מהיר 8 ש׳/קל/4–6 דק׳, רגיל 12 ש׳/בינוני/6–9, קשה 18 ש׳/קשה/9–14, עם התיאורים הנכונים. הטקסט 'ללא דירוג. הלוח נבחר…' והכפתור 'התחל אימון'."
+  },
+  {
+   "taskId": "pregame-type-ranked-rating",
+   "result": "pass",
+   "summary": "'הדירוג שלך' בכל כרטיס: מהיר 1310, רגיל 1206 עם 'זמני', קשה 1232 עם 'זמני', בדיוק כמו בכרטיס הפרופיל."
+  },
+  {
+   "taskId": "pregame-type-ranked-notes",
+   "result": "pass",
+   "summary": "ב־2 שחקנים הנוסח 'יריב קרוב… לשניכם.' עם 'מצא יריב'. ב־3 וב־4 הנוסח '…לכולם. המשחק מתחיל כשהשולחן מלא.' עם 'מצא יריבים'."
+  },
+  {
+   "taskId": "pregame-type-bot-next",
+   "result": "pass",
+   "summary": "מתחת לכרטיסים מופיע הטקסט המדויק, עם 'בשלב הבא בוחרים יריב.'. 'בחירת יריב' פותח 'בחר יריב בוט' עם 'אימון מול בוט · מהיר'."
+  },
+  {
+   "taskId": "pregame-bot-table",
+   "result": "pass",
+   "summary": "'בחר יריב בוט' ו'אימון מול בוט · רגיל'. בחמשת הבוטים השמות, הרמות, הזמנים והאחוזים נכונים, ובכל כרטיס אווטר ושורת תיאור."
+  },
+  {
+   "taskId": "pregame-bot-no-extras",
+   "result": "pass",
+   "summary": "אין דירוג, פסים, גרפים או 'הדירוג שלך'. בכל כרטיס רק זמן חשיבה וטעויות. בתחתית 'ללא דירוג', 'עובד גם בלי אינטרנט' ו'יאללה, למשחק'."
+  },
+  {
+   "taskId": "pregame-bot-all-types",
+   "result": "pass",
+   "summary": "במהיר ובקשה המספרים זהים לרגיל. רק השורה שמתחת לכותרת משתנה ל'אימון מול בוט · מהיר' או '· קשה'."
+  },
+  {
+   "taskId": "pregame-bot-start",
+   "result": "pass",
+   "summary": "אחרי Biscuit ואז Pip, רק Pip מסומן (וי זהב ומסגרת זהב, checked=true רק ב־bot-1). במשחק כרטיס היריב Pip עם '1 · טירון'."
+  },
+  {
+   "taskId": "pregame-bot-results-robot",
+   "result": "pass",
+   "summary": "במסך התוצאות, בכותרת 'יריב', אייקון רובוט באותו ציור כמו בשורה 'אימון מול בוט' (שם הוא בכתום, כאן באפור)."
+  },
+  {
+   "taskId": "game-lock-opponent-look",
+   "result": "pass",
+   "summary": "'חושב…' בכרטיס. בנעילה של G1: מסגרת כתומה עם האווטר של Pip במרכז, בלי שניות. בכרטיס 'בוחר · G1' עם טבעת כתומה קטנה."
+  },
+  {
+   "taskId": "game-lock-taken",
+   "result": "pass",
+   "summary": "הקשה על F2 הנעולה: המשבצת רעדה (היסט בין שני צילומים), השורה נשארה 'בחר משבצת', 0 נקודות ו'אין טעויות' בלי שינוי, והנעילה של Pip נשארה."
+  },
+  {
+   "taskId": "postgame-replay-open",
+   "result": "pass",
+   "summary": "'צפייה חוזרת' ו'אימון מול בוט · מהיר · היום'. 'שלב 1 מתוך 36', 'שלב הבא' בזהב ו'שלב קודם' מושבת (enabled=false). 'המשחק מתחיל', לוח LTR בלי A–I. כרטיס לי ול־Pip עם 'עוד אין… / ההסבר יופיע…'."
+  },
+  {
+   "taskId": "postgame-replay-steps",
+   "result": "pass",
+   "summary": "המונה עולה באחד והשעון מתקדם (0:15, 0:22, 0:36…). 'Pip · נכון ב־D7 · +6': הספרה על הלוח והניקוד 0←6. 'אני · נכון ב־B3 · +4.5' בשלב 27. 'שלב קודם': 15←14, והספרה ב־I2 נעלמה."
+  },
+  {
+   "taskId": "postgame-replay-explain-wrong",
+   "result": "untested",
+   "summary": "כל השורות נראו (טעות ב־A1 · ‎−2, התג 'טעות ‎−2', '2 במקום 6' באדום, 'למה 2 לא מתאים', שורת הקנס) חוץ מההבהוב האדום: קצר מכדי ללכוד ב־adb. נשאר למשה."
+  },
+  {
+   "taskId": "postgame-replay-moments",
+   "result": "pass",
+   "summary": "יש 'המהלך הטוב ביותר' ו'טעויות · 2'. 'טעויות' קפץ משלב 29 לשלב 9 ('Pip · טעות ב־I6'). 'המהלך הטוב ביותר' קפץ לשלב 3 ('Pip · נכון ב־D7 · +6')."
+  },
+  {
+   "taskId": "postgame-replay-missing",
+   "result": "pass",
+   "summary": "הקישור sudokufight://replay/nope123 פתח 'צפייה חוזרת' עם 'לא מצאנו את המשחק הזה', בלי 'לנסות שוב'. החזרה הובילה למסך הקודם (הצפייה החוזרת)."
+  },
+  {
+   "taskId": "postgame-history-filter-practice",
+   "result": "pass",
+   "summary": "ב'אימון' רק כרטיסי אימון לבד ואימון מול בוט, עם 'ללא דירוג' והערת הצפייה החוזרת. ב'מדורג' רק משחקים מדורגים, בלי ההערה. ב'הכל' שני הסוגים."
+  },
+  {
+   "taskId": "postgame-leaderboard-main",
+   "result": "pass",
+   "summary": "חמש לשוניות, 'כללי · הדירוג הגבוה של כל שחקן', ו'שלושת המובילים' ואחריהם השאר. השורה שלי מוצמדת עם 'שחק', בלי אזכור של עונה, ו'שחק' פותח 'משחק חדש'."
+  },
+  {
+   "taskId": "postgame-leaderboard-no-rating",
+   "result": "untested",
+   "summary": "לאורי יש דירוג בכל הלשוניות (קשה 1232, רגיל 1206 זמני), ולכן ההודעה 'עוד אין לך דירוג' לא מופיעה. נשאר למשה."
+  },
+  {
+   "taskId": "postgame-leaderboard-open-card",
+   "result": "pass",
+   "summary": "בלשונית 'מהיר', שורת שני_הנסיכה פותחת 'כרטיס שחקן' עם השם שלה, בלי 'כל ההישגים'. החזרה מחזירה ל'דירוג מהיר · כל העולם'."
+  },
+  {
+   "taskId": "postgame-progress-ladder",
+   "result": "pass",
+   "summary": "'הישגים והתקדמות' והאווטר בפינה. רמה 8, 'נקודות ניסיון', 'עוד 198 XP לרמה 9' ופס. 'ליגת זהב' וסולם של 5 ליגות עם 0+, 1100+, 1250+, 1400+ ו־1600+. אין משימות ואין עונות."
+  },
+  {
+   "taskId": "postgame-progress-xp-rules",
+   "result": "pass",
+   "summary": "ארבע שורות: +50 XP, +20 XP, +10 XP ו־+1 XP, עם הטקסטים המדויקים. בצילום ה־+ צמוד למספר משמאל."
+  },
+  {
+   "taskId": "postgame-progress-card-content",
+   "result": "pass",
+   "summary": "● תכלת ליד 'אורי', ו'במשחק מאז אוקטובר 2026'. 'דירוג לפי סוג משחק', 'נתוני קרב' עם 8 הנתונים, 'תוצאות אחרונות', ו'ההפרעה האהובה: זיקוקים, 3 הפעלות'."
+  },
+  {
+   "taskId": "pregame-type-givens-solo-fast",
+   "result": "pass",
+   "summary": "לוח 1: ‏48/81, ולוח 2: ‏47/81. כל הספרות 1–9 מופיעות, כל אחת 5–6 פעמים."
+  },
+  {
+   "taskId": "pregame-type-givens-solo-normal",
+   "result": "pass",
+   "summary": "לוח 1: ‏40/81 (כל ספרה 4–5 פעמים), ולוח 2: ‏36/81 (כל ספרה 4 פעמים). כל 1–9 מופיעות."
+  },
+  {
+   "taskId": "pregame-type-givens-solo-hard",
+   "result": "pass",
+   "summary": "לוח 1: ‏23/81, ולוח 2: ‏22/81. שניהם בטווח 22–29."
+  },
+  {
+   "taskId": "game-practice-solo-hud",
+   "result": "pass",
+   "summary": "אווטר, ● אני, דגל ישראל, 'אימון לבד · מהיר', 0, 'אין טעויות', 'סיום אימון', זמן רץ (0:04→0:07), מהלך שיא '—', 48/81, אין תגובות/הפרעה"
+  },
+  {
+   "taskId": "game-moves-keypad-ltr",
+   "result": "pass",
+   "summary": "מקלדת 1 משמאל עד 9 מימין עם מונים קטנים, הלוח לא מתהפך (A1 שמאל למעלה), 'ביטול בחירה' מתחת"
+  },
+  {
+   "taskId": "game-lock-cancel",
+   "result": "pass",
+   "summary": "בלי נעילה הכפתור עמום ולא עושה כלום; עם A5 נעולה – הטבעת נעלמה, 'בחר משבצת', ‎−4.5 ו־2 טעויות ללא שינוי"
+  },
+  {
+   "taskId": "game-moves-needs-lock",
+   "result": "pass",
+   "summary": "הקשה על 5 בלי נעילה: הלוח והניקוד ללא שינוי, 'בחר משבצת' זז 14px בפריים אחד וחזר"
+  },
+  {
+   "taskId": "game-lock-select",
+   "result": "pass",
+   "summary": "A2: טבעת בצבע שלי עם 8 בפינה, 'המשבצת שלך A2 · 8 שניות' + פס, T=8 ש׳, 'ביטול בחירה' כבר לא עמום"
+  },
+  {
+   "taskId": "game-moves-formula",
+   "result": "pass",
+   "summary": "A2 (d=6): שורה 5, טור 6, ריבוע 5, 6 מופיע 6 פעמים → 9−6+(9−6)/2=4.5, קיבלתי ‎+4.5"
+  },
+  {
+   "taskId": "game-moves-negative",
+   "result": "pass",
+   "summary": "טעות ראשונה: 0 → ‎−4.5, המינוס משמאל"
+  },
+  {
+   "taskId": "game-moves-wrong",
+   "result": "pass",
+   "summary": "1 אדום קטן בפינה ימנית תחתונה של A2, ‎−4.5 אדום ליד הניקוד, '1 טעות', המשבצת שוחררה"
+  },
+  {
+   "taskId": "game-moves-count",
+   "result": "pass",
+   "summary": "מתחת ל־6: 3→2 אחרי מהלך נכון; מתחת ל־1 נשאר 4 אחרי טעות"
+  },
+  {
+   "taskId": "game-moves-tried",
+   "result": "pass",
+   "summary": "A2 נעולה: מקש 1 אדום עם קו, הקשה לא הזינה ואין קנס; ב־A5 מקש 1 רגיל ופעיל"
+  },
+  {
+   "taskId": "game-moves-penalty-same",
+   "result": "pass",
+   "summary": "קנס שני ב־A2 (ספרה 2) = ‎−4.5 כמו הראשון, לא ‎−1"
+  },
+  {
+   "taskId": "game-moves-penalty-value",
+   "result": "pass",
+   "summary": "קנס ‎−4.5 והספרה הנכונה ‎+4.5, הסימן משמאל"
+  },
+  {
+   "taskId": "game-moves-wrong-stays",
+   "result": "pass",
+   "summary": "6 גדול בצבע שלי ב־A2, '1 2' אדומים קטנים נשארו בפינה הימנית התחתונה"
+  },
+  {
+   "taskId": "game-moves-correct",
+   "result": "pass",
+   "summary": "6 גדול בצבע שלי עם ● בפינה השמאלית העליונה, ‎+4.5 ליד הניקוד, 'בחר משבצת' חזר"
+  },
+  {
+   "taskId": "game-moves-sign-hebrew",
+   "result": "pass",
+   "summary": "‎−4.5 ו־‎+4.5 עם הסימן משמאל, 'מהלך שיא' ‎+4.5 A2 תקין"
+  },
+  {
+   "taskId": "game-lock-one",
+   "result": "pass",
+   "summary": "הקשה D5 ואז F1 (F2 לא ריקה בלוח הזה): טבעת רק ב־F1, 'המשבצת שלך F1 · 8 שניות'"
+  },
+  {
+   "taskId": "game-lock-relock-wait",
+   "result": "pass",
+   "summary": "D5 → ביטול → D5 מיד: זזה ~12px ולא ננעלה, ‎−4.5 ו־2 טעויות ללא שינוי; אחרי 2 ש׳ ננעלה עם 8 שניות"
+  },
+  {
+   "taskId": "game-lock-timeout",
+   "result": "pass",
+   "summary": "D7 ננעלה, אחרי 10 ש׳ 'בחר משבצת', ‎−4.5 ו־2 טעויות ללא שינוי"
+  },
+  {
+   "taskId": "game-practice-solo-stats",
+   "result": "pass",
+   "summary": "זמן עולה, מהלך שיא ‎+6 D5 לא ירד אחרי ‎+3 ו־‎+3.5, מונה 49→50→51→52 ונשאר 52 אחרי טעות; dump 'זמן 6:50' מול שעון 6:56"
+  },
+  {
+   "taskId": "game-practice-background-solo",
+   "result": "pass",
+   "summary": "C7 נעולה ב־7:22; אחרי 20 ש׳ ברקע 'ממשיכים בעוד 2', הקשה על C8 לא עשתה כלום; אחר כך 7:26 ו־C7 עדיין נעולה"
+  },
+  {
+   "taskId": "game-surrender-practice-dialog",
+   "result": "pass",
+   "summary": "החלון עם כל הטקסטים והכפתורים ו'המשחק ממשיך ברקע'; אחרי ביטול אותו לוח ו־3.5, הזמן 8:01→8:24"
+  },
+  {
+   "taskId": "game-surrender-lock-runs",
+   "result": "pass",
+   "summary": "C8 נעולה ומיד סיום אימון; אחרי ההמתנה וביטול – 'בחר משבצת', בלי טבעת ובלי קנס"
+  },
+  {
+   "taskId": "game-surrender-practice-back",
+   "result": "pass",
+   "summary": "חזור ראשון פתח 'לסיים את האימון?', חזור שני סגר והמשחק נשאר"
+  },
+  {
+   "taskId": "game-moves-exhausted",
+   "result": "pass",
+   "summary": "6 עמום עם 0; A5 נעולה + 6 – לא נכנס כלום, 10 ו־3 טעויות ללא שינוי"
+  },
+  {
+   "taskId": "game-moves-last-cell",
+   "result": "pass",
+   "summary": "המשבצת האחרונה I8=7: ‎+1.5 ליד הניקוד (68.5→70)"
+  },
+  {
+   "taskId": "game-practice-solo-complete",
+   "result": "pass",
+   "summary": "81/81 על המסך כ־1.9 ש׳, בלי 'המשחק הסתיים', תוצאות 'הלוח הושלם!' ו'איך זה נגמר: מילאת את כל הלוח'"
+  },
+  {
+   "taskId": "general-perf-startup",
+   "result": "pass",
+   "summary": "בכל 5 ההרצות יש שורת [startup]: 1260/1054/1192/1041/1047 ms, חציון 1054 ms; TotalTime חציון 2277 ms"
+  },
+  {
+   "taskId": "general-background-freeze-stage",
+   "result": "pass",
+   "summary": "שלב 74: 'מוכן?' עמד ברקע; HOME 20 ש׳ ומסך כבוי 20 ש׳: כיסוי עם 3,2,1 ואותו זמן (0:04→0:06, 0:06→0:07); 5 מעברים מהירים בלי מסך שחור ובלי קפיצה בשעון"
+  },
+  {
+   "taskId": "general-background-no-black-levels",
+   "result": "pass",
+   "summary": "סוף זמן, יציאה ('יצאת מהשלב'), 'למפה' מיד, 'לשלב הבא' x5 (שלב 75 אחד), ורקע ב־0:59: תמיד תוצאה, שלב או מפה; בלי מסך שחור ובלי 'המסך לא נטען'; התוצאה נשארה מלאה אחרי 10 ש׳"
+  },
+  {
+   "taskId": "friends-link-not-found",
+   "result": "pass",
+   "summary": "'הקישור הזה לא מוכר' עם ההסבר המלא ו'למסך הבית'; אין Unmatched Route; הכפתור מחזיר לבית"
+  },
+  {
+   "taskId": "friends-link-web-invalid-code",
+   "result": "pass",
+   "summary": "curl he: 'הקישור לא שלם' והטקסט המלא; אין קוד חדר ואין 'פתח באפליקציה'"
+  },
+  {
+   "taskId": "game-surrender-practice-confirm",
+   "result": "pass",
+   "summary": "אונליין, ספרה נכונה אחת, 'כן, לסיים': התוצאות נפתחו מיד, 'האימון הסתיים' ו'איך זה נגמר: סיימת את האימון לפני שהלוח התמלא'"
+  },
+  {
+   "taskId": "friends-error-network-join",
+   "result": "pass",
+   "summary": "מסך ההצטרפות נפתח אונליין, אחר כך מצב טיסה ו־6 ספרות: 'אין חיבור לאינטרנט.'; נשאר במסך, בלי קריסה"
+  },
+  {
+   "taskId": "pregame-offline-gametype",
+   "result": "pass",
+   "summary": "מצב טיסה והקשה על '2 שחקנים': 'מדורג · 2 שחקנים' עם באנר; 'עבור לאימון' ו'בדוק שוב', אין 'מצא יריב'"
+  },
+  {
+   "taskId": "pregame-offline-gametype-back-online",
+   "result": "pass",
+   "summary": "אחרי כיבוי מצב הטיסה, תוך 10 ש׳ הבאנר נעלם ו'מצא יריב' חזר"
+  },
+  {
+   "taskId": "pregame-offline-gametype-practice",
+   "result": "pass",
+   "summary": "'קשה' ואז 'עבור לאימון': 'אימון לבד' עם 'קשה' מסומן ו'התחל אימון'"
+  },
+  {
+   "taskId": "network-offline-game-type",
+   "result": "pass",
+   "summary": "באנר, ו'עבור לאימון' עם 'בדוק שוב' במקום 'מצא יריב'; 'עבור לאימון' פתח אימון לבד עם אותו סוג"
+  },
+  {
+   "taskId": "pregame-offline-banner",
+   "result": "pass",
+   "summary": "באנר אדום עם Wi-Fi מחוק: 'אין חיבור לאינטרנט' ו'משחקים מדורגים לא זמינים'; בזמן בדיקה 'בודק…' עם ספינר"
+  },
+  {
+   "taskId": "pregame-offline-bottom",
+   "result": "pass",
+   "summary": "'עבור לאימון' ו'בדוק שוב' בלי כפתורי חברים; 'בודק חיבור…' עם ספינר; נקודה אדומה ו'ניסיון N' עולה בלחיצה ואוטומטית (כל 5 ש׳)"
+  },
+  {
+   "taskId": "network-offline-attempts",
+   "result": "pass",
+   "summary": "באנר, 'עבור לאימון' ו'בדוק שוב'; 'בודק חיבור…' בכפתור ו'בודק…' בבאנר; N עלה בלי מגע, +1 כל 5 ש׳ (לא 10)"
+  },
+  {
+   "taskId": "pregame-offline-practice-open",
+   "result": "pass",
+   "summary": "'זמין גם בלי אינטרנט'; בוט ולבד לא עמומות, עם 'ללא דירוג' ו'זמין אופליין'; 'אימון בשלבים' פותח את המפה; 'אימון לבד' בלי באנר"
+  },
+  {
+   "taskId": "pregame-offline-go-practice",
+   "result": "pass",
+   "summary": "'עבור לאימון' פתח 'סוג משחק' של 'אימון לבד' עם 'התחל אימון', בלי באנר"
+  },
+  {
+   "taskId": "game-practice-solo-offline",
+   "result": "pass",
+   "summary": "במצב טיסה האימון נפתח בלי הודעה; ספרה נכונה בצבע שלי, ספרה שגויה אדומה עם −2"
+  },
+  {
+   "taskId": "pregame-offline-bot-practice",
+   "result": "pass",
+   "summary": "'סוג משחק' ו'בחר יריב בוט' בלי באנר; מול Pip המשבצת ננעלה והספרה נכנסה"
+  },
+  {
+   "taskId": "game-practice-bot-offline",
+   "result": "pass",
+   "summary": "Mr. Hoot (3 · מתקדם) במצב טיסה: בלי הודעת חיבור; נועל משבצות, מזין ספרות, והניקוד בכרטיס עלה עד 27"
+  },
+  {
+   "taskId": "network-offline-home",
+   "result": "pass",
+   "summary": "האפליקציה הוחלקה מהאחרונות ונפתחה שוב: באנר 'אין חיבור לאינטרנט' עם Wi-Fi מחוק בעיגול אדום, מתחת לכרטיס"
+  }
+ ],
+ "deferred": [
+  {
+   "taskId": "friends-manage-create-cancel",
+   "why": "צריך ליצור חדר ('צור חדר' ו'סגור ופתח חדש'), ואסור בנתיב הזה כשהטלפון השני בבדיקה"
+  },
+  {
+   "taskId": "friends-error-other-device",
+   "why": "צריך חדר ו־fake-client עם ID token של אורי. אין טוקנים של Firebase, ויצירת חדר אסורה בנתיב הזה"
+  }
+ ],
+ "missing": []
+}

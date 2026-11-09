@@ -1,4 +1,6 @@
 import designTokens from '../../../../docs/design/tokens.json';
+import { mixOver } from '../components/ambient/ambientModel';
+import { ambientConfig } from '../config/ambient';
 import { contrast, tokens } from '../theme';
 
 /**
@@ -312,5 +314,51 @@ describe('[D46] the board under an interference’s dim (Moshe 2026-10-17: reada
   it('really disturbs: the given digit drops to 4.5:1 or less (from about 18:1)', () => {
     expect(contrast(board.given, board.cell)).toBeGreaterThan(15);
     expect(contrast(dimmed(board.given), dimmed(board.cell))).toBeLessThanOrEqual(4.5);
+  });
+});
+
+describe('[D126] text over the wandering digits (config/ambient.ts: textMuted laid over bg, one solid ink)', () => {
+  // The digits pass behind every screen (Moshe 31.10.2026: "בכל מקום שבו יש רקע"), so behind any text drawn
+  // straight on the ground: that text must still read where a digit passes under it, at the level in use and at
+  // the most the config allows. textFaint, the faintest text, is what caps the ink.
+  const levels = [ambientConfig.ink.level, ambientConfig.ink.maxLevel];
+  const inkAt = (level: number) => mixOver(tokens.color.textMuted, tokens.color.bg, level);
+  const TEXT = [
+    'color.text',
+    'color.textMuted',
+    'color.textFaint',
+    'color.danger',
+    'color.warning',
+    'color.success',
+    'color.accent',
+    'players[0].ring',
+  ];
+
+  it.each(levels.flatMap((level) => TEXT.map((fg) => [fg, level] as const)))(
+    '%s on the ink at %s: 4.5:1 or more',
+    (fg, level) => {
+      const ink = inkAt(level);
+      expect(contrast(resolve(fg, ink), ink)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it.each(levels)('the faint icons (iconFaint) on the ink at %s: 3:1 or more', (level) => {
+    expect(contrast(tokens.color.iconFaint, inkAt(level))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('maxLevel is the most textFaint allows: a step more and it falls under 4.5:1', () => {
+    const faintOn = (level: number) => contrast(tokens.color.textFaint, inkAt(level));
+    expect(faintOn(ambientConfig.ink.maxLevel)).toBeGreaterThanOrEqual(4.5);
+    expect(faintOn(ambientConfig.ink.maxLevel + 0.01)).toBeLessThan(4.5);
+    expect(ambientConfig.ink.level).toBeLessThanOrEqual(ambientConfig.ink.maxLevel);
+  });
+
+  it('the tiny digits are clearly there: as bright as a raised card (surface2), far over the 7 % Moshe could not see', () => {
+    const step = contrast(inkAt(ambientConfig.ink.level), tokens.color.bg);
+    expect(step).toBeGreaterThanOrEqual(1.2);
+    expect(step).toBeGreaterThanOrEqual(contrast(tokens.color.surface2, tokens.color.bg));
+    expect(step).toBeGreaterThan(contrast(inkAt(0.07), tokens.color.bg) + 0.1);
+    // Still calm: dimmer than a card's border.
+    expect(step).toBeLessThan(contrast(tokens.color.border, tokens.color.bg));
   });
 });

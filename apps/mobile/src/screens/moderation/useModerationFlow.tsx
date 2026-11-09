@@ -143,7 +143,6 @@ export function useModerationFlow({
       } else {
         await unblockPlayer(target.id);
       }
-      cue('primaryPress');
       useToast.getState().show({
         variant: 'success',
         message: action === 'block' ? t('block.done', { name }) : t('block.unblocked', { name }),

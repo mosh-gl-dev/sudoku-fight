@@ -9,8 +9,9 @@ import ts from 'typescript';
  * it, not kept by hand.
  * - A Text (React Native's, Animated's, the base one) with numberOfLines={1} (or a ?: with a 1) or
  *   adjustsFontSizeToFit: what it shows, when the code says it.
- * - A toast's message (useToast().show({ message }), and a screen's own toast(…) helper): one line, 40 high
- *   (components.md §15.1, Toast.tsx).
+ * - A toast's message (useToast().show({ message }), and a screen's own toast(…) helper): 40 high for one line,
+ *   wrapping between words when it needs more, never "…" (components.md §15.1, Toast.tsx; QA loop 9). Listed so
+ *   its words are held to the toast's width and lines (widthBudget.test.ts).
  * - A sheet's title and its text subtitle (<Sheet title subtitle>): one line each (Sheet.tsx).
  * Its keys come from t('…') calls in what it shows, directly or through a const in the same function: the
  * namespace from the nearest useTranslation('…') (or 'ns:' in the key, or { ns }), a template key

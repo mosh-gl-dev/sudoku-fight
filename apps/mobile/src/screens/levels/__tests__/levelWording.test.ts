@@ -2,11 +2,14 @@ import { type AppLevel, type AppLevelOf, LEVEL_RULES, type LevelKind } from '@su
 
 import i18n from '../../../i18n';
 import { allLevels, levelById } from '../../../levels/levelsData';
+import { APP_LOCALES, readLocales } from '../../../testing/localeFiles';
 import {
   bossBandText,
   bossGateText,
   bossResultText,
   bossTraitText,
+  chapterLineLabel,
+  exitBodyText,
   fillBoardLabel,
   fillTaskText,
   findPrompt,
@@ -35,6 +38,7 @@ import {
 
 const LRI = '⁦';
 const PDI = '⁩';
+const RLM = '‏';
 
 const he = () => i18n.getFixedT('he', 'levels') as LevelsT;
 const en = () => i18n.getFixedT('en', 'levels') as LevelsT;
@@ -225,7 +229,10 @@ describe('the puzzle’s words', () => {
 describe('the boss’s words: only what the engine says', () => {
   it('a chip per trait (bossTraits), the per cent an LTR isolate', () => {
     expect(bossTraitText({ key: 'firstBot', bot: 'Pip' }, he())).toBe('הבוט הראשון: Pip');
-    expect(bossTraitText({ key: 'faster', bot: 'Pip', pct: 10 }, he())).toBe(`Pip מהיר ב־${LRI}10%${PDI}`);
+    // B27: it starts with the bot's Latin name, so an RLM first keeps the line right to left in Hebrew.
+    expect(bossTraitText({ key: 'faster', bot: 'Pip', pct: 10 }, he())).toBe(
+      `${RLM}Pip מהיר ב־${LRI}10%${PDI}`,
+    );
     expect(bossTraitText({ key: 'faster', bot: 'Pip', pct: 10 }, en())).toBe(`Pip is ${LRI}10%${PDI} faster`);
     expect(bossTraitText({ key: 'overlord' }, he())).toBe('Overlord');
     expect(bossTraitText({ key: 'moreCells', from: 4, to: 5 }, he())).toBe('5 משבצות חסרות במקום 4');
@@ -277,4 +284,91 @@ describe('what is new in each chapter (levels-content.md §3.2)', () => {
       expect(en()(`chapters.${n}.news` as 'chapters.1.news')).not.toMatch(/Where's/);
     }
   });
+});
+
+/**
+ * B27 (QA run 2): Android takes a line's direction from its first strong letter. "{{bot}} מהיר ב־{{percent}}"
+ * began with the bot's Latin name, so the boss's chip was laid out left to right ("Pip" on the left, "10%" glued
+ * to "מהיר"), and so was the panel's "Pip · רמה 1 · טירון". In the right-to-left languages, every stage line that
+ * begins with a Latin name (a bot's or a chapter's name, a cell) and has right-to-left words starts with an RLM.
+ */
+describe('B27: a right-to-left line that starts with a Latin name starts with an RLM', () => {
+  const LATIN_LEAD = /^(\{\{(bot|name|cell)\}\}|[A-Za-z])/;
+  /** A Hebrew or Arabic letter of the line's own (a label of placeholders alone is read, never laid out). */
+  const RTL_WORD = /(?=\p{L})[\p{Script=Hebrew}\p{Script=Arabic}]/u;
+  const lines = (tree: object, path = ''): [string, string][] =>
+    Object.entries(tree).flatMap(([k, v]) =>
+      typeof v === 'string' ? [[`${path}${k}`, v]] : lines(v as object, `${path}${k}.`),
+    );
+
+  it.each(['he', 'ar'])('%s', (lang) => {
+    const levels = readLocales(APP_LOCALES)[lang]!.levels!;
+    const missing = lines(levels)
+      .filter(([, v]) => LATIN_LEAD.test(v) && RTL_WORD.test(v) && !v.startsWith(RLM))
+      .map(([k]) => k);
+    expect(missing).toEqual([]);
+  });
+
+  it('as the screens say them: the boss’s chip, the panel’s bot line, the result’s reason', () => {
+    expect(he()('boss.traits.faster', { bot: 'Pip', percent: '10%' })).toBe(`${RLM}Pip מהיר ב־10%`);
+    expect(he()('panel.bot', { name: 'Pip', level: 1, title: 'טירון' })).toBe(`${RLM}Pip · רמה 1 · טירון`);
+    expect(he()('result.reasons.botWon', { bot: 'Pip' })).toBe(`${RLM}Pip הגיע ראשון`);
+    expect(en()('boss.traits.faster', { bot: 'Pip', percent: '10%' })).toBe('Pip is 10% faster');
+  });
+});
+
+describe('B39: "לצאת מהשלב?" says what the quit leaves (afterQuit)', () => {
+  it('the next stage opens, stays locked behind a shut gate, or there is none', () => {
+    expect(exitBodyText('opens', he())).toBe('תקבל 0 כוכבים, והשלב הבא ייפתח.');
+    expect(exitBodyText('locked', he())).toBe('תקבל 0 כוכבים, והשלב הבא יישאר נעול.');
+    expect(exitBodyText('last', he())).toBe('תקבל 0 כוכבים.');
+    expect(exitBodyText('opens', en())).toBe("You'll get 0 stars, and the next stage will open.");
+    expect(exitBodyText('locked', en())).toBe("You'll get 0 stars, and the next stage will stay locked.");
+    expect(exitBodyText('last', en())).toBe("You'll get 0 stars.");
+  });
+});
+
+/**
+ * QA levels-lang-english (loop 3): the result's chapter line was spoken "This chapter: 0 stars of 30. the gate is
+ * open", the visible line's lowercase fragment ("· the gate is open") reused after a full stop. The spoken gate
+ * is a sentence of its own: it starts with a capital in every language that has case; the visible fragment stays.
+ */
+describe('the result’s chapter line, spoken: the gate starts a sentence', () => {
+  const langs = Object.keys(readLocales(APP_LOCALES));
+  beforeAll(() => i18n.loadLanguages(langs));
+
+  it('English and Hebrew, as TalkBack reads them', () => {
+    expect(chapterLineLabel(0, 30, { open: true, need: 20 }, en())).toBe(
+      'This chapter: 0 stars of 30. The gate is open',
+    );
+    expect(chapterLineLabel(18, 30, { open: false, need: 20 }, en())).toBe(
+      'This chapter: 18 stars of 30. The gate needs 20',
+    );
+    expect(chapterLineLabel(30, 30, null, en())).toBe('This chapter: 30 stars of 30.');
+    expect(chapterLineLabel(18, 30, { open: false, need: 20 }, he())).toBe(
+      'בפרק הזה: 18 כוכבים מתוך 30. לשער צריך 20',
+    );
+    // The visible line keeps its fragment after the "·".
+    expect(en()('result.chapterGate', { gate: en()('result.chapterOpen') })).toBe('· the gate is open');
+  });
+
+  it.each(langs)(
+    '%s: the first letter after the full stop is a capital (or the language has no case)',
+    (lang) => {
+      const t = i18n.getFixedT(lang, 'levels') as LevelsT;
+      expect(langs).toHaveLength(19);
+      for (const gate of [
+        { open: true, need: 20 },
+        { open: false, need: 20 },
+      ]) {
+        const label = chapterLineLabel(5, 30, gate, t);
+        const gateSentence = gate.open
+          ? t('result.chapterOpenSentence')
+          : t('result.chapterNeedSentence', { need: 20 });
+        expect(label.endsWith(gateSentence)).toBe(true);
+        const first = [...gateSentence].find((c) => /\p{L}/u.test(c))!;
+        expect(first).toBe(first.toLocaleUpperCase(lang));
+      }
+    },
+  );
 });

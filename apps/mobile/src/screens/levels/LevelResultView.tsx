@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import type { AvatarIdOrNone } from '../../avatars';
 import { Icon } from '../../components/Icon';
@@ -34,11 +35,13 @@ import { KIND_ICON } from './LevelNode';
 import {
   bossGateText,
   bossResultText,
+  chapterLineLabel,
   chapterName,
   headline,
   kindName,
   type LevelsT,
   metricParts,
+  puzzleSwapsText,
   starsOf3,
 } from './levelWording';
 
@@ -47,7 +50,7 @@ import {
  * new screen or a window (the black screen of 1.0.0 came with those). What it shows:
  * - the title ("שלב 37 הושלם", or the stage and how it ended), the stars (popping in one by one, motion.md
  *   `level.stars.reveal`; at once under Reduced Motion), the measure in Teko 64 and P1 ("7.6 ש׳", "4 מתוך 5
- *   מקומות", "פער 17"), "שיא חדש!" or "השיא שלך: ★★";
+ *   מקומות", "פער 17"), "שיא חדש!" (only with a star) or "השיא שלך: ★★" (none while the best has no star);
  * - "‎+20 XP" only when there are new stars (the phone's estimate; the server pays its own count), and the
  *   chapter's line, "בפרק הזה: ★ 18/30 · לשער צריך 20";
  * - from the original §23: my mistakes, the time when the measure is not the time, the bot's row in a stage
@@ -91,6 +94,11 @@ export interface LevelPlayed {
   bestMove: { cell: CellIndex; digit: Digit; points: number } | null;
   /** "למה?": the explanation of the target, my wrong tap included (cell names already LTR). */
   why: string | null;
+  /**
+   * A puzzle: the swaps I made and the fewest that solve it, shown under the time ("4 החלפות · המינימום 3",
+   * components.md §19.10); they give no stars. Absent (or null) for every other kind.
+   */
+  swaps?: { used: number; min: number } | null;
 }
 
 /** The chapter's line: its stars after this attempt, and the gate at its end (none in the last chapter). */
@@ -109,6 +117,12 @@ export interface LevelResultViewProps {
   onNext: () => void;
   onAgain: () => void;
   onMap: () => void;
+  /**
+   * Its buttons take no press for this long after it shows (0: at once). play.tsx gives LEVEL_UI.resultGuardMs
+   * when the stage ended by itself under "לצאת מהשלב?": the dialog closed under the player's finger, and a tap
+   * meant for its "יציאה" landed on "למפה" (QA N1). Nothing looks different meanwhile.
+   */
+  armAfterMs?: number;
 }
 
 export function LevelResultView({
@@ -119,33 +133,62 @@ export function LevelResultView({
   onNext,
   onAgain,
   onMap,
+  armAfterMs = 0,
 }: LevelResultViewProps) {
   const { t } = useTranslation('levels');
   const reduce = useReduceMotion();
+  const [armed, setArmed] = useState(armAfterMs <= 0);
+  useEffect(() => {
+    if (armAfterMs <= 0) return;
+    const timer = setTimeout(() => setArmed(true), armAfterMs);
+    return () => clearTimeout(timer);
+  }, [armAfterMs]);
+  /** A button's press, once the result takes presses (a press before is dropped, silently). */
+  const whenArmed = (press: () => void) => () => {
+    if (armed) press();
+  };
+  const pressCue = armed ? undefined : null;
   const { top, bottom } = useSafeAreaInsets();
   const { outcome, finished } = played;
   const n = levelNumber(level.id) ?? 0;
   const completed = outcome.reason === 'completed';
   const bot = played.opponent?.name ?? '';
 
-  // motion.md `level.result.enter`: the result cross-fades in.
+  // motion.md `level.result.enter`: the result cross-fades in. Once in, React holds the opacity 1 too (`entered`).
+  // Reanimated copies a settled value into React's props from a JS timer and forgets it 2 s after; that timer
+  // stands still while the app is away, so a fade that ended then was forgotten unsynced, and the next commit
+  // under it put the fade's 0 back (B11: a result that came as the app left showed, then went blank).
   const opacity = useSharedValue(0);
+  const [entered, setEntered] = useState(false);
   useEffect(() => {
-    opacity.set(withTiming(1, timing(motion.duration.stateChange, 'standard', reduce)));
+    const fade = timing(motion.duration.stateChange, 'standard', reduce);
+    opacity.set(
+      withTiming(1, fade, (finished) => {
+        if (finished) scheduleOnRN(setEntered, true);
+      }),
+    );
+    // The callback can be late or lost (no frames): the result still ends visible.
+    const fallback = setTimeout(() => setEntered(true), (fade.duration ?? 0) + ENTER_FALLBACK_MS);
+    return () => clearTimeout(fallback);
   }, [opacity, reduce]);
   const enter = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   const bossWords = level.boss ? bossResultText(outcome.bossBeaten, t) : null;
   const big = headline(level, outcome);
   const parts = metricParts(level, big.measure, big.value, t);
+  // "שיא חדש!" only for a result with a star: new stars, or a measure that is now the stored best. A first try
+  // with nothing (0 of 5 places, no star) is the best so far, but no record (B26). An end with no star shows the
+  // best so far ("השיא שלך: ★★"), and no record line at all while that best has no star either.
   const newBest =
     finished !== null &&
+    outcome.stars > 0 &&
     (finished.newStars > 0 || (outcome.metric !== null && finished.bestMetric === outcome.metric));
+  const yourBest = finished !== null && !newBest && finished.best > 0 ? finished.best : null;
   const xp = finished && finished.newStars > 0 ? finished.xpEstimate : 0;
 
   return (
     <View style={[styles.screen, { paddingTop: top }]} testID="level-result">
-      <Animated.View style={[styles.flex, enter]}>
+      <Animated.View style={[styles.flex, enter, entered && styles.entered]} testID="level-result-content">
         <ScrollView contentContainerStyle={styles.content}>
           {bossWords ? (
             <BossVerdict won={outcome.bossBeaten === true} words={bossWords} reduce={reduce} />
@@ -187,27 +230,31 @@ export function LevelResultView({
             {parts.after ? <Text style={styles.unit}>{parts.after}</Text> : null}
           </View>
 
-          {finished ? (
-            newBest ? (
-              <View style={styles.bestChip} testID="level-result-new-best">
-                <Text style={styles.bestChipText}>{t('result.newBest')}</Text>
-              </View>
-            ) : (
-              <View
-                style={styles.yourBest}
-                accessible
-                accessibilityLabel={t('result.yourBestLabel', { stars: starsOf3(finished.best, t) })}
-                testID="level-result-your-best"
-              >
-                <Text style={styles.muted}>{t('result.yourBest')}</Text>
-                <StarRow
-                  stars={finished.best}
-                  size={STAR_SIZES.panel}
-                  label={null}
-                  testID="level-result-best-stars"
-                />
-              </View>
-            )
+          {played.swaps ? (
+            <Text style={styles.swaps} testID="level-result-swaps">
+              {puzzleSwapsText(played.swaps.used, played.swaps.min, t)}
+            </Text>
+          ) : null}
+
+          {newBest ? (
+            <View style={styles.bestChip} testID="level-result-new-best">
+              <Text style={styles.bestChipText}>{t('result.newBest')}</Text>
+            </View>
+          ) : yourBest !== null ? (
+            <View
+              style={styles.yourBest}
+              accessible
+              accessibilityLabel={t('result.yourBestLabel', { stars: starsOf3(yourBest, t) })}
+              testID="level-result-your-best"
+            >
+              <Text style={styles.muted}>{t('result.yourBest')}</Text>
+              <StarRow
+                stars={yourBest}
+                size={STAR_SIZES.panel}
+                label={null}
+                testID="level-result-best-stars"
+              />
+            </View>
           ) : null}
 
           {xp > 0 ? <XpLine xp={xp} stars={outcome.stars} reduce={reduce} t={t} /> : null}
@@ -247,7 +294,13 @@ export function LevelResultView({
 
         <View style={[styles.actions, { paddingBottom: bottom + space[6] }]}>
           {next ? (
-            <Button label={t('result.next')} size="lg" onPress={onNext} testID="level-result-next" />
+            <Button
+              label={t('result.next')}
+              size="lg"
+              cue={pressCue}
+              onPress={whenArmed(onNext)}
+              testID="level-result-next"
+            />
           ) : (
             <Text style={styles.note} testID="level-result-no-next">
               {n >= maxLevel() ? t('result.last') : t('result.nextLocked')}
@@ -259,7 +312,7 @@ export function LevelResultView({
               variant="secondary"
               size="modal"
               icon="refresh"
-              onPress={onAgain}
+              onPress={whenArmed(onAgain)}
               style={styles.flex}
               testID="level-result-again"
             />
@@ -267,7 +320,7 @@ export function LevelResultView({
               label={t('result.toMap')}
               variant="ghost"
               icon="map"
-              onPress={onMap}
+              onPress={whenArmed(onMap)}
               style={styles.flex}
               testID="level-result-map"
             />
@@ -283,23 +336,36 @@ export function LevelResultView({
 
 /**
  * A boss's verdict over the title: the 56 dp crown medallion and the engine's word. Won: gold, the crown pops
- * (LEVEL_MOTION.bossWonPopMs, `lv-pop`; Reduced Motion: it is simply there). Lost: muted, still.
+ * (LEVEL_MOTION.bossWonPopMs, `lv-pop`; Reduced Motion: it is simply there). Lost: muted, still. Once popped,
+ * React holds the crown at full size too (`popped`, as the result's fade: B11).
  */
 function BossVerdict({ won, words, reduce }: { won: boolean; words: string; reduce: boolean }) {
   const pop = won && !reduce;
   const scale = useSharedValue(pop ? POP_FROM : 1);
+  const [popped, setPopped] = useState(false);
   useEffect(() => {
     if (!pop) {
       scale.set(1);
       return;
     }
-    scale.set(withTiming(1, timing(LEVEL_MOTION.bossWonPopMs, 'emphasized', false)));
+    scale.set(
+      withTiming(1, timing(LEVEL_MOTION.bossWonPopMs, 'emphasized', false), (finished) => {
+        if (finished) scheduleOnRN(setPopped, true);
+      }),
+    );
+    const fallback = setTimeout(() => setPopped(true), LEVEL_MOTION.bossWonPopMs + ENTER_FALLBACK_MS);
+    return () => clearTimeout(fallback);
   }, [pop, scale]);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   return (
     <View style={styles.boss} testID="level-result-boss">
       <Animated.View
-        style={[styles.medallion, won ? styles.medallionWon : styles.medallionLost, popStyle]}
+        style={[
+          styles.medallion,
+          won ? styles.medallionWon : styles.medallionLost,
+          popStyle,
+          popped && styles.popped,
+        ]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         testID="level-result-boss-crown"
@@ -331,20 +397,32 @@ function BossGateLine({ level, gate, t }: { level: AppLevel; gate: GateState; t:
   );
 }
 
-/** "‎+20 XP": counts up once the stars are in (at once under Reduced Motion). Only with new stars. */
+/**
+ * "‎+20 XP": counts up once the stars are in (at once under Reduced Motion). Only with new stars. Once counted,
+ * the text starts over at "‎+20 XP" (`settled`): React holds an animated text at the value it started with, so
+ * a count that ended while the app was away would come back as "‎+0 XP" at the next commit (B11).
+ */
 function XpLine({ xp, stars, reduce, t }: { xp: number; stars: number; reduce: boolean; t: LevelsT }) {
   const [counted, setCounted] = useState(0);
+  const [settled, setSettled] = useState(false);
   useEffect(() => {
     if (reduce) return;
-    const timer = setTimeout(() => setCounted(xp), revealMs(stars));
-    return () => clearTimeout(timer);
+    const start = revealMs(stars);
+    const timer = setTimeout(() => setCounted(xp), start);
+    const done = setTimeout(() => setSettled(true), start + motion.duration.scoreCount + ENTER_FALLBACK_MS);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(done);
+    };
   }, [xp, stars, reduce]);
-  const shown = reduce ? xp : counted;
+  const shown = reduce || settled ? xp : counted;
   const unit = t('result.xpUnit');
   const decimal = decimalSeparator(t);
+  // Whole XP on every step of the count: the count steps in halves (a score's), and a step such as "‎+27.5 XP"
+  // read on its way to 30 looked like an estimate the server then corrected (QA levels-xp-offline, loop 5).
   const format = (value: number): string => {
     'worklet';
-    return `${ltr(`+${formatScore(value, decimal)}`)} ${unit}`;
+    return `${ltr(`+${formatScore(Math.round(value), decimal)}`)} ${unit}`;
   };
   return (
     <View
@@ -353,7 +431,13 @@ function XpLine({ xp, stars, reduce, t }: { xp: number; stars: number; reduce: b
       accessibilityLabel={t('result.xpLabel', { xp: signedText(xp, decimal) })}
       testID="level-result-xp"
     >
-      <CountUpText value={shown} format={format} style={styles.xpText} testID="level-result-xp-value" />
+      <CountUpText
+        key={settled ? 'settled' : 'counting'}
+        value={shown}
+        format={format}
+        style={styles.xpText}
+        testID="level-result-xp-value"
+      />
     </View>
   );
 }
@@ -370,12 +454,7 @@ function ChapterLine({ chapter, t }: { chapter: ResultChapter; t: LevelsT }) {
     <View
       style={styles.chapter}
       accessible
-      accessibilityLabel={t('result.chapterLine', {
-        count: chapter.stars,
-        stars: chapter.stars,
-        max: chapter.max,
-        gate: gateWords,
-      })}
+      accessibilityLabel={chapterLineLabel(chapter.stars, chapter.max, gate, t)}
       testID="level-result-chapter"
     >
       <Text style={styles.muted}>{t('result.chapterLabel')}</Text>
@@ -462,14 +541,21 @@ function OpponentRow({ level, opponent, t }: { level: AppLevel; opponent: LevelO
 }
 
 const ME = color.players[0]!;
+/**
+ * How long after an entrance's own length (the fade, the crown's pop, the XP count) React holds its end state
+ * even with no word from the animation.
+ */
+const ENTER_FALLBACK_MS = 400;
 /** levels-ui.md §3.2: the boss's crown medallion over the result's title, and its pop. */
 const MEDALLION = 56;
 const MEDALLION_CROWN = 30;
 const POP_FROM = 0.4;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   flex: { flex: 1 },
+  entered: { opacity: 1 },
+  popped: { transform: [{ scale: 1 }] },
   content: {
     alignItems: 'center',
     gap: space[6],
@@ -510,6 +596,7 @@ const styles = StyleSheet.create({
   metric: { flexDirection: 'row', alignItems: 'baseline', gap: space[3] },
   metricValue: { ...text('scoreXL'), color: ME.ring },
   unit: { ...text('h2'), color: color.textMuted },
+  swaps: { ...text('label'), color: color.text, textAlign: 'center' },
   bestChip: {
     height: 24,
     paddingHorizontal: space[5],

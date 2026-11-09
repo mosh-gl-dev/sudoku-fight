@@ -47,6 +47,25 @@ describe('cell labels (components.md §11.5, work plan §3)', () => {
     );
   });
 
+  it('says a lock’s seconds in 5-second steps, every one in the last 5 (Q1: not a change a second)', () => {
+    const said = (seconds: number) =>
+      cellLabel(cell('D5', { kind: 'oppLock', player: nina, lock: lock(seconds) }), tEn)
+        .split(', ')
+        .at(-1);
+    expect([12, 11, 10, 9, 6, 5, 4, 1].map(said)).toEqual([
+      '10 seconds',
+      '10 seconds',
+      '10 seconds',
+      '5 seconds',
+      '5 seconds',
+      '5 seconds',
+      '4 seconds',
+      '1 second',
+    ]);
+    const mine = cellLabel(cell('F8', { kind: 'myLock', player: moshe, lock: lock(18) }), tHe);
+    expect(mine).toBe('F8, ריקה, נעולה אצלך, 15 שניות');
+  });
+
   it('words every state in Hebrew', () => {
     expect(cellLabel(cell('D5'), tHe)).toBe('D5, ריקה');
     expect(cellLabel(cell('D5', { kind: 'given', digit: 4 }), tHe)).toBe('D5, 4, רמז');
@@ -56,8 +75,8 @@ describe('cell labels (components.md §11.5, work plan §3)', () => {
     expect(cellLabel(cell('D5', { kind: 'solved', digit: 6, player: moshe }), tHe)).toBe(
       'D5, 6, נפתרה על ידיך',
     );
-    expect(cellLabel(cell('F8', { kind: 'myLock', player: moshe, lock: lock(7) }), tHe)).toBe(
-      'F8, ריקה, נעולה אצלך, 7 שניות',
+    expect(cellLabel(cell('F8', { kind: 'myLock', player: moshe, lock: lock(10) }), tHe)).toBe(
+      'F8, ריקה, נעולה אצלך, 10 שניות',
     );
     expect(cellLabel(cell('F8', { kind: 'myLock', player: moshe, lock: lock(1) }), tHe)).toBe(
       'F8, ריקה, נעולה אצלך, שנייה אחת',

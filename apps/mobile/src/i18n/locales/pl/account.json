@@ -68,7 +68,8 @@
       "timeout": "Serwer nie odpowiedział na czas. Spróbuj ponownie.",
       "signedOut": "Wylogowano cię. Zaloguj się ponownie.",
       "unexpected": "Serwer wysłał nieoczekiwaną odpowiedź. Spróbuj ponownie albo zaktualizuj aplikację."
-    }
+    },
+    "avatarUnavailable": "Ten awatar nie jest jeszcze dostępny na serwerze. Wybierz inny."
   },
   "splash": {
     "tagline": "Jedna plansza. Wszyscy rozwiązują. Wygrana jest jedna.",
@@ -252,6 +253,9 @@
     "deleteGoogleBody": "Aby usunąć konto, wybierz ponownie konto Google {{email}}.",
     "deleteGoogleSubmit": "Potwierdź przez Google i usuń",
     "deleteGoogleAgain": "Usunięcie konta wymaga nowego potwierdzenia. Spróbuj ponownie i wybierz swoje konto Google.",
-    "deleteWithPassword": "Zamiast tego potwierdź hasłem"
+    "deleteWithPassword": "Zamiast tego potwierdź hasłem",
+    "deleteGoogleOffTitle": "Potrzebne logowanie przez Google",
+    "deleteGoogleOffBody": "To konto loguje się przez Google, więc usunięcie trzeba potwierdzić przez Google. Ta wersja aplikacji nie ma logowania przez Google, więc nie można tu usunąć konta. Możesz je usunąć w aplikacji ze sklepu (Google Play).",
+    "deleteGoogleOffOk": "Rozumiem"
   }
 }

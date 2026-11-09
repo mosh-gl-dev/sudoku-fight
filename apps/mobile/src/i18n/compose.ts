@@ -35,6 +35,27 @@ export function stopSentences(parts: readonly Part[], t: TFunction): string {
 /** One sentence closed with the language's full stop: "בריבוע 5." / "ボックス5。" (common:text.sentence). */
 export const closeSentence = (text: string, t: TFunction): string => t('common:text.sentence', { text });
 
+/** Where a sentence may end: a full stop, "?", "!", "…" in any script ("。", "؟", "।"…). */
+const SENTENCE_END = /[.!?…。！？؟।]$/u;
+/** Marks that may follow the last letter and take no room (an isolate's PDI, a ZWSP): not the end. */
+const TRAILING_MARKS = /[\u{200B}-\u{200F}\u{061C}\u{202A}-\u{202E}\u{2060}-\u{2069}\u{FEFF}\s]+$/u;
+
+/** Whether `text` already ends as a sentence (its last mark is a full stop, a question mark…). */
+export const endsSentence = (text: string): boolean => SENTENCE_END.test(text.replace(TRAILING_MARKS, ''));
+
+/**
+ * Parts that may or may not be sentences, one after another, never run together: each that doesn't end as a
+ * sentence yet is closed with the language's full stop (closeSentence), then they follow with match:sentenceSpace
+ * (spaceSentences). For a label made of sentences, short lines and "label: value" parts (the replay's card:
+ * Japanese has no space after a sentence, so "5ではなく1" ran into "1が入らない理由…" as "5ではなく11が…").
+ */
+export function closeSentences(parts: readonly Part[], t: TFunction): string {
+  return spaceSentences(
+    present(parts).map((p) => (endsSentence(p) ? p : closeSentence(p, t))),
+    t,
+  );
+}
+
 /** Words one after another: "7.6 ש׳", "Found 1 of 2" (common:text.wordSpace: none in Japanese, Chinese, Thai). */
 export function spaceWords(parts: readonly Part[], t: TFunction): string {
   return present(parts).join(t('common:text.wordSpace'));
@@ -71,19 +92,37 @@ export const decimalSeparator = (t: TFunction): string => t('common:number.decim
 export const percent = (value: number, t: TFunction): string => t('common:number.percent', { value });
 
 /**
+ * A language whose dates are in a calendar of its own, named outright: Thai's Buddhist year (2569; docs/i18n
+ * style/th.md). Node takes it for plain 'th' (it reads the region in, TH); Hermes on the phone does not, and wrote
+ * 2026 (QA run #2, B2).
+ */
+const CALENDARS: Readonly<Record<string, string>> = { th: 'buddhist' };
+const calendarOf = (language: string): string | undefined => CALENDARS[language.split('-')[0]!];
+
+/**
  * The locale Intl formats dates in: the app's language with Western digits ("ar-u-nu-latn": 23/10/2026 on every
- * phone; plain 'ar' is Western on a new Android and ٢٣/١٠/٢٠٢٦ on some, as 'ar-SA' is in Node). D108's
- * alternative (I18N_CONFIG.westernDigitsEverywhere off): the language alone, the system's own digits. Thai keeps
- * the Buddhist year: that is its calendar, not its digits.
+ * phone; plain 'ar' is Western on a new Android and ٢٣/١٠/٢٠٢٦ on some, as 'ar-SA' is in Node), and its calendar
+ * where it has one of its own ("th-u-ca-buddhist-nu-latn"). D108's alternative
+ * (I18N_CONFIG.westernDigitsEverywhere off): the system's own digits. Thai keeps the Buddhist year either way:
+ * that is its calendar, not its digits.
  *
  * Not checked on a phone yet: whether Hermes' Intl honours the -u-nu-latn extension (Node does). If the debug
  * screen (plan 0יג) shows Arabic-Indic digits, pass `numberingSystem: 'latn'` among the options in dateFormat too.
  */
 export function intlLocale(language: string): string {
-  return I18N_CONFIG.westernDigitsEverywhere ? `${language}-u-nu-latn` : language;
+  const calendar = calendarOf(language);
+  const keys = [
+    calendar ? `ca-${calendar}` : null,
+    I18N_CONFIG.westernDigitsEverywhere ? 'nu-latn' : null,
+  ].filter((key) => key !== null);
+  return keys.length > 0 ? `${language}-u-${keys.join('-')}` : language;
 }
 
-/** Intl.DateTimeFormat in the app's language (intlLocale). Throws as Intl does on a tag it can't read. */
+/**
+ * Intl.DateTimeFormat in the app's language (intlLocale), its calendar asked for in the options too (both ways
+ * Intl takes one). Throws as Intl does on a tag it can't read.
+ */
 export function dateFormat(language: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(intlLocale(language), options);
+  const calendar = calendarOf(language);
+  return new Intl.DateTimeFormat(intlLocale(language), calendar ? { calendar, ...options } : options);
 }

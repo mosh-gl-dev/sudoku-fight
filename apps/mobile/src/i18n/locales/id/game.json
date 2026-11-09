@@ -128,10 +128,12 @@
     "error": {
       "title": "Kesalahan koneksi",
       "offlineTitle": "Tidak ada koneksi internet",
+      "expiredTitle": "Kamu tidak kembali tepat waktu",
       "body": {
         "offline": "Ponselmu sedang tidak terhubung ke jaringan. Sambungkan ke internet lalu coba lagi.",
         "unreachable": "Kami tidak bisa menghubungi server permainan. Periksa koneksimu lalu coba lagi.",
         "lost": "Koneksi ke server permainan terputus dan kami tidak bisa memulihkannya.",
+        "expired": "Koneksi tidak pulih tepat waktu, jadi kamu dianggap keluar dari permainan.",
         "refused": "Server tidak mengizinkan kami masuk ke room."
       },
       "refusal": {
@@ -167,7 +169,9 @@
       "confirm": "Ya, menyerah",
       "cancel": "Batal",
       "footnote": "Pertandingan tetap berjalan di latar belakang",
-      "dialog": "Konfirmasi menyerah"
+      "dialog": "Konfirmasi menyerah",
+      "notSent": "Kamu belum menyerah, dan permainan berlanjut. Kamu bisa mencoba lagi",
+      "notSentOffline": "Tidak ada koneksi ke server, jadi kamu belum menyerah. Coba lagi setelah koneksi kembali"
     },
     "lobby": {
       "title": "Room privat",
@@ -391,9 +395,27 @@
       "title": "Langkah terbaik",
       "move": "{{cell}} → {{digit}}",
       "label_other": "Langkah terbaik: {{points}} poin, {{digit}} di {{cell}}",
-      "formula": "Cara menghitungnya",
-      "formulaLabel": "Cara menghitungnya: {{line}}",
-      "none": "Tidak ada langkah benar di latihan ini"
+      "before": "Terisi sebelum langkah ini",
+      "count": {
+        "row": "di baris",
+        "col": "di kolom",
+        "box": "di kotak",
+        "num": "angka {{digit}} di papan"
+      },
+      "filled": {
+        "row_other": "{{count}} di baris",
+        "col_other": "{{count}} di kolom",
+        "box_other": "{{count}} di kotak",
+        "num_other": "angka {{digit}} sudah {{count}} kali di papan"
+      },
+      "countName": {
+        "row": "baris",
+        "col": "kolom",
+        "box": "kotak",
+        "num": "angka {{digit}}"
+      },
+      "why": "Makin kosong di sekitar sel, makin tinggi nilai langkahnya. Poin ditentukan oleh dua hitungan tertinggi: {{highest}} dengan bobot penuh, {{next}} dengan bobot setengah.",
+      "none": "Kamu tidak membuat langkah benar di pertandingan ini"
     },
     "stats": {
       "time": "Waktu main",
@@ -424,7 +446,14 @@
     "ratingSoon": "Room privat: untuk saat ini rating tidak berubah",
     "actions": {
       "home": "Beranda",
-      "newGame": "Pertandingan baru"
+      "newGame": "Main lagi"
+    },
+    "again": {
+      "solo": "Langsung memulai latihan solo lagi, {{type}}",
+      "bot": "Langsung memulai pertandingan lagi melawan {{bot}}, {{type}}",
+      "botAny": "Langsung memulai pertandingan lagi melawan bot, {{type}}",
+      "ranked": "Pertandingan ranked lagi, {{type}}",
+      "friends": "Kembali bermain bersama teman"
     },
     "loading": "Memuat hasil…",
     "missing": "Kami tidak menemukan latihan ini",

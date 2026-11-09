@@ -214,6 +214,117 @@ describe('boardModel: a pending tap (optimistic display, spec §18)', () => {
   });
 });
 
+/*
+ * BRD-1: a key enters its digit in the cell the player sees as selected. While a tap waits for the server, that
+ * is the tapped cell (its select goes first on the socket), not the lock it replaces, and not nothing.
+ */
+describe('boardModel: the cell a key goes to (BRD-1)', () => {
+  const D5 = parseCellName('D5');
+  const E5 = parseCellName('E5');
+  const armedKeys = (m: BoardModel) => m.keypad.keys.filter((k) => k.state === 'armed').map((k) => k.digit);
+
+  it('no lock and nothing tapped: the keypad is idle and a key goes nowhere', () => {
+    const m = boardModel(new DemoGame().view('moshe'), 0, 0);
+    expect(m).toMatchObject({ keypadCell: null, pendingCell: null, keypad: { enabled: false } });
+    expect(armedKeys(m)).toEqual([]);
+  });
+
+  it('my lock: its cell, as before', () => {
+    const g = new DemoGame().select('moshe', 'D5', 1000);
+    expect(boardModel(g.view('moshe'), 0, 1100)).toMatchObject({
+      keypadCell: D5,
+      pendingCell: null,
+      keypad: { enabled: true },
+    });
+  });
+
+  it('the first tap, before its lock comes back: the keys work, for the tapped cell', () => {
+    const m = boardModel(new DemoGame().view('moshe'), 0, 0, { pendingCell: D5 });
+    expect(m).toMatchObject({ keypadCell: D5, pendingCell: D5, keypad: { enabled: true } });
+    expect(armedKeys(m)).toEqual(DIGITS.filter((d) => m.keypad.keys[d - 1]!.remaining > 0));
+  });
+
+  it('a switch on its way: the new cell, never the lock it replaces', () => {
+    const g = new DemoGame().select('moshe', 'D5', 1000);
+    const m = boardModel(g.view('moshe'), 0, 1100, { pendingCell: E5 });
+    expect(m.myLock?.cell).toBe(D5);
+    expect(at(m, 'E5').kind).toBe('pending');
+    expect(m).toMatchObject({ keypadCell: E5, pendingCell: E5, keypad: { enabled: true } });
+  });
+
+  it('the keys tried wrongly are those of the tapped cell, not of my lock [D12]', () => {
+    const inLock = demoWrong('D5');
+    const inTapped = demoWrong('E5', [inLock]);
+    const g = new DemoGame()
+      .miss('nina', 'D5', inLock, 500)
+      .miss('nina', 'E5', inTapped, 600)
+      .select('moshe', 'D5', 1000);
+    const locked = boardModel(g.view('moshe'), 0, 1100);
+    expect(locked.keypad.keys[inLock - 1]!.state).toBe('tried');
+    expect(locked.keypad.keys[inTapped - 1]!.state).toBe('armed');
+
+    const tapped = boardModel(g.view('moshe'), 0, 1100, { pendingCell: E5 });
+    expect(tapped.keypad.keys[inTapped - 1]).toMatchObject({ state: 'tried', disabled: true });
+    expect(tapped.keypad.keys[inLock - 1]).toMatchObject({ state: 'armed', disabled: false });
+  });
+
+  it("[D12] in the tapped cell anyone's wrong digit closes a key ('everyone': every game's rule)", () => {
+    const theirs = demoWrong('E5');
+    const mine = demoWrong('E5', [theirs]);
+    const g = new DemoGame().miss('nina', 'E5', theirs, 500).miss('moshe', 'E5', mine, 600);
+    const m = boardModel(g.view('moshe'), 0, 2000, { pendingCell: E5 });
+    expect(m.keypad.keys[theirs - 1]!.state).toBe('tried');
+    expect(m.keypad.keys[mine - 1]!.state).toBe('tried');
+    // The engine's 'mistaker' (no game offers it): a key someone else closed waits for the lock, never refused.
+    const mistaker = new DemoGame({ rules: { wrongDigitDisabledFor: 'mistaker' } }).miss(
+      'nina',
+      'E5',
+      theirs,
+      500,
+    );
+    const held = boardModel(mistaker.view('moshe'), 0, 2000, { pendingCell: E5 });
+    expect(held.keypad.keys[theirs - 1]!.state).toBe('tried');
+    mistaker.select('moshe', 'E5', 2000);
+    expect(boardModel(mistaker.view('moshe'), 0, 2100).keypad.keys[theirs - 1]!.state).toBe('armed');
+  });
+
+  it('a tapped cell the server has filled or locked meanwhile: back to my lock, or idle', () => {
+    const g = new DemoGame().select('moshe', 'D5', 1000).select('nina', 'E5', 1000);
+    expect(boardModel(g.view('moshe'), 0, 1100, { pendingCell: E5 })).toMatchObject({
+      keypadCell: D5,
+      pendingCell: null,
+    });
+    const filled = new DemoGame().solve('nina', 'E5', 1000);
+    expect(boardModel(filled.view('moshe'), 0, 1100, { pendingCell: E5 })).toMatchObject({
+      keypadCell: null,
+      pendingCell: null,
+      keypad: { enabled: false },
+    });
+  });
+
+  it('a frozen game arms nothing, and a spectator never', () => {
+    const g = new DemoGame().act({ type: 'disconnect', playerId: 'nina' }, 1000);
+    expect(g.view('moshe').status).toBe('paused');
+    const m = boardModel(g.view('moshe'), 0, 1100, { pendingCell: E5 });
+    expect(m).toMatchObject({ keypadCell: null, keypad: { enabled: false } });
+    expect(boardModel(g.view(null), null, 1100, { pendingCell: E5 }).keypadCell).toBeNull();
+  });
+
+  it("'turns' [D1]: a held lock can't be switched, so it keeps the keys", () => {
+    const g = new DemoGame({ rules: { turnModel: 'turns' } });
+    const first = g.view('moshe').turn?.playerId;
+    expect(first).toBeDefined();
+    const seat = g.view('moshe').players.find((p) => p.id === first)!.seat;
+    const fresh = boardModel(g.view(first!), seat, 1000, { pendingCell: E5 });
+    expect(fresh.keypadCell).toBe(E5);
+    // Out of my turn nothing can be locked.
+    const other = g.view('moshe').players.find((p) => p.id !== first)!;
+    expect(boardModel(g.view(other.id), other.seat, 1000, { pendingCell: E5 }).keypadCell).toBeNull();
+    g.select(first!, 'D5', 1000);
+    expect(boardModel(g.view(first!), seat, 1100, { pendingCell: E5 }).keypadCell).toBe(D5);
+  });
+});
+
 describe('boardModel: digits waiting for the connection (D42)', () => {
   const queued = (cell: string, digit: Digit) => ({ cell: parseCellName(cell) as CellIndex, digit });
 
@@ -342,7 +453,11 @@ describe('boardModel: the demo board has every cell state at once', () => {
     expect(at(m, 'F8').wrong).toHaveLength(1);
     expect(at(m, 'E5').wrong).toHaveLength(2);
     expect(at(m, 'A5')).toMatchObject({ kind: 'solved', wrong: [expect.any(Number)] });
-    expect(m.keypad.keys.filter((k) => k.state === 'tried')).toHaveLength(1);
+    // The keypad for my lock shows the digit tried under it; the pending tap takes the keys (BRD-1).
+    const locked = boardModel(view, mySeat, now);
+    expect(locked.keypad.keys.filter((k) => k.state === 'tried')).toHaveLength(1);
+    expect(m.keypad.keys.filter((k) => k.state === 'tried')).toHaveLength(0);
+    expect(m.keypadCell).toBe(parseCellName('I1'));
     expect(color.players[at(m, 'A5').player!.colorIndex]!.name).toBe('P2');
   });
 });

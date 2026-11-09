@@ -82,6 +82,7 @@
     },
     "code": "错误代码：{{code}}",
     "retry": "重新搜索",
+    "backToGame": "回到对局",
     "verify": "验证邮箱",
     "practice": "去练习",
     "practiceNote": "单人练习和与机器人练习离线也能玩。",

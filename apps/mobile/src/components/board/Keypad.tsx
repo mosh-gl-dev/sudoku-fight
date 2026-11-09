@@ -1,9 +1,10 @@
 import type { Digit } from '@sudoku-fight/engine';
 import { memo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type GestureResponderEvent, Pressable, StyleSheet } from 'react-native';
+import { type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   ReduceMotion,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -13,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { opaqueOver } from '../../theme/blend';
 import { motion } from '../../theme/motion';
 import { Text } from '../ui/Text';
 import { springs, timing } from './animation';
@@ -125,13 +127,14 @@ function KeypadView({
   guard = null,
   testID = 'keypad',
 }: KeypadProps) {
-  // keypad.arm / keypad.idle: the whole row fades between .55 and 1 in 240 ms (opacity only, so reduced motion too).
+  // keypad.arm / keypad.idle: the whole row dims to .55 and back in 240 ms (no movement, so reduced motion too).
+  // The keys stay opaque (B15, B50: the wandering digits showed through a faded row): each key veils itself in the
+  // ground's colour by this level, and looks as it did at .55 over the ground.
   const target = model.enabled ? 1 : tokens.opacity.keypadIdle;
-  const opacity = useSharedValue(target);
+  const level = useSharedValue(target);
   useEffect(() => {
-    opacity.set(withTiming(target, timing(motion.duration.stateChange)));
-  }, [opacity, target]);
-  const rowStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+    level.set(withTiming(target, timing(motion.duration.stateChange)));
+  }, [level, target]);
   // One slot is a key and its gap: a key that stands n slots from its own place moves n of them.
   const pitch = (width + size.keypadGap) / 9;
   // [D47] The fingers on the keys, by touch id (fingersOnKeys): the guard hears how many after every event.
@@ -144,8 +147,8 @@ function KeypadView({
   const up = guard ? (e: GestureResponderEvent) => touched('end', e) : undefined;
 
   return (
-    <Animated.View
-      style={[styles.row, { width }, rowStyle]}
+    <View
+      style={[styles.row, { width }]}
       onTouchStart={down}
       onTouchEnd={up}
       onTouchCancel={up}
@@ -159,9 +162,10 @@ function KeypadView({
           onIdlePress={onIdlePress}
           shift={(slotIn(order, key.digit) - (key.digit - 1)) * pitch}
           guard={guard}
+          rowLevel={level}
         />
       ))}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -204,6 +208,8 @@ interface KeyProps {
   /** How far the key stands from its own place, dp (0 unless the keys are scrambled [D47]). */
   shift: number;
   guard: KeypadGuard | null;
+  /** How much of the row shows: 1 armed, .55 idle (keypad.arm / keypad.idle). */
+  rowLevel: SharedValue<number>;
 }
 
 /** One key; only the key whose count, state or place changed redraws (a placed digit changes one count). */
@@ -214,10 +220,14 @@ const Key = memo(
     a.onDigit === b.onDigit &&
     a.onIdlePress === b.onIdlePress &&
     a.shift === b.shift &&
-    a.guard === b.guard,
+    a.guard === b.guard &&
+    a.rowLevel === b.rowLevel,
 );
 
-function KeyView({ model, onDigit, onIdlePress, shift, guard }: KeyProps) {
+/** BRD-9's armed lip (P1 at 35 %) as the opaque colour it makes over the ground (B15). */
+const LIP_ARMED = opaqueOver(color.keypad.keyLipArmed);
+
+function KeyView({ model, onDigit, onIdlePress, shift, guard, rowLevel }: KeyProps) {
   const { t } = useTranslation('board');
   const { digit, state } = model;
   const armed = state === 'armed';
@@ -276,8 +286,18 @@ function KeyView({ model, onDigit, onIdlePress, shift, guard }: KeyProps) {
         }
       : sink;
 
+  // BRD-9 (D125): the key stands on a 3 dp lip, P1's while I hold a lock, grey while idle; a press lands flush on
+  // it. A key that can't be pressed (complete, tried) has none.
+  const lip = armed ? LIP_ARMED : state === 'idle' ? color.keypad.keyLip : null;
+
+  // The key dims without turning see-through (B15, B50): a veil of the ground's colour over the face (and the lip)
+  // lets through what the key's opacity would have, complete .3 and tried .55 times the row's level.
+  const shown = state === 'complete' ? tokens.opacity.keyExhausted : tried ? tokens.opacity.keypadIdle : 1;
+  const veilStyle = useAnimatedStyle(() => ({ opacity: 1 - shown * rowLevel.get() }));
+
   return (
     <Animated.View style={[styles.slot, placeStyle]} testID={`key-${digit}-place`}>
+      {lip ? <View style={[styles.lip, { backgroundColor: lip }]} testID={`key-${digit}-lip`} /> : null}
       <Pressable
         style={styles.slot}
         onPress={onPress}
@@ -296,30 +316,40 @@ function KeyView({ model, onDigit, onIdlePress, shift, guard }: KeyProps) {
           <Animated.View
             style={[
               styles.key,
-              {
-                borderColor: state === 'idle' ? color.keypad.keyBorderIdle : color.keypad.keyBorder,
-                opacity:
-                  state === 'complete' ? tokens.opacity.keyExhausted : tried ? tokens.opacity.keypadIdle : 1,
-              },
+              { borderColor: state === 'idle' ? color.keypad.keyBorderIdle : color.keypad.keyBorder },
               pressed && armed ? styles.pressed : null,
               pressStyle,
             ]}
           >
+            {/* BRD-3: the 60 dp key can't grow with the system text: its digit and count stay the design's. */}
             <Text
+              scale="board"
               style={[text('keyDigit'), styles.teko, tried ? styles.tried : { color: color.keypad.keyText }]}
               testID={`key-${digit}-digit`}
             >
               {digit}
             </Text>
-            <Text style={[text('keyCount'), { color: color.keypad.keyCount }]} testID={`key-${digit}-count`}>
+            <Text
+              scale="board"
+              style={[text('keyCount'), { color: color.keypad.keyCount }]}
+              testID={`key-${digit}-count`}
+            >
               {model.remaining}
             </Text>
           </Animated.View>
         )}
       </Pressable>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.veil, lip ? null : styles.veilFace, veilStyle]}
+        testID={`key-${digit}-veil`}
+      />
     </Animated.View>
   );
 }
+
+/** BRD-9: the key's lip, as deep as a press goes down (key.press, elevation.keyPressed). */
+export const KEY_LIP = tokens.elevation.keyPressed.translateY;
 
 const styles = StyleSheet.create({
   // Always LTR: 1 on the left, in Hebrew too.
@@ -334,7 +364,30 @@ const styles = StyleSheet.create({
     backgroundColor: color.keypad.keyBg,
     borderWidth: tokens.border.hairline,
     borderRadius: radius.key,
+    // BRD-9: the face is the key less its lip, so the row stays 60 high.
+    marginBottom: KEY_LIP,
   },
+  // The lip: the face's shape, KEY_LIP lower, behind it; only its foot shows.
+  lip: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: KEY_LIP,
+    bottom: 0,
+    borderRadius: radius.key,
+  },
+  // The dim: over the face and its lip (together, the slot's rounded shape), or the face alone when it has no lip.
+  // Never touchable: a press goes to the key under it (an armed key's veil is clear).
+  veil: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: radius.key,
+    backgroundColor: color.bg,
+  },
+  veilFace: { bottom: KEY_LIP },
   pressed: {
     backgroundColor: color.keypad.keyPressedBg,
     borderColor: color.keypad.keyPressedBorder,

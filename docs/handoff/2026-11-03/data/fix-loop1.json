@@ -1,0 +1,169 @@
+{
+  "summary": "Fix the bugs found in loop round 1 (first Play slow, puzzle result swaps line, fixed-square tap feedback), then one skeptic review",
+  "agentCount": 3,
+  "logs": [],
+  "result": {
+    "reps": [
+      {
+        "key": "levels-puzzle",
+        "brief": "YOUR ITEMS (staged practice, puzzle level, found on the phone with build apk6):\n[{\"taskId\":\"levels-puzzle-solved\",\"title\":\"במסך התוצאה של פאזל חסרה השורה של מספר ההחלפות והמינימום\",\"what\":\"טלפון 1, apk6, עברית. אימון בשלבים ← L034 (פאזל) ← פותרים ב־3 החלפות. בתוצאה: 'שלב 34 הושלם', כוכבים, זמן, 'שיא חדש!', +10 XP, 'בפרק הזה', 'בלי טעויות'/'2 טעויות', 'למה?'. אין את השורה 'N החלפות · המינימום M'. puzzleSwapsText ב־levelWording.ts והמפתח result.swaps קיימים עם בדיקות, אבל LevelResultView לא משתמש בהם.\",\"severity\":\"minor\"},{\"taskId\":\"levels-puzzle-fixed\",\"title\":\"הקשה על ריבוע קבוע בפאזל לא מציגה שום הודעה\",\"what\":\"טלפון 1, apk6. L034 ← מקישים על ריבוע אפור עם מנעול: אין שום הודעה על המסך. ב־PuzzleLevelScreen.tsx onFixed קורא רק ל־announce(t('hud.puzzle.fixedTap')) לאזור חי שקוף (level-live). משתמש בלי TalkBack לא מקבל משוב. עזיבת ריבוע על ריבוע קבוע עובדת (חוזר למקומו).\",\"severity\":\"minor\"}]\n1) The puzzle level's result screen must show the swaps line ('N החלפות · המינימום M' — puzzleSwapsText in apps/mobile/src/screens/levels/levelWording.ts, key result.swaps) as the spec/design says (find where: docs/01-SPEC.md staged practice puzzle, docs/handoff/2026-10-19/levels-ui.md, the QA task: node docs/handoff/2026-11-03/data/task.cjs levels-puzzle-solved). Wire it into LevelResultView (or wherever the spec puts it) with the real swap count and minimum from the level's result.\n2) Tapping a fixed (locked) square must give visible feedback, not only a screen-reader announcement (task: levels-puzzle-fixed). Use an existing visual pattern of the app for a short message/toast/shake on the square (check docs/design/motion.md and how other levels give such feedback), respecting Reduced Motion, keeping the announce for TalkBack.",
+        "rep": {
+          "items": [
+            {
+              "id": "levels-puzzle-solved",
+              "status": "fixed",
+              "rootCause": "Nothing ever passed the puzzle's swap counts to the result screen. LevelPlayed had no swaps field, levelPlayedOf in levelChrome.tsx never read view.level.puzzle (swaps, minSwaps) or the PuzzleLevelOver's swaps, and LevelResultView never called puzzleSwapsText. So the line from components.md §19.10 ('the swaps under it (\"4 החלפות, המינימום 3\")') and spec §23 (1.0.3) was missing, even though the key result.swaps and puzzleSwapsText already existed with tests.",
+              "fix": "LevelPlayed gets an optional `swaps?: { used, min } | null`. levelPlayedOf fills it for a puzzle only: used is the engine's end swaps (r.end.swaps, falling back to view.level.puzzle.over/swaps) and min is view.level.puzzle.minSwaps; every other kind gets null. LevelResultView shows puzzleSwapsText(used, min, t) right under the time metric (testID level-result-swaps, label style). It has no effect on the stars. No new i18n keys.",
+              "test": "In apps/mobile/src/screens/levels/__tests__/LevelResultView.test.tsx, new describe 'a puzzle's result: the swaps under the time'. It plays the first puzzle through a real session (startLevel with ManualClock, one swap there and back, then the minimal swaps) and runs levelPlayedOf. It checks that played.swaps equals {used: min+2, min} and that the screen shows '4 החלפות · המינימום 2' in Hebrew and 'N swaps · the fewest: M' in English. A find stage shows no swaps line. Both tests failed with the old wiring (swaps forced to null).",
+              "deviceCheck": "apk with this fix, Hebrew: staged practice, L034 (puzzle), solve it in 3 swaps. Under the big time on the result there should be '3 החלפות · המינימום N'. Also check a time-up or quit puzzle result: the line shows the swaps made so far. A non-puzzle stage result should have no such line."
+            },
+            {
+              "id": "levels-puzzle-fixed",
+              "status": "fixed",
+              "rootCause": "PuzzleLevelScreen answered a touch on a fixed box (PuzzleBoard onFixed, when a fixed box is tapped or dragged first) and the engine's 'boxFixed' refusal only with announce(t('hud.puzzle.fixedTap')). That goes to the invisible 1px live region (level-live). The only visible cue was the shake of a 16dp lock icon, which is easy to miss. motion.md `level.puzzle.denied` ('Tap mode: the toast \"הריבוע הזה קבוע\"') and components.md §19.13 ('buzzes with \"הריבוע הזה קבוע\"') ask for a visible message.",
+              "fix": "PuzzleLevelScreen has a new sayFixed() that keeps the live-region announce and also shows the app's existing toast: useToast info variant, lock icon, t('hud.puzzle.fixedTap'), the same pattern as the map's locked-node toast. It is used for both onFixed and the boxFixed refusal. Repeat taps add nothing while the same message is on screen or waiting, so no pile of toasts builds up; the lock still shakes each time. Reduced Motion: the toast only fades (Toast handles it), and the lock's lit frame stays as before. No new i18n keys.",
+              "test": "In apps/mobile/src/screens/levels/__tests__/PuzzleLevelScreen.test.tsx, new describe 'a fixed box says so on the screen'. Test 1: tapping a fixed box shows the toast {variant:'info', icon:'lock', message:'הריבוע הזה קבוע'} and plays cellDenied; a second tap queues nothing; the live region still says it. Test 2: a swap onto a fixed box (engine boxFixed) shows the same toast. Both failed with the old code (no toast).",
+              "deviceCheck": "apk with this fix: L034, tap a grey box with the lock. A toast 'הריבוע הזה קבוע' with a lock icon should appear at the top for about 2 s, and the lock should shake. Tapping it several times quickly should not stack toasts. Choosing a movable box and then tapping a fixed one should show the same toast. Repeat with Reduced Motion on: the toast fades without sliding and the lock frame lights. With TalkBack, check whether the message is read once or twice (see notes)."
+            }
+          ],
+          "filesChanged": [
+            "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\levels\\LevelResultView.tsx",
+            "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\levels\\levelChrome.tsx",
+            "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\levels\\PuzzleLevelScreen.tsx",
+            "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\levels\\__tests__\\LevelResultView.test.tsx",
+            "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\levels\\__tests__\\PuzzleLevelScreen.test.tsx"
+          ],
+          "notes": "Checks run: 45 levels suites / 731 tests green (src/screens/levels, src/components/levels, src/levels, noLayoutAnimationsInGame); npx tsc -p apps/mobile --noEmit clean; eslint clean; prettier applied only to the 5 files above. I confirmed the 4 new tests fail on the old behaviour by stubbing out the two fixes for a moment, then restored the exact pre-stub copies; the other uncommitted changes in those files are kept. No i18n keys were added: result.swaps and hud.puzzle.fixedTap already exist in all locales, so i18n:check was not needed. No adb, no build.\n\nOpen point for the device check: as asked, the screen still announces through the level live region, and the Toast component is itself a polite live region (and announces on iOS). With TalkBack on, 'הריבוע הזה קבוע' may be read twice. If it is, the fix is to drop announce() in sayFixed and let the toast speak.\n\nHebrew has no _zero form for result.swaps, so a quit with 0 swaps reads '0 החלפות · המינימום N'. That is acceptable. The swaps line uses unsigned digits only, so no bidi isolation is needed."
+        }
+      },
+      {
+        "key": "first-play",
+        "brief": "YOUR ITEM (performance, found on the phone with build apk6):\n[{\"taskId\":\"general-ambient-screen-change\",\"title\":\"T3-FIRST-PLAY-SLOW still: the first 'שחק' after a cold start waits about 0.55 s before the first frame (apk6)\",\"what\":\"Phone 1 SM-A165F, apk6. force-stop; launch; wait 6–12 s on Home; gfxinfo reset; tap 'שחק'. 4 runs: press frames up to ~85 ms, then no frame until 533, 545, 552, 606 ms. First 'משחק חדש' frames 75–159 ms, fade ends ~0.7–0.8 s after the tap. Expected first frame ~250–300 ms, end ~0.45–0.55 s. Second and later visits fine: first frame 270–320 ms, ~0.45 s total. 0 Reanimated failures. The warm-up does not seem to cover what makes the first New Game mount slow.\",\"severity\":\"minor\"}]\nBackground: round 3 added a \"first 'שחק' warm-up\" (docs/handoff/2026-11-03/data/fix3-result.json, perf item H3 T3-FIRST-PLAY-SLOW — read its rootCause/fix) which runs ~1.2 s after Home. On the phone the first New Game screen still takes ~0.55 s to its first frame (later visits ~0.27–0.32 s). Find what the first mount of the New Game screen (app route + screen component + what it imports/lazily requires/initialises: fonts, SVG avatars, Skia, i18n namespaces, stores, expo-router route chunk) does the first time that the warm-up doesn't cover, and make the warm-up cover it (or remove the work). Measure in Jest/node what you can (module load, render counts); the phone check comes later. Don't regress cold start or Home. Keep the change small and documented in docs/PERF.md.",
+        "rep": {
+          "items": [
+            {
+              "id": "T3-FIRST-PLAY-SLOW (apk6, general-ambient-screen-change)",
+              "status": "fixed",
+              "rootCause": "The slow part was the 'שחק' press, not the New Game screen. 'שחק' is a primary Button. TactileSurface's withCue plays cue('primaryPress') (sound ui_tap) synchronously and only then runs onPress, which calls router.push('/modes'). sfx creates each sound's player on first use, and nothing creates ui_tap on Home before that first press. In expo-audio (AudioModule.kt), the AudioPlayer Constructor does runOnMain = runBlocking(mainQueue): the ExoPlayer is built on the UI thread while the JS thread waits. The first ExoPlayer in a process is slow to build. So the press frames end, then no frame comes, and Modes cannot start rendering until the player exists. That matches 'no frame from ~85 to 533–606 ms'. It happens only once per process, because sfx keeps its players (no release() caller), so second visits are fine. The round-3 warm-up covered the barrel code and the avatar parse, but not this. Measured in Jest: I profiled each /modes visit after warmModes with an inspector CPU profile. The first visit's JS was the same as the second's, apart from Jest's own overhead. So no first-visit JS cost is left on the screen side. In Jest, createAudioPlayer is a mock, so this cost never shows there.",
+              "fix": "apps/mobile/src/screens/home/warmModes.ts: warmModes() now also calls preloadCues(PRESS_CUES = ['primaryPress']) when useSettings sound is on (with sound off the press plays nothing). It runs on every warm-up and does nothing once the player exists, so turning sound on later is covered. It sits in try/catch like the barrel require, because some tests replace the feedback service with only cue(). It runs at the existing moment: Home focused, MODES_WARM_DELAY_MS 1200 plus an idle moment. No new modules join the start: feedback, sfx and settings were already in the startup graph (startupGraph.test passes). The file's header comment explains the cause. docs/PERF.md section 4 ('משחק חדש מוכן לפני ההקשה הראשונה') now has the apk6 result, the cause, the fix, and its cost: one UI-thread stall on a settled Home instead of between the tap and the next screen. It also covers every primary button's first press, not only 'שחק'. The new test is added to the tests list there. No UI strings, so no i18n change.",
+              "test": "New apps/mobile/src/screens/home/__tests__/warmPressCue.test.tsx (real sfx and feedback, expo-audio and expo-haptics from nativeMocks). (1) After warmModes('cassette'), exactly one ui_tap player exists. Pressing a real primary <Button> then creates no player, plays that one, and runs onPress. (2) Control: with no warm-up, the first press creates the player before onPress runs (invocationCallOrder). That is the cost apk6 measured. (3) Sound off: no player. After sound is turned on, repeated warm-ups create exactly one. Tests (1) and (3) fail on the old warmModes (checked by disabling the new line, then restoring it). Also passing: warmModes, warmModesHit, warmModesFocus, HomeScreen, homeTransitions, homeEntrance, startupGraph, sfx, feedback and Button tests (174/174). tsc -p apps/mobile --noEmit is clean. eslint and prettier are clean on the changed files.",
+              "deviceCheck": "Needs a new APK, with sound on in Settings (the default). (1) Same steps as before: force-stop, launch, wait 6–12 s on Home, gfxinfo reset, tap 'שחק'. Expected: the first frame of 'משחק חדש' ~250–300 ms after the tap (was 533–606), fade done ~0.45–0.55 s, the same as a second visit. (2) Cost check on Home: force-stop, launch, gfxinfo reset at once, do not touch for 4 s, then dump framestats. Expect one longer UI frame or gap about 1.2–2 s after Home appears (the player being built). Note how long it is and whether the ambient digits or the avatar visibly stutter. (3) Diagnostic if (1) is still slow: turn sound off in Settings, force-stop, wait, tap 'שחק'. If the first visit is fast with sound off, the press player was the cause and the warm-up did not run in time. Check that it ran (wait longer than 2 s). (4) Optional: tap 'עוד סיבוב' within 1 s of launch. That press still builds the player (the warm-up has not run yet), as before."
+            }
+          ],
+          "filesChanged": [
+            "apps/mobile/src/screens/home/warmModes.ts",
+            "apps/mobile/src/screens/home/__tests__/warmPressCue.test.tsx",
+            "docs/PERF.md"
+          ],
+          "notes": "I traced the cause by reading the code and through Jest, not on a phone. The theory matches what apk6 showed: a UI-thread gap right after the press frames that happens only once per process. The warm-up removes that cost from the tap, but moves a one-time UI stall to a settled Home (about 1.2 s after it appears). The QA should check how visible it is (deviceCheck step 2).\n\nRelated findings outside this item, not changed:\n(a) GameScreen calls preloadCues() in its mount effect. That builds about 13 ExoPlayers synchronously, each a blocking runOnMain on the UI thread, while the game screen's transition runs. It is a likely source of a hitch at game start; worth measuring with framestats around the first frames of a game.\n(b) Each sfx.play of a UI tick runs playingCount(). That reads p.playing on every player, each one a blocking runOnMain round trip to the UI thread. After a game (14+ players), every primary press makes about 14 blocking calls to the UI thread before onPress.\n(c) useConnectivityWatch runs check() on mount, which does set({checking:true}) and set again when the answer comes. Home reads the whole connectivity state, so each Modes visit re-renders Home twice under the transition. The first of those renders comes in the same JS task as the push (sync passive effects), before the first mount.\n\nScratch profiling files were temporary and are deleted. Nothing in the repo besides the 3 files listed was touched. No adb, build or install was run."
+        }
+      }
+    ],
+    "rev": {
+      "verdict": "issues",
+      "issues": [
+        {
+          "area": "levels-puzzle",
+          "severity": "low",
+          "problem": "A screen reader reads 'הריבוע הזה קבוע' twice for each tap on a fixed box. sayFixed() calls announce() through the level live region and also shows a Toast, and the Toast speaks on its own. On iOS this happens for sure: useLiveAnnouncer and Toast each call AccessibilityInfo.announceForAccessibility. On Android TalkBack it is likely, because the 1px level-live region changes and the newly mounted Toast is a polite live region. The fixer marked this as an open point and did not resolve it.",
+          "evidence": "apps/mobile/src/screens/levels/PuzzleLevelScreen.tsx sayFixed: `announce(message); ... toasts.show({ variant: 'info', icon: 'lock', message })`. apps/mobile/src/screens/game/useLiveAnnouncer.ts:30 `if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(line)`. apps/mobile/src/components/ui/Toast.tsx: `useEffect(() => { if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(message) }, [message])` and `accessibilityLiveRegion={... 'polite'}`.",
+          "suggestion": "Call announce() only when no toast is shown, which is the dedupe branch where the same toast is already up or queued. When the toast is shown, let it speak. Keep a test that the live region or the toast carries the words exactly once. If TalkBack does not read a freshly mounted live region, keep announce on Android only and check this on the device."
+        },
+        {
+          "area": "levels-puzzle",
+          "severity": "low",
+          "problem": "Two smaller deviations from the spec. (1) motion.md `level.puzzle.denied` asks for the toast in tap mode only ('Tap mode: the toast'); in drag mode the box returning home is the feedback. sayFixed also runs on the engine's boxFixed refusal after a drag, and on onTouchFixed when a drag starts on a fixed box, so drag mode now shows a toast as well. (2) The toast sits at top+8dp for about 2.2 s and is not pointerEvents:none. It covers, and catches touches on, whatever the puzzle HUD has at the top (the timer or the X), while the level is being timed.",
+          "evidence": "docs/design/motion.md:310 'Tap mode: the toast \"הריבוע הזה קבוע\"'. PuzzleLevelScreen: `case 'swapRefused': ... if (e.reason === 'boxFixed') sayFixed();` and `onFixed={sayFixed}`. Toast.tsx styles.box has no pointerEvents, and ToastViewport puts it at `top: top + space[4]`, with toastModel info hold 2000 ms.",
+          "suggestion": "Acceptable as it is: it is the app's existing toast pattern, and showing it in drag mode too is arguably friendlier. Note the drag-mode deviation in motion.md, or limit the toast to taps. Also add to the device check whether the toast covers the timer or blocks the level's X."
+        },
+        {
+          "area": "first-play",
+          "severity": "low",
+          "problem": "The root cause was found by reading code and has not been shown on a device. Jest mocks createAudioPlayer, so warmPressCue.test only proves that the warm-up creates the ui_tap player, not that this player is the stall of about 450 ms on the phone. The code path is real: withCue calls playCue before onPress, sfx.voices calls createAudioPlayer, and expo-audio's Constructor builds the player in runOnMain = runBlocking(mainQueue), so the JS thread waits on the UI thread. Other one-time native costs on the first Modes mount would also not show in Jest (the first instance of a native view type or image decode). The fix also moves a UI-thread stall onto Home about 1.2 s after it appears, where Reanimated's ambient animations run. That is a possible visible stutter, and its size is unknown.",
+          "evidence": "node_modules/expo-audio/android/.../AudioModule.kt:354-357 `Constructor {...} runOnMain { AudioPlayer(...) }` and :939 `runBlocking(appContext.mainQueue.coroutineContext)`. apps/mobile/src/components/ui/tactile.tsx withCue: `if (cueName) playCue(cueName); onPress(e);`. warmModes.ts: `if (useSettings.getState().sound) preloadCues(PRESS_CUES)` inside warmModesLater (1200 ms + whenIdle). Even after the warm-up, every press still makes blocking runOnMain calls before onPress: playingCount() reads p.playing on every player, plus play().",
+          "suggestion": "Treat this as fixed only if the apk7 device check passes, using the fixer's diagnostic step 3: a fast first visit with sound off confirms the cause. Measure Home framestats 1–2.5 s after launch for the stall the fix moved there. A follow-up for later, not a blocker: play the press cue after onPress or in a microtask, so router.push is never queued behind a UI-thread round trip."
+        }
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Fix"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "fix:levels-puzzle",
+      "phaseIndex": 1,
+      "phaseTitle": "Fix",
+      "agentId": "a7a8a17dbf561b1fe",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1794076858312,
+      "queuedAt": 1794076858293,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Checks run: 45 levels suites / 731 tests green (src/screens…",
+      "promptPreview": "Moshe explicitly asked for this autonomous test→fix loop (\"תעבוד בלי הנחיות. בודק מתקן בודק מתקן\"). Mid-run chat messages are for the main session.\nRepo root = working directory; CLAUDE.md applies (t() for every string in all 19 locales via the i18n tooling the repo uses, Reduced Motion, RTL, signed-number isolation). QA testers are using the phones right now: NO adb, no APK build, no deploy, no n…",
+      "promptFramed": true,
+      "lastProgressAt": 1794077495393,
+      "tokens": 152574,
+      "toolCalls": 58,
+      "durationMs": 637080,
+      "resultPreview": "{\"items\":[{\"id\":\"levels-puzzle-solved\",\"status\":\"fixed\",\"rootCause\":\"Nothing ever passed the puzzle's swap counts to the result screen. LevelPlayed had no swaps field, levelPlayedOf in levelChrome.tsx never read view.level.puzzle (swaps, minSwaps) or the PuzzleLevelOver's swaps, and LevelResultView never called puzzleSwapsText. So the line from components.md §19.10 ('the swaps under it (\\\"4 החלפות…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "fix:first-play",
+      "phaseIndex": 1,
+      "phaseTitle": "Fix",
+      "agentId": "a768b9d771f0010d4",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1794076858313,
+      "queuedAt": 1794076858293,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I traced the cause by reading the code and through Jest, no…",
+      "promptPreview": "Moshe explicitly asked for this autonomous test→fix loop (\"תעבוד בלי הנחיות. בודק מתקן בודק מתקן\"). Mid-run chat messages are for the main session.\nRepo root = working directory; CLAUDE.md applies (t() for every string in all 19 locales via the i18n tooling the repo uses, Reduced Motion, RTL, signed-number isolation). QA testers are using the phones right now: NO adb, no APK build, no deploy, no n…",
+      "promptFramed": true,
+      "lastProgressAt": 1794078325148,
+      "tokens": 245439,
+      "toolCalls": 97,
+      "durationMs": 1465921,
+      "resultPreview": "{\"items\":[{\"id\":\"T3-FIRST-PLAY-SLOW (apk6, general-ambient-screen-change)\",\"status\":\"fixed\",\"rootCause\":\"The slow part was the 'שחק' press, not the New Game screen. 'שחק' is a primary Button. TactileSurface's withCue plays cue('primaryPress') (sound ui_tap) synchronously and only then runs onPress, which calls router.push('/modes'). sfx creates each sound's player on first use, and nothing creates…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "review:loop1",
+      "phaseIndex": 2,
+      "phaseTitle": "Review",
+      "agentId": "a5af1b79cab9db8f5",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1794078326114,
+      "queuedAt": 1794078326091,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "issues",
+      "promptPreview": "Moshe asked for this autonomous loop; mid-run chat is for the main session. You are an independent, skeptical reviewer (CLAUDE.md applies). Do NOT edit files. No adb, no build.\nFixes just made (briefs + reports): [{\"key\":\"levels-puzzle\",\"brief\":\"YOUR ITEMS (staged practice, puzzle level, found on the phone with build apk6):\\n[{\\\"taskId\\\":\\\"levels-puzzle-solved\\\",\\\"title\\\":\\\"במסך התוצאה של פאזל חסר…",
+      "promptFramed": true,
+      "lastProgressAt": 1794078990519,
+      "tokens": 95910,
+      "toolCalls": 31,
+      "durationMs": 664404,
+      "resultPreview": "{\"verdict\":\"issues\",\"issues\":[{\"area\":\"levels-puzzle\",\"severity\":\"low\",\"problem\":\"A screen reader reads 'הריבוע הזה קבוע' twice for each tap on a fixed box. sayFixed() calls announce() through the level live region and also shows a Toast, and the Toast speaks on its own. On iOS this happens for sure: useLiveAnnouncer and Toast each call AccessibilityInfo.announceForAccessibility. On Android TalkBa…"
+    }
+  ],
+  "totalTokens": 493923,
+  "totalToolCalls": 186
+}

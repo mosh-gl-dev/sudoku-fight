@@ -63,6 +63,9 @@
     "title": "Nova partida",
     "footnote": "A ranqueada precisa de conexão com a internet · O treino está sempre disponível",
     "soon": "Em breve",
+    "needsConnection": {
+      "rankedAndFriends": "Ranqueada e com amigos"
+    },
     "groups": {
       "ranked": {
         "title": "Ranqueada",

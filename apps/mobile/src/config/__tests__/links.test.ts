@@ -61,7 +61,7 @@ describe('roomLinkOf: what a URL the app was opened with says', () => {
 
   it("another server's room link, or a code that is not 6 digits: a bad room link (Home)", () => {
     for (const url of [
-      'https://sudoku-fight-prod.fly.dev/r/123456',
+      'https://sudokufight.app/r/123456',
       'https://evil.example/r/123456',
       `https://${STAGING}/r/12345`,
       `https://${STAGING}/r/1234567`,

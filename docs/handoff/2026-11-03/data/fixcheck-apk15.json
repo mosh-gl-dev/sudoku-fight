@@ -1,0 +1,123 @@
+{
+ "checks": [
+  {
+   "id": "surrender-end-empty-frame-still (A ranked surrender, B practice 'סיום אימון', C Reduced Motion, D opponent surrender, + full board)",
+   "result": "partial",
+   "evidence": "APK 15, צילום רציף על המכשיר (cap.sh, 4–5 לולאות, רוב המרווחים 30–130 ms, לפעמים 200+ ms). כניעה מדורגת: טלפון 1 (הפחתת תנועה 'מופעלת') 2/2 נקי, טלפון 3 (כבויה) 2/2 נקי: הלוח עובר לתוצאות, ובפריים המעבר רואים כבר אווטר ו'הפסד' מעל הלוח החצי-שקוף. אין פריים עם רק רקע/ספרות או רק 'לבית'. כניעת היריב: טלפון 3 (כבויה) 1/1 ו־טלפון 1 (מופעלת) 1/1 נקי, 'ניצחון!' מופיע כבר בפריים המעבר והכתר מגיע אחר כך. 'סיום אימון' מול Mr. Hoot: טלפון 3 3/3 נקי, טלפון 1 2/2 נקי. לוח מלא: טלפון 3 (כבויה) 2/2 נקי. טלפון 1 (מופעלת) 3/4 נקי, אבל ב־1 מתוך 4 (10:17, מדורג מול הבוט YuvalA, הבוט מילא את המשבצת האחרונה) היה פריים ריק לגמרי בין הלוח ל'הפסד': רק רקע כהה, בלי ספרות מרחפות ובלי שום תוכן. ב־logcat אין '[Reanimated] synchronouslyUpdateUIProps failed'. צילומים: qa-shots/fix10-RF8Y60PP2XZ-surr-rm-1.png, -surr-rm-2.png, fix10-RF8Y30L038L-surr-1.png, -surr-2.png, fix10-RF8Y30L038L-oppsurr-1.png, fix10-RF8Y60PP2XZ-oppsurr-rm-1.png, fix10-*-practice-end-*.png, fix10-RF8Y60PP2XZ-fullboard-rm-1.png + fix10-RF8Y60PP2XZ-fullboard-rm-1-f71.png (הפריים הריק), fullboard-rm-2..4, fix10-RF8Y30L038L-fullboard-3/4.png. הערה: בלוח מלא, טלפון 3 (בלי הפחתה) מחזיק את הלוח המלא כ־3.6 ש' לפני התוצאות, וטלפון 1 כ־1.4 ש'.",
+   "qaAction": "אין: המשימה ranked-end-i-surrender-my-lock-5x מסומנת V, והכניעה עצמה נקייה עכשיו. הפריים הריק בלוח מלא דווח כבאג (appBugs)."
+  },
+  {
+   "id": "results-newgame-empty-frame-intermittent (Results 'משחק חדש' → search ×5)",
+   "result": "pass",
+   "evidence": "טלפון 3 (תנועה רגילה) 5/5 נקי, וגם טלפון 1 (הפחתת תנועה מופעלת) 1/1 נקי. בפריים המעבר רואים את התוצאות דוהות ואת עמודת החיפוש שלמה ('מתחבר לתור…', השעון, הרדאר והכיסא) יחד עם 'ביטול חיפוש'. אין פריים שבו מופיע רק הכפתור. לא נבדק: מצב שבו התאמה נמצאה ואז בוטלה, וחיפוש שחוזר אחרי זה. הערה: בזמן הצילום הכבד החיפוש נשאר על 'מתחבר לתור… 0:00' יותר מ־10 ש'. בלי צילום הוא התחבר תוך כ־2 ש' והשעון רץ, כלומר העומס של הצילום גרם לזה. צילומים: qa-shots/fix10-RF8Y30L038L-newgame-1..5.png, fix10-RF8Y60PP2XZ-newgame-rm-1.png, fix10-RF8Y30L038L-conn-montage.png",
+   "qaAction": "אין"
+  },
+  {
+   "id": "back-during-go-opens-surrender (Back during 3-2-1 and GO!)",
+   "result": "pass",
+   "evidence": "שני הטלפונים, מדורג מהיר אחד מול השני. 'חזרה' נלחצה כל כ־0.33 ש' מהרגע שנמצא יריב, עם צילום מסך אחרי כל לחיצה. טלפון 3 (תנועה רגילה): לחיצות ב־2, 1 ו־GO! (3 לחיצות) לא עשו כלום: אין חלון כניעה ולא יוצאים. אחרי שהלוח הופיע במלואו, הלחיצה פתחה את 'אתה בטוח שאתה רוצה להיכנע?'. טלפון 1 (הפחתת תנועה מופעלת): 2, 1 ו־GO! (4 לחיצות) לא עשו כלום. בשתי הלחיצות הראשונות על הלוח השלם (כ־0.3–0.7 ש' אחרי GO!) גם לא קרה כלום, ואז החלון נפתח. הלחיצה על '3' עצמה לא נתפסה, כי הזיהוי התחיל במעבר מהחיפוש. צילומים: qa-shots/fix10-RF8Y30L038L-backgo-2.png, fix10-RF8Y60PP2XZ-backgo-rm-2.png",
+   "qaAction": "qa mark 2 pregame-found-countdown-reduced partial עם actual חדש: הבאג של 'חזרה' בזמן GO! תוקן. נשאר רק שהלוח מופיע כ־1.0–1.3 ש' אחרי GO! (ראה catalogIssues)."
+  },
+  {
+   "id": "density-change-orphans-ranked-game: wm density 540 / font_scale 1.3 mid ranked game",
+   "result": "pass",
+   "evidence": "טלפון 1 מול טלפון 3. טלפון 1: הונחה ספרה (4.5), ואז wm density 540: אותו לוח עם ה־8 ו־4.5 נקודות, ועוד ספרה התקבלה (8 נק'). אחרי density reset ואחר כך font_scale 1.3 ובחזרה ל־1.0: כל פעם אותו לוח ו־8 נקודות. לא חזר לבית. בטלפון 3 לא הופיע באנר ניתוק. טלפון 3: wm density 540 נותן כ־1.5–2 ש' של רקע ריק (בניית ה־activity מחדש) ואז אותו לוח, לא הבית. ספרה ב־540 התקבלה (4.5), ואז reset, 1.3 ו־1.0: אותו לוח. בטלפון 1 לא היה באנר. המשחק הזה הסתיים כרגיל בלוח מלא ('תיקו' 45:45, 'הלוח התמלא'). המשחק של טלפון 1 עם שינוי ה־density הסתיים בנטישה, אבל רק כי פתחתי Recents והשארתי את האפליקציה ברקע כ־40 ש' (לא באג). צילומים: qa-shots/fix10-RF8Y60PP2XZ-dens540-1.png, fix10-RF8Y30L038L-dens540-opp-1.png, fix10-dens-montage-p3.png, fix10-RF8Y60PP2XZ-font13-1.png",
+   "qaAction": "אין (אין משימה ב־run 2 שמכסה את זה ומסומנת fail/partial)"
+  },
+  {
+   "id": "density-change-orphans-ranked-game step 3: ranked SEARCH survives wm density 540",
+   "result": "fail",
+   "evidence": "טלפון 3, בעברית. ניסיון 1: חיפוש מ'משחק חדש' בתוצאות ('מחפש יריב… 0:20'). ניסיון 2: חיפוש רגיל מהבית ('שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב', 'מחפש יריב… 0:02'). בשני הניסיונות, אחרי wm density 540 האפליקציה נבנתה מחדש על הבית ולא על מסך החיפוש. גם אחרי wm density reset נשאר הבית. החיפוש גם בוטל בשרת: טלפון 1 התחיל אז חיפוש 'מהיר · 2', לא הותאם לטלפון 3, וקיבל אחרי כ־20 ש' יריב-בוט (איתי81). צילומים: qa-shots/fix10-RF8Y30L038L-searchdens-montage.png, fix10-RF8Y30L038L-searchdens2-montage.png",
+   "qaAction": "אין משימה מתאימה ב־run 2; דווח כבאג (appBugs)."
+  },
+  {
+   "id": "cold-start-resume-ranked-and-friends a): swipe app away mid ranked game, relaunch within ~5 s",
+   "result": "pass",
+   "evidence": "טלפון 1 מול טלפון 3, מדורג מהיר. טלפון 1 הניח ספרה (6 נק'). אחר כך Recents, האפליקציה הוחלקה למעלה (התהליך נסגר, pidof ריק), ופתיחה מחדש אחרי כ־3.5 ש'. טלפון 1: מסך פתיחה, הבית לכ־1 ש', 'טוען לוח… מצטרפים למשחק', ואז אותו לוח עם 6 הנקודות. בטלפון 3: על כרטיס היריב הופיעו נקודה צהובה ואייקון 'אין חיבור', ואז השחקן חזר. לא הופיעה השכבה 'היריב מתנתק…', כי ההיעדרות הייתה קצרה מ־10 ש', כמו שהמשימה מתירה. בניסיון הראשון השארתי את Recents פתוח כ־40 ש', אז טלפון 3 ספר 5…1 ('היריב מתנתק…') ובסוף 'אורי עזב את המשחק · ניצחת בנטישה', וטלפון 1 נפתח על 'הפסד'. זו ההתנהגות הצפויה אחרי 25 ש'. מתחת לטבעת עדיין כתוב באנגלית 'Reconnecting... 5', וזה ידוע וממתין למשה. סעיפים b–d (לחיצה על 'שחק' בזמן החזרה, חזרה אחרי 60 ש', חדר חברים) לא נבדקו. צילומים: qa-shots/fix10-swipe-montage-2.png, fix10-swipe-montage-1.png",
+   "qaAction": "אין"
+  },
+  {
+   "id": "history-he-practice-line-cut-360",
+   "result": "pass",
+   "evidence": "טלפון 3, בעברית, density 480 ו־font 1.3, היסטוריה ← אימון. 'הפסד • אימון מול בוט • מהיר' שלם ב־3 שורות. 'האימון הסתיים • אימון לבד • מהיר' שלם ב־4 שורות, בלי '…' ובלי מילה שבורה. צילומים: qa-shots/fix10-RF8Y30L038L-history-he360-practice.png, -history-he360-solo.png",
+   "qaAction": "כלול ב־partial החדש של general-display-small-big-font"
+  },
+  {
+   "id": "playercard-en-stages-clipped-360",
+   "result": "pass",
+   "evidence": "באנגלית, 480 ו־1.3. 'Stages: 9 • ★ 0' שלם, עם מקום מתחתיו. '1,235 / 1,400 XP' שלם, וגם 'Playing since October 2026' (בשתי שורות). צילום: qa-shots/fix10-RF8Y30L038L-card-en360.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "not-enough-points-toast-cut",
+   "result": "pass",
+   "evidence": "בעברית, density 540, font 1.0, מדורג מול בוט עם 0 נק': 'אין מספיק נקודות להפרעה הבאה (2 נק׳)' שלם בשתי שורות, הסוגריים במקום הנכון והלוח לא מכוסה. באנגלית, 480 ו־1.3: 'Not enough points for the next interference (2 pts)' שלם בשתי שורות. השבב 'זיקוקים ← Ofek_92' (540) ו־'Fireworks → <שם>' (480 ו־1.3) בשורה אחת מעל הלוח, ושורת הבחירה גלויה. לא נבדקו: הודעה בעברית ב־480 ו־1.3, ובאנגלית ב־540. צילומים: qa-shots/fix10-RF8Y30L038L-toast-he540.png (+-crop), -toast-en360-13.png, -chip-he540.png, -chip-en360-13.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "bot-header-chip-cut-360",
+   "result": "pass",
+   "evidence": "באנגלית, 480 ו־1.3, אימון מול Mr. Hoot. התג 'Advanced' שלם, השם 'Mr. Ho…' (מותר). צילום: qa-shots/fix10-RF8Y30L038L-card-bot-en360.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "leaderboard-podium-edge-360",
+   "result": "pass",
+   "evidence": "באנגלית, 480 ו־1.3, לשונית General. במקום 2 (יאיר): '1232' ומתחתיו 'Provisional' במרכז, בתוך העמודה השמאלית, ושום דבר לא נוגע בקצה. צילום: qa-shots/fix10-RF8Y30L038L-lb-en360-general.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "botselect-en-desc-ellipsis-360",
+   "result": "pass",
+   "evidence": "באנגלית, 480 ו־1.3. כל 5 התיאורים מלאים, בלי '…' (Pip: 'Slow, makes a fair few mistakes, and lets you learn' ב־3 שורות). צילומים: qa-shots/fix10-RF8Y30L038L-botsel-en360-montage.png, -botsel-en360-3.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "replay-prev-chevron-360 (not-a-bug)",
+   "result": "pass",
+   "evidence": "באנגלית, 480 ו־1.3. 'Previous' בשורה הראשונה ו־'step' בשנייה, עם החץ, בלי מילה שבורה ובלי '…'. צילום: qa-shots/fix10-RF8Y30L038L-replay-en360.png",
+   "qaAction": "כלול ב־general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font (re-test of run #2 task)",
+   "result": "partial",
+   "evidence": "כל 7 הפריטים של loop 9 תוקנו (ראה למעלה). נמצא קיצוץ חדש בחלון 'Pick an interference' באנגלית, ב־480 ו־1.3: 'Scrambled digits' ו־'Scrambled keypad' חתוכים, והשורה התחתונה נגמרת ב־'tap to …'. צילום: qa-shots/fix10-RF8Y30L038L-picker-en360.png",
+   "qaAction": "qa mark 2 general-display-small-big-font partial --actual-file (בעברית: מה תוקן, מה עדיין חתוך, ומה לא נבדק)"
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "density-change-cancels-ranked-search",
+   "title": "שינוי גודל התצוגה בזמן חיפוש מדורג מחזיר לבית ומבטל את החיפוש",
+   "severity": "major",
+   "what": "APK 15 (1.1.0, loop-9), טלפון 3 SM-A165F, בעברית, staging. שלבים: 'שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. כשמוצג 'מחפש יריב… 0:02' מריצים adb shell wm density 540, כמו שינוי 'גודל התצוגה' בהגדרות. מה רואים: האפליקציה נבנית מחדש על הבית ולא על מסך החיפוש, ונשארת בבית גם אחרי wm density reset. גם החיפוש בשרת בוטל: טלפון 1 שחיפש מיד אחר כך 'מהיר · 2' לא הותאם לטלפון 3, וקיבל אחרי כ־20 ש' יריב-בוט. אותו דבר קרה כשהחיפוש התחיל מ'משחק חדש' בתוצאות. 2 מתוך 2. מצופה, לפי סעיף 3 ב־deviceCheck של loop 9 (useRootTeardown): לחזור למסך החיפוש, השעון ממשיך והחיפוש ממשיך. לעומת זאת משחק שכבר רץ כן שורד את אותו שינוי. צילומים: qa-shots/fix10-RF8Y30L038L-searchdens-montage.png, qa-shots/fix10-RF8Y30L038L-searchdens2-montage.png"
+  },
+  {
+   "id": "fullboard-empty-frame-reduced-motion",
+   "title": "לפעמים יש פריים ריק לגמרי (רק רקע, בלי ספרות) בין לוח מלא לתוצאות",
+   "severity": "medium",
+   "what": "APK 15, טלפון 1 SM-A165F, הפחתת תנועה 'מופעלת', בעברית. במשחק מדורג מהיר מול בוט סמוי (YuvalA, 10:17) הבוט מילא את המשבצת האחרונה. בצילום רציף (4 לולאות, כ־60–100 ms) רואים: הלוח המלא, ואז פריים אחד שבו רק רקע כהה, שורת הסטטוס וסרגל הניווט, בלי הספרות המרחפות ובלי שום תוכן של האפליקציה. אחריו 'הפסד' שלם. קרה 1 מתוך 4 סיומים בלוח מלא בטלפון 1. ב־3 האחרים (2 מול טלפון 3, אחד מהם שבו טלפון 1 מילא בעצמו) אין פריים כזה. בטלפון 3 (בלי הפחתה) 0 מתוך 2. בכניעה ובסיום אימון לא נמצא פריים ריק (14 מעברים). ב־logcat אין synchronouslyUpdateUIProps. ייתכן שזה פריים אחד של ה־ScreenStack בלי שום fragment מצויר. צילומים: qa-shots/fix10-RF8Y60PP2XZ-fullboard-rm-1.png (פריים 71 בגליון) ו־qa-shots/fix10-RF8Y60PP2XZ-fullboard-rm-1-f71.png (הפריים בגודל מלא)"
+  },
+  {
+   "id": "interference-picker-en-360-labels-clipped",
+   "title": "חלון 'Pick an interference' באנגלית ב־360dp ובגופן 1.3: שמות חתוכים",
+   "severity": "low",
+   "what": "APK 15, טלפון 3, wm density 480 ו־font_scale 1.3, באנגלית, משחק מדורג עם יותר מ־2 נק'. לוחצים על כפתור ההפרעה. מה רואים: בכרטיסים 'Scrambled digits' ו־'Scrambled keypad' השורה השנייה ('digits'/'keypad') נחתכת לרוחב מתחת לתג '−2 pts'. השורה התחתונה 'Each interference lasts 5 seconds • tap to …' נגמרת ב־'…'. גם 'Next: 4' שבור לשתי שורות בתוך פס המחיר. צילום: qa-shots/fix10-RF8Y30L038L-picker-en360.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "issue": "השורה 'הלוח מופיע ב־GO כרגיל' עדיין סותרת את התכנון: GO! מוצג כ־1.0–1.3 ש' ואז הלוח נכנס בדהייה. 'חזרה' בזמן GO! תוקן ב־APK 15, ולכן המשימה נשארת partial רק בגלל הניסוח. כדאי לכתוב 'GO! מוצג כשנייה ואז הלוח נכנס בדהייה, בלי פריים ריק', ולהוסיף שורה: 'חזרה בזמן 3-2-1 ו־GO! לא עושה כלום'."
+  },
+  {
+   "taskId": "ranked-end-i-surrender-my-lock-5x",
+   "issue": "המשימה מסומנת V. ב־APK 15 הכניעה אכן נקייה (4 מתוך 4). כדאי להוסיף משימה נפרדת למעבר מלוח מלא לתוצאות עם הפחתת תנועה, כי שם נמצא פריים ריק ב־1 מתוך 4."
+  },
+  {
+   "taskId": "(חסר)",
+   "issue": "אין ב־catalog משימה ל'שינוי גודל תצוגה או גופן באמצע משחק או חיפוש מדורג', וגם לא ל'החלקת האפליקציה מ־Recents ופתיחה מחדש תוך 5 ש' חוזרת לאותו משחק'. כדאי להוסיף את שתיהן תחת 'מדורג וחיפוש יריב' או 'רשת'. האחת עכשיו עוברת במשחק ונכשלת בחיפוש."
+  }
+ ],
+ "phoneState": "שני הטלפונים מחוברים ב־USB ועל APK 15 (installed-<serial>.txt = apk15, כמו latest-build.json). לא התקנתי מחדש ולא מחקתי כלום, לא התנתקתי ולא החלפתי חשבון. בשניהם הרצתי adb.ts reset. המצב עכשיו: wm size 1080x2340 ו־density 450, שניהם פיזיים בלי override. font_scale 1.0, אנימציות 1, מצב טיסה כבוי, show_touches לא מוגדר, שפת האפליקציה he. שניהם נעצרו, הופעלו מחדש ונמצאים בבית בעברית: טלפון 1 (אורי) וטלפון 3 (אחוותא). 'הפחתת תנועה' באפליקציה: בטלפון 1 העברתי ל'מופעלת' לבדיקה והחזרתי ל'כמו במכשיר' (מאומת: checked). בטלפון 3 לא שיניתי, היא נשארה 'כבויה'. בטלפון 3 החלפתי זמנית שפת אפליקציה ל־en וחזרתי ל־he. מחקתי מ־/data/local/tmp/qa את קובצי ה־raw ואת הסקריפטים backtest.sh ו־waitfound.sh. cap.sh נשאר. בדרך שוחקו כ־20 משחקים מדורגים בין הטלפונים ומול בוטים סמויים, עם כניעות ולוחות מלאים, ובערך 8 אימונים מול Mr. Hoot. דירוג מהיר: טלפון 3 ירד מ־1005 לכ־989, וטלפון 1 ירד מ־1291 לכ־1255. ב־run 2 בוצעו שתי פעולות: mark partial עם actual חדש ל־pregame-found-countdown-reduced ול־general-display-small-big-font."
+}

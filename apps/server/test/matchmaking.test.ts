@@ -22,6 +22,8 @@ import {
   MATCHMAKING_SERVER_MESSAGE_TYPES,
   type MatchmakingError,
   matchmakingErrorOf,
+  matchmakingQueueOf,
+  matchmakingRoomOf,
   type MatchmakingServerMessage,
   type Me,
   SERVER_MESSAGE_TYPES,
@@ -332,6 +334,27 @@ describe('matchmaking', () => {
     await leave(again);
   });
 
+  it('the app killed while searching (swiped from Recents): its search is gone at once, nobody is matched with it, and it can search again', async () => {
+    // QA density-change-cancels-ranked-search: a search is not held for a dead app (no reconnection for a
+    // search), so no ghost entry is left to be matched with someone; the app, opened again, starts on Home.
+    const kit = await player('mm_kit', 'MM_Kit');
+    const lev = await player('mm_lev', 'MM_Lev');
+    const dead = await search(kit.client, 'hard-2p');
+    await dead.message('searching');
+    void dead.room.leave(false); // no goodbye: the process is gone
+    await new Promise((r) => setTimeout(r, 100));
+    const other = await search(lev.client, 'hard-2p');
+    // Alone in the queue: nobody else is searching (a ghost would be a range here, then a match).
+    expect((await other.message('searching')).nextRange).toBeNull();
+    await other.message('timeout');
+    expect(other.of('found')).toEqual([]);
+    await leave(other);
+    // Opened again: a new search is taken, not refused alreadyQueued.
+    const again = await search(kit.client, 'hard-2p');
+    expect(await again.message('searching')).toMatchObject({ queueKey: 'hard-2p' });
+    await leave(again);
+  });
+
   it('a lonely search ends with `timeout`; "keep searching" goes on without the cap', async () => {
     const dan = await player('mm_dan', 'MM_Dan');
     const s = await search(dan.client, 'hard-2p');
@@ -403,6 +426,54 @@ describe('matchmaking', () => {
       await leave(stayGame, awaySearch, staySearch);
     },
   );
+
+  it('the app killed mid-game and opened again: back by the room id with the same account, into the same game', async () => {
+    const away = await player('mm_kim', 'MM_Kim');
+    const stay = await player('mm_kai', 'MM_Kai');
+    const awaySearch = await search(away.client);
+    const staySearch = await search(stay.client);
+    const [fa, fs] = await Promise.all([awaySearch.message('found'), staySearch.message('found')]);
+    const awayGame = await enter(away.client, fa);
+    const stayGame = await enter(stay.client, fs);
+    const first = await awayGame.message('snapshot');
+    const events = () => stayGame.of('events').flatMap((m) => m.events);
+    await stayGame.until(() => events().some((e) => e.type === 'gameStarted'), 'gameStarted');
+    // No goodbye, and no reconnection token after the restart: the seat is held for a token nobody has. The
+    // room is not locked by that hold, and the new connection takes the seat over.
+    void awayGame.room.leave(false);
+    await stayGame.until(() => events().some((e) => e.type === 'playerConnectionLost'), 'the drop');
+    // QA density-change-orphans-ranked-game: a new search meanwhile is refused alreadyQueued, and the refusal
+    // names the game's room: the app's way back into it.
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const busy = await search(away.client).then(
+      () => 'joined',
+      (e: unknown) => (e as Error).message,
+    );
+    warn.mockRestore();
+    expect(matchmakingErrorOf(busy)).toBe('alreadyQueued');
+    expect(matchmakingRoomOf(busy)).toBe(fa.reservation.roomId);
+    expect(matchmakingQueueOf(busy)).toBe(fa.queueKey);
+    const back = new Inbox<ServerMessage>(
+      await away.client.joinById(matchmakingRoomOf(busy)!),
+      SERVER_MESSAGE_TYPES,
+    );
+    const snapshot = await back.message('snapshot');
+    expect(snapshot.playerId).toBe(away.me.id);
+    expect(snapshot.state.config.id).toBe(first.state.config.id);
+    // The cards "found" showed come again, after the snapshot: an app back with nothing kept still draws the
+    // other's avatar and flag (QA rejoin-opponent-avatar-lost).
+    const lobby = await back.message('lobby');
+    expect(lobby.players.find((p) => p.id === stay.me.id)).toMatchObject({
+      avatarId: 'lava-lamp',
+      country: 'IL',
+    });
+    expect(back.messages.findIndex((m) => m.type === 'lobby')).toBeGreaterThan(
+      back.messages.findIndex((m) => m.type === 'snapshot'),
+    );
+    await stayGame.until(() => events().some((e) => e.type === 'playerReconnected'), 'the return');
+    expect(back.left).toBeNull();
+    await leave(back, stayGame, awaySearch, staySearch);
+  });
 
   it('is for registered players only, in the open queues', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);

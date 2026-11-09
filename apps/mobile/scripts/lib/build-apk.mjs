@@ -43,7 +43,7 @@ const PROFILES = {
 
 export const USAGE = `npm run apk [-- options]
 
-Builds a release APK on this PC (arm64-v8a, signed with the debug key) into apps/mobile/apk/.
+Builds a release APK on this PC (arm64-v8a, signed with this PC's own key) into apps/mobile/apk/.
 
   --server <name>   the game server the app talks to:
                       staging (default)  eas.json's preview profile
@@ -60,6 +60,14 @@ Builds a release APK on this PC (arm64-v8a, signed with the debug key) into apps
   --clean-native    regenerate the android folder from scratch (expo prebuild --clean)
   --verbose         show Gradle's full output (it always goes to apps/mobile/apk/last-build.log)
   --dry-run         print what would be built, build nothing (not with --install-only or --clean-only)
+  --key             no build: make this PC's signing key if there is none (once), and print its
+                    fingerprints (SHA-1 for Firebase, SHA-256 for fly.toml); alone
+  --resign-sha1 <sha1|debug>
+                    the APK will be signed again after the build (apksigner) with another key, the one
+                    the phones' app already has: Google sign-in is then on only if Firebase lists that
+                    key's SHA-1 (instead of this PC's key's). "debug": React Native's template debug key
+                    (android/app/debug.keystore). Not with --install or --install-only: install the APK
+                    once it is signed again
   --help            this text
 
 Exit codes: 0 ok, 1 build failed, 2 bad option, 3 this PC is not ready, 4 install failed.`;
@@ -78,8 +86,11 @@ export function parseApkArgs(argv) {
     cleanNative: false,
     verbose: false,
     dryRun: false,
+    keyOnly: false,
+    /** @type {string | null} */
+    resignSha1: null,
   };
-  /** @type {Record<string, keyof typeof options>} */
+  /** @type {Record<string, Exclude<keyof typeof options, 'server' | 'resignSha1'>>} */
   const flags = {
     '--install': 'install',
     '--install-only': 'installOnly',
@@ -89,6 +100,7 @@ export function parseApkArgs(argv) {
     '--clean-native': 'cleanNative',
     '--verbose': 'verbose',
     '--dry-run': 'dryRun',
+    '--key': 'keyOnly',
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -104,12 +116,33 @@ export function parseApkArgs(argv) {
       options.server = value.trim();
       continue;
     }
+    if (flag === '--resign-sha1') {
+      let value = inline;
+      if (value === null && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--')) value = argv[++i];
+      const sha1 = value?.trim().toLowerCase() === 'debug' ? TEMPLATE_DEBUG_KEY_SHA1 : hexFingerprint(value);
+      if (sha1 === null || sha1.length !== 40)
+        return {
+          kind: 'error',
+          error:
+            '--resign-sha1 needs the SHA-1 of the key that signs the APK again (40 hex digits) or "debug"',
+        };
+      options.resignSha1 = sha1;
+      continue;
+    }
     const key = flags[flag];
     if (key === undefined)
       return { kind: 'error', error: arg.startsWith('-') ? `unknown option ${arg}` : `unexpected ${arg}` };
     if (inline !== null) return { kind: 'error', error: `${flag} takes no value` };
     options[key] = true;
   }
+  if (options.keyOnly && argv.length > 1) return { kind: 'error', error: '--key takes no other options' };
+  // The APK is signed again after this script: installed before that, it has this PC's key, which neither
+  // updates the phones' app nor has Google sign-in.
+  if (options.resignSha1 !== null && (options.install || options.installOnly))
+    return {
+      kind: 'error',
+      error: `--resign-sha1 and ${options.install ? '--install' : '--install-only'}: install the APK once it is signed again`,
+    };
   if (options.replace && !options.install && !options.installOnly)
     return { kind: 'error', error: '--replace works with --install or --install-only' };
   if (options.installOnly && options.cleanOnly)
@@ -389,26 +422,84 @@ export function prebuildPlan({ androidExists, storedHash, currentHash, cleanNati
   return { run: false, clean: false, reason: 'native config unchanged' };
 }
 
+// ---------------------------------------------------------------- the signing key
+
+/** The alias of this PC's APK key in its keystore (~/.sudoku-fight/apk-key; `npm run apk -- --key`). */
+export const APK_KEY_ALIAS = 'sudoku-fight-apk';
+
 /**
- * The signing config of the release build type in android/app/build.gradle (Expo's template: `debug`, the
- * debug keystore it ships), or null when release builds would come out unsigned.
+ * Gradle's "injected" signing, the one Android Studio's "Generate Signed APK" passes: it takes the place of
+ * build.gradle's signingConfig (the template debug key) for every variant. As environment variables
+ * (ORG_GRADLE_PROJECT_*), so the password stays off the command line and out of last-build.log.
  */
-export function releaseSigningConfig(gradleText) {
-  const text = gradleText.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  const block = (source, name) => {
-    const start = new RegExp(`(^|[\\s{])${name}\\s*\\{`, 'm').exec(source);
-    if (!start) return null;
-    let depth = 0;
-    for (let i = start.index + start[0].length - 1; i < source.length; i++) {
-      if (source[i] === '{') depth++;
-      else if (source[i] === '}' && --depth === 0) return source.slice(start.index + start[0].length, i);
-    }
-    return null;
+export function signingEnv({ storeFile, password, alias }) {
+  const option = 'ORG_GRADLE_PROJECT_android.injected.signing.';
+  return {
+    [`${option}store.file`]: storeFile,
+    [`${option}store.password`]: password,
+    [`${option}key.alias`]: alias,
+    [`${option}key.password`]: password,
   };
-  const buildTypes = block(text, 'buildTypes');
-  const release = buildTypes === null ? null : block(buildTypes, 'release');
-  if (release === null) return null;
-  return /signingConfig\s*(?:=\s*)?signingConfigs\.(\w+)/.exec(release)?.[1] ?? null;
+}
+
+/**
+ * The SHA-1 of the debug key in React Native's project template (android/app/debug.keystore, alias
+ * androiddebugkey): `--resign-sha1 debug`. The same as app.config.ts TEMPLATE_DEBUG_KEY_SHA1 (a test says so).
+ */
+export const TEMPLATE_DEBUG_KEY_SHA1 = '5e8f16062ea3cd2c4a0d547876baa6f38cabf625';
+
+/**
+ * What app.config.ts hears about the APK's key (SF_LOCAL_APK, SF_LOCAL_APK_SHA1): it shows "המשך עם Google" only
+ * while Firebase lists the SHA-1 of the key the installed app is signed with. That is this PC's key, unless the
+ * APK is signed again afterwards (--resign-sha1): then that key's.
+ *
+ * @param {string} keySha1 this PC's key
+ * @param {string | null} resignSha1
+ */
+export const localApkEnv = (keySha1, resignSha1) => ({
+  SF_LOCAL_APK: '1',
+  SF_LOCAL_APK_SHA1: resignSha1 ?? keySha1,
+});
+
+/** A SHA-1 or SHA-256 in lower-case hex without colons, whatever its case or colons; null when it is neither. */
+export function hexFingerprint(text) {
+  const hex = typeof text === 'string' ? text.replace(/:/g, '').trim().toLowerCase() : '';
+  return /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(hex) ? hex : null;
+}
+
+/** The way Firebase, Play and fly.toml show a fingerprint: upper case, a colon between the bytes. */
+export const colonFingerprint = (hex) => hex.toUpperCase().match(/../g).join(':');
+
+/** `keytool -list -v`'s output → the certificate's SHA-1 and SHA-256 (lower-case hex), or null. */
+export function keytoolFingerprints(text) {
+  const sha1 = hexFingerprint(/^\s*SHA-?1:\s*([0-9A-Fa-f:]+)\s*$/m.exec(text)?.[1]);
+  const sha256 = hexFingerprint(/^\s*SHA-?256:\s*([0-9A-Fa-f:]+)\s*$/m.exec(text)?.[1]);
+  return sha1?.length === 40 && sha256?.length === 64 ? { sha1, sha256 } : null;
+}
+
+/** `apksigner verify --print-certs`'s output → each signer's certificate SHA-256 (lower-case hex). */
+export function apkSignerSha256s(text) {
+  return [...text.matchAll(/certificate SHA-256 digest:\s*([0-9a-fA-F]{64})\b/g)].map((m) =>
+    m[1].toLowerCase(),
+  );
+}
+
+/** The newest Android build-tools folder by version (36.0.0 over 35.0.0; a release over its rc), or null. */
+export function newestBuildTools(names) {
+  const parse = (name) => {
+    const m = /^(\d+)\.(\d+)\.(\d+)(-rc(\d+))?$/.exec(name);
+    return m ? [+m[1], +m[2], +m[3], m[4] ? +m[5] : Infinity] : null;
+  };
+  const later = (x, y) => {
+    const i = x.findIndex((part, j) => part !== y[j]);
+    return i >= 0 && x[i] > y[i];
+  };
+  let best = null;
+  for (const name of names) {
+    const version = parse(name);
+    if (version && (!best || later(version, best.version))) best = { name, version };
+  }
+  return best?.name ?? null;
 }
 
 // ---------------------------------------------------------------- the tools' output
@@ -450,7 +541,8 @@ export function parseAdbDevices(text) {
 /** What to tell Moshe for each install failure adb reports (the code in `Failure [CODE: ...]`). */
 const INSTALL_HINTS = {
   INSTALL_FAILED_UPDATE_INCOMPATIBLE:
-    'the phone has the app signed with another key (the cloud build, or an old Development Build)',
+    'the phone has the app signed with another key (an APK from before 2026-10-30, signed with the old public ' +
+    'test key; the cloud build; Google Play; or an old Development Build)',
   INSTALL_FAILED_VERSION_DOWNGRADE: 'the phone has a newer version of the app (from another build)',
   INSTALL_FAILED_NO_MATCHING_ABIS: `this phone is not 64-bit ARM; the APK has only ${ABI}`,
   INSTALL_FAILED_INSUFFICIENT_STORAGE: 'not enough free space on the phone',

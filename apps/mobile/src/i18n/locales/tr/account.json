@@ -68,7 +68,8 @@
       "timeout": "Sunucu zamanında yanıt vermedi. Tekrar dene.",
       "signedOut": "Giriş yapmamışsın. Yeniden giriş yap.",
       "unexpected": "Sunucu beklenmedik bir yanıt gönderdi. Tekrar dene ya da uygulamayı güncelle."
-    }
+    },
+    "avatarUnavailable": "Bu avatar sunucuda henüz yok. Başka bir avatar seç."
   },
   "splash": {
     "tagline": "Tek tablo. Herkes çözer. Yalnızca biri kazanır.",
@@ -79,7 +80,7 @@
       "lock_other": "Seçtiğin hücre yalnızca sana kilitlenir: {{type}} türünde maçta {{seconds}} saniye.",
       "hard": "Daha zor bir hamle daha çok puan getirir.",
       "mistake": "Bir hata, doğru rakamın kazandıracağı puan kadar kaybettirir. Bir an daha fazla düşünmek iyidir.",
-      "interfere": "İki dokunuşla sabotaj gönder: rakibinin kartında “Sabote et”, sonra seçtiğin sabotaj."
+      "interfere": "İki dokunuşla sabotaj gönder: rakibinin kartında “Baltala”, sonra seçtiğin sabotaj."
     },
     "errorTitle": "Dövüşçünü yükleyemedik",
     "retry": "Tekrar dene",
@@ -250,6 +251,9 @@
     "deleteGoogleBody": "Hesabı silmek için {{email}} Google hesabını yeniden seç.",
     "deleteGoogleSubmit": "Google ile onayla ve sil",
     "deleteGoogleAgain": "Hesabı silmek için yeni bir onay gerekiyor. Tekrar dene ve Google hesabını seç.",
-    "deleteWithPassword": "Bunun yerine şifrenle onayla"
+    "deleteWithPassword": "Bunun yerine şifrenle onayla",
+    "deleteGoogleOffTitle": "Google ile giriş gerekli",
+    "deleteGoogleOffBody": "Bu hesap Google ile giriş yapıyor, bu yüzden silmek için Google ile onay gerekiyor. Uygulamanın bu sürümünde Google ile giriş yok, bu yüzden hesap burada silinemez. Hesabı mağazadaki (Google Play) uygulamadan silebilirsin.",
+    "deleteGoogleOffOk": "Anladım"
   }
 }

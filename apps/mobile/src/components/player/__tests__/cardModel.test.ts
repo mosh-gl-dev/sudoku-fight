@@ -338,6 +338,39 @@ describe('the lead bar (§9)', () => {
     expect(leadModel(view, 0).leader).toBeNull();
   });
 
+  it('an abandon win against a higher score: the tag and its label tell the scores, never a tie (QA loop 8)', () => {
+    // MosheG (14) won: NinaVolt (20.5) left. The engine's leader is the one still in the game, MosheG.
+    const view = withPlayer(
+      withPlayer(twoPlayerView({ status: 'over' }), 'moshe', { score: 14, place: 1, isLeader: true }),
+      'nina',
+      { score: 20.5, place: 2, isLeader: false, status: 'abandoned' },
+    );
+    const m = leadModel(view, 0);
+    // The label reads "NinaVolt מובילה ב־6.5 נקודות" (wording.leadLabel), not "שוויון בניקוד".
+    expect(m.leader).toMatchObject({ playerId: 'nina', colorIndex: 1, gap: 6.5 });
+    // The winner ahead: the winner's margin, as before.
+    const ahead = withPlayer(view, 'moshe', { score: 25 });
+    expect(leadModel(ahead, 0).leader).toMatchObject({ playerId: 'moshe', gap: 4.5 });
+    // Equal scores are still a tie.
+    expect(leadModel(withPlayer(view, 'moshe', { score: 20.5 }), 0).leader).toBeNull();
+  });
+
+  it('3–4 players: two still in tied at the top is a tie, even when a player who left scored more ([D36])', () => {
+    // MosheG and Santi.R are both still in at 30 (both engine leaders); Aiko_M left with 40, NinaVolt surrendered.
+    let view = fourPlayerView();
+    view = withPlayer(view, 'moshe', { score: 30, place: 1, isLeader: true });
+    view = withPlayer(view, 'santi', { score: 30, place: 1, isLeader: true });
+    view = withPlayer(view, 'aiko', { score: 40, place: 3, isLeader: false, status: 'abandoned' });
+    view = withPlayer(view, 'nina', { place: 4, isLeader: false, status: 'surrendered' });
+    expect(leadModel(view, 0).leader).toBeNull();
+    // One of them ahead: its margin over the other still in, as before (not over the leaver's 40).
+    const ahead = withPlayer(view, 'santi', { score: 28, place: 2, isLeader: false });
+    expect(leadModel(ahead, 0).leader).toMatchObject({ playerId: 'moshe', gap: 2 });
+    // Only MosheG left in: the tag tells the scores, Aiko_M's 40 over his 30.
+    const alone = withPlayer(view, 'santi', { place: 2, isLeader: false, status: 'surrendered' });
+    expect(leadModel(alone, 0).leader).toMatchObject({ playerId: 'aiko', gap: 10 });
+  });
+
   it('3–4 players: segments by place, the tag between 1st and 2nd', () => {
     const m = leadModel(fourPlayerView(), 0);
     expect(m.segments.map((s) => s.playerId)).toEqual(['aiko', 'santi', 'moshe', 'nina']);

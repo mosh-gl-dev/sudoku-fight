@@ -30,14 +30,14 @@
       "box": "第{{label}}宫只缺{{digit}}。"
     },
     "missing": {
-      "row": "{{label}}行缺{{digits}}。",
-      "col": "第{{label}}列缺{{digits}}。",
-      "box": "第{{label}}宫缺{{digits}}。"
+      "row_other": "{{label}}行缺{{digits}}。",
+      "col_other": "第{{label}}列缺{{digits}}。",
+      "box_other": "第{{label}}宫缺{{digits}}。"
     },
     "seen": {
-      "row": "{{label}}行已有{{digits}}。",
-      "col": "第{{label}}列已有{{digits}}。",
-      "box": "第{{label}}宫已有{{digits}}。"
+      "row_other": "{{label}}行已有{{digits}}。",
+      "col_other": "第{{label}}列已有{{digits}}。",
+      "box_other": "第{{label}}宫已有{{digits}}。"
     },
     "eliminated": "{{digit}}在第{{step}}步已从{{cell}}中排除。",
     "only": "所以只能是{{digit}}。"

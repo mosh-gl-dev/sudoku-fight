@@ -1,6 +1,8 @@
 import {
   ACCOUNT_PATHS,
   type AccountError,
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   AVATAR_IDS,
   type AvatarId,
   LEGACY_AVATAR_MAP,
@@ -119,6 +121,34 @@ describe('the "done" story of stage 8, on the server', () => {
     expect(again.status).toBe(201);
     expect(again.body.id).not.toBe(created.body.id);
     expect(again.body.displayName).toBe('Dana');
+  });
+
+  it('sends an app of an older avatar catalog "no avatar" for a pirate it does not know, never a reply it refuses', async () => {
+    // An app before the pirates (1.1.0) sends no catalog and refuses a Me with an avatar it does not know.
+    const created = await register('uid-1', { avatarId: 'pirates-3-house' });
+    expect(created.status).toBe(201);
+    expect(created.body.avatarId).toBe(NO_AVATAR_ID);
+    const catalog = { [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG) };
+    const token = await idToken('uid-1');
+    // the stored avatar is the pirate: an app of this catalog sees it
+    expect((await api<Me>('GET', ACCOUNT_PATHS.me, { token, headers: catalog })).body.avatarId).toBe(
+      'pirates-3-house',
+    );
+    expect((await me('uid-1')).body.avatarId).toBe(NO_AVATAR_ID);
+    expect(
+      (await api<Me>('GET', ACCOUNT_PATHS.me, { token, headers: { [AVATAR_CATALOG_HEADER]: '1' } })).body
+        .avatarId,
+    ).toBe(NO_AVATAR_ID);
+    // a change of the name from the older app does not touch the avatar
+    expect((await patch('uid-1', { country: 'US' })).body.avatarId).toBe(NO_AVATAR_ID);
+    const changed = await api<Me>('PATCH', ACCOUNT_PATHS.me, {
+      token,
+      headers: catalog,
+      body: { country: 'FR' },
+    });
+    expect(changed.body).toMatchObject({ avatarId: 'pirates-3-house', country: 'FR' });
+    // the 101 avatars an older app knows go to it as they are
+    expect((await patch('uid-1', { avatarId: 'moon' })).body.avatarId).toBe('moon');
   });
 
   it('"המשך עם Google" in the app (Moshe, 14.10.2026): a Google sign-in is an account like any other', async () => {

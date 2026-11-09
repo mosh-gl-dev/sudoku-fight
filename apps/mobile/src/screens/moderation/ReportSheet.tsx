@@ -136,6 +136,8 @@ export function ReportSheet({
             icon="flag"
             size="lg"
             loading={phase === 'sending'}
+            // send() plays the press itself, and only with a reason picked (none picked nudges).
+            cue={null}
             onPress={() => void send()}
             style={styles.stretch}
             testID={`${testID}-send`}

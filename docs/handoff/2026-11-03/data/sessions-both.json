@@ -1,0 +1,1222 @@
+{
+ "batches": [
+  {
+   "lane": "two",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "שני הטלפונים מותקנים עם apk12, ו־installed-<serial>.txt עודכנו ל־apk12. בשניהם הורץ adb.ts reset: גופן 1, אנימציות 1, בלי מצב טיסה. שפת האפליקציה he. האפליקציה הופעלה מחדש ושניהם עומדים בבית. טלפון 1, אורי: מהיר 1277. טלפון 3, אחוותא: מהיר 1087 (היה 1021). קובצי ה־raw של הצילום ב־/data/local/tmp/qa נמחקו. cap.sh נשאר ב־/data/local/tmp. לא שונו הגדרות, ולא היו התחברות או התנתקות.",
+   "ids": [
+    "ranked-found-colors-shapes",
+    "ranked-duel-full-board",
+    "postgame-results-place-2p",
+    "ranked-duel-rating-card",
+    "ranked-duel-results-back",
+    "ranked-duel-guard-before-move",
+    "ranked-duel-guard-games-count",
+    "ranked-end-surrender-no-lock",
+    "ranked-duel-guard-leader",
+    "ranked-end-report-sheet-open",
+    "ranked-duel-guard-behind",
+    "ranked-end-opp-surrenders-my-lock",
+    "postgame-history-summary",
+    "postgame-history-card-score",
+    "ranked-duel-history",
+    "game-online-2p-cards-he",
+    "game-online-perf",
+    "game-surrender-guard-first-move",
+    "game-online-2p-same-board",
+    "game-surrender-guard-not-behind",
+    "game-surrender-ranked-cancel",
+    "game-surrender-ranked-back",
+    "game-moves-tried-everyone",
+    "game-reactions-send-other",
+    "game-online-2p-board-end",
+    "game-surrender-confirm-lock",
+    "game-surrender-opponent-lock",
+    "game-surrender-confirm-nolock"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "Both phones are on Home in Hebrew (app locale he). adb.ts reset was run on both: font 1, animations 1, no colour correction, airplane mode off. 'הפחתת תנועה' was already 'כבויה' on both and was not changed. All recordings and screencaps I made were pulled and deleted from /sdcard; older files from other runs were left there. The evidence (shots, mp4s, gfx_*.txt) is in the scratchpad qa-shots folder, and the crash log is docs/handoff/2026-11-03/data/crash-RF8Y30L038L-interference-new-ink-look.txt. Ranked games on staging: one ink crash (אחוותא abandoned, -8), the interference game (S surrendered with a lock, recorded on both), and games 6, 7, 8 (twice) and 9. Ratings now: אורי fast 1299, אחוותא fast 1079.",
+   "ids": [
+    "interference-where-staging-new-new",
+    "avatars-react-hit-target",
+    "avatars-react-hit-sender",
+    "interference-new-ink-look",
+    "interference-new-ink-tap",
+    "interference-new-scramble-tap",
+    "interference-new-scramble-end",
+    "interference-new-keypad-shuffle",
+    "interference-new-keypad-cancel",
+    "interference-new-keypad-hold",
+    "interference-new-keypad-end",
+    "interference-new-keypad-digit",
+    "interference-new-fps",
+    "ranked-end-screen-off-30s",
+    "ranked-end-screen-off-over-minute",
+    "ranked-end-opp-closes-app",
+    "ranked-end-opp-left-home"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "Both phones (RF8Y60PP2XZ טלפון 1 אורי, RF8Y30L038L טלפון 3 אחוותא): apk12 was already installed on both, so nothing was installed. Both are in Hebrew, on the Home screen after a relaunch. adb.ts reset was run on both: font 1, animations 1, colour correction off, airplane off. wm size and density are physical (1080x2340, 450); טלפון 1's small size was reset right after the fit shot. Wi-Fi is on and airplane mode is off on טלפון 3. Temporary /sdcard capture folders were removed. Ranked games played: P1 hard and fast vs stealth personas, 3 games between the phones (fast, normal, and a fast friends room), and P3 hard vs a persona. All surrenders came before the first move, so no rating changed (P1 fast 1299, normal 1206, hard 1232; P3 fast 1079, normal 1200, hard 1200). The stealth bot stayed ON throughout; I could not change it.",
+   "ids": [
+    "pregame-search-screen",
+    "pregame-search-alone",
+    "pregame-timeout-alone",
+    "pregame-timeout-bot-robot",
+    "pregame-timeout-home",
+    "pregame-search-other-type",
+    "pregame-timeout-keep-alone",
+    "pregame-search-cancel",
+    "pregame-search-bot-from-notice",
+    "pregame-search-4p",
+    "pregame-search-4p-count",
+    "pregame-search-join",
+    "pregame-found-tiles",
+    "pregame-found-side-he",
+    "pregame-found-ready",
+    "pregame-found-no-cancel",
+    "pregame-found-countdown",
+    "pregame-found-rematch",
+    "pregame-type-givens-ranked-fast",
+    "pregame-search-range",
+    "pregame-timeout-range",
+    "pregame-timeout-keep-nocap",
+    "pregame-search-android-back",
+    "pregame-timeout-bot",
+    "pregame-modes-fit-en",
+    "pregame-type-english",
+    "pregame-bot-english",
+    "pregame-search-english",
+    "pregame-found-side-en",
+    "pregame-type-givens-ranked-normal",
+    "friends-a11y-new-game-fit",
+    "friends-a11y-english",
+    "network-en-freeze",
+    "network-en-abandon",
+    "network-abandon-home"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 4,
+   "ok": true,
+   "phoneState": "Both phones are on Home with the app relaunched, in Hebrew (app locale [he]). adb.ts reset ran on both: font scale 1, animations 1, colour correction off, airplane mode off. On טלפון 3, airplane mode was turned on for ~16 s and turned back off; afterwards Wi-Fi was connected to Glaz5593, ping 8.8.8.8 went through, and the game connection came back. 'הפחתת תנועה' was 'כבויה' on both phones and was not changed. The friends game ended with a surrender by טלפון 3 (no rating effect). All of my screenrecord files were pulled into qa-shots (fw.mp4, cats.mp4, warp.mp4, dc.mp4) and deleted from /sdcard. Older k7-g*.mp4 files on /sdcard of טלפון 3 are not mine and were left alone. Both phones stayed on apk12 (no install needed).",
+   "ids": [
+    "interference-where-collection-list",
+    "interference-where-collection-soon",
+    "interference-where-collection-howto",
+    "interference-picker-locked",
+    "interference-picker-no-soon",
+    "interference-picker-rtl-he",
+    "interference-picker-double-tap",
+    "interference-picker-close",
+    "interference-picker-launch",
+    "interference-picker-launch-once",
+    "interference-picker-busy",
+    "interference-hit-sender",
+    "interference-hit-play",
+    "interference-hit-banner",
+    "interference-hit-dim-board",
+    "interference-hit-fireworks-look",
+    "interference-picker-next-price",
+    "interference-hit-lock-paused",
+    "interference-hit-cats-look",
+    "interference-hit-dim-ends",
+    "interference-hit-warp-dim",
+    "interference-hit-warp-look",
+    "interference-hit-fps-classic",
+    "interference-target-disconnects",
+    "avatars-react-reconnect",
+    "avatars-look-grey"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 5,
+   "ok": true,
+   "phoneState": "Both phones are on the app's Home screen in Hebrew (app locale he), relaunched after 'adb.ts reset' (font 1, animations 1, colour correction off, airplane mode off). Wi-Fi is on and airplane mode is off on both. On טלפון 3 (RF8Y30L038L) auto_time=1, and its clock matches טלפון 1 (checked with adb shell date). show_touches, which I turned on for the recordings, is back to its default (deleted; it was null before). Both phones already had apk12 installed, the latest build, so no install was needed. I deleted my recordings and dumps from /sdcard; older qa-*.xml files from earlier runs are still there. The friends 'מהיר' game ended with an abandon (אורי won, אחוותא lost after 'נסה שוב'). Recordings and frames are in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/rec, and screenshots in C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots.",
+   "ids": [
+    "network-lock-pending",
+    "network-digit-sync",
+    "network-timers-clock",
+    "network-relay",
+    "friends-game-play",
+    "network-silent-opponent-mark",
+    "network-silent-opponent-plays",
+    "network-silent-self-no-overlay",
+    "network-silent-keep-playing",
+    "network-silent-return-counted",
+    "network-silent-return-opponent",
+    "network-silent-return-same-state",
+    "network-freeze-opponent",
+    "network-freeze-self",
+    "network-freeze-self-back",
+    "network-freeze-opponent-back",
+    "network-bg-short-opponent",
+    "network-bg-short-return",
+    "network-bg-long-opponent",
+    "network-bg-long-return",
+    "network-both-offline",
+    "network-abandon-countdown",
+    "network-abandon-screen",
+    "network-abandon-results",
+    "network-abandon-leaver"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 6,
+   "ok": true,
+   "phoneState": "Both phones are on Home (טלפון 1 = אורי, טלפון 3 = אחוותא). apk12 is installed on both, as in the installed-*.txt files. Airplane mode is off and Wi-Fi is on on both, and adb.ts reset ran on each (font 1, animations 1, colour correction off). The app locale is he on both. 'שחקנים חסומים' on אורי is empty ('אין שחקנים חסומים'). I deleted the screen recordings I made on /sdcard. On טלפון 3, my first recents swipe dismissed the Settings card (date and time) from the recent apps list by mistake: a recents card only, no data lost. Several friends games (קשה) were played; the ones with a killed app ended with the 'לא חזרת למשחק בזמן' loss. Evidence is in qa-shots: the *-network-silent-*, *-friends-manage-* files, plus sc/ and cs/ for the screenshot timelines. I did not run planner note 4 (the 2p fallback from batch 8), because it is not in this batch's task list.",
+   "ids": [
+    "network-silent-same-cell",
+    "network-silent-cancel-selection",
+    "friends-manage-block-mid-game",
+    "network-surrender-result",
+    "friends-manage-block-hides-room",
+    "friends-manage-block-blocker-joins",
+    "friends-manage-host-leaves",
+    "friends-manage-kick",
+    "friends-manage-block-in-room"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 7,
+   "ok": true,
+   "phoneState": "Both phones are on the app's Home screen in Hebrew, with app locales [he]. adb.ts reset was run on both: font scale 1, animations 1, colour correction off, airplane mode off. Both still have apk12 installed, so no install was needed. No fake-client processes were started because there are no tokens. Phone 1 (אורי) played one solo fast practice and two 2-player friends room games (rooms 499897 and 779833) against phone 3. Its last non-friends game is the solo fast practice. All the games ended normally and no room is left open.",
+   "ids": [
+    "friends-room-copy-code",
+    "friends-game-away-count",
+    "friends-game-start-without",
+    "friends-game-join-started",
+    "friends-game-start-without-closed",
+    "friends-game-four-seats",
+    "friends-game-room-full",
+    "friends-game-countdown",
+    "friends-game-countdown-back",
+    "network-same-board",
+    "friends-game-four-play",
+    "network-full-game",
+    "friends-game-rating-xp",
+    "friends-game-history",
+    "friends-game-leaderboard",
+    "friends-results-no-rematch-home"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 8,
+   "ok": true,
+   "phoneState": "Both phones are on the Hebrew Home screen with the app relaunched. adb reset was run on both (font scale 1, animations 1, colour correction off, airplane mode off), and the app locale is [he] on both. Phone 1 (אורי) was switched to English in the app and switched back to Hebrew through Settings > Language. The friends room 707 253 ended: phone 1 surrendered, so it counts as a loss for אורי and a win for אחוותא. Phone 3 also ended one solo Fast practice early (score 0). Build apk12 was already on both phones; nothing was installed.",
+   "ids": [
+    "friends-manage-create-cancel",
+    "interference-picker-ltr-en",
+    "postgame-leaderboard-no-rating"
+   ]
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "game-surrender-confirm-lock",
+   "severity": "minor",
+   "title": "מעבר ריק לפני מסך התוצאות (0.3 עד 1.1 שניות של רקע בלבד)",
+   "what": "Build: apk12, ‏1.1.0 (08.11 23:53, loop-6 fixes, startup log). מכשירים: 2× SM-A165F, ‏Android 16, בעברית.\nצעדים לשחזור: שני טלפונים במדורג, 2 שחקנים, מהיר. אחד נכנע ('כניעה' ← 'כן, להיכנע'), או שהלוח מתמלא.\nמה רואים בשני הטלפונים: הלוח הסופי, ואחריו 0.3 עד 1.1 שניות של רקע כהה (lum 31) עם הספרות של הרקע בלבד. בלי כותרת ובלי שום תוכן. רק אחר כך מופיעים האווטר ו'ניצחון!'/'הפסד'.\nאיך נמדד: צילומי מסך רציפים במכשיר, כ־10 בשנייה (/data/local/tmp/cap.sh). העומס של הצילום עשוי להאריך את הזמן.\nמדידות:\n- משחק נעילה 5, טלפון 1 (המנצח): ריק מ־3369 עד 4515 ms.\n- משחק נעילה 2, טלפון 1 (הנכנע): ריק מ־3436 עד 4352 ms.\n- משחק 4: ריק מ־1933 עד 2722 ms.\nזה לא מסך שחור תקוע: התוצאות תמיד הגיעו. אבל המשימות דורשות 'אף פעם לא מסך ריק'. ייתכן שזה חלק מ־K8 (זמן מעבר בין מסכים)."
+  },
+  {
+   "taskId": "ranked-duel-rating-card",
+   "severity": "minor",
+   "title": "ספירת הדירוג בכרטיס 'שינוי דירוג' מוסתרת מתחת לסרגל הכפתורים ב־A16",
+   "what": "Build: apk12, ‏1.1.0. מכשיר: SM-A165F, ‏1080x2340, בעברית.\nצעדים לשחזור: מסיימים משחק מדורג עם שינוי דירוג, ומסתכלים על מסך התוצאות בלי לגלול.\nמה רואים:\n- מהכרטיס 'שינוי דירוג · מהיר' רואים רק את הכותרת. המספר והשינוי (y≈1970) מכוסים בסרגל התחתון 'משחק חדש' / 'צפייה חוזרת'.\n- רק אחרי גלילה רואים את המספר: הוא מציג את הדירוג הישן (1061 ⁦+26⁩), ורק אחר כך מגיע ל־1087.\nלכן בלי גלילה המשתמש לא רואה את הספירה מהישן לחדש."
+  },
+  {
+   "taskId": "interference-new-ink-look",
+   "title": "הפרעת 'דיו' מפילה את האפליקציה של היעד: מסך כהה וריק, ונטישה",
+   "severity": "critical",
+   "what": "Build: apk12, 1.1.0 (08.11 23:53, loop-6 fixes), SM-A165F, Android 16, Hebrew, staging. Steps: two phones in a ranked 2p fast game. The sender is level 3 or higher (אורי, level 9) and has 2+ points. On the sender, tap 'הפרעה' on the opponent's card, then 'דיו'. Result: about 2 s later the receiver's app (אחוותא) turns to a blank dark screen with only the status bar: no banner, no board. The JS runtime is destroyed. Logcat on the receiver, 02:05:26.703: ReactHost.handleHostException 'ReferenceError: Property 'INK' doesn't exist at inkPose_inkModelTs1 (:1:54) at InkTsx2 at reactNativeReanimated_useDerivedValueTs1 at mapperRun ...', then 'Starting React Native destruction'. Cause: apps/mobile/src/components/interference/inkModel.ts, inkPose() is a 'worklet' whose default params (splatMs = INK.splatMs, fadeMs = INK.fadeMs) read the module constant INK, which is not captured on the UI runtime in Release. After 25 s the sender gets 'אחוותא עזב את המשחק · ניצחת בנטישה' (+8). The receiver loses 8 rating and has to kill and relaunch the app. Log: docs/handoff/2026-11-03/data/crash-RF8Y30L038L-interference-new-ink-look.txt. The ink hit is unusable for every receiver, and the ink tasks, avatars-react-hit-target/sender and new-fps are blocked by it."
+  },
+  {
+   "taskId": "ranked-end-opp-closes-app",
+   "title": "Untranslated English 'Reconnecting... N' under the disconnect ring in Hebrew",
+   "severity": "minor",
+   "what": "Build: apk12, Hebrew UI, staging. Steps: a ranked 2p game; the opponent closes the app from recents. On the remaining phone, inside the 'היריב מתנתק…' dialog, under the countdown ring, the text reads 'Reconnecting... 13' in English. Cause: apps/mobile/src/i18n/locales/he/game.json line 73, \"ring\": \"Reconnecting... {{seconds}}\", is not translated. Seen in both directions (games 8 and 9)."
+  },
+  {
+   "taskId": "avatars-react-hit-sender",
+   "title": "The sender's launch toast hides the sender's own avatar for the whole wink",
+   "severity": "minor",
+   "what": "Build: apk12, Hebrew, staging, ranked 2p. Steps: on the sender, 'הפרעה' → any kind (seen with 'מספרים מתערבלים' and 'דיו'). Right after launch, a dark toast ('<kind> ← <target>') slides over the top HUD and covers both avatars for about 2 s. When it goes, the sender's avatar already has both eyes open, so the ~1.5 s wink (avatars-react-hit-sender ✓1) is never visible. Frames: qa-shots/RF8Y60PP2XZ-avatars-react-hit-sender-1.png. On the receiver, the banner's sender avatar does wink."
+  },
+  {
+   "taskId": "pregame-search-screen",
+   "title": "The stealth bot takes a lone 2p search within about 1–3 s, not 8–20 s",
+   "what": "Staging, build apk12 1.1.0 (08.11 23:53), טלפון 3 SM-A165F (אחוותא, hard 1200 provisional), Hebrew. Steps: שחק → 2 שחקנים → קשה → מצא יריב, then wait about 2.5 s and dump the UI. The dump already shows the game board against the persona 'יובל94' (1200), so the VS screen and the 3-2-1 countdown (about 5 s) were already over. That means the persona was seated about 1 s after the search began. Same on טלפון 1 (אורי, hard 1232): 'אבי43' (1232) about 7 s after מצא יריב, and 'sami' (1227) in fast within about 10 s. Per config.ts, STEALTH_BOT_AFTER_MS defaults to 8000–20000. Check the staging env value or the draw (stealth/match.ts). It may be a staging setting, not code.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-hit-warp-look",
+   "title": "Warp hit: ~160 ms fully black screen, then ~260 ms frozen warp with no banner or dim, on the receiver",
+   "what": "Build apk12, 1.1.0 (08.11 23:53, loop-6 fixes), Hebrew, SM-A165F, Android 16. Friends room, 2 players: sender טלפון 3 (אחוותא), receiver טלפון 1 (אורי). The receiver had already taken fireworks and cats in the same game. Steps: the sender taps 'הפרעה' → 'עיוות'. Recorded on the receiver with screenrecord --size 540x1170 and decoded at 20 ms steps. At the start of the hit, the whole app content goes black (only the status bar, the nav bar and the faint background digits are visible) for ~160 ms (2.62–2.78 s in warp.mp4). For the next ~260 ms there is a static warped (brown, wavy) frame with no banner, no board dim, and the sender's score not yet updated. Only then do the banner and the dim appear (3.04 s). Evidence: qa-shots/RF8Y60PP2XZ-interference-hit-warp-look-blackflash.png (frames 2.6–3.2 s) and qa-shots/warp.mp4. Seen once; fireworks and cats did not flash.",
+   "severity": "major"
+  },
+  {
+   "taskId": "interference-hit-banner",
+   "title": "Hit banner ring number freezes on '2' for ~1.7 s, and '1' shows for only ~0.3 s",
+   "what": "Build apk12, Hebrew, SM-A165F. Friends room, 2 players. The sender launches fireworks. About 2.5 s into the hit, the receiver selects an empty cell (B2) and enters the correct digit (+6). Recording of the receiver at 100 ms steps (qa-shots/fw.mp4, sheet qa-shots/RF8Y60PP2XZ-interference-hit-banner-ring.png): the ring digit shows 5 for ~0.8 s, 4 for ~1.0 s and 3 for ~0.8 s, then '2' for ~1.7 s (from right after the move), then '1' for only ~0.3 s before the banner leaves. The ring arc itself keeps shrinking smoothly. In the cats hit, where the receiver only selected a cell, the digits were even (0.8–1.1 s each). Likely the digit's JS tick is starved by the move or score animation during the hit.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-picker-double-tap",
+   "title": "Friends room seat shows the joiner's rating from another mode",
+   "what": "Build apk12, Hebrew. טלפון 3 (אחוותא: fast 1079, normal 1200 provisional) creates a room ('רגיל', the default). טלפון 1 (אורי: fast 1299, normal 1206) joins with the code. In the host's room screen: seat 0 'אחוותא … דירוג 1200' (her normal rating), but seat 1 'אורי, ישראל, דירוג 1299', which is אורי's fast/general rating, not his normal 1206. The two seats show ratings from different modes.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "network-abandon-countdown",
+   "title": "The opponent-freeze countdown stops at 1, and the 'הזמן נגמר / בודקים מול השרת…' stage never shows",
+   "severity": "minor",
+   "what": "Build 1.1.0 apk12 (08.11 23:53), SM-A165F, Hebrew. 2-player friends room set to 'מהיר' (phone A hosts, phone B joins with the code). Mid-game, turn on airplane mode on B with Wi-Fi off, and leave it on for 40 s. On A: about 10 s of only the orange dot and Wi-Fi icon, then 'היריב מתנתק…' with the 'Reconnecting... 15' ring counting down. Screen recording on A, frames read every 0.1 s: the ring stays on '1' for about 1 s and then cross-fades in about 0.2 s straight to 'אחוותא עזב את המשחק / ניצחת בנטישה / הזמן נגמר • 25 שניות בלי חיבור'. '0' never shows, and neither does the 'הזמן נגמר' + 'בודקים מול השרת…' state. Likely cause: the server's abandon message arrives about 1 s before the client's local countdown reaches 0. Either the local count runs about 1 s behind the server deadline, or the interim state only shows when the server is late."
+  },
+  {
+   "taskId": "network-abandon-screen",
+   "title": "The lead bar's a11y label says 'שוויון בניקוד' while the scores are 14 vs 20.5",
+   "severity": "minor",
+   "what": "Build apk12, phone A (RF8Y60PP2XZ). Right after the abandon win (same game as above), with the 'אחוותא עזב את המשחק' overlay showing, a uiautomator dump of A reads desc=\"שוויון בניקוד\" id=lead-bar while card-me-score=14 and card-opponent-score=20.5. A TalkBack user hears that the score is tied. I did not check whether the label is also stale during normal play."
+  },
+  {
+   "taskId": "friends-game-play",
+   "title": "A friends room seat shows the wrong rating for the joiner in a 'מהיר' room",
+   "severity": "minor",
+   "what": "Build apk12. On phone A (אורי, fast rating 1299) tap 'שחק' → 'צור חדר': A's seat shows 1299 even though the room type is 'רגיל' and A's normal rating is 1206. Choose 'מהיר'. Phone B (אחוותא, fast rating 1079 on Home, normal 1200) joins with the code. On A, B's seat reads 'אחוותא, ישראל, דירוג 1200' (friends-seat-1-rating=1200) instead of 1079. So the seat ratings follow neither the room type nor one rating type consistently."
+  },
+  {
+   "taskId": "friends-manage-block-mid-game",
+   "title": "אחרי שהאפליקציה נהרגת באמצע משחק עם חברים, אי אפשר לחזור: 4002 ואז 'לא חזרת למשחק בזמן'",
+   "what": "Build apk12, 1.1.0 (08.11 23:53, loop-6 fixes, startup log), on two SM-A165F phones (Android 16, Hebrew), staging. Steps: (1) Phone A creates a friends room ('קשה') and phone B joins with the code. A taps 'התחל משחק · 2 שחקנים' and the board shows on both. (2) On B, open the recent apps list and swipe the app away, so the process dies (it gets a new pid). Relaunch it within about 7 s. Result: the screen shows 'חדר עם חברים' · 'מצטרף לחדר…'. Logcat shows 'Room connection was closed unexpectedly (4002)' three times, about 0 s, 4 s and 10 s after the relaunch (CloseCode.WITH_ERROR). Then the results screen shows 'הפסד', 'איך זה נגמר: לא חזרת למשחק בזמן'. On A, the opponent's card shows 'נטש', and A later gets the win. Expected: the player returns to the same game (friends-manage-block-mid-game). It happens without any block (a control game). It happens the same way when phone A is killed (after it blocked B mid-game). It also happened when the app was opened again with its process still alive: that time it returned fine. So only a real process kill fails. Logs: qa-shots/RF8Y30L038L-friends-manage-block-mid-game-logcat.txt, qa-shots/RF8Y30L038L-friends-manage-block-mid-game-logcat-1.txt, qa-shots/RF8Y60PP2XZ-friends-manage-block-mid-game-logcat.txt (in the run's scratchpad).",
+   "severity": "major"
+  },
+  {
+   "taskId": "friends-game-countdown",
+   "title": "GO! לא מוצג אצל המצטרף לחדר חברים: '1' דוהה ישר ללוח",
+   "what": "Build apk12, 1.1.0 (08.11 23:53), SM-A165F Android 16, Hebrew. Steps: phone 1 (אורי) 'שחק' → 'צור חדר' (מהיר); phone 3 (אחוותא) 'שחק' → 'הצטרף עם קוד' + the code; phone 1 'התחל משחק · 2 שחקנים'. Captured consecutive screencaps on both phones (~0.3 s per frame on phone 3, raw screencap). Phone 1 (host): 3, 2, 1, then 'GO!' with 'מכינים את הלוח...' (2 frames), then the board. Phone 3 (joiner): 3, 2, then '1' with 'התכוננו...' for ~1.5 s (5 frames), then a transition frame of the board with a faded '1' on top, then the board. No GO! frame at all. Reproduced in two separate rooms (499897 with a Back press during the count, 779833 without). Possibly related to K2 (countdown cross-fade, fixed in apk5). Frames: qa-shots/cd-RF8Y30L038L-sheet.png and qa-shots/cd2-RF8Y30L038L-sheet.png in the run scratchpad.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-picker-ltr-en",
+   "severity": "minor",
+   "title": "Interfere button on the 2P opponent card shows only the icon in English, with no 'Interfere' word",
+   "what": "Build: 1.1.0 (08.11 23:53, loop-6 fixes, startup log), SM-A165F, app language English, font scale 1. Steps: (1) Phone 1 (English) joins a friends room (Fast) from phone 3 (Hebrew). (2) Phone 3 starts the 2-player game. (3) Phone 1 solves A4 and A9 (score 5.5). Result: the opponent card shows 'Thinking…' and the interfere button is the lightning icon alone, with no 'Interfere' text. The accessible label is 'Interfere with אחוותא · costs 2 pts'. This looks deliberate: InterferenceButton uses iconOnly when interfereWordFits() is false (QA loop 6). The catalog line still expects the word on the button, so either the catalog changes or the fit rule does. Screenshot: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-interference-picker-ltr-en-1.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "ranked-duel-rating-card",
+   "issue": "השלב והשורה הצפויה מניחים שני חשבונות חדשים עם 1200 'זמני' (1232/1168, K=64, שורת 'דירוג זמני'). בהרצה בלי התחברות אי אפשר לבדוק את זה. כדאי לנסח את השורה כך: 'לפי נוסחת Elo מהדירוגים שלפני המשחק', ולהוסיף דרישה שהספרות יופיעו על המסך בלי גלילה."
+  },
+  {
+   "taskId": "ranked-duel-guard-behind",
+   "issue": "גם כאן הערכים 1168/1232 דורשים חשבונות חדשים. בין חשבונות ותיקים השינוי הוא Elo עם K=32 (כאן ⁦−6⁩/⁦+6⁩)."
+  },
+  {
+   "taskId": "postgame-history-card-score",
+   "issue": "המשימה דורשת fake-client עם Gil ו־--token, ואין טוקנים. נבדק מול טלפון 3 כיריב שנכנע."
+  },
+  {
+   "taskId": "postgame-results-place-2p",
+   "issue": "בתסריט, טלפון א' (אורי, 1310) צריך לנצח את 1021, אבל פער הדירוג 289 קרוב לתקרה של ±300. ניצחון של אורי ועוד ניצחון במשחק 2 היו מעבירים את הפער את 300, ואז שני הטלפונים לא היו נפגשים יותר. לכן במשחק 1 טלפון 3 ניצח. כדאי שהתסריט ירשום את הדירוגים ויחליט מי ינצח לפי הפער."
+  },
+  {
+   "taskId": "game-online-2p-board-end",
+   "issue": "מ'מצא יריב' עד המשחק זה לקח כ־50 שניות. בגלל הפער (כ־230–290) אף פעם לא הגיע בוט, כי השני נמצא בטווח המקסימלי. הצילום ברגע GO, וגם gfxinfo reset, צריכים לכן לחכות כ־50 שניות ולא 8–20."
+  },
+  {
+   "taskId": "interference-where-staging-new-new",
+   "issue": "✓2 (locked kinds dimmed with 'רמה N') can't be judged with these two accounts (levels 9 and 6, unlock levels 2/3/4). The task needs a level-1 to level-3 account, which only comes from a fresh account (login)."
+  },
+  {
+   "taskId": "interference-new-ink-look",
+   "issue": "The steps (and those of the other interference-new-* tasks) still describe a Development Build, dev:lan and fake-client --rules. This round used a real sender on staging from the picker."
+  },
+  {
+   "taskId": "interference-new-fps",
+   "issue": "Release has no Perf Monitor. gfxinfo 'Total frames rendered' on this app counts several surfaces (1100–1340 frames in about 8 s, more than 90 Hz), so 'frames ÷ 5 s' is meaningless. The check needs a different measure, for example SurfaceFlinger queueBuffer fps of the main window, or a video review."
+  },
+  {
+   "taskId": "ranked-end-opp-closes-app",
+   "issue": "'בודקים מול השרת…' did not show in either direction, with frames every 0.75 s: the ring goes from 1 straight to the abandon dialog. If that step only shows when the server is slow, the expected line should say 'ייתכן'. Also, the 'orange dot' is in fact an orange wifi-off icon where the interfere button was."
+  },
+  {
+   "taskId": "avatars-react-hit-target",
+   "issue": "On the receiver, the hit banner covers the receiver's own avatar for most of the hit, so 'בטלפון ב' (בכרטיס שלי)' can be seen only in the last moments of the hit."
+  },
+  {
+   "taskId": "pregame-type-givens-ranked-normal",
+   "issue": "In an English UI dump the given-cell description ends in 'given' (e.g. 'A3, 3, given'), not 'רמז'. Script step 9 and the task's step 3 should say so."
+  },
+  {
+   "taskId": "pregame-type-givens-ranked-fast",
+   "issue": "Same as givens-normal: the dump word is 'רמז' only in Hebrew, 'given' in English."
+  },
+  {
+   "taskId": "pregame-search-alone",
+   "issue": "With the stealth bot on (STEALTH_BOT_HIDE_NOBODY), the 2p 'alone' notice never shows. A lone search shows the 'טווח דירוג' bar instead, and a persona is seated within seconds. All tasks that rely on the 2p notice (search-alone, bot-from-notice, other-type, search-join step 2, search-english ✓2, timeout-*) can only run with the bot off. The same notice can be seen in the 4p queue, which the stealth bot does not enter."
+  },
+  {
+   "taskId": "pregame-search-range",
+   "issue": "✓2 'ובהמשך המסך נמנעים מיריבים ששיחקת מולם לאחרונה': on a 1080x2340 A16 this line is below the fold when the range card is shown, hidden behind the 'ביטול חיפוש' footer, so it is visible only after scrolling. It is visible without scrolling only in the 'מתחבר לתור…' state."
+  },
+  {
+   "taskId": "pregame-found-side-en",
+   "issue": "✓2 allows Hebrew only in the opponent's name, but my own name (אורי) is also Hebrew on the card. It should say 'חוץ משמות השחקנים'."
+  },
+  {
+   "taskId": "pregame-modes-fit-en",
+   "issue": "✓4 'אין אף מילה בעברית': the user's own display name (אורי) sits next to the avatar in the header. It should exclude user names."
+  },
+  {
+   "taskId": "pregame-found-rematch",
+   "issue": "✓1 needs a pair that has not played recently. The two test accounts (אורי, אחוותא) always show 'שיחקתם זה מול זה לאחרונה'. In 'רגיל' too, where the line is per game type."
+  },
+  {
+   "taskId": "pregame-search-join",
+   "issue": "Step 2 'מחכים להודעה כרגע אין שחקנים אחרים…' cannot happen while the stealth bot is on. Searching the same type within 2 s still checks ✓1."
+  },
+  {
+   "taskId": "interference-target-disconnects",
+   "issue": "The expected lines name 'Fake1' (a fake client), but this session uses the second phone as the target. Also, 'נקודה כתומה' does not match the app: the offline dot is amber-yellow (#FFCF3F, the same color as the Wi-Fi circle), not orange. Suggest 'נקודה צהובה־כתומה (אזהרה)'."
+  },
+  {
+   "taskId": "avatars-react-reconnect",
+   "issue": "The expected lines call the disconnecting player ב', while the session script disconnects A (טלפון 3) and watches on B. The roles should match the setup."
+  },
+  {
+   "taskId": "interference-where-collection-list",
+   "issue": "✓2 needs a level-1 account. Neither phone has one (אחוותא is now level 6), and switching accounts is forbidden, so with the current test accounts this can only be checked by Moshe with a new account."
+  },
+  {
+   "taskId": "interference-picker-locked",
+   "issue": "The whole task needs a level-1 sender. אחוותא is level 6, so tapping the 'locked' kinds would launch them. Mark it as a Moshe/new-account task, or keep a level-1 test account."
+  },
+  {
+   "taskId": "interference-hit-fps-classic",
+   "issue": "On Android 16, gfxinfo prints both 'Janky frames' (new metric; here 0%) and 'Janky frames (legacy)' (here 76–90%). The ✓ should say which line counts, and maybe add a p90 limit: p90 was 42–69 ms while Janky was 0%."
+  },
+  {
+   "taskId": "interference-picker-busy",
+   "issue": "The toast said 'בעוד 5 שניות' already ~1.6 s after the launch, while the hit lasts 5 s. If the cooldown is meant to be the remaining hit time, the expected line should say how N is computed, or this is an app issue. Not marked as a failure."
+  },
+  {
+   "taskId": "network-timers-clock",
+   "issue": "The expected line 'הספירה של אותה נעילה מראה אותו מספר שניות בשני הטלפונים' cannot be read literally: on the other phone a rival's lock shows only the rival's avatar in the cell, with no seconds number. Suggest checking 'the lock lasts 8 s and ends at the same moment on both phones', or the 'בוחר <cell>' ring on the rival's card."
+  },
+  {
+   "taskId": "network-abandon-countdown",
+   "issue": "Lines 2–3 ('down to 0', then 'הזמן נגמר' with 'בודקים מול השרת…') depend on timing. If the server's abandon decision arrives before the local count reaches 0, the app goes straight from 'Reconnecting... 1' to the 'עזב את המשחק' screen. If that is acceptable, the task should say so, the way network-abandon-leaver lists two valid outcomes."
+  },
+  {
+   "taskId": "network-freeze-self",
+   "issue": "'הספרה הממתינה נשארת על הלוח, מתחת למסך': the 'הלוח נעול עד שתחזור' card covers rows C–E, so a pending digit there cannot be seen at all. The line can only be judged by the digit being counted after the return. Suggest telling the tester to put the pending digit in row A, B or F–I."
+  },
+  {
+   "taskId": "network-silent-keep-playing",
+   "issue": "Step 4 ('לוחצים על משבצת ריקה ומקישים בה ספרה') together with ✓1 (the lock with its countdown): when the digit follows the tap within about 0.3 s, the lock strip 'המשבצת שלך X · 8 שניות' shows only for a moment. The task could say to wait about 2 s before typing the digit."
+  },
+  {
+   "taskId": "friends-manage-block-hides-room",
+   "issue": "The expected line says 'לא מצאנו חדר עם הקוד הזה.' (friends:notFoundThis, the link variant). When the code is typed, the app shows 'לא מצאנו חדר עם הקוד ⁦XXX XXX⁩. בדוק את הספרות.' (friends:notFound). That is the same as a wrong code, which is what the task means. The wording should match the typed-code message."
+  },
+  {
+   "taskId": "friends-manage-block-in-room",
+   "issue": "Step 3 says to open phone B's card from history. In 1.1.0 a history card opens 'צפייה חוזרת', where the player cards can't be tapped, so there is no card or block there. Pressing back from the room leaves it, so you can't go to Home → history without leaving. I opened the card with the deep link sudokufight://player/<id> over the room. The step needs another way: a ranked game's results, the leaderboard, or a link."
+  },
+  {
+   "taskId": "friends-manage-block-mid-game",
+   "issue": "Steps 5–6 (swipe away from recents) depend on the friends-room rejoin after a process kill, which fails in general (see appBugs). Note for Claude runs: on this Samsung in Hebrew, the recents list shows the current app at the LEFT edge, and the centre card is another app."
+  },
+  {
+   "taskId": "network-surrender-result",
+   "issue": "Step 2 says to choose 'מהיר', but the session script plays the 'קשה' room. I checked it in 'קשה'. The texts do not depend on the game type."
+  },
+  {
+   "taskId": "friends-results-no-rematch-home",
+   "issue": "The session script says the 'עוד סיבוב' line should read 'אימון לבד · לוח מלא', but the app shows 'אימון לבד · מהיר' (the type, not the mode subtitle). The task itself says to write down whatever is shown, so it was judged that way."
+  },
+  {
+   "taskId": "friends-game-history",
+   "issue": "The expected line quotes 'עם חברים · בלי דירוג' as one phrase. The card shows 'ניצחון · עם חברים · מהיר' on one line and 'בלי דירוג' on another. Both phrases are there, so it passed. The wording could match the card."
+  },
+  {
+   "taskId": "friends-game-start-without",
+   "issue": "Example name 'Dana' in the expected lines. Without a third player (fake-client) the task cannot run: with only 2 players and B in the background, 'התחל משחק' is disabled, so the dialog never appears. The same is true for start-without-closed. Both need ID tokens."
+  },
+  {
+   "taskId": "interference-picker-ltr-en",
+   "issue": "Expected line 1 ('the button on the rival card says Interfere') conflicts with the loop-6 design: on a 2P card that is too narrow (for example, rival status 'Thinking…'), the button is icon-only and the word is only in the accessible label. The line should say 'the button's accessible label is Interfere with <name>…, or the word Interfere when it fits'. Step 3 also says the room button is 'צור חדר', but in English it is 'New room'."
+  },
+  {
+   "taskId": "friends-manage-create-cancel",
+   "issue": "Step 2 says to tap Back 'while פותח חדר…' is shown. On Wi-Fi, the screen captured about 0.1 s after the tap already shows 'מצטרף לחדר…' (create is finished and the app is joining), so 'פותח חדר…' is hard to catch. Suggest: 'while the spinner (פותח חדר… / מצטרף לחדר…) is shown'."
+  },
+  {
+   "taskId": "postgame-leaderboard-no-rating",
+   "issue": "Neither test account (אורי, אחוותא) can meet the precondition. Both have a Hard row on the leaderboard (1232 and 1200, both provisional), and אחוותא's 1200 may be a default rating rather than a played game. The message can be checked only with a new account. If the server lists accounts that never played Hard at 1200, the task can never trigger for an existing account."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "game-online-2p-cards-he",
+   "result": "pass",
+   "summary": "בשני הטלפונים: אני מימין עם ● 'אני', אווטר, דגל, דירוג, כניעה ותגובות; VS; היריב משמאל עם ▲ כתום והפרעה"
+  },
+  {
+   "taskId": "game-online-2p-same-board",
+   "result": "pass",
+   "summary": "אותם רמזים בשניהם; נעילה של A2: טבעת כתומה עם אווטר ו'בוחר · A2' בטלפון השני; הספרה הופיעה כתומה עם ▲ והניקוד התעדכן"
+  },
+  {
+   "taskId": "game-surrender-guard-first-move",
+   "result": "pass",
+   "summary": "'המשחק ייחשב כהפסד · הדירוג שלך לא ירד, כי עוד לא ביצעת מהלך' באפור, בלי מספר אדום"
+  },
+  {
+   "taskId": "game-surrender-guard-not-behind",
+   "result": "pass",
+   "summary": "כשמובילים ב־⁦+5⁩: '…כי אין לך פיגור' באפור, בלי מספר אדום"
+  },
+  {
+   "taskId": "game-surrender-ranked-cancel",
+   "result": "pass",
+   "summary": "המהלך של היריב בזמן שהחלון פתוח עודכן; 'ביטול' סגר והמשחק נמשך"
+  },
+  {
+   "taskId": "game-surrender-ranked-back",
+   "result": "pass",
+   "summary": "Back ראשון פתח את חלון הכניעה, השני סגר אותו והמשחק נמשך"
+  },
+  {
+   "taskId": "game-moves-tried-everyone",
+   "result": "pass",
+   "summary": "7 שגוי של היריב ב־D5 נראה קטן ואדום; בנעילה המקש 7 אדום עם קו, וההקשה עליו לא מזינה כלום"
+  },
+  {
+   "taskId": "game-reactions-send-other",
+   "result": "pass",
+   "summary": "😂 עלה מהכרטיס של השולח: אצל היריב משמאל, אצל השולח מימין"
+  },
+  {
+   "taskId": "game-online-perf",
+   "result": "pass",
+   "summary": "Janky frames ‏0.02% (11 פריימים) אחרי כ־5 דקות; מעוף הניקוד והספירה לא נתקעו"
+  },
+  {
+   "taskId": "game-online-2p-board-end",
+   "result": "pass",
+   "summary": "הלוח המלא נשאר כשנייה בשני הטלפונים, בלי 'המשחק הסתיים'; ניצחון/הפסד עם 'הלוח התמלא'"
+  },
+  {
+   "taskId": "ranked-duel-full-board",
+   "result": "pass",
+   "summary": "לוח מלא בלי דיאלוג, ואחרי כשנייה התוצאות: 'ניצחון!' אצל מי שצבר 76, 'הפסד' אצל מי שצבר 8"
+  },
+  {
+   "taskId": "postgame-results-place-2p",
+   "result": "pass",
+   "summary": "'ניצחון!' בזהב עם 'מקום 1 מתוך 2', 'הפסד' עם 'מקום 2 מתוך 2' באפור; 'משחק מדורג · מהיר · 2 שחקנים' ו'הלוח התמלא' (הפעם המנצח טלפון 3)"
+  },
+  {
+   "taskId": "ranked-duel-results-back",
+   "result": "pass",
+   "summary": "טלפון 3: 1048 בתוצאות, Back אחד הביא לבית, ובעמודה 'מהיר' 1048"
+  },
+  {
+   "taskId": "ranked-found-colors-shapes",
+   "result": "pass",
+   "summary": "ב'נמצא יריב!' בשני הטלפונים: אני במסגרת תכלת עם ● ו'אני', היריב עם ▲ כתום"
+  },
+  {
+   "taskId": "ranked-duel-guard-before-move",
+   "result": "pass",
+   "summary": "הדיאלוג '…כי עוד לא ביצעת מהלך'; למפסיד 0 באפור עם ההסבר; למנצח ⁦+7⁩ לפי Elo בלי שורת הסבר (⁦+32⁩ צריך חשבונות חדשים)"
+  },
+  {
+   "taskId": "ranked-duel-guard-games-count",
+   "result": "pass",
+   "summary": "משחקים 68 עלו ל־69 והדירוג 1048 לא זז"
+  },
+  {
+   "taskId": "ranked-duel-guard-leader",
+   "result": "pass",
+   "summary": "'…כי אין לך פיגור'; לנכנע 0 באפור עם '…לא היית בפיגור כשיצאת'; למנצח 0 אפור עם 'אין תוספת לדירוג…'"
+  },
+  {
+   "taskId": "ranked-end-report-sheet-open",
+   "result": "pass",
+   "summary": "גיליון הדיווח ירד לבד, הלוח נשאר כחצי שנייה, ואז 'ניצחון!'; בלי מסך שחור"
+  },
+  {
+   "taskId": "ranked-duel-guard-behind",
+   "result": "partial",
+   "summary": "שינוי דירוג משוער ⁦−6⁩ באדום, ובתוצאות ⁦−6⁩/⁦+6⁩ לפי Elo עם K=32 בלי הסבר; 1168/1232 צריך חשבונות חדשים"
+  },
+  {
+   "taskId": "ranked-end-opp-surrenders-my-lock",
+   "result": "pass",
+   "summary": "הטבעת דהתה, הלוח נשאר ואז 'ניצחון!' עם 'היריב נכנע…'; אצל הנכנע 'הפסד'; 'לבית' עובד; בלי מסך שחור"
+  },
+  {
+   "taskId": "postgame-history-summary",
+   "result": "pass",
+   "summary": "'88 משחקים · 55% ניצחונות · 67 אימונים' ותג 'רצף 3', כמו בכרטיס השחקן"
+  },
+  {
+   "taskId": "postgame-history-card-score",
+   "result": "pass",
+   "summary": "מול טלפון 3 במקום Gil: '12.5 : 5', שלי משמאל בתכלת ושלו באפור; ⁦+6⁩, 'היום', צפייה חוזרת נפתחת"
+  },
+  {
+   "taskId": "ranked-duel-history",
+   "result": "pass",
+   "summary": "בסינון 'מדורג' המשחק ראשון עם 'ניצחון' ו־⁦+6⁩, והלחיצה פותחת את הצפייה החוזרת שלו"
+  },
+  {
+   "taskId": "ranked-end-surrender-no-lock",
+   "result": "pass",
+   "summary": "5 משחקים בלי נעילה: 'הפסד' אצל הנכנע ו'ניצחון!' אצל השני, אף פעם לא שחור (~0.5 ש׳ רקע ריק במעבר)"
+  },
+  {
+   "taskId": "game-surrender-confirm-nolock",
+   "result": "pass",
+   "summary": "5 פעמים: החלון נעלם, הלוח כחצי שנייה, ואז 'הפסד' / 'ניצחון!'; אף פעם לא שחור"
+  },
+  {
+   "taskId": "game-surrender-confirm-lock",
+   "result": "pass",
+   "summary": "5 משחקים ששני הצדדים נעלו בהם משבצת: 'הפסד' עם 'נכנעת…' ו'ניצחון!' עם 'היריב נכנע…'; אף פעם לא שחור ולא 'המסך לא נטען'"
+  },
+  {
+   "taskId": "game-surrender-opponent-lock",
+   "result": "pass",
+   "summary": "6 פעמים: הטבעת דהתה, הלוח כחצי שנייה, ואז 'ניצחון!' עם 'היריב נכנע לפני שהלוח התמלא'"
+  },
+  {
+   "taskId": "ranked-duel-rating-card",
+   "result": "partial",
+   "summary": "השינוי תואם Elo עם K=32, והספירה 1061→1087 נראתה אחרי גלילה; 1200→1232/1168 ושורת 'זמני' צריכים חשבונות חדשים"
+  },
+  {
+   "taskId": "interference-where-staging-new-new",
+   "result": "untested",
+   "summary": "✓1 עבר בשני הכיוונים: בחלון יש שישה סוגים. ✓2 לא נבדק: שני החשבונות ברמה 4 ומעלה (9 ו־6), אז אף סוג לא נעול. נבדק ב־picker-locked."
+  },
+  {
+   "taskId": "interference-new-ink-look",
+   "result": "fail",
+   "summary": "באג קריטי: 'דיו' מפיל את האפליקציה של היעד. המסך נהיה כהה וריק (ReferenceError: Property 'INK' doesn't exist), והיריב מנצח בנטישה."
+  },
+  {
+   "taskId": "interference-new-ink-tap",
+   "result": "fail",
+   "summary": "אותה קריסה: אחרי פגיעת דיו אין לוח, אז אי אפשר להקיש."
+  },
+  {
+   "taskId": "avatars-react-hit-target",
+   "result": "partial",
+   "summary": "עם דיו היעד קורס. עם 'מספרים מתערבלים' האווטר של היעד ספירלי ונטוי בשני הטלפונים, וחוזר לרגיל בסוף ההפרעה."
+  },
+  {
+   "taskId": "avatars-react-hit-sender",
+   "result": "fail",
+   "summary": "קריצת השולח לא נראית: הודעת השיגור מכסה את האווטר בערך 2 שניות. בבאנר אצל היעד האווטר קורץ (בדיו אין באנר, כי האפליקציה נופלת)."
+  },
+  {
+   "taskId": "interference-new-scramble-tap",
+   "result": "pass",
+   "summary": "G1 נבחרה וננעלה ('המשבצת שלך G1 · מושהה'). המקלדת נשארה 1–9 משמאל לימין."
+  },
+  {
+   "taskId": "interference-new-scramble-end",
+   "result": "pass",
+   "summary": "אחרי ההפרעה הלוח זהה ללוח האמיתי. צבע השולח רק במשבצות שהוא פתר, ואין ספרה מתגלגלת."
+  },
+  {
+   "taskId": "interference-new-keypad-shuffle",
+   "result": "untested",
+   "summary": "Claude ראה שהמקשים מחליפים מקומות ושהלוח לא משתנה. ההחלקה והקצב של כשנייה וחצי נשארו למשה, מהסרטון."
+  },
+  {
+   "taskId": "interference-new-keypad-cancel",
+   "result": "pass",
+   "summary": "'ביטול בחירה' באותו מקום בכל הפריימים."
+  },
+  {
+   "taskId": "interference-new-keypad-hold",
+   "result": "pass",
+   "summary": "המקש שהוחזק 3 שניות לא זז. בזמן ההחזקה כל המקלדת קפאה."
+  },
+  {
+   "taskId": "interference-new-keypad-end",
+   "result": "pass",
+   "summary": "בסוף ההפרעה המקשים חזרו לסדר 1–9."
+  },
+  {
+   "taskId": "interference-new-keypad-digit",
+   "result": "pass",
+   "summary": "בשלוש הקשות נכנסה הספרה שעל המקש: 7, 9 ו־6."
+  },
+  {
+   "taskId": "interference-new-fps",
+   "result": "fail",
+   "summary": "את הדיו אי אפשר למדוד, כי היעד קורס. במספרים המתערבלים ובמקלדת המתערבלת Janky 0% ו־p50 של 26–29ms, וספירת הפריימים לא חד־משמעית."
+  },
+  {
+   "taskId": "ranked-end-screen-off-30s",
+   "result": "pass",
+   "summary": "אחרי 30 שניות במסך נעול מופיעים 'ניצחון!' ו'היריב נכנע', בלי מסך של חיבור שאבד."
+  },
+  {
+   "taskId": "ranked-end-screen-off-over-minute",
+   "result": "pass",
+   "summary": "אחרי 80 שניות מופיע 'שגיאת חיבור' (roomGone-522) עם 'לבית'. 'לבית' מגיע לבית בלי מסך שחור."
+  },
+  {
+   "taskId": "ranked-end-opp-closes-app",
+   "result": "partial",
+   "summary": "היה סמל כתום, אחריו מוקפא ו'היריב מתנתק…' עם טבעת מ־15, ואז ניצחון בנטישה ו'לתוצאות'. אבל מתחת לטבעת כתוב 'Reconnecting... 13' באנגלית, ו'בודקים מול השרת…' לא הופיע."
+  },
+  {
+   "taskId": "ranked-end-opp-left-home",
+   "result": "pass",
+   "summary": "'אורי עזב את המשחק' הופיע אחרי כ־30 שניות, ו'לבית' הגיע לבית בלי מסך שחור."
+  },
+  {
+   "taskId": "pregame-search-screen",
+   "result": "pass",
+   "summary": "מתחבר לתור… ואז מחפש יריב…, תג מדורג · 2 שחקנים · קשה, שעון 0:00→0:01, אווטר בעיגולים עם אני ודירוג, יריבים 0/1 עם ? ומחפש…, ביטול חיפוש (טלפון 1 + טלפון 3)"
+  },
+  {
+   "taskId": "pregame-search-android-back",
+   "result": "pass",
+   "summary": "BACK בזמן חיפוש 'קשה' ביטל וחזר ל'סוג משחק' עם 'מדורג · 2 שחקנים' (טלפון 3)"
+  },
+  {
+   "taskId": "pregame-search-cancel",
+   "result": "pass",
+   "summary": "ביטול חיפוש החזיר ל'סוג משחק' עם 'מדורג · 2 שחקנים' ו'מצא יריב' (טלפון 3)"
+  },
+  {
+   "taskId": "pregame-search-4p",
+   "result": "pass",
+   "summary": "מחפש יריבים…, תג מדורג · 4 שחקנים · מהיר, 0/3 עם ▲ ■ ◆, ההודעה 'כרגע אין מספיק שחקנים…' וכפתור שחק מול בוט בינתיים"
+  },
+  {
+   "taskId": "pregame-search-4p-count",
+   "result": "pass",
+   "summary": "שני הטלפונים בתור 4·מהיר: אחרי 15 שניות בשניהם 0/3, שלושה מקומות פנויים וההודעה נשארת"
+  },
+  {
+   "taskId": "pregame-timeout-bot-robot",
+   "result": "pass",
+   "summary": "אייקון רובוט בכפתור 'שחק מול בוט בינתיים' בהודעה ובמסך 1:00, אותו ציור כמו 'אימון מול בוט' (נבדק בתור 4, כי בתור 2 הבוט הסמוי מסתיר את ההודעה)"
+  },
+  {
+   "taskId": "pregame-search-range",
+   "result": "pass",
+   "summary": "D=220: טווח נמוך משמאל 1249–1349→1224–1374→1099–1499, גדל 25 לכל צד כל 5 ש', הפס מתרחב; נמצאו ב־0:35"
+  },
+  {
+   "taskId": "pregame-found-tiles",
+   "result": "pass",
+   "summary": "תג, נמצא יריב!, שני כרטיסים ו־VS עם אווטר/שם/דגל/דירוג, אני + ● תכלת מול ▲ כתום; 'זמני' נראה במשחק רגיל"
+  },
+  {
+   "taskId": "pregame-found-side-he",
+   "result": "pass",
+   "summary": "בשני הטלפונים הכרטיס שלי (אני) מימין, היריב משמאל, VS ביניהם"
+  },
+  {
+   "taskId": "pregame-found-ready",
+   "result": "pass",
+   "summary": "מוכן עם וי לשניהם, 'כל השחקנים מוכנים · המשחק מתחיל', מוכנים 2/2, ואחרי כ־1.1–1.7 ש' הספירה"
+  },
+  {
+   "taskId": "pregame-found-no-cancel",
+   "result": "pass",
+   "summary": "'מכאן אין ביטול: יציאה נחשבת נטישה', אין כפתור ביטול; BACK פעמיים לא עשה כלום והמשחק התחיל"
+  },
+  {
+   "taskId": "pregame-found-countdown",
+   "result": "pass",
+   "summary": "אני מימין ● ודירוג, VS, היריב ▲; לוח קטן עמום, 3, 2, 1, GO!, התכוננו… / הלוח ייחשף…, ואז מכינים את הלוח…"
+  },
+  {
+   "taskId": "pregame-found-rematch",
+   "result": "untested",
+   "summary": "✓2 עבר: 'שיחקתם זה מול זה לאחרונה'; ✓1 לא בר־בדיקה כי הזוג כבר שיחק לאחרונה (נשאר למשה)"
+  },
+  {
+   "taskId": "pregame-type-givens-ranked-fast",
+   "result": "pass",
+   "summary": "50 ספרות גלויות (31 ריקות), כל 1–9, כל ספרה 5–6 פעמים"
+  },
+  {
+   "taskId": "pregame-modes-fit-en",
+   "result": "pass",
+   "summary": "720x1560/320 באנגלית: New game משמאל לימין, שש שורות עד Staged practice, New room ו־Join with code בשורה אחת; עברית רק בשם המשתמש"
+  },
+  {
+   "taskId": "pregame-type-english",
+   "result": "pass",
+   "summary": "Game type, Solo practice / Ranked · 2 players, Fast/Normal/Hard עם 8 s/12 s/18 s, Easy/Medium/Hard, 4–6/6–9/9–14 min, Start practice / Find an opponent"
+  },
+  {
+   "taskId": "pregame-bot-english",
+   "result": "pass",
+   "summary": "Choose a bot, Practice vs bot · Normal, חמש הרמות והשמות, אותם מספרים כמו בעברית, Let's play, בלי עברית"
+  },
+  {
+   "taskId": "friends-a11y-new-game-fit",
+   "result": "pass",
+   "summary": "משחק חדש בעברית ובאנגלית: שש השורות וצור חדר/הצטרף עם קוד (New room/Join with code) בלי גלילה, שורה אחת, בלי …"
+  },
+  {
+   "taskId": "pregame-search-join",
+   "result": "pass",
+   "summary": "תור רגיל: טלפון 3 הצטרף 2 ש' אחרי טלפון 1 ושניהם ב'נמצא יריב!' כעבור כשנייה (ההודעה לא מוצגת בכלל כשהבוט הסמוי דלוק)"
+  },
+  {
+   "taskId": "pregame-found-side-en",
+   "result": "pass",
+   "summary": "Opponent found!, הכרטיס שלי (Me) משמאל והיריב מימין; עברית רק בשמות"
+  },
+  {
+   "taskId": "pregame-type-givens-ranked-normal",
+   "result": "pass",
+   "summary": "37 ספרות גלויות (44 ריקות), כל 1–9, כל ספרה 4–5 פעמים (ב־dump באנגלית המילה היא given)"
+  },
+  {
+   "taskId": "friends-a11y-english",
+   "result": "pass",
+   "summary": "New room/Join with code, החדר וההודעה על קוד לא קיים באנגלית ומשמאל לימין; עברית רק בשמות"
+  },
+  {
+   "taskId": "network-en-freeze",
+   "result": "pass",
+   "summary": "A: Opponent reconnecting…, Game frozen · All timers stopped, Reconnecting... 15; B: You lost your connection / Reconnecting… / The board is locked…; חזרה: You're back in the game · All synced"
+  },
+  {
+   "taskId": "network-en-abandon",
+   "result": "pass",
+   "summary": "A: אחוותא left the game, You win by abandonment, Time's up · 25 seconds without a connection, See results, Home; B: Connection error עם Try again, Go to practice, Home"
+  },
+  {
+   "taskId": "network-abandon-home",
+   "result": "pass",
+   "summary": "Home אחרי נטישה: 12 צילומים רצופים, בלי פריים שחור, בית מלא ותקין"
+  },
+  {
+   "taskId": "interference-where-collection-list",
+   "result": "partial",
+   "summary": "אחוותא ברמה 6: כל ששת הסוגים ב'הארסנל שלך' עם 'זמין'. 'נעולות' עם 'נפתח ברמה 2/3/4' לא נבדק: צריך חשבון ברמה 1"
+  },
+  {
+   "taskId": "interference-where-collection-soon",
+   "result": "pass",
+   "summary": "רעידת אדמה, ערפל, בועות ופנס עם 'בקרוב' בסוף 'נעולות'"
+  },
+  {
+   "taskId": "interference-where-collection-howto",
+   "result": "pass",
+   "summary": "בתחתית: 'במשחק: הקש על \"הפרעה\" בכרטיס היריב, ובחר הפרעה.' בעובדות: '2' עם 'הקשות: \"הפרעה\" בכרטיס היריב, ואז ההפרעה'. אין אזכור לגרירה"
+  },
+  {
+   "taskId": "interference-picker-double-tap",
+   "result": "pass",
+   "summary": "הקשה כפולה על 'הפרעה': החלון נפתח ונשאר פתוח, הניקוד נשאר 21 ואין באנר בטלפון ב'"
+  },
+  {
+   "taskId": "interference-picker-rtl-he",
+   "result": "pass",
+   "summary": "'בחר הפרעה' מיושר לימין, זיקוקים בפינה הימנית העליונה ומקלדת מתערבלת בשמאלית התחתונה. '−2' עם המינוס משמאל, ו'21 ← 19' נקרא נכון"
+  },
+  {
+   "taskId": "interference-picker-no-soon",
+   "result": "pass",
+   "summary": "בחלון אין 'בקרוב', ואין ערפל, פנס, רעידת אדמה או בועות"
+  },
+  {
+   "taskId": "interference-picker-locked",
+   "result": "partial",
+   "summary": "השולח ברמה 6, לכן שלושת הסוגים החדשים פתוחים (−2 נק׳). המצב הנעול לא נבדק: צריך חשבון ברמה 1"
+  },
+  {
+   "taskId": "interference-picker-close",
+   "result": "pass",
+   "summary": "החלון נסגר בהקשה על השכבה הכהה, ב־X וב־Back. הניקוד נשאר 21 ואין באנר בטלפון ב'"
+  },
+  {
+   "taskId": "interference-picker-launch",
+   "result": "pass",
+   "summary": "זיקוקים שוגרו מיד בלי אישור. החלון נסגר, 21→19, טוסט 'זיקוקים ← אורי', ובאנר בטלפון ב'"
+  },
+  {
+   "taskId": "interference-picker-launch-once",
+   "result": "pass",
+   "summary": "הקשה כפולה על זיקוקים: ירידה של 2 בלבד, ובאנר אחד בלבד בהקלטה"
+  },
+  {
+   "taskId": "interference-picker-busy",
+   "result": "pass",
+   "summary": "כ־1.6 שנ' אחרי השיגור: הכפתור עמום, טוסט 'אורי כבר תחת הפרעה. אפשר שוב בעוד 5 שניות', רטט TOUCH של 50ms, והחלון לא נפתח"
+  },
+  {
+   "taskId": "interference-hit-sender",
+   "result": "pass",
+   "summary": "בצילומי השולח מ־+0.9 עד +3.8 שנ' הלוח בהיר, ואין באנר ואין אפקט"
+  },
+  {
+   "taskId": "interference-hit-play",
+   "result": "pass",
+   "summary": "בזמן הזיקוקים ב' בחר את B2 (נבחרה וננעלה מתחת לאפקט ולהחשכה) והזין 3 (+6). הספרה הופיעה גם אצל א'"
+  },
+  {
+   "taskId": "interference-hit-dim-board",
+   "result": "pass",
+   "summary": "בהירות הלוח ירדה מ־226 ל־~97 (כ־57%) לכל משך הבאנר. המקלדת, הכרטיסים והבאנר לא השתנו"
+  },
+  {
+   "taskId": "interference-hit-banner",
+   "result": "partial",
+   "summary": "באנר 'אחוותא שלח/ה לך זיקוקים!' עם אווטר השולח, וזיקוקים פעילים. אבל המספר בטבעת נתקע על '2' ~1.7 שנ' (אחרי מהלך של ב'), ו־'1' הוצג רק ~0.3 שנ'. בחתולים הספירה תקינה"
+  },
+  {
+   "taskId": "interference-hit-fireworks-look",
+   "result": "untested",
+   "summary": "Claude: זיקוקים על כל המסך, כולל המקלדת והכרטיסים, ונגמרים אחרי ~4.7 שנ'. נשאר למשה: האם זה נראה טוב"
+  },
+  {
+   "taskId": "interference-picker-next-price",
+   "result": "pass",
+   "summary": "'מחיר −4 נק׳ · הבאה: 8', ובכל ששת התגים '−4 נק׳'"
+  },
+  {
+   "taskId": "interference-hit-lock-paused",
+   "result": "pass",
+   "summary": "הנעילה הראתה 11 שניות, עברה ל־'‖ מושהה' כל זמן החתולים, ובסיום המשיכה מ־11 ואז 10 ו־9"
+  },
+  {
+   "taskId": "interference-hit-cats-look",
+   "result": "untested",
+   "summary": "Claude: חתולים רצים על כל המסך, כולל המקלדת ואזור הכרטיסים, ונגמרים אחרי ~4.7 שנ'. נשאר למשה: מראה ותנועה בלי קפיצות"
+  },
+  {
+   "taskId": "interference-hit-dim-ends",
+   "result": "pass",
+   "summary": "בזיקוקים ובחתולים ההחשכה נעלמת באותם פריימים שבהם הבאנר דועך (7.7–7.9 שנ', בתוך ~100ms)"
+  },
+  {
+   "taskId": "interference-hit-warp-dim",
+   "result": "pass",
+   "summary": "השכבה הכהה מתעוותת ומוטה יחד עם הלוח, ואין מלבן ישר שזז בנפרד"
+  },
+  {
+   "taskId": "interference-hit-warp-look",
+   "result": "pass",
+   "summary": "כל המסך מתעוות, כולל המקלדת (פרספקטיבה, גלים, היסט צבע), ובסוף הכל חוזר. באג נפרד: פריים שחור ~160ms בהתחלה"
+  },
+  {
+   "taskId": "interference-hit-fps-classic",
+   "result": "pass",
+   "summary": "Janky frames של 0.00% בזיקוקים, בחתולים ובעיוות. ה־legacy: 76.5%, ‏90.4% ו־77.7%; ‏p90 בין 42 ל־69ms"
+  },
+  {
+   "taskId": "interference-target-disconnects",
+   "result": "pass",
+   "summary": "החלון של ב' נסגר לבד ~3.5 שנ' אחרי מצב הטיסה, והניקוד נשאר 6. בכרטיס של א' נקודה צהובה־כתומה ואייקון Wi-Fi מחוק במקום 'הפרעה'"
+  },
+  {
+   "taskId": "avatars-react-reconnect",
+   "result": "pass",
+   "summary": "במשך 10 שנ' האווטר צבעוני ולא זז, ואז אפור בלי תגובה. כשא' חזר, הצבע חזר והמחשבון חייך ~1.5 שנ' בלי תנועה"
+  },
+  {
+   "taskId": "avatars-look-grey",
+   "result": "pass",
+   "summary": "המחשבון האפור עדיין מזוהה: הצורה, המסך, הפנים והמקשים נראים"
+  },
+  {
+   "taskId": "network-lock-pending",
+   "result": "pass",
+   "summary": "טבעת ממתינה חיוורת כ־70 מ\"ש ואז נעילה שלי עם 8 שניות (הקלטת מסך)"
+  },
+  {
+   "taskId": "network-timers-clock",
+   "result": "pass",
+   "summary": "שעון ב' הוקדם ב־2:00 בדיוק; נעילות A4 ו־I9 נמשכו 8 שנ' ונגמרו יחד בשני הטלפונים (אצל היריב הנעילה היא אווטאר בלי מספר)"
+  },
+  {
+   "taskId": "network-digit-sync",
+   "result": "pass",
+   "summary": "ב־א' הנעילה עברה ישר ל־+4.5 ול־2 נכונה בלי סימון זמני; ב־ב' אותה 2 נכונה כמעט באותו רגע"
+  },
+  {
+   "taskId": "network-relay",
+   "result": "pass",
+   "summary": "ב־ב' 'אורי שלח/ה לך זיקוקים!' עם טבעת ספירה; 😂 עלתה מהאווטאר של אורי"
+  },
+  {
+   "taskId": "friends-game-play",
+   "result": "pass",
+   "summary": "בחדר 'מהיר': נעילות מופיעות בטלפון השני, ניקוד, הפרעה (2 נק') ותגובה הגיעו"
+  },
+  {
+   "taskId": "network-silent-opponent-mark",
+   "result": "pass",
+   "summary": "ב־א' כ־5 שנ' אחרי מצב הטיסה: נקודה כתומה ואייקון Wi-Fi במקום 'הפרעה', בלי ספירה/באנר, אווטאר לא אפור"
+  },
+  {
+   "taskId": "network-silent-opponent-plays",
+   "result": "pass",
+   "summary": "ב־א' C2+4 עבד (+5) וטיימר הנעילה המשיך; אין 'הפרעה' על ב', אייקון Wi-Fi במקומו"
+  },
+  {
+   "taskId": "network-silent-self-no-overlay",
+   "result": "pass",
+   "summary": "ב־ב' בלי מסך/באנר; נקודה כתומה על הכרטיס שלי, 'כניעה' ו'תגובות' כבויים"
+  },
+  {
+   "taskId": "network-silent-keep-playing",
+   "result": "pass",
+   "summary": "נעילה עם 'המשבצת שלך B2 · 8 שניות' בלי חיבור; ספרות בצבע שלי עם טבעת ו־Wi-Fi קטן; תווית 'C3, 2, ממתין לחיבור'; שני צילומים זהים"
+  },
+  {
+   "taskId": "network-silent-return-counted",
+   "result": "pass",
+   "summary": "B1/B2 נספרו נכונות אחרי החזרה, בלי 'חזרת למשחק' ובלי מסך"
+  },
+  {
+   "taskId": "network-silent-return-opponent",
+   "result": "pass",
+   "summary": "ב־א' הסימון נעלם, 'הפרעה' חזרה, הספרות של ב' הופיעו"
+  },
+  {
+   "taskId": "network-silent-return-same-state",
+   "result": "pass",
+   "summary": "צילומי שני הטלפונים אחרי החזרה: אותו לוח וניקוד, בלי נעילות פתוחות"
+  },
+  {
+   "taskId": "network-freeze-opponent",
+   "result": "pass",
+   "summary": "סימון בלבד, ואחרי כ־14.5 שנ' 'היריב מתנתק…', 'המשחק מוקפא · כל הטיימרים עצורים', 'Reconnecting... 15'; לחיצות על הלוח ועל המקלדת בלי תגובה"
+  },
+  {
+   "taskId": "network-freeze-self",
+   "result": "pass",
+   "summary": "כ־11 שנ' בלי מסך, ואז 'החיבור שלך אבד' · 'מתחבר מחדש…', 'הלוח נעול עד שתחזור', 'יש לך עוד 11 שניות לחזור'; הספרה הממתינה מתחת לחלון"
+  },
+  {
+   "taskId": "network-freeze-self-back",
+   "result": "pass",
+   "summary": "'חזרת למשחק' עם 'הכל סונכרן · המשחק ממשיך' נעלם אחרי כ־2.5 שנ'; C3 נספרה נכונה"
+  },
+  {
+   "taskId": "network-freeze-opponent-back",
+   "result": "pass",
+   "summary": "ההקפאה נעלמה, הנעילה של א' ב־C4 המשיכה לרדת"
+  },
+  {
+   "taskId": "network-bg-short-opponent",
+   "result": "pass",
+   "summary": "ב־א' כ־2.5 שנ' אחרי שב' יצא: רק נקודה כתומה ואייקון Wi-Fi, בלי הקפאה/באנר"
+  },
+  {
+   "taskId": "network-bg-short-return",
+   "result": "pass",
+   "summary": "ב־ב' המשחק חזר מיד בלי מסך ובלי באנר; ב־א' הסימון נעלם"
+  },
+  {
+   "taskId": "network-bg-long-opponent",
+   "result": "pass",
+   "summary": "כ־10.5 שנ' סימון בלבד ואז 'המשחק מוקפא' ו'Reconnecting... 15'"
+  },
+  {
+   "taskId": "network-bg-long-return",
+   "result": "pass",
+   "summary": "ב־ב' 'מסנכרן…' ואז 'חזרת למשחק' עם 'הכל סונכרן · המשחק ממשיך' והמשחק המשיך"
+  },
+  {
+   "taskId": "network-both-offline",
+   "result": "pass",
+   "summary": "ב' חזר ראשון וראה את הקפאת היריב 'Reconnecting...', הספרות ממתינות בלי 'לא נספר'; כש־א' חזר הן נספרו"
+  },
+  {
+   "taskId": "network-abandon-countdown",
+   "result": "partial",
+   "summary": "10 שנ' סימון תקין, אבל הספירה עצרה ב־1 ועברה ישר למסך 'עזב את המשחק', בלי 0 ובלי 'הזמן נגמר / בודקים מול השרת…'"
+  },
+  {
+   "taskId": "network-abandon-screen",
+   "result": "pass",
+   "summary": "'אחוותא עזב את המשחק', 'ניצחת בנטישה', 'הזמן נגמר • 25 שניות בלי חיבור', ניקוד, 'לתוצאות' ו'לבית'; נשאר כ־100 שנ'"
+  },
+  {
+   "taskId": "network-abandon-results",
+   "result": "pass",
+   "summary": "'ניצחון!', 'ניצחת בנטישה', 'היריב איבד חיבור ולא חזר בזמן'; בלי מסך שחור (כ־0.3 שנ' רקע כהה של האפליקציה)"
+  },
+  {
+   "taskId": "network-abandon-leaver",
+   "result": "pass",
+   "summary": "אפשרות א': 'שגיאת חיבור' עם הטקסט, קוד 'network', 'נסה שוב'/'עבור לאימון'/'לבית'; 'נסה שוב' → 'הפסד', 'לא חזרת למשחק בזמן'"
+  },
+  {
+   "taskId": "network-silent-same-cell",
+   "result": "pass",
+   "summary": "ב' במצב טיסה (Wi-Fi כבה) הקיש ב־D5/C5 ואורי נעל: חזר תוך פחות מ־10 ש', הודעה 'D5 נתפסה בזמן שלא היה לך חיבור · בלי קנס', 0 נק' ו'אין טעויות' בלי שינוי; אצל א' 'המשבצת שלך C5 · 6 שניות'. את הרעידה לא רואים בצילומי מסך, אבל היא באותו קוד (deny) של ההודעה, וההקלטות נשמרו"
+  },
+  {
+   "taskId": "network-silent-cancel-selection",
+   "result": "pass",
+   "summary": "ב' נעל E8, מצב טיסה, 'ביטול בחירה', כיבוי אחרי 2.5 ש'. בצילומי המסך של א' המשבצת נעולה עד 6.7 ש' ומשוחררת מ־7.3 ש' (כשהחיבור חזר, לא אחרי 18 ש'). אצל ב' E8 ריקה ולא נעולה לי"
+  },
+  {
+   "taskId": "friends-manage-block-mid-game",
+   "result": "fail",
+   "summary": "אחרי סגירה מרשימת האחרונות ופתיחה מחדש (~7 ש'), ב' וגם א' מקבלים 'מצטרף לחדר…', 4002 שלוש פעמים, ואז 'הפסד · לא חזרת למשחק בזמן'. קורה גם בלי חסימה. לא מופיע 'לא מצאנו חדר'"
+  },
+  {
+   "taskId": "network-surrender-result",
+   "result": "pass",
+   "summary": "ב' נכנע: אצלו 'הפסד' ו'איך זה נגמר: נכנעת לפני שהלוח התמלא'; אצל א' 'ניצחון!' ו'איך זה נגמר: היריב נכנע לפני שהלוח התמלא' (חדר 'קשה')"
+  },
+  {
+   "taskId": "friends-manage-block-hides-room",
+   "result": "pass",
+   "summary": "ב' החסום הקליד את קוד החדר של א' וקיבל 'לא מצאנו חדר עם הקוד ⁦515 763⁩. בדוק את הספרות.', אותה הודעה כמו בקוד שגוי, בלי רמז לחסימה"
+  },
+  {
+   "taskId": "friends-manage-block-blocker-joins",
+   "result": "pass",
+   "summary": "א' (החוסם) הקליד את הקוד של החדר של ב': 'חסמת שחקן שנמצא בחדר הזה.' ולא נכנס"
+  },
+  {
+   "taskId": "friends-manage-host-leaves",
+   "result": "pass",
+   "summary": "המארח יצא בלי שאלה. אצל ב': 'אורי יצא מהחדר. עכשיו אתה המארח', 'מארח' ו'התחל משחק'. א' חזר עם אותו קוד כאורח"
+  },
+  {
+   "taskId": "friends-manage-kick",
+   "result": "pass",
+   "summary": "'להוציא את אורי מהחדר?', 'לא תהיה לו דרך לחזור לחדר הזה.', 'הוצא'. אחרי ההוצאה: 'המארח הוציא אותך מהחדר.', וגם בניסיון לחזור עם הקוד, והכיסא נשאר פנוי"
+  },
+  {
+   "taskId": "friends-manage-block-in-room",
+   "result": "pass",
+   "summary": "א' חסם את ב' מהכרטיס של ב' כששניהם בחדר. ב' קיבל מיד 'יצאת מהחדר.', בלי 'נחסמת' ובלי רמז. הכרטיס נפתח בקישור, כי ההיסטוריה פותחת רק צפייה חוזרת"
+  },
+  {
+   "taskId": "friends-room-copy-code",
+   "result": "pass",
+   "summary": "'הקוד הועתק' הופיע מיד אחרי 'העתק קוד' ונעלם עד ~3.4 ש' (צילומים מתוזמנים)"
+  },
+  {
+   "taskId": "friends-game-away-count",
+   "result": "pass",
+   "summary": "טלפון 3 ברקע: אחוותא מעומעמת עם 'לא בחדר כרגע', 'התחל משחק' בלי מספר וכבוי עם 'צריך לפחות 2 שחקנים מחוברים'"
+  },
+  {
+   "taskId": "friends-game-countdown-back",
+   "result": "pass",
+   "summary": "Back בטלפון 3 בזמן 3,2,1 לא עשה כלום, המשחק התחיל בשני הטלפונים"
+  },
+  {
+   "taskId": "network-same-board",
+   "result": "pass",
+   "summary": "81 המשבצות זהות ב־dump של שני הטלפונים; 'אני' בתכלת עם ●, היריב בכתום עם ▲"
+  },
+  {
+   "taskId": "network-full-game",
+   "result": "pass",
+   "summary": "הלוח התמלא; בשניהם תוצאות: אורי 45 מקום 1, אחוותא 42 מקום 2"
+  },
+  {
+   "taskId": "friends-game-rating-xp",
+   "result": "pass",
+   "summary": "דירוגים לא זזו בשניהם; XP אורי 1,186→1,254, אחוותא 1,134→1,170"
+  },
+  {
+   "taskId": "friends-game-history",
+   "result": "pass",
+   "summary": "כרטיס 'ניצחון · עם חברים · מהיר' + 'בלי דירוג'; Replay נפתח; 'מדורג' מסתיר, 'הכל' מציג"
+  },
+  {
+   "taskId": "friends-game-leaderboard",
+   "result": "pass",
+   "summary": "לשונית חברים, 'היריבים האחרונים שלך': אחוותא מופיעה"
+  },
+  {
+   "taskId": "friends-results-no-rematch-home",
+   "result": "pass",
+   "summary": "'עוד סיבוב' נשאר 'אימון לבד · מהיר' לפני ואחרי משחק החדר, בלי הצעת חברים"
+  },
+  {
+   "taskId": "friends-game-countdown",
+   "result": "partial",
+   "summary": "בטלפון 1 3,2,1,GO ולוח; בטלפון 3 (המצטרף) GO! לא מופיע: '1' דוהה ישר ללוח, בשני משחקים"
+  },
+  {
+   "taskId": "friends-game-start-without",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש ID tokens ל־fake-client (שחקן שלישי)"
+  },
+  {
+   "taskId": "friends-game-join-started",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש ID tokens ל־fake-client או טלפון שלישי"
+  },
+  {
+   "taskId": "friends-game-start-without-closed",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש ID tokens ל־fake-client (שחקן שלישי)"
+  },
+  {
+   "taskId": "friends-game-four-seats",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש 2 fake-clients עם ID tokens"
+  },
+  {
+   "taskId": "friends-game-room-full",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש 3 fake-clients עם ID tokens"
+  },
+  {
+   "taskId": "friends-game-four-play",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש 2 fake-clients עם ID tokens"
+  },
+  {
+   "taskId": "postgame-leaderboard-no-rating",
+   "result": "untested",
+   "summary": "גם לאחוותא (טלפון 3) יש שורה בלשונית 'קשה' (מקום 2, 1200 זמני), אז 'עוד אין לך דירוג בטבלה הזו' לא מופיעה; צריך חשבון חדש. הכפתור 'שחק' בשורה המוצמדת פותח 'משחק חדש'."
+  },
+  {
+   "taskId": "friends-manage-create-cancel",
+   "result": "pass",
+   "summary": "טלפון 3: 'צור חדר' ומיד Back חזר ל'משחק חדש'; אימון לבד של כ־2 דק' לא נסגר; 'צור חדר' אחר כך פתח מיד חדר 707 253 בלי דיאלוג. בצילום מאמצע הפתיחה הופיע 'מצטרף לחדר…' ולא 'פותח חדר…'."
+  },
+  {
+   "taskId": "interference-picker-ltr-en",
+   "result": "partial",
+   "summary": "בחלון הכל באנגלית ומשמאל לימין (Fireworks בפינה השמאלית העליונה, '−2 pts', '5.5 → 3.5'), אבל בכרטיס היריב הכפתור מוצג כאייקון בלבד, בלי המילה 'Interfere' (בכוונה, לפי loop 6)."
+  }
+ ],
+ "deferred": [],
+ "missing": []
+}

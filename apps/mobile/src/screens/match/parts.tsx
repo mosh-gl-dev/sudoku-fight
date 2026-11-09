@@ -1,19 +1,23 @@
 import type { TFunction } from 'i18next';
+import { type ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
-import { AVATAR_STAGES } from '../../avatars/reactions';
+import { AVATAR_REACTIONS, AVATAR_STAGES } from '../../avatars/reactions';
 import { useReadyFace } from '../../avatars/useFaces';
 import { Icon } from '../../components/Icon';
 import { Avatar } from '../../components/player/Avatar';
+import { NEVER_REDUCE } from '../../components/player/anim';
 import { Flag } from '../../components/player/Flag';
 import { ltr } from '../../components/player/format';
 import { paletteAt } from '../../components/player/metrics';
 import { SeatGlyph } from '../../components/player/SeatGlyph';
+import { timing } from '../../components/ui/motion';
 import { Text } from '../../components/ui/Text';
 import { parenthetical } from '../../i18n/compose';
 import { color, radius, space, text, tokens } from '../../theme';
+import { motion } from '../../theme/motion';
 import { usePulse } from '../game/connection/motion';
 import { isolateName } from '../game/hit/hitModel';
 import type { MatchHeader, RatingRange, SeatModel } from './matchModel';
@@ -77,21 +81,33 @@ export interface SeatTileProps {
   /** The ready badges show (they pop in after the VS, motion.md `vs.slam`). */
   showReady: boolean;
   reduce: boolean;
+  /**
+   * Kept still, unseen, under the count (the VS once the count took its place): the avatar stays as it is drawn,
+   * a nod under way never swapped for a new picture (AvatarArt `frozen`), and "מתחבר…" stops pulsing.
+   */
+  frozen?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
 /**
  * A player at the table (Match-Found): the avatar in the seat's colour (me: P1), the seat's shape, the name
  * and flag, the rating (with "זמני" for the first 10 games, spec §11.2), and ready or still connecting (D37).
- * One label for screen readers: "NinaVolt, דירוג 1305, זמני, מוכן". Ready, the avatar smiles (and nods as it
- * turns ready on screen: avatars/useFaces useReadyFace).
+ * One label for screen readers: "NinaVolt, דירוג 1305, זמני, מוכן". Ready, the avatar smiles, and it nods as
+ * its "מוכן" shows (avatars/useFaces useReadyFace): when the badges pop for a player who was in before them
+ * (most are: phones connect within a few hundred ms), or when a player still connecting gets in after them. Tied to
+ * the readiness on screen, the nod is never lost to a player who was in before the VS was first drawn (QA B43).
  */
-export function SeatTile({ seat, showReady, reduce, style }: SeatTileProps) {
+export function SeatTile({ seat, showReady, reduce, frozen = false, style }: SeatTileProps) {
   const { t } = useTranslation('match');
   const { t: tp } = useTranslation('player');
   const connecting = showReady && !seat.ready;
-  const pulse = usePulse(connecting, reduce);
-  const face = useReadyFace(seat.ready);
+  const pulse = usePulse(connecting && !frozen, reduce);
+  const shown = useReadyFace(showReady && seat.ready);
+  // The mood follows the player (a smile once in); the nod, what the tile says.
+  const face = {
+    expression: seat.ready ? AVATAR_REACTIONS.moods.ready : shown.expression,
+    reaction: shown.reaction,
+  };
   const ring = paletteAt(seat.colorIndex).ring;
   const name = seat.name;
   const ratingLabel = seat.provisional
@@ -122,6 +138,7 @@ export function SeatTile({ seat, showReady, reduce, style }: SeatTileProps) {
         idle={AVATAR_STAGES.vs}
         expression={face.expression}
         reaction={face.reaction}
+        frozen={frozen}
         testID={`seat-${seat.id}-avatar`}
       />
       <View style={styles.nameRow}>
@@ -136,15 +153,50 @@ export function SeatTile({ seat, showReady, reduce, style }: SeatTileProps) {
         {seat.provisional ? <Text style={styles.provisional}>{tp('rating.provisional')}</Text> : null}
       </View>
       {showReady ? (
-        <Animated.View
-          style={[styles.badge, seat.ready ? styles.badgeReady : styles.badgeWaiting, connecting && pulse]}
-          testID={`seat-${seat.id}-${seat.ready ? 'ready' : 'connecting'}`}
+        // A new badge (connecting, then ready) pops in its turn.
+        <BadgePop
+          key={seat.ready ? 'ready' : 'connecting'}
+          still={reduce || frozen}
+          testID={`seat-${seat.id}-badge-pop`}
         >
-          {seat.ready ? <Icon name="check" size={space[7]} color={color.success} /> : null}
-          <Text style={[styles.badgeText, seat.ready ? styles.badgeTextReady : null]}>{state}</Text>
-        </Animated.View>
-      ) : null}
+          <Animated.View
+            style={[styles.badge, seat.ready ? styles.badgeReady : styles.badgeWaiting, connecting && pulse]}
+            testID={`seat-${seat.id}-${seat.ready ? 'ready' : 'connecting'}`}
+          >
+            {seat.ready ? <Icon name="check" size={space[7]} color={color.success} /> : null}
+            <Text style={[styles.badgeText, seat.ready ? styles.badgeTextReady : null]}>{state}</Text>
+          </Animated.View>
+        </BadgePop>
+      ) : (
+        // Its place, kept from the start: the badges popping in move nothing (QA K3: the VS jumped ~50 px).
+        <View style={styles.badgeSlot} testID={`seat-${seat.id}-badge-slot`} />
+      )}
     </View>
+  );
+}
+
+/**
+ * A ready badge popping in (motion.md `vs.slam`: the badges pop; `pop` spring, as chips and badges): 0.6 → 1 as
+ * it fades in. `still` (reduced motion, or the VS kept unseen under the count): there at once, nothing moves.
+ * Transforms only, so nothing around it moves either.
+ */
+function BadgePop({ still, testID, children }: { still: boolean; testID: string; children: ReactNode }) {
+  const shown = useSharedValue(still ? 1 : 0);
+  const scale = useSharedValue(still ? 1 : metrics.vs.badgePopFrom);
+  useEffect(() => {
+    if (still) {
+      shown.set(1);
+      scale.set(1);
+      return;
+    }
+    shown.set(withTiming(1, timing(motion.duration.stateChange, 'standard', false)));
+    scale.set(withSpring(1, { ...motion.spring.pop, reduceMotion: NEVER_REDUCE }));
+  }, [still, shown, scale]);
+  const style = useAnimatedStyle(() => ({ opacity: shown.get(), transform: [{ scale: scale.get() }] }));
+  return (
+    <Animated.View style={style} testID={testID}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -217,6 +269,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: tokens.border.hairline,
   },
+  /** A badge's place before it pops in: its height, so the tile is the same size with or without it. */
+  badgeSlot: { height: metrics.badgeHeight },
   badgeReady: { borderColor: color.success, backgroundColor: color.iconBg.success },
   badgeWaiting: { borderColor: color.border, backgroundColor: color.bg },
   badgeText: { ...text('micro'), color: color.textMuted },

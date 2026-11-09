@@ -7,6 +7,7 @@ import { directionProblems } from '../../../components/ui/testing/layout';
 import i18n from '../../../i18n';
 import { registerPseudoLanguages } from '../../../i18n/pseudoLanguages';
 import { useSettings } from '../../../state/settings';
+import { useTestingSwitches } from '../../../state/testingSwitches';
 import { SettingsScreen } from '../SettingsScreen';
 import { renderApp } from '../testing/homeTesting';
 
@@ -37,10 +38,13 @@ const settle = () => act(async () => void jest.advanceTimersByTime(1000));
 
 beforeEach(async () => {
   useSettings.setState({ language: 'he', languageSource: 'app', reduceMotion: 'on' });
+  // The section opened by the version's taps (SettingsAndPlaceholders.test.tsx).
+  useTestingSwitches.setState({ sectionOpen: true });
   await i18n.changeLanguage('he');
 });
 
 afterAll(async () => {
+  useTestingSwitches.setState({ sectionOpen: false });
   useSettings.setState({ language: 'he', languageSource: 'app' });
   await i18n.changeLanguage('he');
 });

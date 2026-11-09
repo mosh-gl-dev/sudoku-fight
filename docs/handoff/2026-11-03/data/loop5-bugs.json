@@ -1,0 +1,26 @@
+[
+ {
+  "taskId": "levels-new-game-small-phone",
+  "severity": "minor",
+  "title": "Mode-row chips cut at the bottom at font scale 2.0 (New game)",
+  "what": "Build apk9, 1.1.0 (08.11 03:55, loop-3 fixes), SM-A165F, Android 16. Steps: adb shell wm density 480 (360x780dp) and settings put system font_scale 2.0, then Home → 'שחק' (New game) and scroll down. Happens in Hebrew and in English. The pills under 'Practice vs bot', 'Solo • full board' and 'Staged practice' ('Unrated', 'Works offline', 'Stage 76 • ★ 130', 'Offline too' / 'ללא דירוג', 'עובד גם בלי אינטרנט', 'שלב 76 • ★ 130', 'גם אופליין') are shorter than their text, so the chip's bottom border cuts the bottom of the glyphs; the descender of 'g' in 'Stage' is gone. At 1.3 and 1.0 the chips are fine. The pill height looks fixed and doesn't grow with fontScale. Screenshots: qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-1.png (he) and -4.png (en), plus crop-he-chips.png and crop-en-chips.png."
+ },
+ {
+  "taskId": "levels-xp-offline",
+  "severity": "minor",
+  "title": "Home XP doesn't update while Home stays open after the connection comes back (only on refocus)",
+  "what": "Build apk9, phone 1 (signed in as אורי), Hebrew. Steps: on Home the XP is 1,320. Turn airplane mode on, win stages 74 and 79 with 3 new stars each, then go back to Home (still 1,320, as expected). Run adb shell cmd connectivity airplane-mode disable at 05:43:29 and stay on Home, reading it every 5 s for 20 s: it stays at 1,320. Go to History and back to Home: it shows 1,380 right away. The fix in fix-loop3 says startProgress subscribes to useConnectivity and calls syncProgressNow() and refreshMyProgress() on the offline-to-online switch. On the device, that path did not update Home within 20 s; only Home's focus effect did. Related point: stage 74's result showed an estimate of '+27.5 XP' for 3 new stars (from 0, 18.5 s), but the server credited 30 (10 per star), so the estimate and the credit differ."
+ },
+ {
+  "taskId": "levels-new-game-small-phone",
+  "severity": "minor",
+  "title": "Home at font 1.3 on 360dp: 'Provisional' chip breaks mid-word, recent-game titles get '…'",
+  "what": "Build apk9, English, wm density 480 (360x780dp), font_scale 1.3, Home. Under the Normal and Hard ratings, the chip reads 'Provisiona' on one line and 'l' on the next (the word is broken). In 'Recent games', the titles are cut with '…': 'Practice…', 'Solo pra…', 'Practice v…'. Found by chance while checking New game; screenshot qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-5.png was overwritten later, so to reproduce, use the same settings and open Home."
+ },
+ {
+  "taskId": "avatars-motion-on-game",
+  "title": "With reduced motion, the static 🔥 reaction hides my avatar's laugh",
+  "what": "Build 1.1.0 (08.11 03:55, loop-3 fixes, Google on), apk9, SM-A165F (טלפון 3), Hebrew. Steps: 1) Settings > 'הפחתת תנועה' > 'מופעלת'. 2) 'שחק' > 'אימון מול בוט' > 'מהיר' > 'בחירת יריב' > 'טירון' > 'יאללה, למשחק'. 3) Tap 'תגובות' and pick 'אש' (🔥). 4) Watch my avatar (the top-right card). Result: the 🔥 emoji appears static right on top of my avatar and covers the whole face for about 2 s (frames every 0.65 s). When it fades the face is already neutral, so the laugh (reactions.ts '🔥': laugh, spin) is never visible. Reproduced twice. With 'הפחתת תנועה' 'כבויה' the laugh and then the spin are visible, and the fire floats up and off the face. Expected (catalog): with reduced motion, 🔥 shows a laugh with no spin. Suggestion: in reduced motion, offset the static emoji off the face, or keep the laugh face on after the emoji fades.",
+  "severity": "minor"
+ }
+]

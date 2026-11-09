@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "cổng cần {{need}}",
     "chapterOpen": "cổng đã mở",
+    "chapterNeedSentence": "Cổng cần {{need}}",
+    "chapterOpenSentence": "Cổng đã mở",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "Chương này: {{stars}}/{{max}} sao. {{gate}}",
     "mistakes_other": "{{count}} lỗi",
@@ -315,6 +317,8 @@
     "button": "Rời màn",
     "title": "Rời màn?",
     "body": "Bạn sẽ nhận 0 sao, và màn tiếp theo sẽ mở.",
+    "bodyLocked": "Bạn sẽ nhận 0 sao, và màn tiếp theo vẫn chưa mở.",
+    "bodyLast": "Bạn sẽ nhận 0 sao.",
     "confirm": "Rời đi",
     "cancel": "Chơi tiếp"
   },

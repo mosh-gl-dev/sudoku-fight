@@ -63,7 +63,8 @@
       "timeout": "서버가 제때 응답하지 않았어요. 다시 시도하세요.",
       "signedOut": "로그인되어 있지 않아요. 다시 로그인하세요.",
       "unexpected": "서버에서 예상치 못한 응답이 왔어요. 다시 시도하거나 앱을 업데이트하세요."
-    }
+    },
+    "avatarUnavailable": "이 아바타는 아직 서버에서 쓸 수 없어요. 다른 아바타를 고르세요."
   },
   "splash": {
     "tagline": "판은 하나. 모두가 풀어요. 승자는 단 한 명.",
@@ -244,6 +245,9 @@
     "deleteGoogleBody": "계정을 삭제하려면 Google 계정({{email}})을 다시 선택하세요.",
     "deleteGoogleSubmit": "Google로 확인하고 삭제",
     "deleteGoogleAgain": "계정을 삭제하려면 다시 확인해야 해요. 다시 시도해서 Google 계정을 선택하세요.",
-    "deleteWithPassword": "대신 비밀번호로 확인"
+    "deleteWithPassword": "대신 비밀번호로 확인",
+    "deleteGoogleOffTitle": "Google 로그인이 필요해요",
+    "deleteGoogleOffBody": "이 계정은 Google로 로그인하므로 삭제하려면 Google로 확인해야 해요. 이 버전의 앱에는 Google 로그인이 없어서 여기서는 계정을 삭제할 수 없어요. 스토어(Google Play)에서 받은 앱에서 삭제할 수 있어요.",
+    "deleteGoogleOffOk": "알겠어요"
   }
 }

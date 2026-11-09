@@ -1,0 +1,206 @@
+export const meta = {
+  name: 'qa-sessions-p3',
+  description: 'QA round by merged sessions: each tester does whole sessions (one setup, many tasks), phone 1 and phone 3 in parallel, then the two-phone sessions',
+  phases: [
+    { title: 'Solo lanes', detail: 'P1 and P3 in parallel, batches of whole sessions' },
+    { title: 'Two phones', detail: 'sessions that need both phones, then deferred tasks' },
+  ],
+}
+
+// args: { run, scratch, out, lanes: { P1: [batch], P3: [batch], BOTH: [batch] } }, batch = { order, rankedOk, sessions: [{ key, title, tasks, setup, deviceSettings, script, estMinutes }] }
+const A = {"run":2,"scratch":"C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad","out":"docs/handoff/2026-11-03/data","lanes":{"P1":[],"P3":[{"order":1,"rankedOk":true,"sessions":[{"key":"ranked-solo-bot","title":"טלפון 1 מול הבוט הסמוי: דירוג בסוג משחק, חיפוש 4 שחקנים, 5 כניעות עם משבצת נעולה, והדירוג בבית אחרי כל דרך יציאה","tasks":["ranked-entry-type-ratings","ranked-four-type-and-search","ranked-duel-opponent-card","ranked-duel-surrender-home","ranked-duel-home-immediate","ranked-duel-home-progress","ranked-duel-results-background","ranked-duel-gametype-new-rating","ranked-end-i-surrender-my-lock-5x"],"setup":"טלפון 1 (אורי) בבית, בעברית, עם רשת. הבוט הסמוי פעיל ב־staging, ולבודק אין דרך לכבות אותו: המתג באתר הניהול דורש התחברות של משה, ומפתח ה־QA לא פותח אותו. בזמן הזה טלפון 3 לא מחפש '2 שחקנים' במדורג, ומריץ במקביל את postgame-screens-he. המשימות שכתוב בהן 'שני טלפונים' נבדקות כאן מול הבוט, כי הבדיקות שלהן הן רק בטלפון א'. דרך החיפוש בכל משחק: 'שחק' ← במדורג '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. הבוט מגיע אחרי 8–20 שניות. רק משחקים 1 ו־2 מורידים דירוג, כדי שהפער מול טלפון 3 יישאר קטן לקראת המשחקים של שני הטלפונים. טווח החיפוש הוא ±50, ומתרחב ב־25 כל 5 שניות.","deviceSettings":"none","script":"1. בבית מצלמים את כרטיס הפרופיל ורושמים: הדירוג ב'מהיר' (ו'זמני' אם יש), רמה, פס XP, מספר משחקים, אחוז ניצחונות ורצף (השלב 2 של home-progress ושל home-immediate).\n2. 'שחק' ← צילום של 'משחק חדש': בשורות '2 שחקנים', '3 שחקנים' ו־'4 שחקנים' במדורג אין דירוג (entry-type-ratings ✓1). '2 שחקנים' ← צילום של 'סוג משחק': בכל אחד משלושת הכרטיסים 'הדירוג שלך' עם מספר ו'זמני' (✓2). את 1200 עם 'זמני' בודקים בכרטיס שעוד לא שוחק, למשל 'קשה'. אם 'מהיר' כבר לא 1200/זמני: ½, והחלק הזה נשאר למשה (צריך חשבון חדש). מצלמים את הטקסט 'עם דירוג. יריב קרוב לדירוג שלך…' ואת הכפתור 'מצא יריב' (✓3).\n3. 4 שחקנים (הבוט הסמוי לא נכנס ל־3–4): חזרה ← במדורג '4 שחקנים'. מצלמים את הטקסט '…המשחק מתחיל כשהשולחן מלא.' ואת 'מצא יריבים' (four-type ✓1). 'מהיר' ← 'מצא יריבים'. מצלמים 'מחפש יריבים…', התג 'מדורג · 4 שחקנים · מהיר', שלושה מקומות פנויים עם 'מחפש…' ו־▲ ■ ◆, ו'יריבים' ⁦0/3⁩ (✓2). מחכים ל'כרגע אין מספיק שחקנים שמחפשים משחק כזה' עם 'שחק מול בוט בינתיים' ומצלמים (✓3). 'ביטול חיפוש' וחוזרים לבית.\n4. משחק 1 (הדירוג יורד): מחפשים. ב'נמצא יריב!' מצלמים את האווטר, הדגל והדירוג של היריב. אחרי GO מצלמים את הכרטיס שלו מעל הלוח (opponent-card ✓). מיד מזינים ספרה שגויה, ספרה שכבר מופיעה באותה שורה. עכשיו הניקוד שלי שלילי והבוט מוביל, וזה נחשב מהלך, כך שהגנת 'לפני מהלך' לא מאפסת את השינוי. מפעילים screenrecord, בוחרים משבצת ריקה אחרת (טבעת ושניות) ומיד 'כניעה' ← 'כן, להיכנע'. 5x מופע 1: הדיאלוג נעלם, הלוח נשאר כחצי שנייה, ואז 'הפסד'. רושמים את הדירוג בתוצאות ולוחצים מיד 'לבית'. מצלמים את כרטיס הפרופיל כל 2–3 שניות, במשך כ־10 שניות: בעמודה 'מהיר' הדירוג מהתוצאות, עם 'זמני' אם יש, והוא לא חוזר לישן (home-immediate ✓1 ✓2, surrender-home ✓). מספר המשחקים עלה ב־1, ואחוז הניצחונות והרצף השתנו לפי הפסד (home-progress ✓1). פס ה־XP, והרמה אם עברה, התעדכנו בלי הפעלה מחדש (✓2). אם בתוצאות יש 0 באפור עם 'לפני המהלך הראשון', חוזרים על המשחק עם ספרה נכונה ומחכים שהבוט יוביל.\n5. משחק 2 (הדירוג יורד): אותו דפוס: ספרה שגויה, screenrecord, משבצת נעולה וכניעה (5x מופע 2). רושמים את הדירוג בתוצאות. KEYCODE_HOME, מחכים 30 שניות, חוזרים לאפליקציה ומצלמים, ולוחצים 'לבית'. בעמודה 'מהיר' הדירוג מהתוצאות (results-background ✓). מיד 'שחק' ← במדורג '2 שחקנים': בכרטיס 'מהיר' אותו דירוג חדש, עם 'זמני' אם יש (gametype-new-rating ✓). חוזרים לבית.\n6. משחקים 3, 4 ו־5 (רק בשביל 5x, בלי לרדת בדירוג): אחרי GO מזינים מיד ספרה נכונה, כך שאני מוביל. אם הבוט כבר צבר, מזינים עוד ספרות עד שאני מוביל. מפעילים screenrecord, בוחרים משבצת ריקה עם טבעת, ומיד 'כניעה' ← 'כן, להיכנע' (מופעים 3–5: הדיאלוג נעלם, הלוח נשאר כחצי שנייה, ואז 'הפסד'). שינוי של 0 באפור צפוי כאן, בגלל הגנת המוביל. בכל פעם 'לבית'.\n7. 5x ✓2: באף אחד מחמשת המשחקים לא היה מסך שחור או ריק, ובכל אחד מהם 'לבית' הגיע לבית. אם הופיע 'המסך לא נטען', לוחצים 'לתוצאות' או 'לבית', ורושמים את השעה ומה נעשה.","estMinutes":22},{"key":"game-bot-grandmaster","title":"Practice vs bot 5 (fast): no interference button, background, bot reactions, mute, run to the end","tasks":["game-practice-bot-no-button","game-practice-background-bot","game-reactions-bot","game-reactions-mute","game-practice-bot-no-hits"],"setup":"Home → 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב' → '5 · גרנדמאסטר' → 'יאללה, למשחק'. Take screenshots every few seconds for the whole game (or screenrecord in 3-minute parts) to watch for interference banners or effects (game-practice-bot-no-hits). Bot 5 fills the board fast, so do steps 1-4 quickly and in this order.","deviceSettings":"none","script":"1) At start: the bot card has no 'הפרעה' button (game-practice-bot-no-button ✓1). Enter correct digits until I have ≥8 points: still no 'הפרעה'; tapping the bottom row of the bot card opens no interference window (✓1-2).\n2) After some bot moves: screenshot the bot score and the board; HOME, wait 30 s, return: board covered with 'ממשיכים בעוד' and 3,2,1 (game-practice-background-bot ✓1); bot score and board the same as before; after the countdown it continues playing (✓2).\n3) Enter 4 wrong digits in 4 different cells, a few seconds apart, screenrecord: 😂 rises from the bot's card 1-2 s after at least one of them (game-reactions-bot ✓1).\n4) Long-press the bot card, not a button (adb shell input swipe x y x y 600): the menu has only 'השתק תגובות', no 'דווח על שחקן' and no 'חסום שחקן' (game-reactions-mute ✓1). Tap it: the menu closes; 4 more wrong digits → no bot reaction appears (✓2). Long-press again: 'בטל השתקה' → tap; more wrong digits until a bot reaction comes back (✓3).\n5) Do not touch; let the bot fill the board. During the whole game no interference banner ('… שלח/ה לך …!'), no dimmed board, no fireworks, cats, distortion or other effect (game-practice-bot-no-hits ✓1); the game ends on the results screen (✓2). 'לבית'.\nFallback: if the board fills before step 4 is done, start another bot-5 game and finish steps 3-4 there; no-hits is judged on the game that reached the results.\n\nMERGED with interference-bot-games (Same opponent and same game: Overlord = '5 · גרנדמאסטר', fast. Pairs: game-practice-bot-no-button = interference-where-bot-no-button, and game-practice-bot-no-hits = interference-where-bot-never (screencaps every 5 s). One 'בחירת יריב' dump covers where-bot-select. Lead early with the solver, then enter a wrong digit and stay idle 25 s for sad-sleepy. After that come the reactions and mute steps, and the bot finishes the board. Only after that: one 'מדורג · קשה' search → 'שחק מול בוט בינתיים' (where-bot-from-search). That search makes the session ranked, so it goes in lane P3.): do those sessions' checks in the same setup, where they share screens/games.","estMinutes":15},{"key":"interference-bot-games","title":"Bot games: no interferences against bots, plus the sad and sleepy avatar on the 2-player card","tasks":["interference-where-bot-select","interference-where-bot-no-button","interference-where-bot-never","avatars-look-sad-sleepy-sizes","interference-where-bot-from-search"],"setup":"Use either phone, for example טלפון 3. It can run while the walk session uses טלפון 1, because the walk searches 'מהיר' and this session searches 'קשה'. The other phone must not search 'מדורג · קשה' at the same time.","deviceSettings":"None. Hebrew. 'הפחתת תנועה' is 'כבויה' (check it, do not change it).","script":"1. 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב'. Dump the screen and scroll it: read all five cards, including '5 · גרנדמאסטר' (Overlord), and the explanation under them.\n   where-bot-select ✓: neither 'הפרעה' nor 'הפרעות' appears anywhere.\n2. Choose Overlord → 'יאללה, למשחק'. Take a screenshot.\n   where-bot-no-button ✓: Overlord's card has no 'הפרעה' button.\n3. Play at least 5 minutes, or to the end.\n   - Solve fast at the start with the solver, so I lead the bot at least once. Write down when I lead.\n   - Screencap every 5 s to files. Check them by script: the board brightness against the first shot, and the banner area. Open only the shots that look suspicious.\n   - where-bot-never ✓1: no interference banner in the whole game, and the board is never dimmed. ✓2: none while I lead either.\n4. In the same game, after I have led:\n   - Enter a wrong digit and take a screenshot at once.\n   - Then do not touch the phone for 25 s, and take another screenshot.\n   - sad-sleepy ✓1: on the 2-player card, the sad face (a sad mouth) is readable. ✓2: on the 2-player card, the sleepy look (heavy eyelids, looking down) is readable.\n   - The 3-player half needs 3 players: 2 phones plus fake-client with a Firebase token. Mark the task partial and leave that half to Moshe.\n5. Finish or leave the game.\n6. 'שחק' → 'מדורג' → '2 שחקנים' → 'קשה' → 'מצא יריב'.\n   - When 'כרגע אין שחקנים אחרים שמחפשים משחק כזה' shows (or the no-match screen, after a minute), tap 'שחק מול בוט בינתיים'.\n   - where-bot-from-search ✓1: a bot game starts, and the bot's card has no 'הפרעה' button.\n   - Play about 3 minutes, with screencaps every 5 s checked as in step 3. ✓2: no banner, and the board is never dimmed.\n   - Leave the game, and go back to Home.","estMinutes":30},{"key":"game-bot-advanced","title":"Practice vs bot 3 (fast): cards, lead bar, streak, reactions, end x3","tasks":["game-practice-bot-card","game-practice-bot-lead","game-moves-no-streak","game-reactions-picker","game-reactions-send-self","game-reactions-cooldown","game-surrender-bot-confirm"],"setup":"Home → 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב' → '3 · מתקדם' → 'יאללה, למשחק'. game-reactions-send-self is marked [both] but needs only this phone (practice bot).","deviceSettings":"Check Settings → 'הפחתת תנועה' = 'כבויה' before starting (needed by game-reactions-send-self); it is the default, leave it so","script":"GAME 1:\n1) Before any move, screenshot: my card on the right with ● 'אני', flag, 'סיום אימון' and 'תגובות'; VS between the cards; bot card on the left Mr. Hoot (owl) with the tag '3 · מתקדם' under the name instead of a rating; no rating number on either card (game-practice-bot-card ✓1-4; game-surrender-bot-confirm ✓1, the button is 'סיום אימון'). Lead tag says 'שוויון' (game-practice-bot-lead ✓1).\n2) Enter 4 correct digits in a row, no mistakes, screenshot after each: no 'רצף' tag anywhere, not mine and not the bot's (game-moves-no-streak ✓1). Lead tag shows the leader's gap in its color (e.g. +6), the leader's part of the bar grows, my part on my card's side (lead ✓2). Stop and wait until the bot passes me: the tag switches to its color (lead ✓3).\n3) Tap 'תגובות': row 😂 😱 😎 🤦 🔥 👀 under my card (game-reactions-picker ✓1); tap 'תגובות' again: closes, nothing sent (✓2).\n4) Screenrecord: 'תגובות' → 🔥: the row closes and 🔥 rises from my card, animated, ~1.5 s, then fades (game-reactions-send-self ✓1); it does not cover the board (✓2).\n5) Wait 3 s. 'תגובות' → 😎 and at once tap 'תגובות' again: dimmed, does not open for ~2 s (game-reactions-cooldown ✓1); after 3 s it opens normally (✓2). Close it.\n6) Screenrecord, 'סיום אימון' → 'כן, לסיים': sheet gone, results open with 'סיימת את האימון לפני שהלוח התמלא' and 'אימון: אין שינוי בדירוג' (game-surrender-bot-confirm ✓2, run 1); no black, empty or 'המסך לא נטען' (✓3, run 1). 'לבית'.\nGAMES 2 and 3: the full path again from Home (same '3 · מתקדם', 'מהיר'); check the button says 'סיום אימון'; at once 'סיום אימון' → 'כן, לסיים' with screenrecord; check the results the same way (bot-confirm runs 2-3). 'לבית'.","estMinutes":14}]},{"order":2,"rankedOk":true,"sessions":[{"key":"general-walk-he-en","title":"One screen walk in Hebrew and English at 360dp and big font: display, screen-reader labels, no Hebrew, screen awake, English picker","tasks":["general-background-awake-font","general-background-awake","general-display-small-big-font","general-sr-names","general-lang-no-hebrew","interference-picker-ltr-en"],"setup":"טלפון 1 is on Home, in Hebrew, with the latest APK (a Release build).\n- During Phase A, טלפון 3 must not search 'מדורג · מהיר'. The search screen is checked there, and the two phones would find each other.\n- For every screen in the walk, do both of these:\n  (a) Take a screenshot and look for cut or hidden text, a button off the screen, and sideways scrolling. Try a horizontal swipe on each list.\n  (b) Take a uiautomator dump. Check that every clickable or focusable node has a clear text or content-desc in the current language: none is empty, and none reads only 'כפתור', 'button' or 'ללא תווית'. In English, also check that no text or desc has a Hebrew letter.\n- uiautomator sometimes fails on game screens ('could not get idle state'). Retry right after a tap, and never use an old file.","deviceSettings":"טלפון 1 (RF8Y60PP2XZ) only. First write down the original values: settings get system screen_off_timeout, settings get system font_scale, wm size, wm density.\n- Then set: screen_off_timeout 15000; wm size 1080x2340; wm density 480 (360dp); font_scale 1.3.\n- From Phase B: the app language is English.\n- In Phase C: wm size reset, wm density reset and the original font_scale, while the language stays English.\n- At the end, restore: the app language עברית ('Switch and restart'), the original screen_off_timeout, and check that wm size, wm density and font_scale are the originals.\n- TalkBack is not turned on: the labels are read from UI dumps, which hold the same accessibility tree.\n- טלפון 3 changes nothing. It only joins the room in Phase C.","script":"Phase A, Hebrew:\n1. awake-font:\n   - Set screen_off_timeout to 15000. Open the app on Home, then press HOME (keyevent 3).\n   - Apply wm size 1080x2340, wm density 480 and font_scale 1.3.\n   - Return to the app. Do not touch it for 30 s. Every 5 s, read dumpsys power | grep mWakefulness.\n   - ✓: Awake the whole time. This also counts as the 30 s on Home for awake ✓1.\n2. Walk these screens, doing (a) and (b) on each. This covers display ✓1–2 for Hebrew, and sr-names ✓1–2 for Hebrew.\n   - Home.\n   - 'משחק חדש': stay 30 s without touching it, reading mWakefulness (awake).\n   - The game-type screen, then 'בחר יריב בוט'.\n   - A solo practice game: in the middle, stay 30 s without touching it (awake). Play it to the end with the solver.\n   - The results.\n   - 'היסטוריה', and a Replay from it.\n   - 'טבלת מובילים', 'הישגים' and 'הגדרות'.\n   - Edit profile: open it and leave without saving.\n   - My player card, and the level map.\n   - 'צור חדר': the friends room lobby. Leave it.\n   - 'הצטרף עם קוד'.\n   - The search: 'מדורג' → '2 שחקנים' → 'מהיר' → 'מצא יריב'. Dump at once, then stay 30 s without touching it (awake). If the stealth bot joins before 30 s, keep counting: the screen must stay on. Then surrender.\n3. awake ✓1: all four screens (Home, משחק חדש, mid-practice, the search) stayed Awake.\n   awake ✓2: on Home, press HOME and wait 30 s. mWakefulness turns Asleep or Dozing after about 15 s. Wake the phone (keyevent 224), unlock it, and return to the app.\n\nPhase B, English, still at 360dp and font 1.3:\n4. 'הגדרות' → 'שפה' → English → 'החלפה והפעלה מחדש'.\n5. Walk the same screens again with (a) and (b). This covers display in English, sr-names in English, and lang-no-hebrew ✓2 and ✓3 (no Hebrew letter on any screen, dialog or toast; everything left to right). Also:\n   - lang-no-hebrew ✓1: the bottom of New game shows 'New room' and 'Join with code'.\n   - Play the solo practice to the end, and check the results.\n   - 'Staged practice' → the map → one stage of each open kind → its result.\n   - Open the New room lobby, leave it, then open 'Join with code'.\n   - Read every dialog you meet: exit, surrender and leave.\n   - The browser page: adb shell am start -a android.intent.action.VIEW -d 'https://sudoku-fight-staging.fly.dev/r/123456?lang=en' com.android.chrome (or com.sec.android.app.sbrowser), so the app does not catch the link. Screenshot and dump it. Then go back to the app.\n\nPhase C, English at normal size (no false clipping from the small screen on the 2-player card):\n6. Run wm size reset, wm density reset, and set font_scale back to the original.\n   - טלפון 1: 'Play' → 'New room'. טלפון 3: 'שחק' → 'הצטרף עם קוד' → the code. טלפון 1: 'Start game · 2 players'.\n   - טלפון 1 solves cells until its score is 2 or more.\n   - picker-ltr-en ✓1: the button on טלפון 3's card reads 'Interfere'.\n   - Tap it, then take a screenshot and a dump.\n   - ✓2: the title 'Pick an interference' is on the left, and the grid runs left to right, with 'Fireworks' top-left.\n   - ✓3: the numbers match the Hebrew screenshot from the room session: the minus is left of the 2 in the price, and the score is the same.\n   - ✓4: the window has no Hebrew word. This is also lang-no-hebrew ✓2 for the picker.\n   - Close it with X. טלפון 1 surrenders: read the English dialog. טלפון 3 goes back to Home.\n7. Restore: Settings → Language → עברית → 'Switch and restart'. Set screen_off_timeout back to the original. Check that wm size, wm density and font_scale are the originals.\n\nMERGED with game-ranked-en-bot, postgame-english (Walk Phase B already visits every postgame screen in English and searches ranked in English, so one switch to English covers all three. In Phase B, play a practice game against Novice with one right and one wrong digit, and step through its whole Replay (postgame-replay-english). Read history (All, Ranked, Practice), all leaderboard tabs, achievements and the player card against postgame-english ✓1–3. When the stealth bot joins the English search, check game-online-2p-cards-en ✓1–4 before surrendering: card sides, LTR board, 'Cancel selection', 'Your cell', no Hebrew. These are layout-direction checks, so they still hold at 360dp and font 1.3. The walk's Phase C (room, English picker) moves to netfr-english-room-freeze-abandon. That leaves the walk single-phone, so it runs on phone 3 in lane P3.): do those sessions' checks in the same setup, where they share screens/games.","estMinutes":100},{"key":"game-ranked-en-bot","title":"Ranked 2p in English against the stealth bot: card sides and LTR board","tasks":["game-online-2p-cards-en"],"setup":"Only this phone searches ranked; the other phone must not search ranked at the same time (it may run a practice session in parallel). Switch the app to English first.","deviceSettings":"App language English (Settings → 'שפה' → English → 'החלפה והפעלה מחדש'); restore at the end (Settings → Language → עברית → 'Switch and restart')","script":"game-online-2p-cards-en is [both], but every ✓ line is on phone A's own screen, so the stealth bot (found after 8-20 s when one phone searches) is a full opponent here.\n1) Play → Ranked '2 players' → Fast → find opponent; wait for found + 3,2,1,GO.\n2) Screenshot: my card ('Me') on the left, the opponent on the right (✓1). Lock an empty cell, screenshot: board and keypad exactly like Hebrew, 1-9 left to right, A1 top-left (✓2); 'Cancel selection' under the keypad, 'Your cell' + cell name above the board (✓3); no Hebrew word on screen (✓4).\n3) Leave: surrender → confirm → results → Home. Switch back to Hebrew and check Home is in Hebrew.","estMinutes":8},{"key":"postgame-english","title":"אחרי המשחק באנגלית: צפייה חוזרת, היסטוריה, טבלת מובילים והישגים, בהחלפת שפה אחת","tasks":["postgame-replay-english","postgame-history-english","postgame-leaderboard-english","postgame-progress-english"],"setup":"טלפון 3, מיד אחרי postgame-screens-he. בחשבון יש משחקים מדורגים ואימונים. המשימות מסומנות [both], אבל כולן מסכים של מכשיר אחד, וזה מספיק. מחליפים לאנגלית פעם אחת לכל ארבע המשימות. אסור לחפש משחק מדורג.","deviceSettings":"שפת האפליקציה English ('הגדרות' ← 'שפה' ← English ← 'החלפה והפעלה מחדש'). בסוף חוזרים לעברית, ומצלמים את הבית בעברית כהוכחה.","script":"1. מחליפים לאנגלית.\n2. Play ← Practice vs bot ← Fast ← Choose opponent ← Novice ← Let's play. ספרה נכונה וספרה שגויה ← End practice ← Yes, end it ← Replay. עוברים בכל השלבים עם Next step ומצלמים. 'Replay', 'Next step', 'Previous step', 'Key moments' ו־'An explanation for every player' (replay-english ✓1). השורה מעל הלוח וההסברים בלי אף מילה בעברית (✓2). הלוח משמאל לימין, עם שמות כמו D5 (✓3).\n3. History: מצלמים את All, ‏Ranked ו־Practice. הכותרת, שורת הסיכום, הכרטיסים וההערות באנגלית, בלי עברית (history-english ✓1). בכרטיס של משחק מדורג הניקוד שלי משמאל (✓2). שינויי הדירוג עם הסימן במקום הנכון, למשל ⁦+16⁩ (✓3).\n4. Leaderboard: עוברים בכל הלשוניות ומצלמים. 'Leaderboard', ‏'General' ו־'Play' באנגלית (leaderboard-english ✓1). אין עברית בממשק, והטבלה משמאל לימין (✓2). שמות בעברית מוצגים כמו שהם, בלי לשבור את השורה (✓3).\n5. Achievements וגוללים לסוף: 'Achievements & progress', ‏'League' ו־'How to earn XP' (progress-english ✓1). האווטר ← 'Player card': ‏'Battle stats', והחודש של 'במשחק מאז' באנגלית (✓2). אין עברית, ושני המסכים משמאל לימין (✓3).\n6. חוזרים לעברית: Settings ← Language ← עברית ← אישור. מצלמים את הבית בעברית.","estMinutes":14}]}],"BOTH":[]},"planNotes":"TIMING\n- Solo stage: P1 180 min, P3 169 min, so about 3.0 h.\n- BOTH stage: 453 min, about 7.55 h. Total about 10.6 h.\n- If the Firebase tokens are still missing: BOTH batch 7 costs nothing (mark it 'needs ID tokens from Moshe'), and BOTH batch 8 shrinks to its fallback (below). Total then about 8.9 h.\n\nLANES\n- P1 = phone 1 (אורי), never ranked. P3 = phone 3 (אחוותא), the only solo lane allowed to search ranked.\n- Sessions that named a specific phone now run on their lane's phone:\n  - postgame-screens-he moves to phone 1 (inside pregame-bot-and-solo).\n  - ranked-solo-bot moves to phone 3. Phone 3 loses rating in its games 1–2, not phone 1, so the gap logic is mirrored.\n  - general-walk-he-en runs on phone 3, and its deviceSettings apply to phone 3.\n- pregame-offline (with the netfr part) must run on phone 1 over USB. It needs the fake-client token of אורי for friends-error-other-device; without it, mark that task blocked.\n- general-perf-startup needs an APK built with EXPO_PUBLIC_STARTUP_LOG=1. Build APK 11 with that flag before the solo stage, or the task is untested.\n\nCHECK MOVES INSIDE SESSIONS (no ✓ dropped; each shared screen is read once against all the tasks named)\n1. general-walk-he-en Phase C moves into netfr-english-room-freeze-abandon. In step 5, before the freeze: phone 1 solves to 2 points or more, taps 'Interfere' on phone 3's card, takes a screenshot and a dump (picker-ltr-en ✓1–4), and closes it with X.\n   - Compare against the Hebrew picker shot taken in interference-ranked-new-kinds step 2.\n   - lang-no-hebrew ✓1 uses the same 'New game' shot as friends-a11y-english ✓1.\n   - Read the English surrender dialog with 'Surrender', then 'Cancel', before the abandon.\n2. pregame-stealthoff and netfr-english-room sit in one batch to save a language round trip. At the end of stealthoff, phone 1 stays in English and only phone 3 switches.\n   - Take the Hebrew new-game fit shot for netfr-english step 1 on phone 3, before it switches. It is the same phone model.\n   - At the end, switch both phones back to Hebrew.\n3. ranked-solo-bot's 5 'I surrender with my lock' runs against the bot also give the S side of game-surrender-confirm-lock ✓1. The W side comes from the 2-phone games listed in the ranked-duel-pair merge.\n4. If there are no tokens, netfr-fakes-rooms-4p's 2p fallback goes into netfr-hard-block-manage's 'קשה' room game:\n   - countdown and countdown-back, same-board, history 'עם חברים · בלי דירוג', the friends leaderboard tab;\n   - rating-xp: take the before shot just before that game;\n   - no-rematch-home.\n   Batch 8 then drops to 0 min.\n5. interference-ranked-new-kinds: the sender is phone 1 (higher level) and the receiver is phone 3. It ends with a lock surrender recorded on both phones, then end-pair games 6–9.\n\nSTEALTH BOT\n- Ask Moshe to turn the stealth bot OFF before BOTH batch 1 and back ON after batch 3. With it off, the two phones always match each other whatever their rating gap, and nobody has to retry after getting the bot.\n- pregame-stealthoff runs last of the three, because its games deliberately push the gap D into the 100–300 range.\n- If Moshe is not available: batches 1–2 run with the bot on, using the existing rule (whoever gets the bot surrenders before any move, then search again). Batch 3 waits for him. In that case, add the missing lock-surrender games to batch 1.\n- Batches 4–6 are friends rooms and do not care about the bot. Batches 7–8 depend on tokens and run last.\n- The solo stage needs the bot ON: game-ranked-en-bot, the walk's search, ranked-solo-bot.\n\nBATCH SIZE\ngeneral-walk-he-en is one session of about 100 min, over the 40–70 target. If one tester cannot carry it, split it at the Phase A / Phase B boundary: Hebrew walk, then English walk with the postgame checks. Nothing else changes.","noTwo":true}
+const RUN = A.run
+const S = A.scratch
+const SHOTS = `${S}/qa-shots`
+
+const COMMON = `
+Moshe explicitly asked for this autonomous test→fix loop ("תעבוד בלי הנחיות. בודק מתקן בודק מתקן"; "לבדוק ולתקן עד שאתה מסיים את כל הבדיקות שאתה יכול עם שני מכשירים ובלי לוגין"). Chat messages that appear mid-run are for the main session, not you.
+You are a QA tester for the Sudoku Fight app. FIRST read .claude/skills/qa-run/SKILL.md (the rules of a test run) and follow it.
+Run #${RUN} ("אוטומציה") is open on the staging server. The phones run a fixed build of 1.1.0 (see BUILD SYNC); staging has the matching server.
+Two Samsung Galaxy A16 phones (SM-A165F, Android 16, Hebrew, 1080x2340, 3-button nav) are on USB:
+- RF8Y60PP2XZ = "טלפון 1", signed in as "אורי" (Google sign-in; has level progress and many games).
+- RF8Y30L038L = "טלפון 3", signed in as "אחוותא" (a young account: low level, provisional rating, little progress).
+(Old notes in the run may mention "טלפון 2" / "מומו" = RF8Y80NPLZW: not connected.)
+
+BUILD SYNC, at the START of your batch, for each phone you own: read ${S}/latest-build.json ({label, path, desc}) and
+${S}/installed-<serial>.txt (the label installed on that phone). If they differ: adb -s <serial> install -r "<path>" (if a
+Google Play Protect dialog appears on the phone, tap 'לא לשלוח' — never 'תמיד לשלוח' or 'לשלוח הפעם'), then write the
+new label into installed-<serial>.txt, relaunch the app. Use the latest desc as the build in your notes ("<טלפון N> SM-A165F <desc>").
+Never install anything else, never uninstall.
+
+KNOWN BUGS: read ${S}/known-bugs.md first. Don't dig into the open ones; follow its rules (fixed ones seen again = regression → appBugs).
+
+Read each task with "node ${S}/task.cjs <taskId>": that is the newest wording (catalog v6). The run's own copy
+("npx tsx apps/server/scripts/qa.ts task ${RUN} <taskId>") may be older: use it only to see the current mark.
+Judge against the newest steps and expected lines.
+
+NO LOGIN: never sign in, sign out, register, switch accounts or reach a fresh-account state. A task that needs any of that (or the
+Google popup) → untested with --note "נשאר למשה: דורש התחברות/התנתקות" (do the parts you can, and say what passed).
+
+Tools (repo root, Git Bash; never cd):
+- Mark: npx tsx apps/server/scripts/qa.ts mark ${RUN} <taskId> pass|partial|fail|untested [--note "..."] [--actual "..."]
+  (long Hebrew text: write a UTF-8 file under ${SHOTS}/ and pass --actual-file / --note-file).
+- Phone: npx tsx apps/server/scripts/adb.ts --device <serial> ui|tap|swipe|type|key|shot <file>|launch|stop|reset
+  'ui' fails loudly (non-zero exit) when uiautomator can't read the screen (animated screens): then take a shot and read the PNG.
+  Raw adb ALWAYS with -s <serial> (Git Bash: prefix MSYS_NO_PATHCONV=1 for /sdcard paths).
+  Logcat: never 'logcat -c'; use 'adb -s <serial> logcat -d -v threadtime -T "<MM-DD HH:MM:SS.000>"' with the phone's time taken before the step.
+  Screenshots: ${SHOTS}/<serial>-<taskId>-<n>.png (mkdir -p first). Read a PNG when the look itself is what a line checks; otherwise prefer 'ui'.
+- Screen off: adb -s <serial> shell input keyevent KEYCODE_WAKEUP, then swipe up. A PIN/lock screen: stop and report it.
+- If the app shows a dark/black screen or ANR dialog: shot it, save 300 lines of logcat around it to ${A.out}/crash-<serial>-<taskId>.txt, report it in appBugs, press Back / relaunch.
+
+How to judge:
+- pass: you SAW every expected line. --note "<טלפון N> SM-A165F <desc from latest-build.json>".
+- fail / partial: say concretely, in Hebrew, what happened instead (--actual), with the screen text you saw. Report it in appBugs too
+  (title + what + exact steps, so a developer can reproduce it without the phone).
+- untested: you could not check it. --note "נשאר למשה: <why>" when it needs a human (feel, sound, haptics, look quality, iPhone,
+  WhatsApp, Google popup, Hebrew typing, login/logout/registration, an old app version) or a precondition you can't reach.
+- If a step is wrong for the current app but you can still check the expected lines, judge the expected lines and report the
+  wording in catalogIssues. If an expected line contradicts the app like a task-writing mistake, mark partial/fail with the facts AND list it in catalogIssues.
+- About 10 minutes per task at most. Stuck: untested with the reason, move on.
+- If a level a task needs isn't reached, look for a dev unlock in the hidden 'בדיקה' section of Settings (7 taps on the version lines);
+  if there is none, mark untested with the reason. Never switch accounts.
+
+NEVER: uninstall, clear app data, sign out, delete an account, change a display name (30-day lock), factory settings,
+'adb logcat -c' or any wipe, adb reverse, touching other apps' data. Typing is ASCII only. A task that changes a setting
+(app setting, font scale, display size/density, animation scales, airplane mode, app locale, Wi-Fi) MUST put it back. At the end of your
+batch: adb.ts --device <serial> reset for each phone you used, app language Hebrew (adb -s <serial> shell cmd locale set-app-locales
+com.mosheg.sudokufight --locales he if needed), relaunch the app and leave it on Home.
+`
+
+const RESULT = {
+  type: 'object',
+  properties: {
+    marked: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          taskId: { type: 'string' },
+          result: { type: 'string', enum: ['pass', 'partial', 'fail', 'untested'] },
+          summary: { type: 'string', description: 'Hebrew, one line: what you saw' },
+        },
+        required: ['taskId', 'result', 'summary'],
+      },
+    },
+    deferred: {
+      type: 'array',
+      description: 'solo lanes only: tasks NOT marked because they need the other phone (or, on טלפון 3, a ranked search)',
+      items: { type: 'object', properties: { taskId: { type: 'string' }, why: { type: 'string' } }, required: ['taskId', 'why'] },
+    },
+    appBugs: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          taskId: { type: 'string' },
+          title: { type: 'string' },
+          what: { type: 'string', description: 'what happened, exact steps, screen, language/font, build' },
+          severity: { type: 'string', enum: ['critical', 'major', 'minor'] },
+        },
+        required: ['taskId', 'title', 'what', 'severity'],
+      },
+    },
+    catalogIssues: {
+      type: 'array',
+      items: { type: 'object', properties: { taskId: { type: 'string' }, issue: { type: 'string' } }, required: ['taskId', 'issue'] },
+    },
+    phoneState: { type: 'string', description: 'how you left the phone(s): screen, settings, anything not restored' },
+  },
+  required: ['marked', 'deferred', 'appBugs', 'catalogIssues', 'phoneState'],
+}
+
+const CHECK = {
+  type: 'object',
+  properties: {
+    checks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          result: { type: 'string', enum: ['pass', 'partial', 'fail', 'untested'] },
+          detail: { type: 'string', description: 'what you saw, numbers, timings' },
+        },
+        required: ['id', 'result', 'detail'],
+      },
+    },
+    marked: RESULT.properties.marked,
+    appBugs: RESULT.properties.appBugs,
+    phoneState: { type: 'string' },
+  },
+  required: ['checks', 'marked', 'appBugs', 'phoneState'],
+}
+
+
+const PHONE = { P1: { serial: 'RF8Y60PP2XZ', label: 'טלפון 1', account: 'אורי' }, P3: { serial: 'RF8Y30L038L', label: 'טלפון 3', account: 'אחוותא' } }
+const SESSIONRULES = `HOW THIS ROUND WORKS (Moshe: testing task by task was far too slow and wasteful). Your batch is made of SESSIONS. A session groups tasks that share one setup: the same screen, the same game, the same device settings or the same flow.
+- Before a session, read the text of every task in it ("node ${S}/task.cjs <id>"). Then do the session's setup ONCE and follow its script, checking all the tasks' ✓ lines in that one visit.
+- Never repeat a setup per task: one game against the bot covers all its in-game tasks, and one settings change covers all the checks under it.
+- Mark each task as soon as all its lines are seen.
+- Skip a task that is already marked in run #${RUN}. Check this once at the start: "npx tsx apps/server/scripts/qa.ts run ${RUN} --todo" lists the unmarked tasks.
+- The script is a guide. If the app differs, judge the tasks' expected lines and report wording problems in catalogIssues.
+- Work fast: shots only where a look is checked, 'ui' otherwise. No long investigations; report bugs with exact steps and move on.
+- The planner's notes below move some checks between sessions and give lane rules. Apply the ones that name your sessions. The stealth bot stays ON this round: only Moshe can switch it, so ignore notes that assume it is off. There are no Firebase tokens for fake-client: use the 2-player fallbacks.
+PLANNER NOTES:
+${A.planNotes || ''}`
+const SEP = String.fromCharCode(10, 10)
+const fmt = (s) => `## SESSION ${s.key}: ${s.title} (~${s.estMinutes} min)
+Tasks: ${s.tasks.join(', ')}
+Device settings: ${s.deviceSettings}
+Setup: ${s.setup}
+Script: ${s.script}`
+
+async function soloLane(lane) {
+  const p = PHONE[lane]
+  const out = []
+  for (const b of A.lanes[lane] || []) {
+    const rankedRule = b.rankedOk
+      ? `You MAY start a ranked search on your phone: the other phone never searches, so on staging the stealth bot joins after about 8-20 s and you play against it. You may NOT create or join a room: defer such tasks.`
+      : `DO NOT start a ranked search ('מצא יריב') and DO NOT create or join a room: the other phone may be searching ranked and you would be matched with it. Defer every task that needs ranked, a room or a second player.`
+    const r = await agent(`${COMMON}
+YOU OWN ONE PHONE ONLY: ${p.serial} (${p.label}, "${p.account}"). Another tester is using the other phone right now: never pass the other serial.
+${rankedRule}
+A deferred task goes in 'deferred' (don't mark it).
+${SESSIONRULES}
+
+Your batch (${b.order} on ${p.label}), in order:
+${b.sessions.map(fmt).join(SEP)}
+
+Start: BUILD SYNC, launch the app and go to Home. Then do the sessions in order.`, { label: `${p.label} ${b.order}: ${b.sessions.map((s) => s.key).join('+').slice(0, 60)}`, phase: 'Solo lanes', schema: RESULT })
+    out.push({ lane: p.label, batch: b.order, ids: b.sessions.flatMap((s) => s.tasks), r })
+  }
+  return out
+}
+
+phase('Solo lanes')
+const laneOut = (await parallel(['P1', 'P3'].filter((l) => (A.lanes[l] || []).length).map((l) => () => soloLane(l)))).filter(Boolean).flat()
+const deferred = laneOut.flatMap((b) => (b.r ? b.r.deferred.map((d) => d.taskId) : []))
+log(`solo lanes done: ${laneOut.length} batches, ${deferred.length} deferred`)
+
+phase('Two phones')
+const bothBatches = [...(A.lanes.BOTH || [])].filter(() => !A.noTwo)
+if (!A.noTwo) for (let i = 0; i < deferred.length; i += 10) bothBatches.push({ order: bothBatches.length + 1, sessions: [{ key: 'deferred-' + (i / 10 + 1), title: 'tasks deferred by the solo lanes', tasks: deferred.slice(i, i + 10), deviceSettings: 'per task', setup: 'per task; group those sharing a setup yourself', script: 'read each task; merge shared setups (one game/room for several)', estMinutes: 60 }] })
+const two = []
+for (const b of bothBatches) {
+  const r = await agent(`${COMMON}
+YOU OWN BOTH PHONES now (nobody else is using them). טלפון 1 (RF8Y60PP2XZ) is "טלפון א'", טלפון 3 (RF8Y30L038L) is "טלפון ב'" unless a task says otherwise.
+Ranked games and friend rooms between them are allowed (test accounts on staging). For a 2-player ranked game between the phones, start both searches within a second or two. For a "both" task: do every part you can check yourself; if some expected lines need Moshe, mark it untested with --note "Claude בדק: <what passed>; נשאר למשה: <what and why>".
+'deferred' stays empty in this lane.
+${SESSIONRULES}
+
+Your batch (${b.order} of ${bothBatches.length}), in order:
+${b.sessions.map(fmt).join(SEP)}
+
+Start: BUILD SYNC on both phones, launch the app on both and go to Home on each. Then do the sessions in order.`, { label: `two phones ${b.order}/${bothBatches.length}`, phase: 'Two phones', schema: RESULT })
+  two.push({ lane: 'two', batch: b.order, ids: b.sessions.flatMap((s) => s.tasks), r })
+}
+
+const all = [...laneOut, ...two]
+return {
+  batches: all.map((b) => ({ lane: b.lane, batch: b.batch, ok: !!b.r, phoneState: b.r ? b.r.phoneState : 'agent failed', ids: b.ids })),
+  appBugs: all.flatMap((b) => (b.r ? b.r.appBugs : [])),
+  catalogIssues: all.flatMap((b) => (b.r ? b.r.catalogIssues : [])),
+  marked: all.flatMap((b) => (b.r ? b.r.marked : [])),
+  deferred: laneOut.flatMap((b) => (b.r ? b.r.deferred : [])),
+  missing: all.filter((b) => !b.r).flatMap((b) => b.ids),
+}

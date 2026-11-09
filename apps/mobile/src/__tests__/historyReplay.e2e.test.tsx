@@ -39,7 +39,6 @@ import ReplayRoute from '../../app/replay/[id]';
 import ResultsRoute from '../../app/results/[id]';
 import SettingsRoute from '../../app/settings';
 import { installSignedInPlayer } from '../auth/testing/testAuth';
-import { ltr } from '../components/player';
 import { useGameStore } from '../game/gameStore';
 import { type OfflinePuzzle, puzzleById } from '../game/offlinePool';
 import type { PracticeDeps, PracticeSession } from '../game/session';
@@ -418,9 +417,13 @@ function checkStep(o: Oracle, n: number): number {
       continue;
     }
     const want = o.explained(subject);
-    expect(screen.getByTestId(`${card}-move`, hidden)).toHaveTextContent(
-      ltr(`${cellName(want.cell)} → ${want.digit}`),
-    );
+    // The move's words, each its own text (MoveText, B20).
+    const words = within(screen.getByTestId(`${card}-move`, hidden)).getAllByText(/\S/, hidden);
+    expect(words.map((w) => String(w.props.children))).toEqual([
+      cellName(want.cell),
+      '→',
+      String(want.digit),
+    ]);
     expect(screen.getByTestId(`${card}-text`, hidden)).toHaveTextContent(want.text);
     explained++;
   }
@@ -476,7 +479,8 @@ describe('history and replay, end to end (work plan stages 9–11)', () => {
     for (const cell of rest) await place(run, cell, answerIn(solo.puzzle, cell));
     await waitFor(() => expect(run.pathname()).toBe(`/results/${solo.session.id}`));
     played.solo = solo.session.id;
-    await fireEvent.press(screen.getByRole('button', { name: 'לבית' }));
+    // The results open once the game's read is back (resultsHandoff.ts), then draw.
+    await fireEvent.press(await screen.findByRole('button', { name: 'לבית' }));
     await waitFor(() => expect(run.pathname()).toBe('/'));
 
     // Against Pip, "מהיר": my first move is wrong; then the free cells, until the board is full.
@@ -506,7 +510,7 @@ describe('history and replay, end to end (work plan stages 9–11)', () => {
     await waitFor(() => expect(run.pathname()).toBe(`/results/${bot.session.id}`));
     played.bot = bot.session.id;
     played.botPuzzle = bot.puzzle;
-    await fireEvent.press(screen.getByRole('button', { name: 'לבית' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'לבית' }));
     await waitFor(() => expect(run.pathname()).toBe('/'));
     expect(mockApp.saveErrors).toEqual([]);
     await run.kill();

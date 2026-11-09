@@ -1,5 +1,5 @@
 import type { GameType } from '@sudoku-fight/engine';
-import { memo, type ReactNode, useCallback, useRef } from 'react';
+import { memo, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
@@ -23,7 +23,10 @@ import {
   SeatGlyph,
   signedText,
 } from '../../components/player';
-import { metrics } from '../../components/player/metrics';
+import { ClockDigits } from '../../components/clock/ClockDigits';
+import { clockLabelSeconds } from '../../components/player/format';
+import { AVATAR_SIZES, metrics } from '../../components/player/metrics';
+import { type Probe, useProbeWidths, WidthProbes, widthsOf } from '../../components/player/statusFit';
 import { Button } from '../../components/ui';
 import { Text } from '../../components/ui/Text';
 import { decimalSeparator } from '../../i18n/compose';
@@ -58,6 +61,7 @@ export interface SoloHudProps {
 
 const ME = paletteAt(0);
 const row = tokens.layout.game.playerCard;
+const HUD_GAP = space[6];
 
 export const SoloHud = memo(function SoloHud({
   card,
@@ -97,23 +101,50 @@ export const SoloHud = memo(function SoloHud({
     [report],
   );
 
+  // QA loop 7 (360 dp, font 1.3): "Solo practice · Normal" was cut to "Solo prac…". The identity is one button
+  // high (no room for a second line under the name), so where the whole title is wider than its room at full
+  // size, the line keeps the game type alone ("Normal"); "Solo practice" is said by "סיום אימון" beside it.
+  const fullTitle = t('subtitle', { title: t('title'), type: t(`type.${gameType}`) });
+  const titleProbes = useMemo<Probe[]>(
+    () => [{ id: 'solo-title', text: fullTitle, style: text('caption') }],
+    [fullTitle],
+  );
+  const [probeWidths, onProbe] = useProbeWidths();
+  const [hudWidth, setHudWidth] = useState<number | null>(null);
+  const [endWidth, setEndWidth] = useState<number | null>(null);
+  const onHud = useCallback(
+    (e: LayoutChangeEvent) => {
+      setHudWidth(e.nativeEvent.layout.width);
+      onLayout?.(e);
+    },
+    [onLayout],
+  );
+  const onEndLayout = useCallback((e: LayoutChangeEvent) => setEndWidth(e.nativeEvent.layout.width), []);
+  const titleWidth = widthsOf(titleProbes, probeWidths)?.[0] ?? null;
+  const shortTitle =
+    titleWidth !== null &&
+    hudWidth !== null &&
+    endWidth !== null &&
+    titleWidth > soloTitleRoom(hudWidth, endWidth);
+
   const decimal = decimalSeparator(t);
   const time = formatClock(stats.elapsedMs);
+  const timeLabel = t('hud.timeLabel', {
+    time: formatClock(clockLabelSeconds(stats.elapsedMs, 'elapsed') * 1000),
+  });
   const best = stats.best;
-  const statsLabel = [
-    t('hud.timeLabel', { time }),
-    best
-      ? t('hud.bestLabel', {
-          count: best.points,
-          points: ltr(formatScore(best.points, decimal)),
-          cell: ltr(best.cell),
-        })
-      : t('hud.noBestLabel'),
-  ].join(t('listSep'));
+  const bestLabel = best
+    ? t('hud.bestLabel', {
+        count: best.points,
+        points: ltr(formatScore(best.points, decimal)),
+        cell: ltr(best.cell),
+      })
+    : t('hud.noBestLabel');
   const canEnd = card.mine?.canSurrender ?? false;
 
   return (
-    <View style={[styles.hud, style]} onLayout={onLayout} testID={testID}>
+    <View style={[styles.hud, style]} onLayout={onHud} testID={testID}>
+      <WidthProbes probes={titleProbes} onWidth={onProbe} />
       {/* Start: who I am and my score, read as one summary (components.md §3.6). */}
       <View
         style={styles.start}
@@ -140,7 +171,7 @@ export const SoloHud = memo(function SoloHud({
               <Flag country={country} size="game" decorative />
             </View>
             <Text style={[text('caption'), styles.muted]} numberOfLines={1} testID={`${testID}-title`}>
-              {t('subtitle', { title: t('title'), type: t(`type.${gameType}`) })}
+              {shortTitle ? t(`type.${gameType}`) : fullTitle}
             </Text>
           </View>
         </View>
@@ -167,7 +198,7 @@ export const SoloHud = memo(function SoloHud({
       </View>
 
       {/* End: leave the practice, and how it is going. */}
-      <View style={styles.end}>
+      <View style={styles.end} onLayout={onEndLayout} testID={`${testID}-end`}>
         <View style={styles.endRow}>
           <Button
             label={t('end.button')}
@@ -179,20 +210,19 @@ export const SoloHud = memo(function SoloHud({
             testID="end-practice-button"
           />
         </View>
-        <View
-          style={styles.statsRow}
-          accessible
-          accessibilityRole="text"
-          accessibilityLabel={statsLabel}
-          testID={`${testID}-stats`}
-        >
-          <Stat label={t('hud.time')}>
-            <Text style={[text('cellRef'), styles.value]} testID={`${testID}-time`}>
-              {time}
-            </Text>
+        <View style={styles.statsRow} testID={`${testID}-stats`}>
+          {/* Q1: nothing here changes every second for the accessibility layer. The clock is drawn as paths (no
+              text whose change is an event), and its label says the time in 5-second steps. */}
+          <Stat label={t('hud.time')} accessibilityLabel={timeLabel} testID={`${testID}-time-stat`}>
+            <ClockDigits
+              value={time}
+              textStyle={text('cellRef')}
+              color={color.text}
+              testID={`${testID}-time`}
+            />
           </Stat>
           <View style={styles.divider} />
-          <Stat label={t('hud.best')}>
+          <Stat label={t('hud.best')} accessibilityLabel={bestLabel} testID={`${testID}-best-stat`}>
             {best ? (
               <View style={styles.best} testID={`${testID}-best`}>
                 <Text style={[text('cellRef'), styles.bestPoints]}>{signedText(best.points, decimal)}</Text>
@@ -223,9 +253,33 @@ const sameStats = (a: SoloStats, b: SoloStats): boolean =>
   a.total === b.total &&
   sameData(a.best, b.best);
 
-function Stat({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * The room of the title line under my name: the HUD's row less the end column, the gap between them, my avatar
+ * and the gap beside it (the name block is all that is left of the start column's identity row).
+ */
+export const soloTitleRoom = (hudWidth: number, endWidth: number): number =>
+  hudWidth - HUD_GAP - endWidth - AVATAR_SIZES.card.frame - row.headerGap;
+
+/** One stat, read as one element with its own label. */
+function Stat({
+  label,
+  accessibilityLabel,
+  testID,
+  children,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  testID?: string;
+  children: ReactNode;
+}) {
   return (
-    <View style={styles.stat}>
+    <View
+      style={styles.stat}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+    >
       <Text style={[text('micro'), styles.muted]} numberOfLines={1}>
         {label}
       </Text>
@@ -235,7 +289,7 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  hud: { flexDirection: 'row', justifyContent: 'space-between', gap: space[6] },
+  hud: { flexDirection: 'row', justifyContent: 'space-between', gap: HUD_GAP },
   start: { flexShrink: 1, minWidth: 0 },
   identity: {
     height: size.buttonModal,

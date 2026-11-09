@@ -142,7 +142,7 @@ const TRACK = { false: color.border, true: color.accent } as const;
 const INDEX_SLOP = { top: (size.touch - space[12]) / 2, bottom: (size.touch - space[12]) / 2 } as const;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: {
     paddingHorizontal: tokens.layout.gutterGame,
     paddingBottom: space[6],

@@ -2,8 +2,9 @@ import { fireEvent, render, screen, userEvent } from '@testing-library/react-nat
 import { I18nManager, StyleSheet, type ViewStyle } from 'react-native';
 
 import i18n from '../../../i18n';
-import { color, size, tokens } from '../../../theme';
+import { color, radius, size } from '../../../theme';
 import { RowButton } from '../RowButton';
+import { CARD_BASE } from '../tactile';
 import { directionProblems, hostStyles } from '../testing/layout';
 
 const styleOf = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as ViewStyle) ?? {};
@@ -26,6 +27,18 @@ describe('RowButton', () => {
     // 64 high, or taller in a script with taller lines (localization plan 0ט).
     expect(styleOf(button)).toMatchObject({ minHeight: size.listRow, borderColor: color.border });
     expect(styleOf(button).height).toBeUndefined();
+    // A tappable card since D125 (VIS-2): the surface, lit at the top, on its base, at a card's radius.
+    expect(styleOf(button)).toMatchObject({
+      backgroundColor: color.surface,
+      borderTopColor: color.tactile.borderLit,
+      borderRadius: radius.card,
+    });
+    expect(styleOf(button).boxShadow).toContainEqual({
+      offsetX: 0,
+      offsetY: CARD_BASE.depth,
+      blurRadius: 0,
+      color: color.tactile.cardBase,
+    });
     await fireEvent.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
@@ -35,12 +48,13 @@ describe('RowButton', () => {
     expect(screen.getByRole('button', { name: 'היסטוריה' })).toBeOnTheScreen();
   });
 
-  it('when disabled: dimmed and does not press', async () => {
+  it('when disabled: no base, faint words, and it does not press', async () => {
     const onPress = jest.fn();
     await render(<RowButton {...again} disabled onPress={onPress} />);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(styleOf(button).opacity).toBe(tokens.opacity.disabled);
+    expect(styleOf(button).boxShadow).toBeUndefined();
+    expect(screen.getByText('עוד סיבוב')).toHaveStyle({ color: color.tactile.disabledLabel });
     await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
   });
@@ -55,6 +69,15 @@ describe('RowButton', () => {
     ).not.toBeOnTheScreen();
     await userEvent.setup().press(button);
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('presses as a card: surface2, over its base', async () => {
+    await render(<RowButton {...again} onPress={jest.fn()} />);
+    await fireEvent(screen.getByRole('button'), 'pressIn');
+    expect(styleOf(screen.getByRole('button'))).toMatchObject({
+      backgroundColor: color.tactile.cardPressed,
+      boxShadow: [],
+    });
   });
 
   it('shows the selected chip state in gold', async () => {

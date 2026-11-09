@@ -60,6 +60,9 @@
     "title": "Neues Spiel",
     "footnote": "Rangliste braucht eine Internetverbindung · Training geht immer",
     "soon": "Bald",
+    "needsConnection": {
+      "rankedAndFriends": "Rangliste und Freunde"
+    },
     "groups": {
       "ranked": {
         "title": "Rangliste",
@@ -78,7 +81,7 @@
     "chips": {
       "rated": "Gewertet",
       "unrated": "Ungewertet",
-      "offline": "Auch offline"
+      "offline": "Auch ohne Netz"
     },
     "ranked": {
       "name": "Rangliste"
@@ -117,7 +120,7 @@
       "taglineNew_one": "1 kurze Etappe · 0–3 Sterne",
       "taglineNew_other": "{{total}} kurze Etappen · 0–3 Sterne",
       "chip": "Etappe {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Ohne Netz",
       "chipLabel_one": "Etappe {{stage}} · 1 Stern",
       "chipLabel_other": "Etappe {{stage}} · {{count}} Sterne",
       "label": "Etappentraining"

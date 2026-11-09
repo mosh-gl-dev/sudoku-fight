@@ -30,14 +30,14 @@
       "box": "Khối {{label}} chỉ còn thiếu {{digit}}."
     },
     "missing": {
-      "row": "Hàng {{label}} còn thiếu {{digits}}.",
-      "col": "Cột {{label}} còn thiếu {{digits}}.",
-      "box": "Khối {{label}} còn thiếu {{digits}}."
+      "row_other": "Hàng {{label}} còn thiếu {{digits}}.",
+      "col_other": "Cột {{label}} còn thiếu {{digits}}.",
+      "box_other": "Khối {{label}} còn thiếu {{digits}}."
     },
     "seen": {
-      "row": "Hàng {{label}} đã có {{digits}}.",
-      "col": "Cột {{label}} đã có {{digits}}.",
-      "box": "Khối {{label}} đã có {{digits}}."
+      "row_other": "Hàng {{label}} đã có {{digits}}.",
+      "col_other": "Cột {{label}} đã có {{digits}}.",
+      "box_other": "Khối {{label}} đã có {{digits}}."
     },
     "eliminated": "Số {{digit}} đã bị loại khỏi ô {{cell}} ở bước {{step}}.",
     "only": "Vậy chỉ còn {{digit}}."

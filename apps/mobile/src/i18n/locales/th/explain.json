@@ -30,14 +30,14 @@
       "box": "กล่อง {{label}} ขาดเพียงเลข {{digit}}"
     },
     "missing": {
-      "row": "แถว {{label}} ยังขาด {{digits}}",
-      "col": "คอลัมน์ {{label}} ยังขาด {{digits}}",
-      "box": "กล่อง {{label}} ยังขาด {{digits}}"
+      "row_other": "แถว {{label}} ยังขาด {{digits}}",
+      "col_other": "คอลัมน์ {{label}} ยังขาด {{digits}}",
+      "box_other": "กล่อง {{label}} ยังขาด {{digits}}"
     },
     "seen": {
-      "row": "แถว {{label}} มี {{digits}} อยู่แล้ว",
-      "col": "คอลัมน์ {{label}} มี {{digits}} อยู่แล้ว",
-      "box": "กล่อง {{label}} มี {{digits}} อยู่แล้ว"
+      "row_other": "แถว {{label}} มี {{digits}} อยู่แล้ว",
+      "col_other": "คอลัมน์ {{label}} มี {{digits}} อยู่แล้ว",
+      "box_other": "กล่อง {{label}} มี {{digits}} อยู่แล้ว"
     },
     "eliminated": "เลข {{digit}} ถูกตัดออกจาก {{cell}} ในขั้นที่ {{step}}",
     "only": "ดังนั้นเหลือเพียงเลข {{digit}}"

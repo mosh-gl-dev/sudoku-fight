@@ -1,7 +1,8 @@
 /**
  * The visual check loop (docs/avatars/STYLE.md, "Check what you draw"): contact sheets and motion filmstrips.
  *
- *   npm run sheet -w @sudoku-fight/avatars -- [ids…] [--fixtures] [--out <dir>] [--shoot]
+ *   npm run sheet -w @sudoku-fight/avatars -- [ids…] [--file <module.ts>]… [--lineup] [--fixtures]
+ *                                              [--out <dir>] [--shoot]
  *
  * For each avatar (default: all) it writes, to <dir> (default: <os temp>/sfa-sheets, never the repo):
  * - sheet-<id>.html: every expression at 160, 48 and 24 px (plus the head crop) on the dark app and the light
@@ -11,6 +12,19 @@
  *   triggers it, sampled with sampleGimmick (what the app plays).
  * With --shoot it screenshots each page with headless Chrome to a .png next to it: open the PNGs and look.
  * --fixtures adds the demo characters of src/testing/fixtures.ts (one per rig and gimmick option).
+ *
+ * --file <module> draws a character that is not in the catalog yet: every AvatarDef the module exports (a
+ * def, a list of defs, or a series character's looks, e.g. a PirateCharacter: house, then invested). Without
+ * ids, all of them; with ids, the ids are looked up in the file first, then in the catalog, so a new character
+ * can be drawn beside a finished one. Repeatable. A relative path is taken from the folder npm was run in
+ * (INIT_CWD), else from packages/avatars:
+ *
+ *   npm run sheet -w @sudoku-fight/avatars -- --file packages/avatars/src/catalog/pirates/two.ts --shoot
+ *
+ * --lineup adds lineup.html: every chosen avatar in a row at the app's sizes (96 to 24 px, and the 48 and 22 px
+ * head crop), neutral, on the dark app and the light board, to compare a series side by side:
+ *
+ *   … -- --file <two.ts> pirates-2-invested pirates-1-invested pirates-7-invested --lineup --shoot
  */
 
 import { execFileSync } from 'node:child_process';
@@ -30,24 +44,30 @@ import {
   MOTIONS,
   type MotionId,
   motionOrigin,
+  PIRATE_LOOKS,
   poseMatrix,
   renderAvatar,
   resolveMotion,
   sampleGimmick,
   sampleTrack,
+  TARGET_CLASSES,
 } from '../src';
 import { FIXTURES } from '../src/testing/fixtures';
 
 const ids: string[] = [];
+const files: string[] = [];
 let OUT = join(tmpdir(), 'sfa-sheets');
 let shoot = false;
 let fixtures = false;
+let lineup = false;
 const args = process.argv.slice(2);
 for (let i = 0; i < args.length; i++) {
   const a = args[i] ?? '';
   if (a === '--out') OUT = resolve(args[++i] ?? '.');
   else if (a === '--shoot') shoot = true;
   else if (a === '--fixtures') fixtures = true;
+  else if (a === '--lineup') lineup = true;
+  else if (a === '--file') files.push(args[++i] ?? '');
   else ids.push(a);
 }
 
@@ -127,10 +147,9 @@ function film(def: AvatarDef): string {
               ),
           );
         else
-          svg = svg.replace(
-            `class="sfa-${tr.target}"`,
-            `class="sfa-${tr.target}" ${matrix(pose, motionOrigin(def, tr.origin))}`,
-          );
+          // a face track moves the extras too (render.ts draws them in their own group)
+          for (const c of TARGET_CLASSES[tr.target])
+            svg = svg.replace(`class="${c}"`, `class="${c}" ${matrix(pose, motionOrigin(def, tr.origin))}`);
       }
       body += svg;
     }
@@ -199,30 +218,121 @@ function screenshot(html: string, png: string, width: number, height: number): v
   );
 }
 
-const pool = fixtures ? [...AVATARS, ...FIXTURES] : AVATARS;
-const chosen = ids.length ? pool.filter((a) => ids.includes(a.id)) : fixtures ? FIXTURES : AVATARS;
-const unknown = ids.filter((id) => !pool.some((a) => a.id === id));
-if (unknown.length) console.warn(`Unknown avatar ids: ${unknown.join(', ')}`);
-mkdirSync(OUT, { recursive: true });
-for (const def of chosen) {
-  const files = [
-    {
-      name: `sheet-${def.id}`,
-      html: sheet(def),
-      w: 140 + EXPRESSIONS.length * 172,
-      h: def.headBox ? 1560 : 1300,
-    },
-    { name: `film-${def.id}`, html: film(def), w: 1240, h: 1100 },
-  ];
-  const anims = (def.gimmicks ?? []).reduce((n, g) => n + gimmickAnims(g).length, 0);
-  if (anims) files.push({ name: `gimmicks-${def.id}`, html: gimmickFilm(def), w: 1240, h: 40 + anims * 124 });
-  for (const f of files) {
-    const html = join(OUT, `${f.name}.html`);
-    writeFileSync(html, f.html);
+/** The sizes the app draws an avatar at (a profile, Home, a duel's card, an in-game card, a list) and the cell. */
+const LINEUP_TILE = [96, 64, 48, 36, 24] as const;
+const LINEUP_HEAD = [48, 22] as const;
+
+function lineupPage(defs: readonly AvatarDef[]): string {
+  let body = '';
+  for (const [name, bg] of Object.entries(GROUNDS)) {
+    body += `<div style="background:${bg};padding:10px;margin:-2px -2px 10px">`;
+    for (const def of defs) {
+      const cells = [
+        ...LINEUP_TILE.map((size) => ({ size, crop: 'tile' as const })),
+        ...LINEUP_HEAD.map((size) => ({ size, crop: 'head' as const })),
+      ]
+        .filter((c) => c.crop === 'tile' || def.headBox)
+        .map(
+          (c) =>
+            `<div class="cell">${renderAvatar(def, { size: c.size, crop: c.crop, idPrefix: `l-${name}-${def.id}-${c.crop}${c.size}` })}</div>`,
+        )
+        .join('');
+      body += `<div class="row"><div class="label" style="width:150px">${def.id}</div>${cells}</div>`;
+    }
+    body += '</div>';
+  }
+  return page(body, '#0f1218');
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// --file: the AvatarDefs a module exports
+
+const isDef = (v: unknown): v is AvatarDef => {
+  const d = v as Partial<AvatarDef> | null;
+  return (
+    typeof d === 'object' &&
+    d !== null &&
+    typeof d.id === 'string' &&
+    typeof d.layers?.back === 'string' &&
+    typeof d.face === 'object'
+  );
+};
+
+/** The defs in an exported value: a def, a list (of defs or characters), or a series character's looks. */
+function defsIn(v: unknown): AvatarDef[] {
+  if (isDef(v)) return [v];
+  if (Array.isArray(v)) return v.flatMap(defsIn);
+  const c = v as { digit?: unknown; looks?: Record<string, unknown> } | null;
+  const looks = typeof c === 'object' && c !== null && typeof c.digit === 'number' ? c.looks : undefined;
+  if (typeof looks !== 'object' || looks === null) return [];
+  return PIRATE_LOOKS.flatMap((l) => {
+    const d = looks[l];
+    return isDef(d) ? [d] : [];
+  });
+}
+
+function defsOfModule(mod: Record<string, unknown>): AvatarDef[] {
+  const out: AvatarDef[] = [];
+  for (const [key, value] of Object.entries(mod)) {
+    const found = defsIn(value);
+    if (found.length) out.push(...found);
+    // a CommonJS module imported from here: its named exports sit on `default`
+    else if (key === 'default' && typeof value === 'object' && value !== null)
+      out.push(...defsOfModule(value as Record<string, unknown>));
+  }
+  return out;
+}
+
+/** Each id once, the first one found winning. */
+const uniqueById = (defs: readonly AvatarDef[]): AvatarDef[] =>
+  defs.filter((d, i) => defs.findIndex((e) => e.id === d.id) === i);
+
+async function loadFile(file: string): Promise<AvatarDef[]> {
+  const candidates = [resolve(process.env.INIT_CWD ?? process.cwd(), file), resolve(process.cwd(), file)];
+  const path = candidates.find((p) => existsSync(p));
+  if (!file || !path) throw new Error(`--file: no such module: ${file || '(missing path)'}`);
+  const mod = (await import(pathToFileURL(path).href)) as Record<string, unknown>;
+  const defs = uniqueById(defsOfModule(mod));
+  if (!defs.length) throw new Error(`--file ${file}: it exports no AvatarDef (nor a character with looks).`);
+  return defs;
+}
+
+async function main(): Promise<void> {
+  const fileDefs = uniqueById((await Promise.all(files.map(loadFile))).flat());
+  const catalog = fixtures ? [...AVATARS, ...FIXTURES] : AVATARS;
+  // the file's defs first: a character being drawn wins over an older copy of it in the catalog
+  const pool = uniqueById([...fileDefs, ...catalog]);
+  const chosen = ids.length
+    ? ids.flatMap((id) => pool.filter((a) => a.id === id))
+    : files.length
+      ? fileDefs
+      : fixtures
+        ? FIXTURES
+        : AVATARS;
+  const unknown = ids.filter((id) => !pool.some((a) => a.id === id));
+  if (unknown.length) console.warn(`Unknown avatar ids: ${unknown.join(', ')}`);
+  if (files.length)
+    console.log(`From ${files.join(', ')}: ${fileDefs.map((d) => d.id).join(', ')}\nInto ${OUT}`);
+  mkdirSync(OUT, { recursive: true });
+  const write = (name: string, markup: string, w: number, h: number) => {
+    const html = join(OUT, `${name}.html`);
+    writeFileSync(html, markup);
     if (shoot) {
-      const png = join(OUT, `${f.name}.png`);
-      screenshot(html, png, f.w, f.h);
+      const png = join(OUT, `${name}.png`);
+      screenshot(html, png, w, h);
       console.log(png);
     } else console.log(html);
+  };
+  for (const def of chosen) {
+    write(`sheet-${def.id}`, sheet(def), 140 + EXPRESSIONS.length * 172, def.headBox ? 1560 : 1300);
+    write(`film-${def.id}`, film(def), 1240, 1100);
+    const anims = (def.gimmicks ?? []).reduce((n, g) => n + gimmickAnims(g).length, 0);
+    if (anims) write(`gimmicks-${def.id}`, gimmickFilm(def), 1240, 40 + anims * 124);
   }
+  if (lineup && chosen.length) write('lineup', lineupPage(chosen), 1000, 64 + 2 * chosen.length * 116);
 }
+
+main().catch((e: unknown) => {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+});

@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 
+import { labelSecondsLeft } from '../player/format';
 import type { BoardModel, CellLock, CellModel, CellPlayer, KeyModel } from './boardModel';
 
 /**
@@ -12,8 +13,10 @@ type BoardT = TFunction<'board'>;
 
 const playerName = (p: CellPlayer, t: BoardT): string => p.name ?? t('cell.player', { n: p.seat + 1 });
 
+// In steps, exact in the last 5 (Q1): a lock's seconds change the label every second otherwise, and a screen reader
+// would get a change event a second (components.md §10: not every second). The pill on the cell shows them all.
 const timeLeft = (lock: CellLock, t: BoardT): string =>
-  lock.paused ? t('cell.timerStopped') : t('cell.seconds', { count: lock.seconds });
+  lock.paused ? t('cell.timerStopped') : t('cell.seconds', { count: labelSecondsLeft(lock.seconds) });
 
 /** E.g. "D5, ריקה, נעולה על ידי NinaVolt, 4 שניות" or "D5, 7, נפתרה על ידי MosheG". */
 export function cellLabel(cell: CellModel, t: BoardT): string {

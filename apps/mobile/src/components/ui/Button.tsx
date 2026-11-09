@@ -10,19 +10,24 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import type { FeedbackCue } from '../../services/feedback';
 import { color, radius, size, space, text, tokens } from '../../theme';
-import { motion, useReduceMotion } from '../../theme/motion';
 import { Icon, type IconName } from '../Icon';
-import { curve } from './motion';
 import { Spinner } from './Spinner';
-
+import { TactileSurface } from './tactile';
 import { Text } from './Text';
-/** components.md §1: primary (skewed gold), secondary (outline), ghost (text) and danger (outline, red). */
+
+/**
+ * components.md §1: primary (skewed gold on its gold edge), secondary (a filled slate on its edge), ghost (text)
+ * and danger (the red outline, on a red edge).
+ */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-/** Heights: hero 96 · lg 60 · md 52 · modal 48 (`size.ctaHero`, `buttonLg`, `buttonMd`, `buttonModal`). Ghost is always 44. */
-export type ButtonSize = 'hero' | 'lg' | 'md' | 'modal';
+/**
+ * Heights: hero 96 · lg 60 · md 52 · modal 48 · sm 40 (`size.ctaHero`, `buttonLg`, `buttonMd`, `buttonModal`,
+ * `buttonSm`; sm reaches the 44 touch target with its hit slop). Ghost is always 44.
+ */
+export type ButtonSize = 'hero' | 'lg' | 'md' | 'modal' | 'sm';
 
 export interface ButtonProps {
   label: string;
@@ -37,11 +42,22 @@ export interface ButtonProps {
   /** Secondary "chip" use: gold border and label (components.md §1.2). */
   selected?: boolean;
   /**
-   * Primary only: once the phone's text is large (fontScale ≥ LARGE_TEXT_SCALE), the label may take a second
-   * line instead of being cut, and the button grows to hold it. Below that the label keeps to one line at the
-   * button's height, as every button does.
+   * Secondary or danger beside the primary in one row: skewed with it, so the two edges between them run
+   * parallel (components.md §1.0, the pair rule). The primary is always skewed.
    */
-  wrapLabel?: boolean;
+  skew?: boolean;
+  /**
+   * The press's sound and haptic, played as the press lands. The primary plays "primaryPress" by default
+   * (components.md §1.1: a light haptic); the others none, since their screens choose their own. Null: none.
+   */
+  cue?: FeedbackCue | null;
+  /**
+   * Not ghost: once the phone's text is large (fontScale ≥ LARGE_TEXT_SCALE), the label may take a second line
+   * instead of being cut or shrunk, and the button grows to hold it. Below that the label keeps to one line at
+   * the button's height, as every button does. `'always'`: at any text size (a dialog's stacked actions, each
+   * the whole width already: ConfirmModal), so a long label is never drawn smaller than its button's text.
+   */
+  wrapLabel?: boolean | 'always';
   /** Overrides the visible label for screen readers (the visible label is the default). */
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -57,6 +73,7 @@ const HEIGHT: Record<ButtonSize, number> = {
   lg: size.buttonLg,
   md: size.buttonMd,
   modal: size.buttonModal,
+  sm: size.buttonSm,
 };
 
 /**
@@ -65,12 +82,13 @@ const HEIGHT: Record<ButtonSize, number> = {
  */
 export const LARGE_TEXT_SCALE = 1.15;
 
-/** Rubik 700, 44 / 28 / 22 / 18. */
+/** Rubik 700, 44 / 28 / 22 / 18 / 16. */
 const PRIMARY_LABEL: Record<ButtonSize, TextStyle> = {
   hero: text('ctaHero'),
   lg: text('screenTitle'),
   md: text('h1'),
   modal: text('sheetTitle'),
+  sm: text('h2'),
 };
 
 const ICON_SIZE: Record<ButtonSize, number> = {
@@ -78,20 +96,44 @@ const ICON_SIZE: Record<ButtonSize, number> = {
   lg: size.icon.header,
   md: size.icon.card,
   modal: size.icon.inline,
+  sm: size.icon.inline,
 };
 
-const SKEW = `${tokens.effects.skewXDeg}deg`;
-const UNSKEW = `${-tokens.effects.skewXDeg}deg`;
-const CTA = tokens.elevation.cta;
+/** A small button's hit slop above and below: 40 high, a 44 touch target. */
+const SM_SLOP = (size.touch - size.buttonSm) / 2;
+
 /**
  * A one-line label too long for its button in a long language (German "Neuer Raum" on the A16, localization D124)
  * shrinks, down to 70%, instead of ending in "…". Hebrew and English labels fit, so they never shrink.
  */
 const FIT_LABEL = { adjustsFontSizeToFit: true, minimumFontScale: 0.7 } as const;
 
+/** The label's style of a raised (not ghost) button: what a caller measures to know whether it fits. */
+export function buttonLabelStyle(variant: Exclude<ButtonVariant, 'ghost'>, sizeName: ButtonSize): TextStyle {
+  if (variant === 'primary') return { ...PRIMARY_LABEL[sizeName], ...styles.primaryLabel };
+  return text(variant === 'danger' ? 'sheetTitle' : 'button');
+}
+
+/** The face's padding on each side of a raised button's label (primaryFace, outlineFace). */
+export const buttonLabelInset = (variant: Exclude<ButtonVariant, 'ghost'>): number =>
+  variant === 'primary' ? space[10] : space[8];
+
+/*
+ * The label's wrapper is a native view of its own at all times (`collapsable={false}`), loading or not (K1,
+ * 2026-11-06). Without it, Fabric flattens the plain flex wrapper away and the label sits straight on the face;
+ * `loading` adds opacity 0, the wrapper can no longer be flattened, and that one commit has to create it and
+ * move the label into it (a Remove from the face and an Insert into the wrapper). Results' "משחק חדש" sets
+ * loading in the same commit as router.replace to /match, and on Android that batch, through Reanimated's
+ * layout-animation proxy, applied the Insert before the label left the face: addViewAt "View already has a
+ * parent", the React host torn down, a dark screen for good. With the wrapper always there, loading is only an
+ * opacity update, and no view changes parent. (Until round 1 a constant unskew transform kept it unflattened.)
+ */
+
 /**
  * The app's button. One gold primary per screen (components.md §0.6). The primary is skewed −8° in both
- * languages (a brand slant, not a direction cue) and sits on a hard gold shadow that shrinks when pressed.
+ * languages (a brand slant, not a direction cue); its label stands upright on the slanted face. Every raised
+ * button is a tactile surface (D125, tactile.tsx): its face sits on a hard edge, sinks onto it when pressed, and
+ * springs back.
  */
 export function Button({
   label,
@@ -102,6 +144,8 @@ export function Button({
   disabled = false,
   loading = false,
   selected,
+  skew = false,
+  cue,
   wrapLabel = false,
   accessibilityLabel,
   accessibilityHint,
@@ -111,13 +155,9 @@ export function Button({
   ref,
 }: ButtonProps) {
   const { t } = useTranslation('ui');
-  const reduce = useReduceMotion();
   const { fontScale } = useWindowDimensions();
-  const twoLines = wrapLabel && fontScale >= LARGE_TEXT_SCALE;
-  const press = useSharedValue(0);
-  const face = useAnimatedStyle(() => ({
-    transform: [{ translateY: press.get() * CTA.pressedTranslateY }, { skewX: SKEW }],
-  }));
+  const twoLines =
+    variant !== 'ghost' && (wrapLabel === 'always' || (wrapLabel && fontScale >= LARGE_TEXT_SCALE));
 
   const spoken = accessibilityLabel ?? label;
   const a11y = {
@@ -131,56 +171,10 @@ export function Button({
     },
     disabled,
     onPress: loading ? undefined : onPress,
-    hitSlop,
+    hitSlop: hitSlop ?? (sizeName === 'sm' ? SM_SLOP : undefined),
     testID,
     ref,
   };
-
-  if (variant === 'primary') {
-    const height = HEIGHT[sizeName];
-    // Two lines of a large label: the height becomes a minimum, and the face (and its shadow) grow with it.
-    const box = twoLines ? { minHeight: height } : { height };
-    // cta.press (motion.md §4.1): 80 ms down, 140 ms up. Reduced motion: the same 3 dp, without the tween.
-    const toPressed = (to: number, duration: number) =>
-      press.set(reduce ? to : withTiming(to, { duration, easing: curve('standard') }));
-    return (
-      <Pressable
-        {...a11y}
-        onPressIn={() => toPressed(1, motion.duration.tapFeedbackMin)}
-        onPressOut={() => toPressed(0, motion.duration.tapFeedbackMax)}
-        style={[box, disabled && styles.disabled, style]}
-      >
-        {disabled ? null : (
-          <View
-            testID={testID && `${testID}-shadow`}
-            style={[
-              styles.primaryShadow,
-              twoLines ? { top: CTA.offsetY, bottom: -CTA.offsetY } : { height, top: CTA.offsetY },
-              { transform: [{ skewX: SKEW }] },
-            ]}
-          />
-        )}
-        <Animated.View style={[styles.primaryFace, box, twoLines && styles.primaryFaceTall, face]}>
-          <View style={[styles.content, loading && styles.hidden, { transform: [{ skewX: UNSKEW }] }]}>
-            {icon ? <Icon name={icon} size={ICON_SIZE[sizeName]} color={color.onAccent} /> : null}
-            <Text
-              style={[PRIMARY_LABEL[sizeName], styles.primaryLabel, twoLines && styles.labelWrap]}
-              numberOfLines={twoLines ? 2 : 1}
-              {...(twoLines ? null : FIT_LABEL)}
-              testID={testID && `${testID}-label`}
-            >
-              {label}
-            </Text>
-          </View>
-          {loading ? (
-            <View style={styles.spinnerOverlay}>
-              <Spinner color={color.onAccent} stroke={tokens.border.lockRing} size={size.icon.header} />
-            </View>
-          ) : null}
-        </Animated.View>
-      </Pressable>
-    );
-  }
 
   if (variant === 'ghost') {
     return (
@@ -189,7 +183,7 @@ export function Button({
         style={({ pressed }) => [
           styles.ghost,
           icon ? styles.ghostWithIcon : styles.ghostTextOnly,
-          pressed && styles.pressedSurface,
+          pressed && styles.ghostPressed,
           disabled && styles.disabled,
           style,
         ]}
@@ -210,37 +204,111 @@ export function Button({
     );
   }
 
-  // Secondary and danger: flat outlines, never skewed, so they never look like the primary.
+  const height = HEIGHT[sizeName];
+  // Two lines of a large label: the height becomes a minimum, and the face (and its edge) grow with it.
+  const box = twoLines ? { minHeight: height } : { height };
+  const faceTestID = testID && `${testID}-face`;
+
+  if (variant === 'primary') {
+    const tint = disabled ? color.tactile.disabledLabel : color.onAccent;
+    return (
+      <TactileSurface
+        {...a11y}
+        kind="gold"
+        skew
+        inert={loading}
+        cue={cue === undefined ? 'primaryPress' : cue}
+        style={[box, style]}
+        faceStyle={[styles.primaryFace, box, twoLines && styles.primaryFaceTall]}
+        edgeTestID={testID && `${testID}-shadow`}
+        faceTestID={faceTestID}
+      >
+        {() => (
+          <>
+            <View
+              style={[styles.content, loading && styles.hidden]}
+              collapsable={false}
+              testID={testID && `${testID}-content`}
+            >
+              {icon ? <Icon name={icon} size={ICON_SIZE[sizeName]} color={tint} /> : null}
+              <Text
+                style={[
+                  PRIMARY_LABEL[sizeName],
+                  styles.primaryLabel,
+                  { color: tint },
+                  twoLines && styles.labelWrap,
+                ]}
+                numberOfLines={twoLines ? 2 : 1}
+                {...(twoLines ? null : FIT_LABEL)}
+                testID={testID && `${testID}-label`}
+              >
+                {label}
+              </Text>
+            </View>
+            {loading ? (
+              <View style={styles.spinnerOverlay}>
+                <Spinner color={tint} stroke={tokens.border.lockRing} size={size.icon.header} />
+              </View>
+            ) : null}
+          </>
+        )}
+      </TactileSurface>
+    );
+  }
+
+  // Secondary and danger: a filled slate, or the red outline, each on its own edge.
   const danger = variant === 'danger';
-  const tint = danger ? color.danger : selected ? color.accent : color.text;
+  const tint = disabled
+    ? color.tactile.disabledLabel
+    : danger
+      ? color.danger
+      : selected
+        ? color.accent
+        : color.text;
   return (
-    <Pressable
+    <TactileSurface
       {...a11y}
-      style={({ pressed }) => [
-        styles.outline,
-        { height: HEIGHT[sizeName] },
-        danger ? styles.danger : selected ? styles.selected : null,
-        pressed && (danger ? styles.dangerPressed : styles.pressedSurface),
-        disabled && styles.disabled,
-        style,
-      ]}
+      kind={danger ? 'danger' : 'slate'}
+      skew={skew}
+      selected={selected}
+      inert={loading}
+      cue={cue ?? null}
+      style={[box, style]}
+      faceStyle={[styles.outlineFace, box, twoLines && styles.primaryFaceTall]}
+      edgeTestID={testID && `${testID}-edge`}
+      faceTestID={faceTestID}
     >
-      <View style={[styles.content, loading && styles.hidden]}>
-        {icon ? <Icon name={icon} size={danger ? size.icon.inline : size.icon.card} color={tint} /> : null}
-        <Text
-          style={[text(danger ? 'sheetTitle' : 'button'), { color: tint }]}
-          numberOfLines={1}
-          {...FIT_LABEL}
-        >
-          {label}
-        </Text>
-      </View>
-      {loading ? (
-        <View style={styles.spinnerOverlay}>
-          <Spinner color={tint} size={size.icon.card} />
-        </View>
-      ) : null}
-    </Pressable>
+      {() => (
+        <>
+          <View
+            style={[styles.content, loading && styles.hidden]}
+            collapsable={false}
+            testID={testID && `${testID}-content`}
+          >
+            {icon ? (
+              <Icon name={icon} size={danger ? size.icon.inline : size.icon.card} color={tint} />
+            ) : null}
+            <Text
+              style={[
+                text(danger ? 'sheetTitle' : 'button'),
+                { color: tint },
+                twoLines && styles.outlineLabelWrap,
+              ]}
+              numberOfLines={twoLines ? 2 : 1}
+              {...(twoLines ? null : FIT_LABEL)}
+              testID={testID && `${testID}-label`}
+            >
+              {label}
+            </Text>
+          </View>
+          {loading ? (
+            <View style={styles.spinnerOverlay}>
+              <Spinner color={tint} size={size.icon.card} />
+            </View>
+          ) : null}
+        </>
+      )}
+    </TactileSurface>
   );
 }
 
@@ -262,48 +330,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryShadow: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderRadius: radius.button,
-    backgroundColor: color.accentShadow,
-  },
   primaryFace: {
     justifyContent: 'center',
     paddingHorizontal: space[10],
-    borderRadius: radius.button,
-    backgroundColor: color.accent,
   },
   primaryFaceTall: {
     paddingVertical: space[4],
   },
   primaryLabel: {
-    color: color.onAccent,
     textAlign: 'center',
   },
   labelWrap: {
     flexShrink: 1,
   },
-  outline: {
+  outlineFace: {
     justifyContent: 'center',
     paddingHorizontal: space[8],
-    borderRadius: radius.button,
-    borderWidth: tokens.border.hairline,
-    borderColor: color.border,
   },
-  selected: {
-    borderColor: color.accent,
+  outlineLabelWrap: {
+    flexShrink: 1,
+    textAlign: 'center',
   },
-  danger: {
-    backgroundColor: color.dangerSubtle,
-    borderColor: color.dangerBorder,
-  },
-  dangerPressed: {
-    backgroundColor: color.dangerPressed,
-  },
-  pressedSurface: {
-    backgroundColor: color.surface,
+  ghostPressed: {
+    backgroundColor: color.pressedOverlay,
   },
   ghost: {
     height: size.buttonGhost,

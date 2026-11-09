@@ -23,6 +23,7 @@ import {
 import {
   type ClientMessage,
   type ClientMessageType,
+  type LobbyPlayer,
   type MatchSeatReservation,
   PROTOCOL_VERSION,
   type ServerMessage,
@@ -252,6 +253,10 @@ export class FakeTable implements OnlineClient {
   /** The server's last clientSeq taken from me, per connection lifetime (reset by a rejoin). */
   lastClientSeq = 0;
   private seatHeld = false;
+  /** GO of the count under way (countdown()), null before it. */
+  private countingTo: number | null = null;
+  /** The players of the last lobby(). */
+  private lobbyPlayers: LobbyPlayer[] = [{ id: ME, name: 'Moshe' }];
   private tokenCount = 0;
   private config: GameConfig;
 
@@ -342,7 +347,8 @@ export class FakeTable implements OnlineClient {
   // -- the server's side ---------------------------------------------------------------------------------
 
   /** The lobby message to the current connection, after the delay. */
-  lobby(players = [{ id: ME, name: 'Moshe' }]): void {
+  lobby(players: LobbyPlayer[] = [{ id: ME, name: 'Moshe' }]): void {
+    this.lobbyPlayers = players;
     this.toMe({
       type: 'lobby',
       code: CODE,
@@ -351,6 +357,12 @@ export class FakeTable implements OnlineClient {
       players,
       playerId: ME,
     });
+  }
+
+  /** A ranked match's (or a started friends room's) 3… 2… 1…: GO at `startsAt`, in server time. */
+  countdown(startsAt: number): void {
+    this.countingTo = startsAt;
+    this.toMe({ type: 'countdown', startsAt, serverTime: this.serverNow() });
   }
 
   /** Everyone is in: the snapshot of the game as created, then the start. */
@@ -422,9 +434,24 @@ export class FakeTable implements OnlineClient {
     return room;
   }
 
-  /** Back in the seat: a fresh snapshot, then the engine's reconnect for everyone. */
+  /**
+   * Back in the seat: a fresh snapshot, then the engine's reconnect for everyone. In the count (no game yet), as
+   * GameRoom.welcomeBack: the countdown, then the lobby (the players' cards).
+   */
   private welcomeBack(room: FakeRoom): void {
     this.scheduler.setTimeout(() => {
+      if (room.open && !this.game && this.countingTo !== null) {
+        room.deliver({ type: 'countdown', startsAt: this.countingTo, serverTime: this.serverNow() });
+        room.deliver({
+          type: 'lobby',
+          code: CODE,
+          gameType: this.config.gameType,
+          playerCount: 2,
+          players: this.lobbyPlayers,
+          playerId: ME,
+        });
+        return;
+      }
       if (!room.open || !this.game) return;
       room.deliver(this.snapshotFor());
       this.game.apply({ type: 'reconnect', playerId: ME });
@@ -433,6 +460,11 @@ export class FakeTable implements OnlineClient {
 
   /** A connection closed: the server notices (unless `unnoticed`) and holds the seat for the token. */
   private closed(room: FakeRoom, consented: boolean): void {
+    // In the count, a drop's seat is held for its token (GameRoom holdSeatBeforeGame).
+    if (room === this.room && !this.game && this.countingTo !== null) {
+      this.seatHeld = !consented;
+      return;
+    }
     if (room !== this.room || !this.game || this.game.state.status === 'over') return;
     this.heldIfDropped = !consented;
     if (this.unnoticed) return;

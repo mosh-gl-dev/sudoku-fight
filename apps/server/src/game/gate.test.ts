@@ -182,6 +182,25 @@ describe('MessageGate', () => {
     expect(g.admit('ana', 'place', { clientSeq: 6, cell: 1, digit: 1 }).kind).toBe('action');
   });
 
+  it('a tap and its digit at once (BRD-1): a fast player’s pairs all pass, in order, at the default limits', () => {
+    const { gate: g, clock } = gate();
+    let seq = 0;
+    // Five cells a second, each select with its digit in the same millisecond (the phone sends both at once).
+    for (let k = 0; k < 5; k++) {
+      expect(g.admit('ana', 'select', { clientSeq: ++seq, cell: k })).toEqual({
+        kind: 'action',
+        clientSeq: seq,
+        action: { type: 'select', cell: k },
+      });
+      expect(g.admit('ana', 'place', { clientSeq: ++seq, cell: k, digit: 3 })).toEqual({
+        kind: 'action',
+        clientSeq: seq,
+        action: { type: 'place', cell: k, digit: 3 },
+      });
+      clock.advance(200);
+    }
+  });
+
   it('too many violations in the window: disconnect (duplicates are not violations)', () => {
     const { gate: g, clock } = gate();
     // One action and nine copies of it, within the rate limit: duplicates cost nothing.

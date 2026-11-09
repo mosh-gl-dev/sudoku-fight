@@ -182,7 +182,7 @@ function Fact({ icon, value, label }: { icon: 'history' | 'bolt' | 'target'; val
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: { paddingHorizontal: tokens.layout.gutterGame, paddingTop: space[4], gap: space[6] },
   summary: { flexDirection: 'row', alignItems: 'baseline', gap: space[4] },
   facts: { flexDirection: 'row', gap: space[4] },

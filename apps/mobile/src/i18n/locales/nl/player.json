@@ -61,7 +61,7 @@
     "locking_female": "Kiest",
     "turn": "Aan de beurt",
     "turn_female": "Aan de beurt",
-    "paused": "Gepauzeerd",
+    "paused": "Pauze",
     "thinking": "Denkt na",
     "thinking_female": "Denkt na",
     "reconnecting": "Verbindt opnieuw",
@@ -84,7 +84,7 @@
     "reactions": "Reacties"
   },
   "interfere": {
-    "button": "Verstoren",
+    "button": "Storen",
     "label": "{{name}} verstoren · kost {{cost}} ptn",
     "labelMissing": "{{name}} verstoren · {{count}} ptn tekort",
     "labelBusy": "{{name}} verstoren kan niet, wordt al verstoord",

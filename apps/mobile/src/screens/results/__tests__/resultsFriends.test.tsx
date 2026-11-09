@@ -84,6 +84,27 @@ describe('the results of a game with friends', () => {
     close();
   });
 
+  it.each([
+    ['with friends', true],
+    ['ranked', false],
+  ])('no correct move: said for a game, not "באימון הזה" (B41, B54): %s', async (_kind, isFriends) => {
+    const { session, close } = await friendsGameOver(isFriends);
+    await render(
+      <ResultsScreen
+        gameId={session.id}
+        load={(id) => Promise.resolve(loadOnlineResults(id, session))}
+        onNewGame={jest.fn()}
+        onHome={jest.fn()}
+      />,
+    );
+    await settle();
+    const best = screen.getByTestId('results-best');
+    expect(best).toHaveTextContent('לא היה לך מהלך נכון במשחק הזה', { exact: false });
+    expect(best).not.toHaveTextContent(/אימון/);
+    expect(best).toHaveProp('accessibilityLabel', 'לא היה לך מהלך נכון במשחק הזה');
+    close();
+  });
+
   it('in English too', async () => {
     await i18n.changeLanguage('en');
     const { session, close } = await friendsGameOver();
@@ -97,6 +118,9 @@ describe('the results of a game with friends', () => {
     );
     await settle();
     expect(screen.getByTestId('results-unrated')).toHaveTextContent('Game with friends · unrated');
+    expect(screen.getByTestId('results-best')).toHaveTextContent('You had no correct move in this game', {
+      exact: false,
+    });
     close();
   });
 });

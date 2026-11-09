@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../../../components/Icon';
 import { useShake } from '../../../components/player/anim';
+import { ltr } from '../../../components/player/format';
 import { Button } from '../../../components/ui/Button';
 import { Text } from '../../../components/ui/Text';
 import { color, radius, space, text, tokens } from '../../../theme';
@@ -52,7 +53,14 @@ export function ConnectionError({
   const shake = useShake(failedAttempts ?? undefined, reduce);
 
   const offline = m.failure === 'offline';
-  const title = offline ? t('connection.error.offlineTitle') : t('connection.error.title');
+  const title = offline
+    ? t('connection.error.offlineTitle')
+    : m.failure === 'expired'
+      ? t('connection.error.expiredTitle')
+      : t('connection.error.title');
+  // The code keeps its own order inside a right-to-left line (an LRI…PDI isolate: Android ignores the style's
+  // writingDirection), e.g. "ERR_NOT_FOUND · 522".
+  const code = ltr(m.code);
   const body = m.refusal
     ? t(`connection.error.refusal.${m.refusal}`)
     : t(`connection.error.body.${m.failure}`);
@@ -89,12 +97,12 @@ export function ConnectionError({
           <View style={styles.meta} testID={`${testID}-meta`}>
             <Animated.View
               accessible
-              accessibilityLabel={t('connection.error.code', { code: m.code })}
+              accessibilityLabel={t('connection.error.code', { code })}
               style={[styles.code, shake.flash && styles.codeFlash, shake.style]}
               testID={`${testID}-code`}
             >
               <View style={styles.codeDot} />
-              <Text style={styles.codeText}>{m.code}</Text>
+              <Text style={styles.codeText}>{code}</Text>
             </Animated.View>
             {failed ? (
               <View style={styles.failedChip} testID={`${testID}-attempts`}>
@@ -143,7 +151,7 @@ export function ConnectionError({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: tokens.layout.gutterHome },
   column: { alignItems: 'center', gap: space[6] },
   illustration: {

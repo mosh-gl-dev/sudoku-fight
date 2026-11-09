@@ -87,12 +87,12 @@ describe('a game of 4 on the server', () => {
     ]);
     expect(summaryOf(NINA)).toMatch(/^NinaVolt · מקום 1 · 0 נקודות · חושב/);
 
-    // NinaVolt takes a cell: her lock on my board, in her colour's shape and her name.
+    // NinaVolt takes a cell: her lock on my board, in her colour's shape and her name (8 s, said in 5-s steps: Q1).
     const c0 = cells[0] as CellIndex;
     await serverAct(g, NINA, { type: 'select', cell: c0 });
     expect(screen.getByTestId(`cell-${cellName(c0)}`)).toHaveProp(
       'accessibilityLabel',
-      `${cellName(c0)}, ריקה, נעולה על ידי NinaVolt, 8 שניות`,
+      `${cellName(c0)}, ריקה, נעולה על ידי NinaVolt, 5 שניות`,
     );
     expect(summaryOf(NINA)).toContain(`בוחר ${cellName(c0)}`);
 

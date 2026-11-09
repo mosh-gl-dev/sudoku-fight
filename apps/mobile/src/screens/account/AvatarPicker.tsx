@@ -7,6 +7,7 @@ import { Pressable, SectionList, StyleSheet, useWindowDimensions, View } from 'r
 import {
   AVATAR_GROUPS,
   AVATAR_META,
+  AVATAR_STAGES,
   type AvatarMeta,
   avatarName,
   type AvatarReaction,
@@ -23,13 +24,14 @@ import { PickerField } from './PickerField';
 /**
  * The avatar (spec §3.2 step 1, §3.4; Register-Fighter and Edit profile): a field like the name's and the
  * country's, with the chosen avatar small inside it and its name; a tap opens a tall sheet, "בחר אווטאר", with
- * all 101 in a grid, under a header for each kind (people, animals, objects…), the chosen one framed in my P1
+ * all 119 in a grid, under a header for each kind (people, animals, objects…), the chosen one framed in my P1
  * colour with a tick. A tap on another chooses it and closes the sheet; the avatar in the field greets the
  * choice with a smile and a bounce (with reduced motion only the smile). Moshe's call after the first device
  * test (14.10.2026): the big stage with its strip took too much of the screen.
  *
  * The grid is a virtualized SectionList of rows (a sheet's worth renders at first, the rest as it scrolls),
- * opening on the chosen avatar's row; each avatar in it is one still picture.
+ * opening on the chosen avatar's row; each avatar in it is one still picture, except the chosen one, which
+ * idles (AVATAR_STAGES.picker, decision 3.19).
  *
  * [D17] An avatar whose unlockLevel is above my level shows a lock and can't be chosen ("נפתח ברמה 12").
  * In V1 every unlockLevel is 0, so none is locked.
@@ -279,7 +281,10 @@ function AvatarSheet({
   );
 }
 
-/** One avatar of the grid: a radio, still, framed in my colour with a tick when it is the chosen one. */
+/**
+ * One avatar of the grid: a radio, a still picture, framed in my colour with a tick when it is the chosen one,
+ * which idles (its blink and its own moving parts, while the sheet is shown, never with reduced motion).
+ */
 const Tile = memo(function Tile({
   id,
   on,
@@ -312,6 +317,8 @@ const Tile = memo(function Tile({
         colorIndex={on ? 0 : null}
         backdrop={color.sheet.bg}
         inactive={locked}
+        // The chosen one lives (AVATAR_STAGES.picker, decision 3.19); the others stay still pictures.
+        idle={on && !locked && AVATAR_STAGES.picker}
       />
       {locked ? (
         <View style={styles.lock} testID={`${testID}-locked`}>

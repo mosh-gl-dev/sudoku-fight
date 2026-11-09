@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: space[6],
-    backgroundColor: color.bg,
   },
   waitingText: { ...text('body'), color: color.textMuted },
 });

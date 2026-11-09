@@ -121,6 +121,7 @@
     },
     "code": "Error code: {{code}}",
     "retry": "Search again",
+    "backToGame": "Back to the game",
     "verify": "Verify email",
     "practice": "Go to practice",
     "practiceNote": "Practice alone or against a bot works offline too.",

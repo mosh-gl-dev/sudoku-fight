@@ -18,13 +18,18 @@ import { OBJECTS } from './objects';
 import { OFFICE } from './office';
 import { PEOPLE } from './people';
 import { PEOPLE2 } from './people2';
+import { PIRATES } from './pirates';
 import { PLAY } from './play';
 import { SYMBOLS } from './symbols';
 
 export { ANIMALS, CREATURES, DIGITS, FOOD, HOME, NATURE, OBJECTS, OFFICE, PEOPLE, PEOPLE2, PLAY, SYMBOLS };
+// PIRATES is exported with the rest of pirates/index.ts (PIRATE_CAST, PIRATE_LOOKS) by the package's index.
 
 /** The catalog files' lists, by file name. */
 export const CATALOG_FILES: Readonly<Record<string, readonly AvatarDef[]>> = {
+  // First: its 18 symbols open that group of the picker, before objects.ts's eight and letter-a, so Moshe finds
+  // them at once (31.10.2026; pirates/). The kinds' order is AVATAR_KINDS', whatever a file's place here.
+  pirates: PIRATES,
   people: PEOPLE,
   people2: PEOPLE2,
   animals: ANIMALS,

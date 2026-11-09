@@ -2,12 +2,13 @@ import { GAME_TYPES } from '@sudoku-fight/engine';
 import type { MyProgress, RatingEntry } from '@sudoku-fight/protocol';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { leagueRating, ratingsByType } from '../../api/me';
 import { AVATAR_STAGES, type AvatarIdOrNone } from '../../avatars';
 import { Icon } from '../../components/Icon';
 import { Avatar, countryName, Flag, LeagueBadge, leagueFor, ltr, Rating } from '../../components/player';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { percent as percentText } from '../../i18n/compose';
 import { color, radius, size, space, text, tokens } from '../../theme';
@@ -194,7 +195,7 @@ export function ProfileCard({
             {i > 0 ? <View style={styles.statRule} /> : null}
             <View style={styles.stat} testID={`stat-${s.key}`}>
               <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel} numberOfLines={1}>
+              <Text style={styles.statLabel} numberOfLines={2}>
                 {s.label}
               </Text>
             </View>
@@ -205,17 +206,18 @@ export function ProfileCard({
   );
 
   if (onPress) {
+    // A tappable card (D125): the card surface (its fill, hairline, lit top and base) and the one card press.
     return (
-      <Pressable
+      <PressableCard
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityHint={tProgress('leaderboard.openHint')}
         onPress={onPress}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={styles.cardPadding}
         testID="profile-card"
       >
         {content}
-      </Pressable>
+      </PressableCard>
     );
   }
   return (
@@ -236,8 +238,12 @@ const styles = StyleSheet.create({
     padding: HOME.profileCardPadding,
     backgroundColor: color.surface,
     borderRadius: radius.card,
+    // D126: a hairline edge, so a faint ambient digit passing under the card never looks like a bump on it.
+    borderWidth: tokens.border.hairline,
+    borderColor: color.border,
   },
-  pressed: { backgroundColor: color.surface2 },
+  // The pressable card's own part: the surface comes from PressableCard.
+  cardPadding: { padding: HOME.profileCardPadding },
   identity: { flexDirection: 'row', alignItems: 'center', gap: HOME.profileCardGap },
   names: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: space[4] },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space[4], maxWidth: '100%' },
@@ -275,13 +281,16 @@ const styles = StyleSheet.create({
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
   },
+  // B8: "10 pertandingan" (Indonesian) ran past its divider into "40% menang". A label that doesn't fit beside
+  // its number goes under it, inside its third (a second line before an ellipsis).
   stat: {
     flex: 1,
     minWidth: 0,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'baseline',
     justifyContent: 'center',
-    gap: space[3],
+    columnGap: space[3],
   },
   statRule: {
     width: tokens.border.hairline,
@@ -289,5 +298,5 @@ const styles = StyleSheet.create({
     backgroundColor: color.border,
   },
   statValue: { ...text('scoreSm'), color: color.text },
-  statLabel: { ...text('caption'), color: color.textMuted },
+  statLabel: { ...text('caption'), color: color.textMuted, flexShrink: 1, textAlign: 'center' },
 });

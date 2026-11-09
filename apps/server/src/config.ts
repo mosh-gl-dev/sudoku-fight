@@ -112,12 +112,21 @@ export const DEFAULT_CHEAT_THRESHOLDS: CheatThresholds = { thinkMs: 1200, moves:
  * - `levelXpCarryOver` (LEVEL_XP_CARRY_OVER, default true) [D55]: level XP that does not fit in a day's cap is
  *   paid on a later day (the next PUT /v1/me/levels), so all of it (10,450 at most) arrives in the end; false:
  *   what does not fit is lost, as practice XP is. Absent when the variable is not set (the default applies).
+ * - `friendsPlaces` (FRIENDS_PLACES, default 'global') [D99]: the places on the friends tab. 'global' (D99 as
+ *   approved): each opponent's place on the general board of people, a persona the place it would have had
+ *   there. 'among' (QA loop 7, awaiting Moshe's OK): places among the listed opponents and me, "1224".
+ *   Absent when the variable is not set (the default applies).
  */
 export interface ProgressConfig {
   practiceXpDailyCap: number;
   inviteUrl: string | null;
   levelXpCarryOver?: boolean;
+  friendsPlaces?: FriendsPlaces;
 }
+
+/** The places on the friends tab [D99]: see ProgressConfig. */
+export type FriendsPlaces = 'global' | 'among';
+export const DEFAULT_FRIENDS_PLACES: FriendsPlaces = 'global';
 
 export const DEFAULT_PRACTICE_XP_DAILY_CAP = 1500;
 export const DEFAULT_LEVEL_XP_CARRY_OVER = true;
@@ -329,7 +338,7 @@ export interface ServerConfig {
    * server's own check. Development tokens count as verified: they are taken only outside production.
    */
   rankedRequiresVerifiedEmail: boolean;
-  /** PRACTICE_XP_DAILY_CAP and INVITE_URL (stage 12); LEVEL_XP_CARRY_OVER (1.0.2). */
+  /** PRACTICE_XP_DAILY_CAP and INVITE_URL (stage 12); LEVEL_XP_CARRY_OVER (1.0.2); FRIENDS_PLACES [D99]. */
   progress: ProgressConfig;
   /** SENTRY_DSN and the rest (stage 14), or null: no error reports leave the server. */
   sentry: SentryConfig | null;
@@ -468,6 +477,10 @@ const envSchema = z.object({
       .enum(['true', 'false', '1', '0'], { error: 'expected true or false' })
       .optional()
       .transform((v) => (v === undefined ? undefined : v === 'true' || v === '1')),
+  ),
+  FRIENDS_PLACES: z.preprocess(
+    (v) => (typeof v === 'string' ? (v.trim() === '' ? undefined : v.trim().toLowerCase()) : v),
+    z.enum(['global', 'among'], { error: 'expected global or among' }).optional(),
   ),
   INVITE_URL: z.preprocess(
     (v) => (typeof v === 'string' ? (v.trim() === '' ? undefined : v.trim()) : v),
@@ -908,6 +921,7 @@ export function loadConfig(
       practiceXpDailyCap: e.PRACTICE_XP_DAILY_CAP,
       inviteUrl: e.INVITE_URL ?? null,
       ...(e.LEVEL_XP_CARRY_OVER === undefined ? {} : { levelXpCarryOver: e.LEVEL_XP_CARRY_OVER }),
+      ...(e.FRIENDS_PLACES === undefined ? {} : { friendsPlaces: e.FRIENDS_PLACES }),
     },
     sentry:
       e.SENTRY_DSN === undefined

@@ -6,7 +6,15 @@ import { useSettings } from '../../../state/settings';
 import { auditA11y } from '../../../testing/a11yAudit';
 import { color } from '../../../theme';
 import { motion } from '../../../theme/motion';
-import { Skeleton, SKELETON_OPACITY, SkeletonCard, SkeletonGroup, SkeletonRows } from '../Skeleton';
+import { ltr } from '../../player/format';
+import {
+  Skeleton,
+  SKELETON_OPACITY,
+  SKELETON_PULSE,
+  SkeletonCard,
+  SkeletonGroup,
+  SkeletonRows,
+} from '../Skeleton';
 import { supportCodeOf } from '../stateModel';
 import { StateView } from '../StateView';
 import { directionProblems } from '../testing/layout';
@@ -88,9 +96,10 @@ describe('StateView', () => {
       />,
     );
     const code = screen.getByTestId('offline-code');
-    expect(code).toHaveAccessibleName('קוד שגיאה: unavailable-503');
-    expect(code).toHaveTextContent('unavailable-503');
-    expect(styleOf(screen.getByText('unavailable-503'))).toMatchObject({
+    // Plainly a code, in an LTR isolate (connection-error-english-chip).
+    expect(code).toHaveAccessibleName(`קוד שגיאה: ${ltr('ERR_UNAVAILABLE · 503')}`);
+    expect(code).toHaveTextContent(ltr('ERR_UNAVAILABLE · 503'));
+    expect(styleOf(screen.getByText(ltr('ERR_UNAVAILABLE · 503')))).toMatchObject({
       writingDirection: 'ltr',
       color: color.textFaint,
     });
@@ -131,7 +140,7 @@ describe('StateView', () => {
         testID="error"
       />,
     );
-    expect(screen.getByTestId('error-code')).toHaveAccessibleName('Error code: internal-500');
+    expect(screen.getByTestId('error-code')).toHaveAccessibleName(`Error code: ${ltr('ERR_INTERNAL · 500')}`);
     expect(announce).toHaveBeenCalledWith('Something went wrong. Try again in a moment.');
   });
 });
@@ -152,7 +161,6 @@ describe('Skeleton (motion.md skeleton)', () => {
   });
 
   it('the blocks are the skeleton colour, and pulse 0.5 ↔ 1 over 1200 ms', async () => {
-    jest.useFakeTimers();
     await render(
       <SkeletonGroup label="loading">
         <Skeleton height={20} testID="block" />
@@ -160,15 +168,14 @@ describe('Skeleton (motion.md skeleton)', () => {
     );
     const block = screen.getByTestId('block', hidden);
     expect(styleOf(block)).toMatchObject({ backgroundColor: color.skeleton.base });
+    // A CSS animation from the low end (Reanimated runs it natively; under Jest only its config is there).
     expect(block).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.low });
-    await act(async () => {
-      jest.advanceTimersByTime(motion.loop.skeleton / 2);
+    expect(StyleSheet.flatten(block.props.jestInlineStyle as ViewStyle)).toMatchObject(SKELETON_PULSE);
+    expect(SKELETON_PULSE).toMatchObject({
+      animationDuration: motion.loop.skeleton / 2,
+      animationDirection: 'alternate',
+      animationIterationCount: 'infinite',
     });
-    expect(block).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.high });
-    await act(async () => {
-      jest.advanceTimersByTime(motion.loop.skeleton / 2);
-    });
-    expect(block).toHaveAnimatedStyle({ opacity: SKELETON_OPACITY.low });
   });
 
   it('reduced motion: no pulse and no shimmer, the blocks stand still at 0.7', async () => {

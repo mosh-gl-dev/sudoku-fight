@@ -57,6 +57,9 @@
     "title": "เกมใหม่",
     "footnote": "แรงก์ต้องใช้อินเทอร์เน็ต · ฝึกซ้อมได้ตลอด",
     "soon": "เร็วๆ นี้",
+    "needsConnection": {
+      "rankedAndFriends": "แรงก์และเล่นกับเพื่อน"
+    },
     "groups": {
       "ranked": {
         "title": "แรงก์",

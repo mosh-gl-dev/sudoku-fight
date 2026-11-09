@@ -48,7 +48,7 @@ export function PlaceholderScreen({ tab }: { tab: PlaceholderTab }) {
 const ICON_BOX = size.touch + space[6];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: { paddingHorizontal: GUTTER.home, paddingTop: space[8], paddingBottom: space[12], gap: space[12] },
   title: { ...text('screenTitle'), color: color.text },
   card: {

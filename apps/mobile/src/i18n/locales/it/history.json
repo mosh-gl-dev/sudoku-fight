@@ -71,7 +71,7 @@
     "hint": "Apre il replay"
   },
   "results": {
-    "replay": "Guarda il replay",
+    "replay": "Rivedi",
     "replayHint": "La partita dall’inizio, passo dopo passo, con ogni mossa spiegata",
     "rating": {
       "title": "Variazione del punteggio · {{type}}",

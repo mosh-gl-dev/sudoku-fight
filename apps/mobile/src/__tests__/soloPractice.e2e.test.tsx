@@ -5,7 +5,6 @@ import {
   type CellIndex,
   cellName,
   type Digit,
-  formatScoreLine,
   type GameEvent,
   ManualClock,
   ManualScheduler,
@@ -310,10 +309,16 @@ describe('solo practice, end to end (work plan stage 4)', () => {
     expect(screen.getByTestId('results-score')).toHaveTextContent(scoreText(me.score));
     expect(screen.getByLabelText('טעויות: 1')).toBeOnTheScreen();
     expect(screen.getByLabelText(`מהלכים נכונים: ${empty.length}`)).toBeOnTheScreen();
-    // The move of the game: the best points of the log, with the engine's calculation line.
+    // The move of the game: the best points of the log, told by the engine's counts (no raw formula line).
     const best = view.result!.stats[0]!.bestMove!;
     expect(best.points).toBe(Math.max(...points));
-    expect(screen.getByTestId('results-best-line')).toHaveTextContent(ltr(formatScoreLine(best.breakdown)));
+    expect(screen.getByTestId('results-best-why')).toHaveTextContent(/במשקל מלא, ו.+ בחצי משקל\.$/);
+    expect(screen.getByTestId('results-best')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringContaining(
+        `${best.breakdown.row} בשורה, ${best.breakdown.col} בטור, ${best.breakdown.box} בריבוע`,
+      ),
+    );
     expect(screen.getByTestId('results-best')).toHaveProp(
       'accessibilityLabel',
       expect.stringContaining(`${best.digit} ב־${ltr(cellName(best.cell))}`),
@@ -375,12 +380,9 @@ describe('solo practice, end to end (work plan stage 4)', () => {
     await screen.findByTestId('results-score');
     expect(resultsShown()).toEqual(first.results);
 
-    // "משחק חדש": the game type again, "מהיר" chosen. The same seed, but the puzzle just played is in the
+    // "משחק חדש": the same practice at once (UX-2), "מהיר". The same seed, but the puzzle just played is in the
     // history (spec §20), so another one comes.
     await fireEvent.press(screen.getByRole('button', { name: 'משחק חדש' }));
-    await waitFor(() => expect(run.pathname()).toBe('/game-type'));
-    expect(await screen.findByTestId('type-fast')).toHaveProp('accessibilityState', { checked: true });
-    await fireEvent.press(screen.getByRole('button', { name: 'התחל אימון' }));
     const { session, puzzle } = await gameOpened(run);
     expect(session.gameType).toBe('fast');
     expect(session.puzzleId).not.toBe(first.puzzleId);

@@ -62,6 +62,7 @@ describe('the catalog', () => {
   it('joins every catalog file, grouped by kind in AVATAR_KINDS order', () => {
     const files = Object.values(CATALOG_FILES);
     expect(Object.keys(CATALOG_FILES)).toEqual([
+      'pirates',
       'people',
       'people2',
       'animals',
@@ -125,6 +126,7 @@ describe('the catalog', () => {
   });
 });
 
+// The Pirates series (catalog/pirates/) is in AVATARS since 31.10.2026: the same checks as every character.
 describe.each([...AVATARS, ...FIXTURES].map((a) => [a.id, a] as const))('avatar %s', (_, a) => {
   it('has a Hebrew and an English name', () => {
     expect(a.name.he.trim()).not.toBe('');

@@ -108,7 +108,9 @@ describe('design-system sections', () => {
     expect(within(screen.getByTestId('opponent-bot')).queryByTestId('interfere')).toBeNull();
     // [D45] The target specimen: framed, "יעד"; no drag specimens any more.
     const targeted = screen.getByTestId('opponent-targeted');
-    expect(within(screen.getByTestId('target-frame')).getByText('יעד', hidden)).toBeTruthy();
+    expect(
+      within(screen.getByTestId('target-frame')).getByTestId('target-chip-label', hidden),
+    ).toHaveTextContent('יעד');
     expect(targeted).toBeTruthy();
     expect(screen.queryByTestId('opponent-dropTarget')).toBeNull();
     // The button's states: the word "הפרעה" only, blocked ones dimmed but still answering a tap.
@@ -128,7 +130,7 @@ describe('design-system sections', () => {
     expect(screen.getByLabelText(/^MosheG מוביל ב־/)).toBeTruthy();
     // NinaVolt leads when I am behind, and when my score is under zero.
     expect(screen.getAllByLabelText(/^NinaVolt מובילה ב־/)).toHaveLength(2);
-    expect(screen.getByLabelText('המשבצת שלך F8, נותרו 7 שניות')).toBeTruthy();
+    expect(screen.getByLabelText('המשבצת שלך F8, נותרו 5 שניות')).toBeTruthy(); // 7 s, in 5-s steps (Q1)
     expect(screen.getByLabelText('המשבצת שלך F8, הטיימר עצור')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('nudge'));
   });
@@ -142,7 +144,7 @@ describe('design-system sections', () => {
     // The demo board (the close-ups under it have cells of their own).
     const board = () => within(screen.getByTestId('ds-board'));
     expect(screen.getByTestId('ds-clock')).toHaveTextContent('שעון המשחק: 16 שניות');
-    expect(board().getByRole('button', { name: /^F8, ריקה, נעולה אצלך, 7 שניות/ })).toBeTruthy();
+    expect(board().getByRole('button', { name: /^F8, ריקה, נעולה אצלך, 5 שניות/ })).toBeTruthy(); // 7 s (Q1)
 
     await fireEvent.press(board().getByTestId(`cell-${empty.name}`));
     expect(board().getByRole('button', { name: `${empty.name}, ריקה, ממתינה לאישור הנעילה` })).toBeTruthy();

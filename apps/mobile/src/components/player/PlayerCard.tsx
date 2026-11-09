@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -13,13 +13,23 @@ import { type CardModel, type InterferenceModel, sameCard } from './cardModel';
 import { CardIconButton } from './CardIconButton';
 import { Flag } from './Flag';
 import { InterferenceButton } from './InterferenceButton';
-import { metrics, paletteAt } from './metrics';
+import { AVATAR_SIZES, metrics, paletteAt } from './metrics';
 import { Rating } from './Rating';
 import { sameProps, sameStyle } from './sameProps';
 import { DeltaLabel, type ScoreDelta, ScoreNumber } from './Score';
 import { SeatGlyph } from './SeatGlyph';
+import {
+  interfereWordFits,
+  mistakesFitIn,
+  mistakesProbes,
+  opponentProbes,
+  opponentWidths,
+  useProbeWidths,
+  WidthProbes,
+  widthsOf,
+} from './statusFit';
 import { cardOpacity, TargetFrame, useCardOpacity } from './TargetFrame';
-import { cardLabel, displayName, type Gender } from './wording';
+import { cardLabel, displayName, type Gender, mistakesShort } from './wording';
 
 export interface PlayerCardActions {
   onSurrender?: () => void;
@@ -48,9 +58,11 @@ export interface PlayerCardProps extends PlayerCardActions {
   delta?: ScoreDelta | null;
   /**
    * A bot's level (Game-Bot: "בוט · חד"), in the rating's place under the name, as the bot has no rating:
-   * `text` drawn ("3 · מתקדם"), `label` said after "בוט" ("רמה 3, מתקדם").
+   * `text` drawn ("3 · מתקדם"), `label` said after "בוט" ("רמה 3, מתקדם"). `shorter`: what the chip shows, in
+   * this order, where `text` is wider than the room under the name at full size ("Advanced", then "3"): the chip
+   * never ends in "…" (QA loop 9, 360 dp at font 1.3: "3 • Adva…"). Its label stays whole.
    */
-  botLevel?: { text: string; label: string } | null;
+  botLevel?: { text: string; label: string; shorter?: readonly string[] } | null;
   /** Keep the delta on screen instead of fading it (design-system page). */
   persistentDelta?: boolean;
   /** Another card is the interference picker's target (§3.4). */
@@ -61,6 +73,10 @@ export interface PlayerCardProps extends PlayerCardActions {
   interferenceExpanded?: boolean;
   /** My reactions picker is open. */
   reactionsExpanded?: boolean;
+  /** The card's width where the screen is too narrow for two of 159 (duelCardWidth); default 159. */
+  width?: number;
+  /** Room the name block keeps on the card's inner side, clear of the VS badge between the cards (vsInset). */
+  innerInset?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -88,6 +104,8 @@ export const PlayerCard = memo(function PlayerCard({
   onReactions,
   onInterfere,
   onInterfereBlocked,
+  width,
+  innerInset = 0,
   style,
   testID,
 }: PlayerCardProps) {
@@ -98,9 +116,41 @@ export const PlayerCard = memo(function PlayerCard({
   const name = displayName(model, t);
   const fade = useCardOpacity(cardOpacity(dimmed, model.out !== null));
 
+  // The status row's words at their full size, or not at all (statusFit, QA loop 6): measured on the phone, as
+  // designed until then. My mistakes become the mark and the count; "הפרעה" its icon.
+  const cardWidth = width ?? size.playerCard.width;
+  const [measured, onMeasured] = useProbeWidths();
+  const mistakeWords = model.isMe ? mistakesShort(model.mistakes, t) : null;
+  const probes =
+    mistakeWords !== null
+      ? mistakesProbes(mistakeWords)
+      : model.interference
+        ? opponentProbes(t, gender)
+        : [];
+  // A new count's words are measured anew: until then the form stays as it was (no flash of the other one).
+  const [lastMistakesFit, setLastMistakesFit] = useState(true);
+  const mistakesFit = mistakeWords !== null ? mistakesFitIn(cardWidth, probes, measured) : null;
+  if (mistakesFit !== null && mistakesFit !== lastMistakesFit) setLastMistakesFit(mistakesFit);
+  const mistakesMark = !(mistakesFit ?? lastMistakesFit);
+  const opponentWords = mistakeWords === null ? opponentWidths(probes, measured) : null;
+  const interfereIconOnly = opponentWords !== null && !interfereWordFits(cardWidth, opponentWords);
+  const inner =
+    innerInset > 0 ? (mirrored ? { paddingStart: innerInset } : { paddingEnd: innerInset }) : null;
+  // A bot's level chip: its longest form that fits under the name at full size (botLevelForm).
+  const levelForms = model.isBot && botLevel ? [botLevel.text, ...(botLevel.shorter ?? [])] : [];
+  const levelProbes = levelForms.map((form, i) => ({
+    id: `bot-level-${i}`,
+    text: form,
+    style: text('micro'),
+  }));
+  const levelText = botLevel
+    ? botLevelForm(levelForms, widthsOf(levelProbes, measured), levelChipRoom(cardWidth, innerInset))
+    : null;
+  const allProbes = levelProbes.length > 0 ? [...probes, ...levelProbes] : probes;
+
   return (
     <TargetFrame targeted={targeted} style={style}>
-      <Animated.View style={[styles.card, fade]} testID={testID}>
+      <Animated.View style={[styles.card, width !== undefined && { width }, fade]} testID={testID}>
         <View
           accessible
           accessibilityRole="text"
@@ -108,7 +158,7 @@ export const PlayerCard = memo(function PlayerCard({
           accessibilityHint={targeted ? t('card.targetHint') : undefined}
           testID={testID ? `${testID}-summary` : undefined}
         >
-          <View style={[row, styles.identity]}>
+          <View style={[row, styles.identity, inner]} testID={testID ? `${testID}-identity` : undefined}>
             <View>
               <Avatar
                 avatarId={avatarId}
@@ -127,7 +177,7 @@ export const PlayerCard = memo(function PlayerCard({
               <View style={[row, styles.nameRow]}>
                 <View style={[row, styles.glyphName]}>
                   <SeatGlyph colorIndex={model.colorIndex} size={metrics.glyph.name} />
-                  <Text style={[text('playerName'), styles.name]} numberOfLines={1}>
+                  <Text scale="hud" style={[text('playerName'), styles.name]} numberOfLines={1}>
                     {name}
                   </Text>
                 </View>
@@ -137,8 +187,13 @@ export const PlayerCard = memo(function PlayerCard({
                 <Rating value={model.rating} size="card" decorative />
               ) : model.isBot && botLevel ? (
                 <View style={styles.levelChip} testID={testID ? `${testID}-bot-level` : undefined}>
-                  <Text style={[text('micro'), styles.levelText]} numberOfLines={1}>
-                    {botLevel.text}
+                  <Text
+                    scale="hud"
+                    style={[text('micro'), styles.levelText]}
+                    numberOfLines={1}
+                    testID={testID ? `${testID}-bot-level-text` : undefined}
+                  >
+                    {levelText}
                   </Text>
                 </View>
               ) : null}
@@ -165,7 +220,7 @@ export const PlayerCard = memo(function PlayerCard({
 
         <View style={[row, styles.statusRow]}>
           {model.isMe ? (
-            <MistakesText count={model.mistakes} />
+            <MistakesText count={model.mistakes} mark={mistakesMark} />
           ) : (
             <ActivityLine activity={model.activity} colorIndex={model.colorIndex} gender={gender} />
           )}
@@ -197,16 +252,47 @@ export const PlayerCard = memo(function PlayerCard({
               name={name}
               state={model.interference}
               expanded={interferenceExpanded}
+              iconOnly={interfereIconOnly}
               onPress={onInterfere}
               onBlockedPress={onInterfereBlocked}
               testID="interfere"
             />
           ) : null}
         </View>
+        {allProbes.length > 0 ? <WidthProbes probes={allProbes} onWidth={onMeasured} /> : null}
       </Animated.View>
     </TargetFrame>
   );
 }, samePlayerCard);
+
+/**
+ * The room a bot's level chip has for its words: the card less the avatar, the gap beside it and the room kept clear
+ * of the VS badge (the name block's width), less the chip's own padding and border.
+ */
+export function levelChipRoom(cardWidth: number, innerInset: number): number {
+  return (
+    cardWidth -
+    AVATAR_SIZES.card.frame -
+    card.headerGap -
+    innerInset -
+    2 * metrics.card.levelChipPaddingX -
+    2 * tokens.border.hairline
+  );
+}
+
+/**
+ * The first of `forms` (the whole tag, then the shorter ones) whose measured width fits `room`; the shortest where
+ * none does; the whole tag until they are measured (as before).
+ */
+export function botLevelForm(
+  forms: readonly string[],
+  widths: readonly number[] | null,
+  room: number,
+): string {
+  if (widths === null) return forms[0] ?? '';
+  const i = widths.findIndex((w) => w <= room);
+  return forms[i >= 0 ? i : forms.length - 1] ?? '';
+}
 
 /**
  * The avatar is greyed for a player who is out, reconnecting (the grace) or gone; never in the soft phase of a

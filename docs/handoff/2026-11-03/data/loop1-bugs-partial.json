@@ -1,0 +1,20 @@
+[
+ {
+  "taskId": "general-ambient-screen-change",
+  "title": "T3-FIRST-PLAY-SLOW still: the first 'שחק' after a cold start waits about 0.55 s before the first frame (apk6)",
+  "what": "Phone 1 SM-A165F, build 1.1.0 (06.11 18:25, K1 fix + Reanimated patch). Steps: adb shell am force-stop com.mosheg.sudokufight; launch; wait 6–12 s on Home (longer than the ~1.2 s warm-up); adb shell dumpsys gfxinfo com.mosheg.sudokufight reset; input tap on 'שחק' (541,1449); dump framestats. 4 runs: press frames up to ~85 ms after the tap, then no frame at all until 533, 545, 552 and 606 ms. The first 'משחק חדש' frames take 75–159 ms, and the fade ends ~0.7–0.8 s after the tap. The fix check expected the first frame at ~250–300 ms and the end at ~0.45–0.55 s. The second and later visits in the same process are fine: first frame at 270–320 ms, ~0.45 s in total. 0 synchronouslyUpdateUIProps failures, no Skipped/Davey. So the warm-up does not seem to cover what makes the first New Game mount slow.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-puzzle-solved",
+  "title": "במסך התוצאה של פאזל חסרה השורה של מספר ההחלפות והמינימום",
+  "what": "טלפון 1, SM-A165F, ‏1.1.0 (06.11 18:25, K1 fix + Reanimated patch), בעברית. צעדים: אימון בשלבים ← L034 (פאזל) ← פותרים ב־3 החלפות. אפשר גם להחליף פעם אחת לא נכון ואז לפתור. בתוצאה מופיעים 'שלב 34 הושלם', הכוכבים, הזמן (48.1 / 45.4 ש׳), 'שיא חדש!', ‏+10 XP, 'בפרק הזה', 'בלי טעויות' או '2 טעויות' ו'למה?'. אין את השורה 'N החלפות · המינימום M' שהאפיון מצפה לה. בקוד, ‏puzzleSwapsText ב־apps/mobile/src/screens/levels/levelWording.ts והמפתח result.swaps קיימים, ויש להם בדיקות, אבל אף מסך לא מציג אותם (LevelResultView לא משתמש בהם).",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-puzzle-fixed",
+  "title": "הקשה על ריבוע קבוע בפאזל לא מציגה שום הודעה",
+  "what": "טלפון 1, SM-A165F, ‏1.1.0 (apk6), בעברית. צעדים: L034 ← מקישים על ריבוע אפור עם מנעול. על המסך לא מופיעה שום הודעה (צילום כשנייה אחרי ההקשה). ב־PuzzleLevelScreen.tsx הפונקציה onFixed קוראת רק ל־announce(t('hud.puzzle.fixedTap')), והטקסט נכתב לאזור חי שקוף (level-live, לקורא מסך). לכן משתמש בלי TalkBack לא מקבל שום משוב. עזיבה של ריבוע על ריבוע קבוע עובדת: הגרור חוזר למקומו.",
+  "severity": "minor"
+ }
+]

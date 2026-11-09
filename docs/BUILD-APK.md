@@ -91,7 +91,7 @@ npm run version:bump
 **‏APK ‏1.0.4 (משחק עם חברים) הוא בנייה מלאה, עם שינוי native:**
 - **למה:** הקישור לחדר (`https://<השרת>/r/<code>`) פותח את האפליקציה דרך Android App Links, שמוגדרים בתוך האפליקציה (`intentFilters` עם `autoVerify` ב־`app.config.ts`), ו"העתק קוד" צריך ספרייה חדשה (`expo-clipboard`). לכן הסקריפט בונה מחדש את החלק ה־native: כתובת השרת נכנסה לרשימת הקבצים שהוא בודק (`nativeInputs`), כי ה־`intentFilters` נבנים ממנה. הבנייה ארוכה יותר, ותופסת יותר מקום בכונן C (למטה, "כשהדיסק מלא").
 - **קודם השרת:** ‏Staging עם השרת של 1.0.4 (ה־migration ‏0009 רץ לבד). בודקים בדפדפן ש־`https://sudoku-fight-staging.fly.dev/r/123456` מציג את הדף "הוזמנת למשחק", ו־`/.well-known/assetlinks.json` מחזיר JSON. רק אחר כך `npm run apk`.
-- **הקישור פותח את ה־APK מהמחשב** מול Staging, כי מפתח הבדיקות שלו נמצא ב־`assetlinks.json` של Staging (רק שם). APK מהענן (EAS) צריך גם את ה־SHA-256 של מפתח EAS בשרת (`docs/MOSHE-TODO.md`, ‏B8). בטלפון: `adb shell pm get-app-links com.mosheg.sudokufight` צריך להראות `verified`.
+- **הקישור פותח את ה־APK מהמחשב** מול Staging, כי המפתח הפרטי של המחשב נמצא ב־`assetlinks.json` של Staging (‏`ANDROID_APP_LINK_SHA256` ב־`fly.toml`). APK מהענן (EAS) צריך גם את ה־SHA-256 של מפתח EAS בשרת (`docs/MOSHE-TODO.md`, ‏B8). בטלפון: `adb shell pm get-app-links com.mosheg.sudokufight` צריך להראות `verified`.
 - **‏`--server local`** (שרת במחשב, ב־http): בלי `autoVerify`, כי שם App Links לא יכול להיות מאומת. הקישור נפתח בדפדפן, ו"פתח באפליקציה" עובד.
 - **הבוט הסמוי** (אפיון 9.1) הוא שרת בלבד: אין בשבילו APK.
 
@@ -135,11 +135,40 @@ npm run version:bump
 3. בפעם הראשונה הטלפון שואל אם לאשר התקנה "ממקור לא ידוע". מאשרים.
 4. אם Play Protect מזהיר: "פרטים נוספים", ואז "התקן בכל זאת". זו האפליקציה שלך, היא פשוט לא מהחנות.
 
+## המפתח הפרטי של המחשב (מ־30.10.2026)
+
+ה־APK מהמחשב חתום במפתח פרטי, שנמצא רק במחשב הזה: `C:\Users\mosheg\.sudoku-fight\apk-key\` (שני קבצים: `sudoku-fight-apk.p12` ו־`password.txt`). הוא מחוץ לפרויקט, ולכן אף פעם לא נכנס ל־git.
+
+- **פעם אחת בכל מחשב:** `npm run apk -- --key` יוצר את המפתח ומדפיס את טביעות האצבע שלו: SHA-1 בשביל Firebase, ו־SHA-256 בשביל `fly.toml`. אם המפתח כבר קיים, הפקודה רק מדפיסה אותן, ולעולם לא מחליפה אותו.
+- **גיבוי:** שומרים עותק של שני הקבצים במנהל הסיסמאות. בלי המפתח, ה־APK הבא ייחתם במפתח אחר, וכל טלפון יצטרך להסיר את האפליקציה פעם אחת.
+- **למה לא מפתח הבדיקות של React Native, כמו קודם:** הוא ציבורי, וזהה בכל פרויקט. כל עוד Firebase מכיר אותו, כל אחד יכול לבנות אפליקציה מזויפת עם השם של המשחק, ולקבל דרכה כניסות עם Google. לכן הבנייה לחנות מסרבת לרוץ כשהוא רשום ב־Firebase.
+- **"המשך עם Google"** מופיע ב־APK רק כש־Firebase מכיר את ה־SHA-1 של המפתח הפרטי (לפי `google-services.json` שבמחשב).
+- בסוף כל בנייה הסקריפט בודק, עם `apksigner`, שה־APK באמת חתום במפתח הזה.
+
+### APK שייחתם מחדש במפתח אחר (`--resign-sha1`, טלפוני הבדיקות)
+
+בטלפוני הבדיקות (QA) מותקנת אפליקציה שחתומה במפתח הבדיקות של React Native (‏`apps\mobile\android\app\debug.keystore`, ‏SHA-1 ‏`5E:8F:16:…:F6:25`). כדי שה־APK יתעדכן מעליה בלי למחוק נתונים, חותמים כל APK מהמחשב מחדש, עם `apksigner`, באותו מפתח.
+
+הבעיה: "המשך עם Google" מוצג רק כש־Firebase מכיר את המפתח שהאפליקציה **מותקנת** איתו. בלי האפשרות הזו, `app.config.ts` בודק את המפתח הפרטי של המחשב. Firebase לא מכיר אותו, ולכן Google כבוי, גם אחרי החתימה מחדש, כשהוא כבר היה עובד.
+
+הפתרון: אומרים לבנייה מראש באיזה מפתח ה־APK ייחתם מחדש:
+
+```powershell
+npm run apk -- --resign-sha1 debug
+```
+
+- `debug` הוא קיצור למפתח הבדיקות של React Native. אפשר גם לכתוב SHA-1 מלא, עם נקודתיים או בלעדיהן.
+- הבנייה עצמה עדיין חתומה במפתח הפרטי, ו־`apksigner` עדיין בודק את זה. רק `SF_LOCAL_APK_SHA1`, מה ש־`app.config.ts` שואל, הוא ה־SHA-1 שנתתם.
+- Google יופיע רק אם `google-services.json` מכיר את המפתח הזה.
+- **אחרי הבנייה חייבים לחתום מחדש** באותו מפתח, ורק אז להתקין. לכן האפשרות לא עובדת עם `--install` או `--install-only`: הסקריפט מסרב, ובסוף הבנייה מזכיר לחתום.
+- הבנייה לחנות (EAS) לא מושפעת: היא לא קוראת את המשתנה, וממשיכה לסרב לרוץ כש־Firebase מכיר את מפתח הבדיקות (`assertStoreBuildWithoutDebugKey`).
+- גם בגרסה בלי Google, חשבון שנכנס רק עם Google לא נתקע: "מחיקת חשבון" אומר שהמחיקה דורשת כניסה עם Google, ושאפשר למחוק אותו באפליקציה מהחנות. הוא לא מבקש סיסמה שאין לחשבון.
+
 ## למה APK מהמחשב ו־APK מהענן לא מחליפים זה את זה
 
 כל APK **חתום** במפתח, כמו חותמת. אנדרואיד מעדכן אפליקציה רק כשהחותמת של הגרסה החדשה זהה לזו שכבר בטלפון.
 
-- APK **מהמחשב** חתום במפתח בדיקות, שנמצא במחשב.
+- APK **מהמחשב** חתום במפתח הפרטי של המחשב (למעלה). APK מלפני 30.10.2026 חתום במפתח הבדיקות הישן, ולכן גם אותו מסירים פעם אחת.
 - APK **מהענן** (EAS) חתום במפתח ש־Expo שומרת אצלה.
 - הגרסה **מהחנות** חתומה במפתח של Google.
 
@@ -180,7 +209,8 @@ npm run version:bump
 | `Could not move android/.gradle aside` | תוכנה אחרת מחזיקה את הקבצים, בדרך כלל Android Studio. סוגרים אותה ומריצים שוב. |
 | `No phone found` | הכבל מחובר? "ניפוי באגים ב־USB" דולק? יש כבלים שרק מטעינים. |
 | `unauthorized` | פותחים את נעילת הטלפון ומאשרים "לאפשר ניפוי באגים ב־USB?". |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | בטלפון יש גרסה מהענן. ראו "למה APK מהמחשב ו־APK מהענן לא מחליפים זה את זה". |
+| `cannot build: no signing key on this PC` | ‏`npm run apk -- --key` (פעם אחת), או מחזירים את שני הקבצים מהגיבוי ל־`C:\Users\mosheg\.sudoku-fight\apk-key\`. ראו "המפתח הפרטי של המחשב". |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | בטלפון יש גרסה שחתומה במפתח אחר: מהענן, מהחנות, או APK מלפני 30.10.2026. ראו "למה APK מהמחשב ו־APK מהענן לא מחליפים זה את זה". |
 | `INSTALL_FAILED_USER_RESTRICTED` | הטלפון חסם. ב־Xiaomi: להדליק "Install via USB" באפשרויות המפתחים. ב־Samsung: לכבות את Auto Blocker. |
 
 ## כל האפשרויות
@@ -200,12 +230,14 @@ npm run apk -- --help
 | `--clean-native` | בונה את תיקיית `android` מאפס. |
 | `--verbose` | מציג את כל הפלט של Gradle, לא רק סיכום. |
 | `--dry-run` | רק מדפיס מה ייבנה, בלי לבנות. לא עובד עם `--install-only` או `--clean-only`. |
+| `--key` | בלי לבנות: יוצר את המפתח הפרטי אם אין, ומדפיס את טביעות האצבע שלו. רק לבד. |
+| `--resign-sha1 <sha1\|debug>` | ה־APK ייחתם מחדש אחרי הבנייה במפתח אחר: Google מוצג לפי המפתח הזה. לא עם `--install` או `--install-only`. ראו "APK שייחתם מחדש במפתח אחר". |
 
 ## לבעלי מקצוע
 
 - הסקריפט: `apps/mobile/scripts/build-apk.mjs`. החלקים בלי קלט/פלט ב־`apps/mobile/scripts/lib/build-apk.mjs`, והבדיקות ב־`apps/mobile/src/__tests__/buildApk.test.ts`.
 - השרת נקרא מ־`env` של הפרופיל ב־`apps/mobile/eas.json` (‏`preview` או `production`), כך שהבנייה במחשב והבנייה בענן לא מתפצלות. Metro מכניס את משתני `EXPO_PUBLIC_*` לקוד בזמן הבנייה. קובצי `.env` לא נקראים (`EXPO_NO_DOTENV`), כדי ש־`.env.local` של `dev:lan` לא יחליט לאיזה שרת ה־APK מתחבר.
-- החתימה: התבנית של Expo חותמת release במפתח ה־debug שהיא שמה ב־`android/app/debug.keystore`. הסקריפט מוודא את זה ב־`android/app/build.gradle` לפני כל בנייה.
+- החתימה: המפתח הפרטי מגיע ל־Gradle כ־"injected signing" (‏`android.injected.signing.*`, כמו "Generate Signed APK" של Android Studio), במשתני סביבה `ORG_GRADLE_PROJECT_*`. כך הסיסמה לא בשורת הפקודה ולא ב־`last-build.log`. זה גובר על ה־`signingConfig` של התבנית (מפתח ה־debug הציבורי). אחרי הבנייה `apksigner verify --print-certs` מוודא שה־SHA-256 של החותם הוא של המפתח הפרטי. ה־SHA-1 עובר ל־`app.config.ts` ב־`SF_LOCAL_APK_SHA1`, שנקרא מחדש בכל ריצה של Gradle (דרך expo-constants). עם `--resign-sha1` עובר במקומו ה־SHA-1 של המפתח שיחתום מחדש (`localApkEnv` ב־`lib/build-apk.mjs`).
 - `expo prebuild` רץ רק כשמשהו ב"שלד" השתנה: התלויות ב־`package.json` והגרסאות שמותקנות בפועל (גם כשרק `package-lock.json` השתנה), ‏`app.json` והקבצים שהוא מפנה אליהם (אייקונים, מסך פתיחה, גופנים), ‏`app.config.ts`, התוספים ב־`apps/mobile/plugins`, קובץ Firebase, הגרסאות של Expo ו־React Native, או `--server local`. טביעת האצבע נשמרת ב־`android/.sf-prebuild-hash`. ב־Expo 57 כל prebuild (גם בלי `--clean`) כותב את תיקיית `android` מחדש, ומוחק את כל מה שנבנה בה. לכן כשאין שינוי הוא לא רץ בכלל, וכשיש, הוא רץ עם `--clean`.
 - בבנייה במחשב, `app.config.ts` מוסיף דברים שלא קיימים בענן:
   - `plugins/with-local-native-build.js`:

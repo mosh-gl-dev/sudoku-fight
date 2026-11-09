@@ -241,11 +241,12 @@ it('"סיום אימון" → "כן, לסיים" against a bot: the game ends, g
     expect.objectContaining({ id: session.id, mode: 'bot', outcome: 'loss' }),
   ]);
 
-  // "משחק חדש": the flow ends, and the game type of a bot practice opens again, "מהיר" chosen.
+  // "משחק חדש": the flow ends, and the next game against the same bot opens at once (UX-2), "מהיר".
   await fireEvent.press(screen.getByRole('button', { name: 'משחק חדש' }));
-  await waitFor(() => expect(app.getPathname()).toBe('/game-type'));
-  expect(app.getSearchParams()).toEqual({ gameType: 'fast', mode: 'bot' });
-  expect(useGameStore.getState().session).toBeNull();
+  await waitFor(() => expect(app.getPathname()).toBe('/game'));
+  const next = useGameStore.getState().session!;
+  expect(next.id).not.toBe(session.id);
+  expect(next).toMatchObject({ mode: 'bot', gameType: 'fast' });
   // From the game to its end, its results and "משחק חדש", nothing loaded the online code.
   expect((globalThis as { netLoaded?: string[] }).netLoaded ?? []).toEqual([]);
 });

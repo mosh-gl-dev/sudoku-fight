@@ -2,7 +2,6 @@ import { GAME_TYPES, type GameType } from '@sudoku-fight/engine';
 import {
   isAvatarId,
   isCountryCode,
-  isLegacyAvatarId,
   type Me,
   NO_AVATAR_ID,
   normalizeAvatarId,
@@ -62,12 +61,13 @@ export function isMe(v: unknown): v is Me {
 
 /**
  * A Me from the server or from the phone, or null. An avatar of the retired av01–av51 pack (a profile saved
- * before the pack was replaced, an older server) reads as its replacement (protocol normalizeAvatarId).
+ * before the pack was replaced, an older server) reads as its replacement, and one this app does not know (an
+ * avatar a newer app chose) as none (protocol normalizeAvatarId): an app before this one refused the whole Me.
  */
 export function readMe(v: unknown): Me | null {
   if (typeof v !== 'object' || v === null) return null;
   const m = v as Record<string, unknown>;
-  const current = isLegacyAvatarId(m.avatarId) ? { ...m, avatarId: normalizeAvatarId(m.avatarId) } : m;
+  const current = typeof m.avatarId === 'string' ? { ...m, avatarId: normalizeAvatarId(m.avatarId) } : m;
   return isMe(current) ? current : null;
 }
 

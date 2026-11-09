@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "ประตูต้องการ {{need}}",
     "chapterOpen": "ประตูเปิดแล้ว",
+    "chapterNeedSentence": "ประตูต้องการ {{need}}",
+    "chapterOpenSentence": "ประตูเปิดแล้ว",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "บทนี้: {{stars}} ดาวจาก {{max}} {{gate}}",
     "mistakes_other": "ผิด {{count}} ครั้ง",
@@ -315,6 +317,8 @@
     "button": "ออกจากด่าน",
     "title": "ออกจากด่านไหม?",
     "body": "คุณจะได้ 0 ดาว และด่านถัดไปจะเปิด",
+    "bodyLocked": "คุณจะได้ 0 ดาว และด่านถัดไปจะยังล็อกอยู่",
+    "bodyLast": "คุณจะได้ 0 ดาว",
     "confirm": "ออก",
     "cancel": "เล่นต่อ"
   },

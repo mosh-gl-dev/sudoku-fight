@@ -48,6 +48,8 @@
           "languagesFile": "./src/i18n/enabled-languages.json"
         }
       ],
+      "./plugins/withTextAdvanceWidths.js",
+      "./plugins/withNightModeAtStart.js",
       [
         "expo-font",
         {

@@ -1,4 +1,4 @@
-import type { RatingOption } from '@sudoku-fight/engine';
+import { GAME_TYPES, type GameType, type RatingOption } from '@sudoku-fight/engine';
 import { isCountryCode, NO_AVATAR_ID, normalizeAvatarId, ratingKeysFor } from '@sudoku-fight/protocol';
 import { and, desc, eq, gt, inArray, isNull } from 'drizzle-orm';
 
@@ -14,7 +14,8 @@ import type { FriendsStore } from './service';
  * (spec §3.5, [D85c]).
  *
  * The general rating is the leaderboard's 'general' row (progress/leaderboard.ts): the best rating among the
- * keys of the server's RATING_OPTION in which the player has a rated game; null before any.
+ * keys of the server's RATING_OPTION in which the player has a rated game; null before any. With it, the rating
+ * of each game type (`ratings`: the best of that type's keys), so a seat shows the room's type's rating.
  */
 export function dbFriendsStore(db: Db | (() => Db), ratingOption: RatingOption): FriendsStore {
   const database = typeof db === 'function' ? db : () => db;
@@ -25,21 +26,32 @@ export function dbFriendsStore(db: Db | (() => Db), ratingOption: RatingOption):
         .select({ avatarId: users.avatarId, country: users.country })
         .from(users)
         .where(and(eq(users.id, userId), isNull(users.deletedAt)));
-      const [best] = await database()
-        .select({ rating: ratings.rating })
+      const rows = await database()
+        .select({ key: ratings.ratingKey, rating: ratings.rating })
         .from(ratings)
         .where(and(eq(ratings.userId, userId), inArray(ratings.ratingKey, keys), gt(ratings.games, 0)))
-        .orderBy(desc(ratings.rating), desc(ratings.games), ratings.ratingKey)
-        .limit(1);
+        .orderBy(desc(ratings.rating), desc(ratings.games), ratings.ratingKey);
+      // Best first: the first row is the general rating, and the first of each type is that type's.
+      const byType: Partial<Record<GameType, number>> = {};
+      for (const row of rows) {
+        const type = gameTypeOfKey(row.key);
+        if (type !== null && byType[type] === undefined) byType[type] = Math.round(row.rating);
+      }
       return {
         id: userId,
         name,
         avatarId: user === undefined ? NO_AVATAR_ID : normalizeAvatarId(user.avatarId),
         country: user !== undefined && isCountryCode(user.country) ? user.country : null,
-        rating: best === undefined ? null : Math.round(best.rating),
+        rating: rows[0] === undefined ? null : Math.round(rows[0].rating),
+        ratings: byType,
       };
     },
 
     blocksAmong: (userIds) => blocksAmong(database(), userIds),
   };
+}
+
+/** 'fast' (option B) or 'fast-2p' (option A): the game type of a rating key; null for any other key. */
+function gameTypeOfKey(key: string): GameType | null {
+  return GAME_TYPES.find((type) => key === type || key.startsWith(`${type}-`)) ?? null;
 }

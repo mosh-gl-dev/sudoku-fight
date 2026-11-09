@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { type StyleProp, type TextStyle } from 'react-native';
 
 import { size } from '../../theme';
-import { Text } from '../ui/Text';
+import { Text, type TextScale } from '../ui/Text';
 import { countryName, flagEmoji } from './countryFlag';
 import { metrics } from './metrics';
 
@@ -22,17 +22,23 @@ export interface FlagProps {
   size?: FlagSize;
   /** Inside a card the card's label carries the country, so the flag stays silent. */
   decorative?: boolean;
+  /**
+   * How far the system text size may grow it (BRD-3). 'board' on an avatar of fixed size (the compact card),
+   * where a bigger flag only hides the picture (QA 2026-11-03: at the largest size it covered most of it).
+   */
+  scale?: TextScale;
   style?: StyleProp<TextStyle>;
 }
 
 /** A country flag as system emoji. Screen readers hear "מדינה: ישראל", never the emoji. */
-export function Flag({ country, size: flagSize = 'game', decorative = false, style }: FlagProps) {
+export function Flag({ country, size: flagSize = 'game', decorative = false, scale, style }: FlagProps) {
   const { t, i18n } = useTranslation('player');
   const emoji = flagEmoji(country);
   if (!emoji || !country) return null;
   const px = FLAG_PX[flagSize];
   return (
     <Text
+      scale={scale}
       style={[{ fontSize: px, lineHeight: Math.round(px * metrics.flagLine) }, style]}
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}

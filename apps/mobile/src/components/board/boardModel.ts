@@ -99,13 +99,13 @@ export interface CellModel {
 
 /** A key's look (components.md §12.1). */
 export type KeyState =
-  /** I hold a lock: the key works. */
+  /** I hold a lock, or wait for the one I just tapped (BRD-1): the key works. */
   | 'armed'
   /** No lock: the whole row is idle. */
   | 'idle'
   /** All nine of this digit are on the board. Wins over 'tried'. */
   | 'complete'
-  /** Already tried wrongly in my locked cell [D12]. */
+  /** Already tried wrongly in my locked cell, or in the cell I just tapped [D12]. */
   | 'tried';
 
 export interface KeyModel {
@@ -118,7 +118,7 @@ export interface KeyModel {
 }
 
 export interface KeypadModel {
-  /** I hold a lock and the game runs. */
+  /** I hold a lock, or wait for one I just tapped (BRD-1), and the game runs. */
   enabled: boolean;
   /** Digits 1–9, in that order. */
   keys: KeyModel[];
@@ -133,6 +133,14 @@ export interface BoardModel {
   /** 81 cells, row by row (index = row × 9 + column). */
   cells: CellModel[];
   keypad: KeypadModel;
+  /**
+   * The cell a key enters its digit in: the one the player sees as selected (BRD-1). That is the cell just tapped
+   * while the server has not confirmed its lock yet ('pending'): the select goes first on the same socket, so the
+   * server judges the digit there, or refuses both at no cost. Else my lock. Null while the keypad is idle.
+   */
+  keypadCell: CellIndex | null;
+  /** The cell I tapped whose lock the server has not confirmed yet, as the board shows it ('pending'). */
+  pendingCell: CellIndex | null;
   /** My lock: the strip, "ביטול בחירה" and the board's label. */
   myLock: LockInfo | null;
   /** Locks other players hold, in seat order, for the board's label. */
@@ -301,34 +309,53 @@ export function boardModel(
     return { ...base, kind: 'empty', digit: null, player: null, lock: null, interactive: open(index) };
   });
 
-  const keypad: KeypadModel = {
-    enabled: view.keypad.enabled,
-    keys: DIGITS.map((digit): KeyModel => {
-      const remaining = view.keypad.remaining[digit - 1] ?? 0;
-      const state: KeyState =
-        remaining <= 0
-          ? 'complete'
-          : view.keypad.disabled.includes(digit)
-            ? 'tried'
-            : view.keypad.enabled
-              ? 'armed'
-              : 'idle';
-      return { digit, remaining: Math.max(0, remaining), state, disabled: state !== 'armed' };
-    }),
-  };
+  const myLockCell = cells.find((c) => c.kind === 'myLock');
+  const pendingCell = cells.find((c) => c.kind === 'pending') ?? null;
+  // BRD-1: the keys work for the cell I just tapped, before its lock comes back. In 'turns' a held lock can't
+  // be switched, and out of my turn nothing can be locked: there the select will be refused, so it arms nothing.
+  const turns = view.rules.turnModel === 'turns';
+  const canSwitch = !turns || (view.turn?.playerId === me?.id && !myLockCell);
+  const armedFor = pendingCell && canPlay && canSwitch ? pendingCell : null;
+  const keypad = keypadOf(view, armedFor);
 
   const lockInfo = (cell: CellModel): LockInfo => ({
     cell: cell.index,
     name: cell.name,
     ...(cell.lock ?? NO_TIMER),
   });
-  const myLockCell = cells.find((c) => c.kind === 'myLock');
   const otherLocks = cells
     .filter((c) => c.kind === 'oppLock')
     .map((c) => ({ ...lockInfo(c), player: c.player! }))
     .sort((a, b) => a.player.seat - b.player.seat);
 
-  return { cells, keypad, myLock: myLockCell ? lockInfo(myLockCell) : null, otherLocks };
+  return {
+    cells,
+    keypad,
+    keypadCell: armedFor ? armedFor.index : keypad.enabled && myLockCell ? myLockCell.index : null,
+    pendingCell: pendingCell?.index ?? null,
+    myLock: myLockCell ? lockInfo(myLockCell) : null,
+    otherLocks,
+  };
+}
+
+/**
+ * The digit row: the view's own for my lock, or (BRD-1) armed for `pending`, the cell I just tapped. There the
+ * view's keypad (it speaks of my lock only) can't say which digits are closed, so the cell's wrong digits close
+ * them, whoever tried them: [D12] 'everyone', the rule of every game the app plays (defaultRules; the server
+ * takes no other). Under the engine's 'mistaker' this only holds a key back until the lock comes back.
+ */
+function keypadOf(view: GameView, pending: CellModel | null): KeypadModel {
+  const enabled = view.keypad.enabled || pending !== null;
+  const tried: readonly Digit[] = pending ? pending.wrong : view.keypad.disabled;
+  return {
+    enabled,
+    keys: DIGITS.map((digit): KeyModel => {
+      const remaining = view.keypad.remaining[digit - 1] ?? 0;
+      const state: KeyState =
+        remaining <= 0 ? 'complete' : tried.includes(digit) ? 'tried' : enabled ? 'armed' : 'idle';
+      return { digit, remaining: Math.max(0, remaining), state, disabled: state !== 'armed' };
+    }),
+  };
 }
 
 function uniqueDigits(digits: readonly Digit[]): Digit[] {

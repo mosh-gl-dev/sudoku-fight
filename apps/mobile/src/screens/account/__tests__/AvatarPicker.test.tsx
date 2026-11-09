@@ -25,7 +25,7 @@ import { renderWholeAvatarGrid } from '../testing/avatarGrid';
 
 /**
  * The avatar (spec §3.2, §3.4; Moshe's device test, 14.10.2026): a field like the name's and the country's,
- * and a tall sheet with all 101 of our characters in a grid under a header per kind. The field's avatar greets
+ * and a tall sheet with all 119 of our characters in a grid under a header per kind. The field's avatar greets
  * a new choice; the grid's avatars stay still.
  */
 
@@ -103,7 +103,7 @@ describe('the avatar field', () => {
 });
 
 describe('the avatar sheet', () => {
-  it('shows all 101 in a grid, under a header per kind, in the catalog’s order, each still', async () => {
+  it('shows all 119 in a grid, under a header per kind, in the catalog’s order; only the chosen one idles', async () => {
     renderWholeAvatarGrid();
     await render(<Picker initial="noam" />);
     const sheet = await openSheet();
@@ -122,7 +122,13 @@ describe('the avatar sheet', () => {
     for (const radio of gridRadios()) {
       const id = idOf(radio);
       expect(radio).toHaveProp('accessibilityLabel', avatarById(id)!.name.he);
-      // One still picture each: nothing in the grid idles or moves.
+      if (id === 'noam') {
+        // The chosen one lives (AVATAR_STAGES.picker, decision 3.19): its parts that may move, each a layer.
+        expect(svgXmlsIn(radio).length).toBeGreaterThan(1);
+        expect(svgXmlsIn(radio).every((x) => drawnAvatarId(x.props.xml) === null)).toBe(true);
+        continue;
+      }
+      // One still picture each: the others never idle.
       expect(svgXmlsIn(radio)).toHaveLength(1);
       expect(avatarIdsIn(radio)).toEqual([id]);
     }
@@ -136,7 +142,7 @@ describe('the avatar sheet', () => {
   it('renders a sheet’s worth at first and opens on the chosen avatar’s row', async () => {
     await render(<Picker initial="cassette" />);
     await openSheet();
-    // Virtualized: not all 101 at once.
+    // Virtualized: not all 119 at once.
     expect(gridRadios().length).toBeGreaterThan(0);
     expect(gridRadios().length).toBeLessThan(AVATAR_IDS.length);
     expect(screen.getByTestId('avatar-picker-cassette')).toHaveProp('accessibilityState', { checked: true });
@@ -176,6 +182,16 @@ describe('the avatar sheet', () => {
     await close(() => fireEvent(screen.getByTestId('avatar-picker-sheet'), 'requestClose'));
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'האווטאר שנבחר: נועם' })).toBeOnTheScreen();
+  });
+
+  it('with reduced motion the chosen one in the grid is a still picture too', async () => {
+    useSettings.setState({ reduceMotion: 'on' });
+    renderWholeAvatarGrid();
+    await render(<Picker initial="noam" />);
+    await openSheet();
+    const chosen = screen.getByTestId('avatar-picker-noam');
+    expect(svgXmlsIn(chosen)).toHaveLength(1);
+    expect(avatarIdsIn(chosen)).toEqual(['noam']);
   });
 
   it('with reduced motion the choice only smiles, for the bounce’s length, still', async () => {

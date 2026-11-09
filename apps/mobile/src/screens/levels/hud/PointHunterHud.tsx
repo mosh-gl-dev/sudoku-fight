@@ -7,7 +7,14 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import { Icon } from '../../../components/Icon';
 import { type CellChip, CellChipsLayer } from '../../../components/levels/CellChipsLayer';
 import { StarsBar } from '../../../components/levels/StarsBar';
-import { formatScore, ltr, scoreText, secondsOf, signedText } from '../../../components/player/format';
+import {
+  clockLabelSeconds,
+  formatScore,
+  ltr,
+  scoreText,
+  secondsOf,
+  signedText,
+} from '../../../components/player/format';
 import { Text } from '../../../components/ui/Text';
 import { decimalSeparator, stopSentences } from '../../../i18n/compose';
 import { color, radius, space, text, tokens } from '../../../theme';
@@ -245,17 +252,21 @@ export function PointHunterHud({ level, view, now, onExit, style }: PointHunterH
           }
           testID="hunt-score"
         >
-          <Text style={styles.scoreValue} testID="hunt-score-value">
+          <Text scale="board" style={styles.scoreValue} {...FIT_SCORE} testID="hunt-score-value">
             {scoreText(score, decimal)}
           </Text>
-          <Text style={styles.scoreUnit}>{t('hud.hunt.points')}</Text>
-          {burnt ? (
-            <View style={styles.lost} testID="hunt-lost">
-              <Text style={styles.lostText} testID="hunt-lost-text">
-                {signedText(-burnt.penalty, decimal)}
-              </Text>
-            </View>
-          ) : null}
+          <View style={styles.scoreSide} testID="hunt-score-side">
+            {burnt ? (
+              <View style={styles.lost} testID="hunt-lost">
+                <Text scale="hud" style={styles.lostText} testID="hunt-lost-text">
+                  {signedText(-burnt.penalty, decimal)}
+                </Text>
+              </View>
+            ) : null}
+            <Text scale="hud" style={styles.scoreUnit} testID="hunt-score-unit">
+              {t('hud.hunt.points')}
+            </Text>
+          </View>
         </View>
         <View
           style={styles.moves}
@@ -275,7 +286,12 @@ export function PointHunterHud({ level, view, now, onExit, style }: PointHunterH
               <Dot key={i} state={d} testID={`hunt-dot-${i}-${d}`} />
             ))}
           </View>
-          <Text style={[styles.moveText, burnt ? styles.burntText : null]} testID="hunt-move-text">
+          <Text
+            scale="hud"
+            numberOfLines={2}
+            style={[styles.moveText, burnt ? styles.burntText : null]}
+            testID="hunt-move-text"
+          >
             {moveText}
           </Text>
         </View>
@@ -284,16 +300,18 @@ export function PointHunterHud({ level, view, now, onExit, style }: PointHunterH
           accessible
           accessibilityRole="timer"
           accessibilityLabel={t('hud.hunt.timeLabel', {
-            count: secondsOf(left),
-            s: secondsOf(left),
+            count: clockLabelSeconds(left, 'left'),
+            s: clockLabelSeconds(left, 'left'),
             limit: secondsOf(limit),
           })}
           testID="hunt-clock"
         >
-          <Text style={styles.clockValue} testID="hunt-clock-value">
+          <Text scale="hud" style={styles.clockValue} testID="hunt-clock-value">
             {clockText(left)}
           </Text>
-          <Text style={styles.clockSub}>{t('hud.hunt.left', { limit: ltr(clockText(limit)) })}</Text>
+          <Text scale="hud" style={styles.clockSub} testID="hunt-clock-sub">
+            {t('hud.hunt.left', { limit: ltr(clockText(limit)) })}
+          </Text>
         </View>
       </View>
       <View style={styles.bar}>
@@ -352,6 +370,25 @@ export function PointHunterOverlay({ level, width }: PointHunterOverlayProps) {
 const DOT = 14;
 const DOT_ICON = 10;
 
+/**
+ * My points stay whole on one line inside their half of the row (B25): a wide score ("‎−11.5") shrinks rather
+ * than grow past it, and "נקודות" and the burned move's "‎−4" stack beside it in a narrow column, so neither
+ * ever runs over the move dots. The row keeps its height while the number shrinks: the board never moves.
+ * What makes that hold in every language and at any system text size (hunterHudFit.test.tsx measures it):
+ * - the 64 dp number never grows with the system text (`scale="board"`, display type as a card's scoreXL,
+ *   Score.tsx scoreScale), and the row's words grow up to the HUD's ×1.35 (`scale="hud"`, BRD-3), no more;
+ * - "מהלך 1 מתוך 3" takes two lines rather than more than `movesTextMax` of the row ("Zug 2 verschenkt");
+ * - the number may shrink to `scoreMinFontScale`: the widest score in the tightest row (Dutch at ×1.35 on a
+ *   360 dp phone) still shows whole, never cut with "…".
+ */
+export const HUNT_ROW = { movesTextMax: 96, scoreMinFontScale: 0.3 } as const;
+const FIT_SCORE = {
+  numberOfLines: 1,
+  adjustsFontSizeToFit: true,
+  minimumFontScale: HUNT_ROW.scoreMinFontScale,
+} as const;
+const SCORE_HEIGHT = tokens.type.scoreXL.lineHeight + tokens.type.scoreXL.paddingTop;
+
 const p1 = color.players[0]!;
 
 const DOT_STYLE: Record<MoveDot, ViewStyle> = {
@@ -367,11 +404,18 @@ const styles = StyleSheet.create({
   goalText: { ...text('status'), color: color.text },
   note: { ...text('caption'), color: color.textMuted },
   row: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
-  score: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', gap: space[3] },
-  scoreValue: { ...text('scoreXL'), color: p1.ring },
+  score: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: SCORE_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: space[3],
+  },
+  scoreValue: { ...text('scoreXL'), color: p1.ring, flexShrink: 1 },
+  scoreSide: { flexShrink: 0, alignItems: 'flex-start', gap: space[2] },
   scoreUnit: { ...text('caption'), color: color.textMuted },
   lost: {
-    alignSelf: 'center',
     height: 22,
     paddingHorizontal: space[3],
     borderRadius: radius.xs,
@@ -391,7 +435,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  moveText: { ...text('caption'), color: color.textMuted },
+  moveText: {
+    ...text('caption'),
+    color: color.textMuted,
+    maxWidth: HUNT_ROW.movesTextMax,
+    textAlign: 'center',
+  },
   burntText: { color: color.danger },
   clock: { flex: 1, minWidth: 0, alignItems: 'flex-end', gap: space[2] },
   clockValue: { ...text('scoreCompact'), color: color.text, writingDirection: 'ltr' },

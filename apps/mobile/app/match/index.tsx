@@ -1,18 +1,22 @@
+import { matchmakingQueueOf, parseQueueKey } from '@sudoku-fight/protocol';
 import { type Href, router, Stack } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { NavigationContext, NavigationRouteContext } from 'expo-router/react-navigation';
+import { useContext, useEffect, useRef } from 'react';
 
 import { normalizeAvatarId } from '../../src/avatars';
 import { refreshMe, useAuth } from '../../src/auth/authStore';
 import { ROUTES } from '../../src/auth/redirect';
 import { useGameStore } from '../../src/game/gameStore';
+import { rejoinRankedGame } from '../../src/game/rankedResume';
 import { FlowFallback } from '../../src/screens/FlowFallback';
 import { goBack, startAndOpen } from '../../src/screens/home';
 import { headerOf, MatchScreen } from '../../src/screens/match';
+import { dropWhenCovered } from '../../src/screens/results/dropWhenCovered';
 import { useProfile } from '../../src/state/profile';
 
 /**
  * /match: the ranked search the game store holds (work plan stage 9, spec §10), from searching to GO; then
- * the game replaces it (motion.md `flow.fade`). Started from the game type's "מצא יריב", Home's "עוד סיבוב"
+ * the game takes its place (pushed over it at once, and this screen leaves the history once covered: goHandoff.ts). Started from the game type's "מצא יריב", Home's "עוד סיבוב"
  * or the results' "משחק חדש" (screens/home/startGame.ts). No search, nothing to show: back to the modes (a
  * spinner meanwhile, and a way out should they not come: never an empty screen).
  * The back swipe is off; Android's back cancels a search, and nothing from "found" on [D32].
@@ -23,6 +27,9 @@ export default function MatchRoute() {
   const localName = useProfile((s) => s.name);
   const localAvatar = useProfile((s) => s.avatarId);
   const leaving = useRef(false);
+  // Read through the contexts: none outside a navigator.
+  const navigation = useContext(NavigationContext);
+  const routeKey = useContext(NavigationRouteContext)?.key;
 
   useEffect(() => {
     if (!match && !leaving.current) router.replace('/modes');
@@ -59,7 +66,10 @@ export default function MatchRoute() {
         }}
         onPlay={() => {
           leaving.current = true;
-          router.replace('/game');
+          // Over this screen, not in its place: its GO! stays whole under the game's until it is covered, and
+          // only then does it leave the history (goHandoff.ts; QA loop 6, empty frames at GO!).
+          router.push('/game');
+          if (navigation && routeKey) void dropWhenCovered(navigation, routeKey);
         }}
         onLeave={() => leaveTo(goBack)}
         onBot={() => {
@@ -72,6 +82,22 @@ export default function MatchRoute() {
         onVerifyEmail={() => leaveTo(() => router.replace(ROUTES.verifyEmail))}
         onHome={() => dismissTo('/')}
         onSuspended={() => void refreshMe()}
+        onBackToGame={(roomId) =>
+          // The search is over (refused); the game this account is still in comes over this screen, joined
+          // again by its room with the same account (QA density-change-orphans-ranked-game), and this screen
+          // leaves the history once covered. The game screen shows the way in.
+          leaveTo(() => {
+            // The game's own queue, as the refusal named it (else this search's, an older server's text).
+            const queueKey = matchmakingQueueOf(match.info.error?.message ?? '');
+            rejoinRankedGame({
+              roomId,
+              gameType: parseQueueKey(queueKey)?.gameType ?? gameType,
+              queueKey,
+            });
+            router.push('/game');
+            if (navigation && routeKey) void dropWhenCovered(navigation, routeKey);
+          })
+        }
       />
     </>
   );

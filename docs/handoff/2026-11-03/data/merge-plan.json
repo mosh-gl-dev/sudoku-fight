@@ -1,0 +1,1106 @@
+{
+ "areas": [
+  {
+   "key": "pregame",
+   "plan": {
+    "sessions": [
+     {
+      "key": "pregame-newgame-screen",
+      "title": "משחק חדש וסוג משחק, בלי חיפוש (טלפון קטן ואז רגיל)",
+      "tasks": [
+       "pregame-modes-fit-he",
+       "pregame-modes-practice-chips",
+       "pregame-modes-rows",
+       "pregame-modes-no-ranked-chip",
+       "pregame-modes-header-me",
+       "pregame-modes-bot-robot",
+       "pregame-modes-navigation",
+       "pregame-type-cards",
+       "pregame-type-ranked-rating",
+       "pregame-type-ranked-notes"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "בשלב 2 בלבד: adb shell wm size 720x1560 ו־adb shell wm density 320. בסוף שלב 2: adb shell wm size reset ו־adb shell wm density reset, ומוודאים בצילום שהגודל חזר.",
+      "setup": "טלפון אחד (עדיף טלפון 1, אורי), מחובר לאינטרנט, בעברית, בבית. לא מחפשים משחק מדורג בסשן הזה (רק פותחים את מסך 'סוג משחק').",
+      "script": "1. בבית: צילום של כרטיס הפרופיל. רושמים את הדירוג בכל סוג (מהיר, רגיל, קשה), ואם מופיע 'זמני', באיזה סוג. זה הבסיס ל־pregame-type-ranked-rating ול־pregame-modes-header-me ✓3.\n2. מעבירים לגודל הקטן. בבית לוחצים 'שחק', ובלי לגלול: צילום ו־ui dump אחד → (pregame-modes-fit-he ✓1–3), (pregame-modes-practice-chips ✓1–2: שני התגים באותה שורה, לפי bounds, גם ב'אימון מול בוט' וגם ב'אימון לבד · לוח מלא'). מחזירים את הגודל והצפיפות.\n3. במסך 'משחק חדש' בגודל רגיל: צילום, ו־ui dump (גוללים אם צריך) → (pregame-modes-rows ✓1–3), (pregame-modes-no-ranked-chip ✓1–2), (pregame-modes-header-me ✓1–3: משווים את מסגרת האווטר בכותרת לכרטיס שלי מצילום שלב 1), (pregame-modes-bot-robot ✓1–2: משווים את המסגרת של הרובוט למסגרת בשורה 'אימון לבד', לפי bounds).\n4. '2 שחקנים' → (pregame-modes-navigation ✓1), (pregame-type-ranked-notes ✓1), (pregame-type-ranked-rating ✓1–3: המספרים ו'זמני' מול שלב 1). אם אף סוג אצל אורי לא זמני, ✓3 נשאר פתוח, ובודקים אותו בטלפון 3 בסשן pregame-stealthoff (שלב 0). חוזרים בחץ.\n5. '4 שחקנים' ואחר כך '3 שחקנים', ובכל אחד חוזרים בחץ → (pregame-modes-navigation ✓2), (pregame-type-ranked-notes ✓2).\n6. 'אימון מול בוט' → (pregame-modes-navigation ✓3). חוזרים.\n7. 'אימון לבד · לוח מלא' → (pregame-modes-navigation ✓4), (pregame-type-cards ✓1–4: שלושת הכרטיסים, הטקסט שמתחתם והכפתור). חוזרים.\n8. 'אימון בשלבים' → (pregame-modes-navigation ✓5). חוזרים לבית.",
+      "estMinutes": 15
+     },
+     {
+      "key": "pregame-bot-and-solo",
+      "title": "בחירת בוט, משחק מול Pip וספירת ספרות גלויות באימון לבד",
+      "tasks": [
+       "pregame-type-bot-next",
+       "pregame-bot-table",
+       "pregame-bot-no-extras",
+       "pregame-bot-all-types",
+       "pregame-bot-start",
+       "pregame-bot-results-robot",
+       "pregame-type-givens-solo-fast",
+       "pregame-type-givens-solo-normal",
+       "pregame-type-givens-solo-hard"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "טלפון אחד, בעברית, עם חשבון, בבית. אין צורך בחיפוש מדורג. pregame-bot-results-robot מסומנת [both], אבל אפשר לבדוק אותה במלואה מול בוט אימון בטלפון אחד: היא בודקת רק את האייקון בכרטיס היריב במסך התוצאות. מכינים מראש סקריפט שקורא ui dump, סופר את המשבצות שהתיאור שלהן נגמר ב'רמז', וסופר כמה פעמים מופיעה כל ספרה.",
+      "script": "1. 'שחק': צילום של 'משחק חדש', וחותכים ממנו את הרובוט שבשורה 'אימון מול בוט' (בסיס להשוואה בשלב 5, כך שהסשן לא תלוי בסשן אחר). 'אימון מול בוט': קוראים את הטקסט שמתחת לכרטיסים → (pregame-type-bot-next ✓1).\n2. 'רגיל' ← 'בחירת יריב'. צילום, גוללים עד התחתית, ו־ui dump → (pregame-bot-table ✓1–7), (pregame-bot-no-extras ✓1–3). רושמים איזה כרטיס מסומן.\n3. חוזרים ובוחרים 'מהיר' ← 'בחירת יריב' → (pregame-type-bot-next ✓2). רושמים את המספרים של חמשת הבוטים. חוזרים, 'קשה' ← 'בחירת יריב' → (pregame-bot-all-types ✓1–2).\n4. חוזרים, 'מהיר' ← 'בחירת יריב'. אם Pip כבר מסומן, קודם מקישים על בוט אחר. מקישים על Pip → (pregame-bot-start ✓1). לוחצים 'יאללה, למשחק' → (pregame-bot-start ✓2).\n5. מכניסים ספרה אחת או שתיים ← 'סיום אימון' ← 'כן, לסיים'. במסך התוצאות מצלמים את הכרטיס 'יריב', ומשווים לרובוט משלב 1 → (pregame-bot-results-robot ✓1).\n6. 'אימון לבד · לוח מלא' ← 'מהיר' ← 'התחל אימון'. לפני כל מהלך: צילום של תג ההתקדמות, ו־ui dump שמריצים עליו את הסקריפט ← 'סיום אימון' ← 'כן, לסיים'. חוזרים על זה בלוח שני → (pregame-type-givens-solo-fast ✓1–3, בשני הלוחות). כדי לחסוך ניווט, מותר להתחיל את הלוח השני מכפתור המשחק החדש במסך התוצאות, באותו סוג.\n7. אותו דבר ב'רגיל', שני לוחות → (pregame-type-givens-solo-normal ✓1–3).\n8. אותו דבר ב'קשה', שני לוחות, ומספיק לקרוא את התג → (pregame-type-givens-solo-hard ✓1). חוזרים לבית.",
+      "estMinutes": 18
+     },
+     {
+      "key": "pregame-offline",
+      "title": "לפני משחק במצב טיסה: באנר, בדוק שוב, עבור לאימון, ובוט אופליין",
+      "tasks": [
+       "pregame-offline-gametype",
+       "pregame-offline-gametype-back-online",
+       "pregame-offline-gametype-practice",
+       "pregame-offline-banner",
+       "pregame-offline-bottom",
+       "pregame-offline-practice-open",
+       "pregame-offline-go-practice",
+       "pregame-offline-bot-practice"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "מצב טיסה: adb shell cmd connectivity airplane-mode enable, ובכיבוי disable. מדליקים ומכבים כמה פעמים לפי הסקריפט. בסוף מכבים ובודקים שהרשת חזרה. הטלפון חייב להיות מחובר ב־USB, כי מצב טיסה מנתק adb אלחוטי.",
+      "setup": "טלפון אחד מחובר ב־USB, בעברית, עם חשבון, מחובר לאינטרנט, בבית. לא מחפשים משחק מדורג.",
+      "script": "1. מחוברים: 'שחק', השורות המדורגות פעילות. מדליקים מצב טיסה, ומיד '2 שחקנים' → (pregame-offline-gametype ✓1–2).\n2. נשארים במסך, מכבים מצב טיסה ולא נוגעים. צילום כל 3 שניות במשך 20 שניות → (pregame-offline-gametype-back-online ✓1–2).\n3. חוזרים ל'משחק חדש' (מחוברים). מדליקים מצב טיסה, ומיד '2 שחקנים' ← 'קשה' ← 'עבור לאימון' → (pregame-offline-gametype-practice ✓1–2). חוזרים לבית. מכאן מצב הטיסה נשאר דלוק עד שלב 9.\n4. 'שחק': צילום של ראש הרשימה, של קבוצת 'אימון' ושל התחתית, ו־ui dump → (pregame-offline-banner ✓1), (pregame-offline-practice-open ✓1–2), (pregame-offline-bottom ✓1).\n5. מפעילים screenrecord ולוחצים 'בדוק שוב' → (pregame-offline-bottom ✓2), (pregame-offline-banner ✓2: 'בודק…' עם ספינר בבאנר). אחרי הכישלון קוראים 'עדיין אין חיבור · ניסיון N'. לוחצים שוב, ו־N עולה. מחכים 12 שניות בלי לגעת, ו־N עולה שוב → (pregame-offline-bottom ✓3).\n6. 'אימון בשלבים' נפתחת מכאן → (pregame-offline-practice-open ✓3). חוזרים. 'אימון לבד · לוח מלא' פותחת 'סוג משחק' בלי באנר → (pregame-offline-practice-open ✓4). חוזרים.\n7. 'עבור לאימון' → (pregame-offline-go-practice ✓1–2). חוזרים.\n8. 'אימון מול בוט' ← 'מהיר' ← 'בחירת יריב' → (pregame-offline-bot-practice ✓1). מקישים על Pip ← 'יאללה, למשחק', ואז על משבצת ריקה ועל ספרה → (pregame-offline-bot-practice ✓2). 'סיום אימון' ← 'כן, לסיים'.\n9. מכבים מצב טיסה ומוודאים שיש חיבור.",
+      "estMinutes": 15
+     },
+     {
+      "key": "pregame-stealthoff",
+      "title": "בוט סמוי כבוי, שני טלפונים: לבד בתור, דקה, 4 שחקנים, נמצא יריב, טווחים ואנגלית",
+      "tasks": [
+       "pregame-search-screen",
+       "pregame-search-alone",
+       "pregame-timeout-alone",
+       "pregame-timeout-bot-robot",
+       "pregame-timeout-home",
+       "pregame-search-other-type",
+       "pregame-timeout-keep-alone",
+       "pregame-search-cancel",
+       "pregame-search-bot-from-notice",
+       "pregame-search-4p",
+       "pregame-search-4p-count",
+       "pregame-search-join",
+       "pregame-found-tiles",
+       "pregame-found-side-he",
+       "pregame-found-ready",
+       "pregame-found-no-cancel",
+       "pregame-found-countdown",
+       "pregame-found-rematch",
+       "pregame-type-givens-ranked-fast",
+       "pregame-search-range",
+       "pregame-timeout-range",
+       "pregame-timeout-keep-nocap",
+       "pregame-search-android-back",
+       "pregame-timeout-bot",
+       "pregame-modes-fit-en",
+       "pregame-type-english",
+       "pregame-bot-english",
+       "pregame-search-english",
+       "pregame-found-side-en",
+       "pregame-type-givens-ranked-normal"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "הבוט הסמוי כבוי ב־staging מתחילת הסשן ועד סופו, ומדליקים אותו שוב בסוף. בטלפון 1: wm size 720x1560 ו־wm density 320 רק לצילום של שלב 7 (fit-en), ומיד אחריו reset. טלפון 1 עובר לאנגלית בשלב 7 וחוזר לעברית בשלב 10. טלפון 3 נשאר בעברית ובגודל רגיל כל הזמן. בסוף: שני הטלפונים בעברית, בגודל רגיל, בבית, והבוט הסמוי דלוק.",
+      "setup": "משה מכבה את הבוט הסמוי במתג באתר הניהול. הבודק לא יכול לעשות את זה בעצמו: POST /admin/api/stealth/switch דורש התחברות של מנהל, ובלי זה מחזיר 401. הסשן תופס את שני הטלפונים, ולכן אף סשן אחר לא רץ במקביל. טלפון 1 (אורי) וטלפון 3 (אחוותא) מחוברים, בעברית, בבית. הבדיקה הראשונה בשלב 1 היא גם בדיקה שהבוט כבוי. כלל: לעולם לא שני הטלפונים באותו תור, חוץ ממה שהסקריפט מבקש במפורש.",
+      "script": "0. הכנה: בשני הטלפונים צילום של כרטיס הפרופיל. רושמים את הדירוג ב'מהיר' (D הוא ההפרש), ובטלפון 3 גם ב'רגיל'. בטלפון 1, כשעוברים ב'משחק חדש', חותכים את הרובוט שבשורה 'אימון מול בוט' (בשביל pregame-timeout-bot-robot ✓2). אם pregame-type-ranked-rating ✓3 נשאר פתוח מ־pregame-newgame-screen: בטלפון 3 '2 שחקנים', ומשווים את 'זמני' לכרטיס הפרופיל שלו.\n1. שני תורים שונים במקביל, כ־1:10:\n   - טלפון 1: '2 שחקנים' ← 'קשה' ← 'מצא יריב', עם screenrecord של 25 שניות → (pregame-search-screen ✓1–6). צילום מיד, ושוב אחרי 20 שניות → (pregame-search-alone ✓1–3). אם במקום ההודעה מופיע 'נמצא יריב!', הבוט הסמוי דלוק: עוצרים ומודיעים למשה.\n   - חותכים את הרובוט בכפתור 'שחק מול בוט בינתיים' שבהודעה. לא נוגעים עד 1:00 → (pregame-timeout-alone ✓1–4). חותכים את הרובוט בכפתור במסך הזה, ומשווים לשני הצילומים האחרים → (pregame-timeout-bot-robot ✓1–2). 'חזרה לבית' → (pregame-timeout-home ✓1).\n   - טלפון 3, כמה שניות אחרי טלפון 1: '2 שחקנים' ← 'רגיל' ← 'מצא יריב'. אחרי 15 שניות, צילום בשני הטלפונים → (pregame-search-other-type ✓1–2. כאן 'קשה' מול 'רגיל' במקום 'מהיר' מול 'רגיל', ושני ה־✓ לא תלויים בסוג).\n   - ב־1:00 של טלפון 3: 'המשך לחפש' → (pregame-timeout-keep-alone ✓1–2). 'ביטול חיפוש' → (pregame-search-cancel ✓1: חוזרים ל'סוג משחק' עם 'מדורג · 2 שחקנים' ו'מצא יריב').\n2. טלפון 1: '2 שחקנים' ← 'קשה' ← 'מצא יריב', ומיד 'שחק מול בוט בינתיים' שבהודעה. מקישים על משבצת ריקה → (pregame-search-bot-from-notice ✓1–2: שם של בוט ורמה, והטבעת מתחילה מ־18). 'סיום אימון' ← 'כן, לסיים' ← לבית.\n3. טלפון 1: '4 שחקנים' ← 'מהיר' ← 'מצא יריבים', צילום → (pregame-search-4p ✓1–3). טלפון 3 אותו דבר. מחכים 15 שניות ומצלמים את שניהם → (pregame-search-4p-count ✓1–2). 'ביטול חיפוש' בשניהם.\n4. משחק 1 (מהיר), עם screenrecord בשני הטלפונים. טלפון 1: '2 שחקנים' ← 'מהיר' ← 'מצא יריב', ומחכים להודעה 'כרגע אין שחקנים אחרים…'. טלפון 3: 'מהיר' ← 'מצא יריב' → (pregame-search-join ✓1–2).\n   - במסך 'נמצא יריב!': צילום בשני הטלפונים → (pregame-found-tiles ✓1–4), (pregame-found-side-he ✓1). אם אף אחד מהשניים לא זמני ב'מהיר', את found-tiles ✓3 בודקים במשחק 3.\n   - BACK בטלפון 1 → (pregame-found-no-cancel ✓1).\n   - → (pregame-found-ready ✓1–3). קוראים את השורה שמתחת ל'מוכנים' → (pregame-found-rematch ✓1). אם כתוב 'שיחקתם זה מול זה לאחרונה', הזוג כבר שיחק לאחרונה: ✓1 לא בר־בדיקה עם החשבונות האלה, ורושמים את זה.\n   - BACK שוב בזמן הספירה → (pregame-found-no-cancel ✓2), (pregame-found-countdown ✓1–3).\n   - ב־GO, מיד ui dump בטלפון 1 (בטלפון 3 לא נוגעים בלוח) → (pregame-type-givens-ranked-fast ✓1–3).\n   - כניעה: בוחרים איזה טלפון נכנע כך ש־D יתקרב לטווח שצריך בשלב 5 (המנצח עולה והמפסיד יורד, בערך 15–20 נקודות כל אחד). 'לבית' בשניהם, ומחשבים את D מחדש מכרטיסי הפרופיל.\n5. משחק 2 (מהיר), לפי D:\n   - D בין 100 ל־250: שני הטלפונים כמעט יחד '2 שחקנים' ← 'מהיר' ← 'מצא יריב', וצילום כל 5 שניות בשניהם → (pregame-search-range ✓1–4).\n   - D בין 250 ל־300: טלפון 1 מחפש. כשהשעון שלו מראה 0:50, גם טלפון 3 מחפש. ב־1:00, בטלפון 1 → (pregame-timeout-range ✓1–3). 'המשך לחפש' ומחכים → (pregame-timeout-keep-nocap ✓1–2).\n   - D מחוץ לשני הטווחים: שניהם מחפשים 'מהיר' יחד, רק בשביל המשחק החוזר. את משימות הטווח מסמנים חסומות, עם שני הדירוגים.\n   - ב'נמצא יריב!' של משחק 2, קוראים בטלפון 1 את השורה → (pregame-found-rematch ✓2). כניעה ו'לבית'.\n6. אם נשארה משימת טווח אחת, ו־D נכנס עכשיו לטווח שלה, משחק נוסף אחד לכל היותר באותה שיטה. לא יותר מזה.\n7. במקביל:\n   - טלפון 3 (עברית): '2 שחקנים' ← 'קשה' ← 'מצא יריב', ואז מקש BACK → (pregame-search-android-back ✓1). שוב 'מצא יריב', ומחכים ל־1:00. 'שחק מול בוט בינתיים', ומקישים על משבצת ריקה → (pregame-timeout-bot ✓1–2: שם של בוט ורמה, והטבעת מתחילה מ־18). 'סיום אימון' ← 'כן, לסיים' ← לבית.\n   - טלפון 1: 'הגדרות' ← 'שפה' ← 'English' ← 'החלפה והפעלה מחדש'. מעבירים לגודל הקטן, ו־'Play' בלי לגלול: צילום ו־ui dump → (pregame-modes-fit-en ✓1–4). מחזירים את הגודל והצפיפות.\n   - טלפון 1: 'Solo · full board' וצילום, חוזרים. '2 players' וצילום, חוזרים → (pregame-type-english ✓1–3).\n   - טלפון 1: 'Practice vs bot' ← 'Normal' ← 'Choose opponent'. צילום, גלילה ו־ui dump → (pregame-bot-english ✓1–3). חוזרים ל־Home.\n8. טלפון 1, רק אחרי שטלפון 3 יצא מהתור '2 · קשה' (כלומר כבר במשחק הבוט, או אחריו): '2 players' ← 'Hard' ← 'Find an opponent' עם screenrecord → (pregame-search-english ✓1–3). 'Cancel search'.\n9. משחק 3 (רגיל): טלפון 1 באנגלית, טלפון 3 בעברית. שניהם כמעט יחד '2 שחקנים' ← 'רגיל' ← 'מצא יריב'.\n   - בטלפון 1, במסך 'Opponent found!' → (pregame-found-side-en ✓1–2). הסוג 'רגיל' במקום 'מהיר' לא משנה אף ✓ במשימה הזו, והוא חוסך משחק מדורג.\n   - אם found-tiles ✓3 עוד פתוח ואחד החשבונות זמני ב'רגיל': צילום של מסך ה־VS בטלפון 3 → (pregame-found-tiles ✓3). אחרת ✓3 לא בר־בדיקה, ורושמים את זה.\n   - ב־GO, מיד ui dump בטלפון 1 (בטלפון 3 לא נוגעים בלוח) → (pregame-type-givens-ranked-normal ✓1–3). ה־dump באנגלית: קודם בודקים במשבצת גלויה אחת באיזו מילה התיאור נגמר, ומעדכנים את הסקריפט במקום 'רמז'.\n   - טלפון 3 נכנע. 'Home' ו'לבית'.\n10. טלפון 1: 'Settings' ← 'Language' ← 'עברית' ← 'Switch and restart'. מוודאים ששני הטלפונים בעברית, בגודל רגיל ובבית. מודיעים למשה להדליק את הבוט הסמוי.",
+      "estMinutes": 40
+     }
+    ],
+    "duplicates": [],
+    "moshe": [],
+    "notes": "באזור pregame יש 57 משימות, ועכשיו הן מחולקות ל־4 סשנים, במקום 57 ביקורים נפרדים, ובערך 88 דקות בסך הכל. כל 57 המזהים מופיעים פעם אחת בדיוק.\n\n**הסשן של שני הטלפונים, pregame-stealthoff:**\n- שני הסשנים של הבוט הסמוי הכבוי אוחדו לסשן אחד. כך בודק אחד מחזיק את החלון מתחילתו ועד סופו, ואין מצב שהבוט נשאר כבוי בין שני בודקים.\n- כל המתנה של דקה מכסה עכשיו כמה בדיקות. בהמתנה של טלפון 1 נבדקים: מסך החיפוש, 'לבד בתור', המסך שאחרי דקה, הרובוט בכפתור ו'חזרה לבית'.\n- במקביל, טלפון 3 מחפש בתור אחר. הוא בודק 'סוג אחר', אחר כך 'המשך לחפש', ואחר כך 'ביטול חיפוש'.\n- כך ירדו שני חיפושים ובערך 3 דקות המתנה, בלי לאבד אף ✓.\n- צריך בסך הכל 3 המתנות של דקה, כי לכל מסך של דקה יש יציאה אחת: הביתה, המשך חיפוש או בוט. אם משחק הטווח יוצא 250–300, יש המתנה רביעית.\n\n**משה:** אין משימה שנשארת רק בשבילו, אבל צריך ממנו פעולה אחת: לכבות את הבוט הסמוי לפני pregame-stealthoff ולהדליק אותו אחריו.\n- הבודק לא יכול לעשות את זה לבד. ב־POST /admin/api/stealth/switch צריך להיות מחובר כמנהל, ובלי זה השרת מחזיר 401.\n- הבוט הסמוי נכנס רק לתורים של 2 שחקנים, ולכן בדיקות ה־4 שחקנים לא תלויות בו. הן נמצאות בחלון רק כי שם שני הטלפונים כבר זמינים.\n\n**משימות הטווח:** pregame-search-range צריכה הפרש של 100–250 בין הדירוגים ב'מהיר'. pregame-timeout-range ו־pregame-timeout-keep-nocap צריכות 250–300.\n- הבודק מכוון את ההפרש לפי מי שנכנע במשחק 1, ומותר לו לכל היותר משחק נוסף אחד.\n- מה שלא נכנס לטווח מסומן חסום, עם שני הדירוגים.\n\n**✓ שאולי לא יהיו ברי־בדיקה:**\n- pregame-found-rematch ✓1: רק אם הזוג לא שיחק לאחרונה. כנראה שכן שיחק.\n- 'זמני' ב־pregame-found-tiles ✓3 וב־pregame-type-ranked-rating ✓3: רק אם יש סוג שבו לאחד החשבונות פחות מ־10 משחקים מדורגים. לשניהם הוספתי ניסיון נוסף: טלפון 3, וסוג 'רגיל'.\n\n**סשנים שאפשר להריץ מתי שרוצים:** pregame-newgame-screen, pregame-bot-and-solo ו־pregame-offline לא מחפשים משחק מדורג, ואין ביניהם תלות. pregame-offline צריך טלפון מחובר ב־USB."
+   },
+   "changes": [
+    "איחדתי את pregame-stealthoff-pair ואת pregame-stealthoff-split לסשן אחד, pregame-stealthoff. בודק אחד מחזיק את כל החלון שבו הבוט הסמוי כבוי, וגם מדליק אותו בסוף. הוא כולל 30 משימות, ובערך 40 דקות במקום 47.",
+    "ההמתנה הראשונה של טלפון 1 לדקה (בתור '2 · קשה') מכסה עכשיו גם את search-screen, ‏search-alone, ‏timeout-alone, ‏timeout-bot-robot ו־timeout-home. הצעד B1 בוטל, ובוטלה גם ההמתנה הנפרדת לדקה ב־B3 בשביל timeout-alone.",
+    "בזמן ההמתנה הזו טלפון 3 מחפש בתור '2 · רגיל', ובודק search-other-type ('קשה' מול 'רגיל', וה־✓ לא תלוי בסוג). בדקה שלו הוא בודק timeout-keep-alone, ואחריה search-cancel עם 'ביטול חיפוש'. כך ירד החיפוש הנפרד של other-type.",
+    "את timeout-bot ואת search-android-back מריץ טלפון 3 במקביל לסבב האנגלית של טלפון 1. search-english רץ רק אחרי שטלפון 3 יצא מהתור '2 · קשה'.",
+    "אחרי צילום fit-en מחזירים מיד את הגודל של טלפון 1, במקום אחרי A3. מסכי type-english ו־bot-english לא צריכים טלפון קטן.",
+    "pregame-bot-and-solo כבר לא תלוי בצילום מסשן אחר: הוא מצלם את הרובוט ב'משחק חדש' בעצמו. גם timeout-bot-robot מצלם את הרובוט בתוך הסשן שלו.",
+    "pregame-type-givens-ranked-normal: הוספתי הערה. ה־ui dump באנגלית, ולכן קודם בודקים באיזו מילה נגמר התיאור של משבצת גלויה, ולא סופרים לפי 'רמז'.",
+    "‏'זמני' (found-tiles ✓3 ו־type-ranked-rating ✓3): הוספתי ניסיון נוסף בטלפון 3 ובסוג 'רגיל', כדי שה־✓ לא ייפול רק כי לאורי אין סוג זמני.",
+    "תיקנתי את ההערה על המתג: POST /admin/api/stealth/switch דורש התחברות של מנהל, ובלי זה מחזיר 401. לכן רק משה יכול לכבות את הבוט ולהדליק אותו. ציינתי גם שהבוט הסמוי נכנס רק לתורים של 2 שחקנים, ולכן בדיקות ה־4 שחקנים לא תלויות בו.",
+    "בדקתי את הכיסוי: 57 מזהים בקובץ, וכל אחד מופיע בדיוק פעם אחת. אין כפולות אמיתיות, כי לכל משימה יש ✓ שאין באף משימה אחרת. אין גם משימה שרק משה יכול לבדוק.",
+    "בסשנים pregame-newgame-screen ו־pregame-offline כמעט לא שיניתי: הם מכסים את כל ה־✓, ומחזירים את הגודל ואת מצב הטיסה."
+   ]
+  },
+  {
+   "key": "game",
+   "plan": {
+    "sessions": [
+     {
+      "key": "game-solo-full-board",
+      "title": "Solo practice, one game to a full board: HUD, locks, first wrong digit, penalties, formula, stats, background, end dialog, last cell",
+      "tasks": [
+       "game-practice-solo-hud",
+       "game-moves-keypad-ltr",
+       "game-lock-cancel",
+       "game-moves-needs-lock",
+       "game-lock-select",
+       "game-moves-formula",
+       "game-moves-negative",
+       "game-moves-wrong",
+       "game-moves-count",
+       "game-moves-tried",
+       "game-moves-penalty-same",
+       "game-moves-penalty-value",
+       "game-moves-wrong-stays",
+       "game-moves-correct",
+       "game-moves-sign-hebrew",
+       "game-lock-one",
+       "game-lock-relock-wait",
+       "game-lock-timeout",
+       "game-practice-solo-stats",
+       "game-practice-background-solo",
+       "game-surrender-practice-dialog",
+       "game-surrender-lock-runs",
+       "game-surrender-practice-back",
+       "game-moves-exhausted",
+       "game-moves-last-cell",
+       "game-practice-solo-complete"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "none (app in Hebrew, reduced motion 'כבויה' as default)",
+      "setup": "Home → 'שחק' → 'אימון לבד · לוח מלא'. On 'סוג משחק' write down 'זמן למשבצת' of 'מהיר' = T (needed for game-lock-select ✓3 and the end-dialog wait). Pick 'מהיר' → 'התחל אימון'. Read the game screen ONLY from screenshots (uiautomator cannot read it). Solve the whole puzzle from the first screenshot (it is needed for the full board at the end). Pick target cell X: empty, known answer d, and choose it so that P = 9 − X + (9 − Y)/2 ends in .5 (Y even), so one cell covers the half-point sign checks. Pick two wrong digits w and w2 for X. game-moves-sign-hebrew is marked [both] but needs only this phone.",
+      "script": "1) BEFORE ANY TAP, two screenshots 2 s apart: my avatar, ● 'אני' and flag; 'אימון לבד · מהיר', 0, 'אין טעויות'; on the other side 'סיום אימון', 'זמן' running from 0:00 (it rose between the shots), 'מהלך שיא' '—'; progress bar with n/81; no 'תגובות' and no 'הפרעה' (game-practice-solo-hud ✓1-5). Keypad 1 leftmost..9 rightmost with small remaining counts under each digit; A1 top-left, I9 bottom-right; 'ביטול בחירה' under the keypad (game-moves-keypad-ltr ✓1-3). Write down n and the counts under d and w.\n2) Tap 'ביטול בחירה' with nothing locked: dimmed, nothing happens (game-lock-cancel ✓1). Start screenrecord, tap digit 5: nothing entered, score same, 'בחר משבצת' shakes once (game-moves-needs-lock ✓1-2).\n3) Before entering anything, for X count filled cells in its row, column and box (not X itself, no red digits) and the occurrences of d; X = largest, Y = second largest; P = 9 − X + (9 − Y)/2 (game-moves-formula).\n4) Tap X: my-color ring with falling seconds top-right; 'המשבצת שלך X' + seconds + draining bar; count starts from T; 'ביטול בחירה' no longer dimmed (game-lock-select ✓1-4).\n5) FIRST action of the game: enter w in X. Score 0 → −P, negative, minus on the left (game-moves-negative ✓1-2); w stays small red bottom-right, cell otherwise empty; red penalty next to the score; card says '1 טעות'; ring gone and 'בחר משבצת' back (game-moves-wrong ✓1-4); count under w unchanged (game-moves-count ✓2). Write down the penalty.\n6) Wait 1 s, lock X again: key w red with a strike; tap it → nothing entered, no extra penalty (game-moves-tried ✓1). Enter w2: penalty exactly equal to the first one, several points and not −1 (game-moves-penalty-same ✓1-2).\n7) Wait 1 s, lock X, enter d: gain = |penalty| = P (game-moves-penalty-value ✓1, game-moves-formula ✓1); with the .5 value the sign stays left of the number in the change and the score (penalty-value ✓2, game-moves-sign-hebrew ✓1); d big in my color with ● top-left, +P next to the score, 'בחר משבצת' back (game-moves-correct ✓1-3); red w still bottom-right (game-moves-wrong-stays ✓1); count under d dropped by exactly 1 (game-moves-count ✓1). 'מהלך שיא' now shows +P with X: sign on the left, cell name not flipped (game-moves-sign-hebrew ✓2).\n8) Lock another empty cell: key w normal and active there (game-moves-tried ✓2). Tap 'ביטול בחירה': ring gone, 'בחר משבצת', score and mistakes line unchanged (game-lock-cancel ✓2-3).\n9) In ONE adb shell command tap empty D5 then empty F2: ring and seconds move to F2, none on D5, 'המשבצת שלך F2' with full T again (game-lock-one ✓1-2).\n10) In ONE adb shell command tap 'ביטול בחירה' then F2 (<1 s): F2 shakes, no lock, score and mistakes unchanged (game-lock-relock-wait ✓1). Wait 2 s, tap F2: locks normally with ring and seconds (✓2).\n11) Note score + mistakes line; touch nothing until F2's seconds hit 0: ring gone, 'בחר משבצת', same score and mistakes (game-lock-timeout ✓1-2).\n12) Note the progress counter. Enter 3 correct digits in different cells (at least one worth less than the current best) and 1 wrong digit, screenshot after each: 'זמן' rises every second; 'מהלך שיא' keeps the best value and its cell and does not drop after a smaller move; counter +1 per correct digit, unchanged after the wrong one (game-practice-solo-stats ✓1-3).\n13) Lock a cell, note 'זמן' and its seconds; HOME key, wait 20 s, return; while 'ממשיכים בעוד' 3,2,1 covers the board tap a cell: nothing happens (game-practice-background-solo ✓1); after it 'זמן' about the same (not +20 s), same cell still locked with about the same seconds (✓2).\n14) Note score, mistakes and 'זמן'. Lock a cell and at once tap 'סיום אימון': sheet with 'לסיים את האימון?', 'התוצאה תישמר במכשיר. אין השפעה על הדירוג.', 'כן, לסיים', 'ביטול' and under them 'המשחק ממשיך ברקע' (game-surrender-practice-dialog ✓1). Wait T + 2 s (at least 5 s) without touching, tap 'ביטול': same board and score (✓2); 'זמן' advanced by the wait (✓3); the cell is no longer locked, 'בחר משבצת', no penalty (game-surrender-lock-runs ✓1-2).\n15) Phone BACK: 'לסיים את האימון?' opens and the game stays; BACK again closes it like 'ביטול', game stays (game-surrender-practice-back ✓1-2).\n16) Fill the board. As soon as some digit shows 0 under it: key dimmed with 0; lock an empty cell and tap that digit → nothing entered, score and mistakes same (game-moves-exhausted ✓1-2).\n17) Start screenrecord before the last empty cell; enter its digit: '+1.5' next to the score (game-moves-last-cell ✓1); full board stays ~1 s, no 'המשחק הסתיים' window, results open with 'הלוח הושלם!' (game-practice-solo-complete ✓1-2) and 'איך זה נגמר' 'מילאת את כל הלוח' (✓3). 'לבית'.",
+      "estMinutes": 45
+     },
+     {
+      "key": "game-practice-end-offline",
+      "title": "Short practice games: end solo practice online, then solo and bot practice in airplane mode",
+      "tasks": [
+       "game-surrender-practice-confirm",
+       "game-practice-solo-offline",
+       "game-practice-bot-offline"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "Airplane mode ON for steps 2-3 only (phone on USB adb, not wireless): adb shell cmd connectivity airplane-mode enable; restore with adb shell cmd connectivity airplane-mode disable in step 4",
+      "setup": "Phone on the USB cable, app in Hebrew, on Home and online.",
+      "script": "1) ONLINE: 'שחק' → 'אימון לבד · לוח מלא' → 'מהיר' → 'התחל אימון'. Enter one correct digit. Start screenrecord, 'סיום אימון' → 'כן, לסיים': the sheet vanishes and results open at once, no black or empty screen (game-surrender-practice-confirm ✓1); title 'האימון הסתיים' and 'איך זה נגמר' 'סיימת את האימון לפני שהלוח התמלא' (✓2). 'לבית'.\n2) Airplane mode ON. 'שחק' → 'אימון לבד · לוח מלא' → 'מהיר' → 'התחל אימון': opens normally, no connection message or error (game-practice-solo-offline ✓1). Enter one correct digit (my color) and one wrong digit (stays red, penalty): both checked instantly (✓2). 'סיום אימון' → 'כן, לסיים' → 'לבית'.\n3) Still in airplane mode: 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב' → '3 · מתקדם' → 'יאללה, למשחק': no connection message (game-practice-bot-offline ✓1). Play about a minute, screenshots every few seconds: the bot locks cells, enters digits and its score on its card updates (✓2). 'סיום אימון' → 'כן, לסיים' → 'לבית'.\n4) Airplane mode OFF; wait until Home is online again.",
+      "estMinutes": 11
+     },
+     {
+      "key": "game-bot-pip-locks",
+      "title": "Practice vs bot 1 (regular): how a bot lock looks and tapping it",
+      "tasks": [
+       "game-lock-opponent-look",
+       "game-lock-taken"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "Home → 'שחק' → 'אימון מול בוט' → 'רגיל' → 'בחירת יריב' → '1 · טירון' → 'יאללה, למשחק'. Note my score and mistakes line. Do not lock anything during the whole session.",
+      "script": "1) Screenshots every ~2 s until the bot locks: while it has no lock its card says 'חושב…' (game-lock-opponent-look ✓1); when it locks: ring in the bot's color (not mine) with its small avatar in the middle of the cell, no seconds (✓2); its card shows 'בוחר · ' + cell with a small draining time ring in its color (✓3).\n2) On the bot's next lock tap that cell fast (still without locking anything myself): it shakes, 'בחר משבצת' stays (game-lock-taken ✓1); my score and mistakes unchanged (✓2); the bot's lock is still on the cell (✓3).\n3) 'סיום אימון' → 'כן, לסיים' → 'לבית'.",
+      "estMinutes": 6
+     },
+     {
+      "key": "game-bot-advanced",
+      "title": "Practice vs bot 3 (fast): cards, lead bar, streak, reactions, end x3",
+      "tasks": [
+       "game-practice-bot-card",
+       "game-practice-bot-lead",
+       "game-moves-no-streak",
+       "game-reactions-picker",
+       "game-reactions-send-self",
+       "game-reactions-cooldown",
+       "game-surrender-bot-confirm"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "Check Settings → 'הפחתת תנועה' = 'כבויה' before starting (needed by game-reactions-send-self); it is the default, leave it so",
+      "setup": "Home → 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב' → '3 · מתקדם' → 'יאללה, למשחק'. game-reactions-send-self is marked [both] but needs only this phone (practice bot).",
+      "script": "GAME 1:\n1) Before any move, screenshot: my card on the right with ● 'אני', flag, 'סיום אימון' and 'תגובות'; VS between the cards; bot card on the left Mr. Hoot (owl) with the tag '3 · מתקדם' under the name instead of a rating; no rating number on either card (game-practice-bot-card ✓1-4; game-surrender-bot-confirm ✓1, the button is 'סיום אימון'). Lead tag says 'שוויון' (game-practice-bot-lead ✓1).\n2) Enter 4 correct digits in a row, no mistakes, screenshot after each: no 'רצף' tag anywhere, not mine and not the bot's (game-moves-no-streak ✓1). Lead tag shows the leader's gap in its color (e.g. +6), the leader's part of the bar grows, my part on my card's side (lead ✓2). Stop and wait until the bot passes me: the tag switches to its color (lead ✓3).\n3) Tap 'תגובות': row 😂 😱 😎 🤦 🔥 👀 under my card (game-reactions-picker ✓1); tap 'תגובות' again: closes, nothing sent (✓2).\n4) Screenrecord: 'תגובות' → 🔥: the row closes and 🔥 rises from my card, animated, ~1.5 s, then fades (game-reactions-send-self ✓1); it does not cover the board (✓2).\n5) Wait 3 s. 'תגובות' → 😎 and at once tap 'תגובות' again: dimmed, does not open for ~2 s (game-reactions-cooldown ✓1); after 3 s it opens normally (✓2). Close it.\n6) Screenrecord, 'סיום אימון' → 'כן, לסיים': sheet gone, results open with 'סיימת את האימון לפני שהלוח התמלא' and 'אימון: אין שינוי בדירוג' (game-surrender-bot-confirm ✓2, run 1); no black, empty or 'המסך לא נטען' (✓3, run 1). 'לבית'.\nGAMES 2 and 3: the full path again from Home (same '3 · מתקדם', 'מהיר'); check the button says 'סיום אימון'; at once 'סיום אימון' → 'כן, לסיים' with screenrecord; check the results the same way (bot-confirm runs 2-3). 'לבית'.",
+      "estMinutes": 14
+     },
+     {
+      "key": "game-bot-grandmaster",
+      "title": "Practice vs bot 5 (fast): no interference button, background, bot reactions, mute, run to the end",
+      "tasks": [
+       "game-practice-bot-no-button",
+       "game-practice-background-bot",
+       "game-reactions-bot",
+       "game-reactions-mute",
+       "game-practice-bot-no-hits"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "Home → 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב' → '5 · גרנדמאסטר' → 'יאללה, למשחק'. Take screenshots every few seconds for the whole game (or screenrecord in 3-minute parts) to watch for interference banners or effects (game-practice-bot-no-hits). Bot 5 fills the board fast, so do steps 1-4 quickly and in this order.",
+      "script": "1) At start: the bot card has no 'הפרעה' button (game-practice-bot-no-button ✓1). Enter correct digits until I have ≥8 points: still no 'הפרעה'; tapping the bottom row of the bot card opens no interference window (✓1-2).\n2) After some bot moves: screenshot the bot score and the board; HOME, wait 30 s, return: board covered with 'ממשיכים בעוד' and 3,2,1 (game-practice-background-bot ✓1); bot score and board the same as before; after the countdown it continues playing (✓2).\n3) Enter 4 wrong digits in 4 different cells, a few seconds apart, screenrecord: 😂 rises from the bot's card 1-2 s after at least one of them (game-reactions-bot ✓1).\n4) Long-press the bot card, not a button (adb shell input swipe x y x y 600): the menu has only 'השתק תגובות', no 'דווח על שחקן' and no 'חסום שחקן' (game-reactions-mute ✓1). Tap it: the menu closes; 4 more wrong digits → no bot reaction appears (✓2). Long-press again: 'בטל השתקה' → tap; more wrong digits until a bot reaction comes back (✓3).\n5) Do not touch; let the bot fill the board. During the whole game no interference banner ('… שלח/ה לך …!'), no dimmed board, no fireworks, cats, distortion or other effect (game-practice-bot-no-hits ✓1); the game ends on the results screen (✓2). 'לבית'.\nFallback: if the board fills before step 4 is done, start another bot-5 game and finish steps 3-4 there; no-hits is judged on the game that reached the results.",
+      "estMinutes": 15
+     },
+     {
+      "key": "game-ranked-en-bot",
+      "title": "Ranked 2p in English against the stealth bot: card sides and LTR board",
+      "tasks": [
+       "game-online-2p-cards-en"
+      ],
+      "phones": 1,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "App language English (Settings → 'שפה' → English → 'החלפה והפעלה מחדש'); restore at the end (Settings → Language → עברית → 'Switch and restart')",
+      "setup": "Only this phone searches ranked; the other phone must not search ranked at the same time (it may run a practice session in parallel). Switch the app to English first.",
+      "script": "game-online-2p-cards-en is [both], but every ✓ line is on phone A's own screen, so the stealth bot (found after 8-20 s when one phone searches) is a full opponent here.\n1) Play → Ranked '2 players' → Fast → find opponent; wait for found + 3,2,1,GO.\n2) Screenshot: my card ('Me') on the left, the opponent on the right (✓1). Lock an empty cell, screenshot: board and keypad exactly like Hebrew, 1-9 left to right, A1 top-left (✓2); 'Cancel selection' under the keypad, 'Your cell' + cell name above the board (✓3); no Hebrew word on screen (✓4).\n3) Leave: surrender → confirm → results → Home. Switch back to Hebrew and check Home is in Hebrew.",
+      "estMinutes": 8
+     },
+     {
+      "key": "game-ranked-2p",
+      "title": "Two phones, ranked 2p: one long game to a full board, then 5 lock and 5 no-lock surrender games",
+      "tasks": [
+       "game-online-2p-cards-he",
+       "game-online-perf",
+       "game-surrender-guard-first-move",
+       "game-online-2p-same-board",
+       "game-surrender-guard-not-behind",
+       "game-surrender-ranked-cancel",
+       "game-surrender-ranked-back",
+       "game-moves-tried-everyone",
+       "game-reactions-send-other",
+       "game-online-2p-board-end",
+       "game-surrender-confirm-lock",
+       "game-surrender-opponent-lock",
+       "game-surrender-confirm-nolock"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none (both phones Hebrew; Release APK from npm run apk installed, as now)",
+      "setup": "Phone A = טלפון 1, phone B = טלפון 3, both Hebrew, both verified accounts. For every game: on both phones, within a few seconds, 'שחק' → 'מדורג' '2 שחקנים' → 'מהיר' → 'מצא יריב'; check each phone got the other account (not the stealth bot); wait for 'נמצא יריב!' and 3,2,1,GO. Nobody else searches ranked during this session.",
+      "script": "GAME 1 (long):\n1) Right at GO on the PC: adb -s A shell dumpsys gfxinfo com.mosheg.sudokufight reset (game-online-perf).\n2) Screenshot both phones: my card on the right with ● 'אני', avatar, flag, rating, 'כניעה' and 'תגובות'; VS; opponent on the left with name, avatar, flag, rating, ▲ in another color and 'הפרעה'; the same on the other phone, 'אני' on the right in my color (game-online-2p-cards-he ✓1-4). Same givens in the same cells on both (game-online-2p-same-board ✓1).\n3) A (no digit yet; B idle too): 'כניעה' → 'המשחק ייחשב כהפסד · הדירוג שלך לא ירד, כי עוד לא ביצעת מהלך', grey, no red number → 'ביטול' (game-surrender-guard-first-move ✓1-2).\n4) A locks a cell: on B a ring in A's color with A's small avatar on that cell, and A's card on B says 'בוחר · ' + cell (same-board ✓2). A enters the correct digit: on B it appears in A's color with A's shape, and A's score updates on A's card on B (same-board ✓3).\n5) B still idle (A leads): A 'כניעה' → 'המשחק ייחשב כהפסד · הדירוג שלך לא ירד, כי אין לך פיגור', grey, no red number → 'ביטול' (game-surrender-guard-not-behind ✓1-2).\n6) A 'כניעה'; while it is open B enters a correct digit; A 'ביטול': the sheet closes, nothing else happens, A still in game (game-surrender-ranked-cancel ✓1); B's move is already on A's board and B's score updated (✓2).\n7) A phone BACK: 'אתה בטוח שאתה רוצה להיכנע?' opens, A stays in game; BACK again closes it like 'ביטול', game goes on (game-surrender-ranked-back ✓1-2).\n8) B locks empty cell C and enters a wrong digit, e.g. 7: on A a small red 7 in C (game-moves-tried-everyone ✓1); A locks C: key 7 red with a strike, tapping it enters nothing (✓2). A cancels.\n9) A 'תגובות' → 😂: on B it rises from A's card (left) (game-reactions-send-other ✓1); on A from my card (right) (✓2).\n10) A: a few more locks, correct moves, one mistake, one interference to B. About 1-2 min after GO: adb -s A shell dumpsys gfxinfo com.mosheg.sudokufight → 'Janky frames' ≤5% (game-online-perf ✓1); score flight and countdown never stuck (✓2).\n11) Both phones play until the board is full; screenrecord both at the end: full board stays ~1 s on both (game-online-2p-board-end ✓1); no 'המשחק הסתיים' window, both straight to results (✓2); one 'ניצחון!' and one 'הפסד' (or 'תיקו' on both) with 'איך זה נגמר' 'הלוח התמלא' (✓3). Both 'לבית'.\nGAMES 2-6 (lock, 5 times; alternate which phone surrenders, S = surrenderer, W = the other): both enter ≥1 digit; W locks a cell, then S locks a cell (ring + seconds visible); screenrecord both; S 'כניעה' → 'כן, להיכנע'. S: sheet gone, final board ~0.5 s, then 'הפסד' with 'איך זה נגמר' 'נכנעת לפני שהלוח התמלא' (game-surrender-confirm-lock ✓1). W: its ring fades, board ~0.5 s, 'ניצחון!' with 'היריב נכנע לפני שהלוח התמלא' (confirm-lock ✓2; game-surrender-opponent-lock ✓1). Never black, empty or 'המסך לא נטען' in any of the 5 (confirm-lock ✓3; opponent-lock ✓2). Both 'לבית'.\nGAMES 7-11 (no lock, 5 times, alternate S): both enter ≥1 digit, nobody holds a cell; screenrecord both; S 'כניעה' → 'כן, להיכנע': S sheet gone, board ~0.5 s, 'הפסד' (game-surrender-confirm-nolock ✓1); W 'ניצחון!' (✓2); never black or empty in any of the 5 (✓3). Both 'לבית'.",
+      "estMinutes": 55
+     },
+     {
+      "key": "game-ranked-3p",
+      "title": "Two phones + one fake-client, ranked 3p: two games cover cards, pips, disconnects and all 3p surrenders",
+      "tasks": [
+       "game-surrender-3p-no-loss",
+       "game-online-3p-cards",
+       "game-online-3p-pips",
+       "game-surrender-3p-dialog",
+       "game-online-3p-soft",
+       "game-online-3p-grace",
+       "game-surrender-3p-out",
+       "game-surrender-3p-others",
+       "game-surrender-3p-results",
+       "game-online-3p-small",
+       "game-surrender-3p-home",
+       "game-surrender-3p-requeue",
+       "game-online-3p-last-player"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "Game 1: phone B airplane mode twice (B on USB adb): adb -s B shell cmd connectivity airplane-mode enable / disable; make sure it ends OFF. Game 2 only, phone A narrow + big font: adb -s A shell wm density 480 (≈360dp on the A16) and adb -s A shell settings put system font_scale 1.3 from Home BEFORE searching; restore after game 2: wm density reset and settings put system font_scale 1.0",
+      "setup": "BLOCKED until Moshe gives one Firebase ID token of a test account (the stealth bot only fills 2p, friends rooms have no bots). Phone A = טלפון 1, phone B = טלפון 3 (on USB), both Hebrew. Third player: fake-client on the PC: npm run fake-client -- --queue fast-3p --name Cyd --url wss://sudoku-fight-staging.fly.dev --token <token> (it plays like a bot: locks, digits, mistakes). For each game start the fake-client, then on both phones 'שחק' → '3 שחקנים' → 'מהיר' → 'מצא יריבים', wait for GO.",
+      "script": "GAME 1 (normal font):\n1) Right at GO, before A enters anything: A 'כניעה' → text 'תצא מהמשחק, והמשבצות שפתרת יישארו בצבע שלך. הדירוג שלך לא ירד מול אף שחקן שנשאר במשחק.' → 'ביטול' (game-surrender-3p-no-loss ✓1).\n2) A screenshot: three small cards in one row, mine first (right) with ●, then ▲ and ■ (game-online-3p-cards ✓1); each with place #n, avatar+flag, name, rating and score (✓2); 'כניעה'+'תגובות' on mine, 'הפרעה' on each rival (✓3); lead bar under the cards with the leader's shape in the tag (✓5).\n3) B (and Cyd) enter digits. A enters 2 wrong digits in 2 cells: on A, A's card shows two small red pips with the last two penalties, minus on the left also with halves (game-online-3p-pips ✓1); the same on B on A's card (✓2); the score is not cut (✓3). A is behind now: A 'כניעה' → title 'אתה בטוח שאתה רוצה להיכנע?' and text 'תצא מהמשחק, והמשבצות שפתרת יישארו בצבע שלך.' (game-surrender-3p-dialog ✓1); no score row, no rating number (✓2); 'ביטול' prominent and 'כן, להיכנע' secondary (✓3) → 'ביטול'.\n4) B locks a cell, airplane ON ~6 s, OFF; watch A: orange dot on B's avatar, Wi-Fi icon instead of 'הפרעה', no countdown, avatar not grey (game-online-3p-soft ✓1); B's lock stays on the board (✓2); A keeps locking and entering digits, no overlay (✓3); when B is back its card is normal, no banner (✓4).\n5) B locks a cell, airplane ON ~20 s, OFF; watch A: 10-15 s after ON B's card is grey with a countdown from 15 (game-online-3p-grace ✓1); B's ring disappears from the board (✓2); no 'המשחק מוקפא', A keeps playing (✓3); B returns before the countdown ends and its card goes back to normal (✓4).\n6) Play a while; when places change only #n changes, the card order is fixed (3p-cards ✓4).\n7) A solves ≥1 cell, locks another cell, 'כניעה' → 'כן, להיכנע', stays on the game screen. A: 'נכנעת · מקום 3', 'המשחק ממשיך עד הסוף', 'לבית' instead of 'בחר משבצת' (game-surrender-3p-out ✓1); taps on board and keypad do nothing (✓2); my card dimmed, and a digit B now enters appears on A's board (✓3). B: A's card dimmed with 'נכנע', no 'הפרעה' (game-surrender-3p-others ✓1); A's cells keep A's color and shape (✓2); A's lock released and the game goes on for B (✓3).\n8) B 'כניעה' → 'כן, להיכנע' so only Cyd is left and the game ends. A (still on the game screen) goes to results by itself (game-surrender-3p-results ✓1): full ranking of all players, A last with 'מקום 3!' and 'מתוך 3 שחקנים' (✓2). Stop the fake-client. Both 'לבית'. Check B's airplane mode is OFF.\nGAME 2 (set phone A narrow + font 1.3 from Home; restart the fake-client):\n9) All three enter ≥1 digit (Cyd plays by itself; check on the board). A enters 2 wrong digits: every card's score fully visible (game-online-3p-small ✓1); if space is short the old pip is cut on the left, not the score (✓2); no horizontal scroll, whole board visible (✓3).\n10) B 'כניעה' → 'כן, להיכנע' → 'לבית': B goes Home at once (game-surrender-3p-home ✓1; B plays the task's phone A role); on A the game goes on and B's card stays dimmed with 'נכנע' (✓2).\n11) B, while A and Cyd still play: 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב' → 'כבר יש לך חיפוש או משחק מדורג פעיל, אולי במכשיר אחר.' with the small code alreadyQueued (game-surrender-3p-requeue ✓1).\n12) Ctrl+C the fake-client, wait ~25 s: when A is the only one left the game ends, board ~0.5 s, then results (game-online-3p-last-player ✓1) with 'ניצחון!' and 'מקום 1 מתוך 3' (✓2). A 'לבית'.\n13) B tries the search again: it starts normally (requeue ✓2); cancel the search at once. Restore density and font on A.",
+      "estMinutes": 35
+     },
+     {
+      "key": "game-ranked-4p",
+      "title": "Two phones + two fake-clients, ranked 4p: one game covers cards, pips, x5 overflow, small phone (on B) and exit order",
+      "tasks": [
+       "game-online-4p-cards",
+       "game-online-4p-pips",
+       "game-online-4p-overflow",
+       "game-online-4p-small",
+       "game-online-exit-order"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "Phone B (טלפון 3) narrow + big font for the whole game: adb -s B shell wm density 480 and adb -s B shell settings put system font_scale 1.3 from Home before searching; restore after the game: adb -s B shell wm density reset and settings put system font_scale 1.0. Phone A stays normal.",
+      "setup": "BLOCKED until Moshe gives two Firebase ID tokens of test accounts. Phone A = טלפון 1 (normal), phone B = טלפון 3 (narrow + font 1.3; it plays the 'small phone' of game-online-4p-small), both Hebrew. Two fake-clients on the PC: npm run fake-client -- --queue fast-4p --name Cyd --url wss://sudoku-fight-staging.fly.dev --token <t1> ; npm run fake-client -- --queue fast-4p --name Dan --url wss://sudoku-fight-staging.fly.dev --token <t2>. Start both, then both phones 'שחק' → '4 שחקנים' → 'מהיר' → 'מצא יריבים', wait for GO.",
+      "script": "1) A screenshot: four small cards in one row, mine first and a bit wider, then by seat with ● ▲ ■ ◆ (game-online-4p-cards ✓1); each with place #1-#4 (✓2, first half); 'הפרעה' on each rival, 'כניעה'+'תגובות' on mine (✓3).\n2) A enters 2 wrong digits in 2 cells: on A and on B, A's card shows only ONE pip, the last penalty (game-online-4p-pips ✓1); score not cut (✓2).\n3) B (narrow, font 1.3) enters 2 wrong digits; screenshot B: four cards in one row, no horizontal scroll, names cut with '…' if needed (game-online-4p-small ✓1); every score fully visible, board and keypad fully visible (✓2); if short of space the pip is cut on the left, not the score (✓3).\n4) A enters 3 more wrong digits (5 total): on A and B '×5' then only the last penalty (game-online-4p-overflow ✓1); a 6th: '×6' (✓2); score not cut (✓3). If on narrow B A's pip is cut so far that the value or '×5' cannot be read, the B side of 4p-pips/overflow is not proven: only then repeat steps 2 and 4 in a second 4p game with B restored to normal.\n5) Play a few minutes; when places change the card order on A does not move (4p-cards ✓2).\n6) Every player has entered ≥1 digit (fake-clients play by themselves). B 'כניעה' → 'כן, להיכנע'; a few seconds later A the same; both stay on the game screen: B 'נכנעת · מקום 4', A 'נכנעת · מקום 3' (game-online-exit-order ✓1). Stop the Dan fake-client (Ctrl+C) so Cyd is left after ~25 s; results open on both phones by themselves: A place 3, B place 4, the same on both (✓2). Stop Cyd. Both 'לבית'. Restore density and font on B.",
+      "estMinutes": 18
+     }
+    ],
+    "duplicates": [],
+    "moshe": [],
+    "notes": "I checked all 75 game tasks: each one is in exactly one session (verified with a script, no missing, unknown or repeated ids). 9 sessions instead of 10.\n\nDuplicates: none. I read the full catalog text of the done tasks the first plan named. None covers every ✓ line of a game task:\n- general-lang-board-ltr has no digit counts and no 'ביטול בחירה'.\n- general-lang-signed-numbers does not check 'מהלך שיא'.\n- levels-practice-freeze-solo does not check 'cannot tap during the countdown'.\n- levels-practice-freeze-bot does not check the 'ממשיכים בעוד' cover.\n- avatars-look-locked-cell does not check 'חושב…', 'בוחר ·' or 'no seconds'.\n- postgame-results-v2-solo-ended/full-gold do not check 'no black screen' or 'full board ~1 s, no window'.\n- levels-no-reactions is in the levels mode, not practice vs bot.\n- The done game-surrender-ranked-dialog is the 'behind' case. The guard texts (first move, not behind) are different.\n\nMoshe: none. The 3p and 4p sessions are blocked until Moshe provides Firebase ID tokens of test accounts: one for 3p, two for 4p. The stealth bot only fills 2p, and friends rooms have no bots. With the tokens the AI can run them, so they are not Moshe tasks.\n\nSavings:\n- One solo game to a full board covers 26 tasks, and the puzzle is solved from a screenshot only once.\n- The 4p tasks need one game instead of two: phone B is the narrow, big-font phone from the start.\n- The [both] tasks that need only one phone stay on one phone (sign-hebrew, reactions-send-self, 2p-cards-en).\n\nParallel runs:\n- game-ranked-en-bot (phone 1, ranked) can run next to any practice session on the other phone, as long as that phone does not search ranked.\n- The practice sessions can be split across the two phones.\n\nRisks:\n- Bot 5 fills the board fast, so the grandmaster script orders the steps and has a fallback game.\n- Airplane mode needs USB adb, not wireless.\n- The game screen is read from screenshots only (uiautomator cannot read it). For game-lock-one and relock-wait, send both taps in one adb shell command.\n- After every density or font change, restore the setting at the end of the session."
+   },
+   "changes": [
+    "Fixed a missing check: the script of game-lock-cancel covered only ✓1. ✓2-3 (cancel with a locked cell: ring gone, 'בחר משבצת', no penalty) were not covered. Added them as step 8 of the solo session.",
+    "Merged the sessions game-solo-first-moves and game-solo-full-board into one solo game that reaches a full board (26 tasks). This saves one game setup, and the puzzle is solved from a screenshot only once.",
+    "Moved game-surrender-practice-confirm (the end of an online solo game) into the short-games session. It is done online, before airplane mode is turned on. Renamed the session game-practice-offline to game-practice-end-offline.",
+    "Solo session: target cell X is picked so that P ends in .5. So game-moves-penalty-value ✓2 (halves) and game-moves-sign-hebrew ✓1-2 (including 'מהלך שיא') are certain to be checked on that one cell. Before, they depended on chance.",
+    "game-surrender-practice-dialog / lock-runs: the wait is now 'זמן למשבצת' + 2 s. Before it said '≥5 s', which does not prove the lock time ran out.",
+    "game-practice-solo-hud ✓3: two screenshots 2 s apart, to show that 'זמן' is running. Also added avatar, ● and 'אני' for ✓1.",
+    "game-bot-grandmaster: reordered the steps (background before the wrong digits). Added a fallback: a new bot-5 game if the board fills before the mute steps are done. Its estMinutes is 15.",
+    "game-ranked-4p: one game instead of two. Phone B (טלפון 3) is the narrow, font 1.3 phone from the start, so game-online-4p-small is checked on B in the same game. A second game runs only if B cannot read A's pip.",
+    "game-ranked-3p and game-ranked-4p are marked BLOCKED until Moshe provides Firebase ID tokens. The stealth bot only fills 2p, and friends rooms have no bots (spec, sections 1156 and 1244). The fake-client does play by itself (enters digits), so no step depends on manual moves.",
+    "game-ranked-3p: added a check that phone B's airplane mode is OFF at the end of game 1. Its estMinutes went from 30 to 35.",
+    "game-ranked-2p: game-surrender-opponent-lock ✓2 (never black) is now listed explicitly. Its estMinutes went from 45 to 55: a full-board game played by two phones plus 10 short ranked games.",
+    "Duplicates and Moshe: checked against the full catalog text of the done tasks (apps/server/data/qa-catalog.json). There is no real duplicate and no Moshe-only task, so both stay empty. Checked with a script that each of the 75 ids appears exactly once."
+   ]
+  },
+  {
+   "key": "ranked-postgame",
+   "plan": {
+    "sessions": [
+     {
+      "key": "ranked-solo-bot",
+      "title": "טלפון 1 מול הבוט הסמוי: דירוג בסוג משחק, חיפוש 4 שחקנים, 5 כניעות עם משבצת נעולה, והדירוג בבית אחרי כל דרך יציאה",
+      "tasks": [
+       "ranked-entry-type-ratings",
+       "ranked-four-type-and-search",
+       "ranked-duel-opponent-card",
+       "ranked-duel-surrender-home",
+       "ranked-duel-home-immediate",
+       "ranked-duel-home-progress",
+       "ranked-duel-results-background",
+       "ranked-duel-gametype-new-rating",
+       "ranked-end-i-surrender-my-lock-5x"
+      ],
+      "phones": 1,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "טלפון 1 (אורי) בבית, בעברית, עם רשת. הבוט הסמוי פעיל ב־staging, ולבודק אין דרך לכבות אותו: המתג באתר הניהול דורש התחברות של משה, ומפתח ה־QA לא פותח אותו. בזמן הזה טלפון 3 לא מחפש '2 שחקנים' במדורג, ומריץ במקביל את postgame-screens-he. המשימות שכתוב בהן 'שני טלפונים' נבדקות כאן מול הבוט, כי הבדיקות שלהן הן רק בטלפון א'. דרך החיפוש בכל משחק: 'שחק' ← במדורג '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. הבוט מגיע אחרי 8–20 שניות. רק משחקים 1 ו־2 מורידים דירוג, כדי שהפער מול טלפון 3 יישאר קטן לקראת המשחקים של שני הטלפונים. טווח החיפוש הוא ±50, ומתרחב ב־25 כל 5 שניות.",
+      "script": "1. בבית מצלמים את כרטיס הפרופיל ורושמים: הדירוג ב'מהיר' (ו'זמני' אם יש), רמה, פס XP, מספר משחקים, אחוז ניצחונות ורצף (השלב 2 של home-progress ושל home-immediate).\n2. 'שחק' ← צילום של 'משחק חדש': בשורות '2 שחקנים', '3 שחקנים' ו־'4 שחקנים' במדורג אין דירוג (entry-type-ratings ✓1). '2 שחקנים' ← צילום של 'סוג משחק': בכל אחד משלושת הכרטיסים 'הדירוג שלך' עם מספר ו'זמני' (✓2). את 1200 עם 'זמני' בודקים בכרטיס שעוד לא שוחק, למשל 'קשה'. אם 'מהיר' כבר לא 1200/זמני: ½, והחלק הזה נשאר למשה (צריך חשבון חדש). מצלמים את הטקסט 'עם דירוג. יריב קרוב לדירוג שלך…' ואת הכפתור 'מצא יריב' (✓3).\n3. 4 שחקנים (הבוט הסמוי לא נכנס ל־3–4): חזרה ← במדורג '4 שחקנים'. מצלמים את הטקסט '…המשחק מתחיל כשהשולחן מלא.' ואת 'מצא יריבים' (four-type ✓1). 'מהיר' ← 'מצא יריבים'. מצלמים 'מחפש יריבים…', התג 'מדורג · 4 שחקנים · מהיר', שלושה מקומות פנויים עם 'מחפש…' ו־▲ ■ ◆, ו'יריבים' ⁦0/3⁩ (✓2). מחכים ל'כרגע אין מספיק שחקנים שמחפשים משחק כזה' עם 'שחק מול בוט בינתיים' ומצלמים (✓3). 'ביטול חיפוש' וחוזרים לבית.\n4. משחק 1 (הדירוג יורד): מחפשים. ב'נמצא יריב!' מצלמים את האווטר, הדגל והדירוג של היריב. אחרי GO מצלמים את הכרטיס שלו מעל הלוח (opponent-card ✓). מיד מזינים ספרה שגויה, ספרה שכבר מופיעה באותה שורה. עכשיו הניקוד שלי שלילי והבוט מוביל, וזה נחשב מהלך, כך שהגנת 'לפני מהלך' לא מאפסת את השינוי. מפעילים screenrecord, בוחרים משבצת ריקה אחרת (טבעת ושניות) ומיד 'כניעה' ← 'כן, להיכנע'. 5x מופע 1: הדיאלוג נעלם, הלוח נשאר כחצי שנייה, ואז 'הפסד'. רושמים את הדירוג בתוצאות ולוחצים מיד 'לבית'. מצלמים את כרטיס הפרופיל כל 2–3 שניות, במשך כ־10 שניות: בעמודה 'מהיר' הדירוג מהתוצאות, עם 'זמני' אם יש, והוא לא חוזר לישן (home-immediate ✓1 ✓2, surrender-home ✓). מספר המשחקים עלה ב־1, ואחוז הניצחונות והרצף השתנו לפי הפסד (home-progress ✓1). פס ה־XP, והרמה אם עברה, התעדכנו בלי הפעלה מחדש (✓2). אם בתוצאות יש 0 באפור עם 'לפני המהלך הראשון', חוזרים על המשחק עם ספרה נכונה ומחכים שהבוט יוביל.\n5. משחק 2 (הדירוג יורד): אותו דפוס: ספרה שגויה, screenrecord, משבצת נעולה וכניעה (5x מופע 2). רושמים את הדירוג בתוצאות. KEYCODE_HOME, מחכים 30 שניות, חוזרים לאפליקציה ומצלמים, ולוחצים 'לבית'. בעמודה 'מהיר' הדירוג מהתוצאות (results-background ✓). מיד 'שחק' ← במדורג '2 שחקנים': בכרטיס 'מהיר' אותו דירוג חדש, עם 'זמני' אם יש (gametype-new-rating ✓). חוזרים לבית.\n6. משחקים 3, 4 ו־5 (רק בשביל 5x, בלי לרדת בדירוג): אחרי GO מזינים מיד ספרה נכונה, כך שאני מוביל. אם הבוט כבר צבר, מזינים עוד ספרות עד שאני מוביל. מפעילים screenrecord, בוחרים משבצת ריקה עם טבעת, ומיד 'כניעה' ← 'כן, להיכנע' (מופעים 3–5: הדיאלוג נעלם, הלוח נשאר כחצי שנייה, ואז 'הפסד'). שינוי של 0 באפור צפוי כאן, בגלל הגנת המוביל. בכל פעם 'לבית'.\n7. 5x ✓2: באף אחד מחמשת המשחקים לא היה מסך שחור או ריק, ובכל אחד מהם 'לבית' הגיע לבית. אם הופיע 'המסך לא נטען', לוחצים 'לתוצאות' או 'לבית', ורושמים את השעה ומה נעשה.",
+      "estMinutes": 22
+     },
+     {
+      "key": "postgame-screens-he",
+      "title": "אחרי המשחק בעברית: אימון אחד מול בוט, צפייה חוזרת, קישור שבור, היסטוריה, טבלת מובילים והישגים",
+      "tasks": [
+       "postgame-replay-open",
+       "postgame-replay-steps",
+       "postgame-replay-explain-wrong",
+       "postgame-replay-moments",
+       "postgame-replay-missing",
+       "postgame-history-filter-practice",
+       "postgame-leaderboard-main",
+       "postgame-leaderboard-no-rating",
+       "postgame-leaderboard-open-card",
+       "postgame-progress-ladder",
+       "postgame-progress-xp-rules",
+       "postgame-progress-card-content"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "טלפון 3 (אחוותא), במקביל ל־ranked-solo-bot בטלפון 1. בעברית, עם רשת, בבית. אסור לחפש משחק מדורג. החשבון כבר שיחק מדורג. ל־leaderboard-no-rating צריך לשונית שאין לי בה דירוג: אם החשבון שיחק 'קשה', בודקים בלשונית 'רגיל' אם לא שוחק, ואם שוחקו שתיהן: ½, למשה. postgame-replay-open מסומן [both], אבל זה אימון מול בוט בטלפון אחד, ובודקים בו כרטיס לכל שחקן, כולל הבוט.",
+      "script": "1. 'שחק' ← 'אימון מול בוט' ← 'מהיר' ← 'בחירת יריב' ← 'טירון' ← 'יאללה, למשחק'. מזינים 2 ספרות נכונות, ואז ספרה שגויה במשבצת ריקה, ספרה שכבר מופיעה באותה שורה. זה מכסה את ההכנה של open, ‏steps, ‏explain-wrong ו־moments. 'סיום אימון' ← 'כן, לסיים' ← 'צפייה חוזרת'.\n2. בשלב 1 מצלמים: 'צפייה חוזרת' ומתחתיה 'אימון מול בוט · מהיר · היום' (replay-open ✓1). ציר השלבים, 'שלב 1 מתוך N', 'שלב הבא' בזהב ו'שלב קודם' מושבת (✓2). 'המשחק מתחיל', והלוח משמאל לימין בלי A–I ו־1–9 סביבו (✓3). ב'הסבר לכל שחקן' כרטיס לי ולבוט, ובכרטיס שלי 'עוד אין לי מהלך' ו'ההסבר יופיע אחרי המהלך הראשון' (✓4).\n3. לוחצים 'שלב הבא' שוב ושוב, ומצלמים אחרי כל לחיצה: המונה עולה באחד, והשעון מתקדם (steps ✓1). בשלב הנכון הראשון: '<שם> · נכון ב־D5 · ⁦+6⁩' (✓2), הספרה על הלוח, והניקוד בכרטיס של אותו שחקן גדל (✓3). 'שלב קודם' פעם אחת: המונה יורד והספרה נעלמת (✓4).\n4. 'שלב הבא' עד הטעות שלי: בשורה 'טעות ב־<משבצת> · ‎−X', והמשבצת מהבהבת באדום (explain-wrong ✓1). בכרטיס שלי: התג 'טעות' עם מינוס (✓2), '<ספרה> במקום <ספרה>' באדום (✓3), 'למה … לא מתאים: …', ושורת חישוב תחת 'הקנס: …' (✓4).\n5. 'רגעי מפתח': יש 'המהלך הטוב ביותר' ו'טעויות · N' (moments ✓1). 'טעויות · N' קופץ ל'טעות ב־…' והמונה משתנה (✓2). 'המהלך הטוב ביותר' קופץ ל'נכון ב־…' (✓3).\n6. adb shell am start -a android.intent.action.VIEW -d \"sudokufight://replay/nope123?source=practice\": מופיע 'לא מצאנו את המשחק הזה' (missing ✓1), בלי 'לנסות שוב' (✓2). החזרה בכותרת מובילה למסך הקודם או לבית (✓3).\n7. 'היסטוריה' ← 'אימון': רק 'אימון לבד' או 'אימון מול בוט', עם 'ללא דירוג' (filter ✓1), וההערה 'משחקי אימון לא משנים את הדירוג…' (✓2). 'מדורג': רק משחקים מדורגים, וההערה נעלמה. 'הכל': שני הסוגים (✓3).\n8. 'טבלת מובילים': הלשוניות 'כללי', 'מהיר', 'רגיל', 'קשה' ו'חברים', ומתחתן 'כללי · הדירוג הגבוה של כל שחקן' (main ✓1). 'שלושת המובילים' ואחריהם השאר (✓2). גוללים לסוף: השורה שלי מוצמדת עם 'שחק', ואין שום אזכור של עונה (✓3). 'שחק' פותח 'משחק חדש' (✓4). חוזרים ללשונית 'קשה' (או 'רגיל', לפי ההכנה): 'עוד אין לך דירוג בטבלה הזו' עם 'שחק' (no-rating ✓1). 'שחק' פותח 'משחק חדש' (✓2). חוזרים ללשונית 'מהיר' ← שורה של שחקן אחר: 'כרטיס שחקן' עם השם שלו (open-card ✓1), בלי 'כל ההישגים' (✓2). החזרה בכותרת מובילה לטבלה, ללשונית 'מהיר' (✓3).\n9. 'הישגים' וגוללים לסוף: 'הישגים והתקדמות' והאווטר בפינה (ladder ✓1). חלונית הרמה עם 'רמה', 'נקודות ניסיון', 'עוד X XP לרמה N' ופס (✓2). 'ליגה' (או 'בדירוג זמני'), וסולם של 5 ליגות עם ⁦1100+⁩, ⁦1250+⁩, ⁦1400+⁩ ו־⁦1600+⁩ (✓3). אין משימות יומיות ואין עונות (✓4). 'איך מרוויחים XP': ארבע שורות עם ערך (xp-rules ✓1), ⁦+50⁩ ו־⁦+20⁩ (✓2), ⁦+10⁩ ו־⁦+1⁩ (✓3), וה־+ צמוד למספר משמאל (✓4). האווטר בפינה ← 'כרטיס שחקן', וגוללים לסוף: ● ליד השם ו'במשחק מאז <חודש> <שנה>' (card-content ✓1). 'דירוג לפי סוג משחק', 'נתוני קרב' עם 8 הנתונים, ו'תוצאות אחרונות' (✓2). 'ההפרעה האהובה' עם 'N הפעלות', אם שלחתי הפרעות במדורג, ואם לא: רושמים שהחלק לא מופיע (✓3).",
+      "estMinutes": 22
+     },
+     {
+      "key": "postgame-english",
+      "title": "אחרי המשחק באנגלית: צפייה חוזרת, היסטוריה, טבלת מובילים והישגים, בהחלפת שפה אחת",
+      "tasks": [
+       "postgame-replay-english",
+       "postgame-history-english",
+       "postgame-leaderboard-english",
+       "postgame-progress-english"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "שפת האפליקציה English ('הגדרות' ← 'שפה' ← English ← 'החלפה והפעלה מחדש'). בסוף חוזרים לעברית, ומצלמים את הבית בעברית כהוכחה.",
+      "setup": "טלפון 3, מיד אחרי postgame-screens-he. בחשבון יש משחקים מדורגים ואימונים. המשימות מסומנות [both], אבל כולן מסכים של מכשיר אחד, וזה מספיק. מחליפים לאנגלית פעם אחת לכל ארבע המשימות. אסור לחפש משחק מדורג.",
+      "script": "1. מחליפים לאנגלית.\n2. Play ← Practice vs bot ← Fast ← Choose opponent ← Novice ← Let's play. ספרה נכונה וספרה שגויה ← End practice ← Yes, end it ← Replay. עוברים בכל השלבים עם Next step ומצלמים. 'Replay', 'Next step', 'Previous step', 'Key moments' ו־'An explanation for every player' (replay-english ✓1). השורה מעל הלוח וההסברים בלי אף מילה בעברית (✓2). הלוח משמאל לימין, עם שמות כמו D5 (✓3).\n3. History: מצלמים את All, ‏Ranked ו־Practice. הכותרת, שורת הסיכום, הכרטיסים וההערות באנגלית, בלי עברית (history-english ✓1). בכרטיס של משחק מדורג הניקוד שלי משמאל (✓2). שינויי הדירוג עם הסימן במקום הנכון, למשל ⁦+16⁩ (✓3).\n4. Leaderboard: עוברים בכל הלשוניות ומצלמים. 'Leaderboard', ‏'General' ו־'Play' באנגלית (leaderboard-english ✓1). אין עברית בממשק, והטבלה משמאל לימין (✓2). שמות בעברית מוצגים כמו שהם, בלי לשבור את השורה (✓3).\n5. Achievements וגוללים לסוף: 'Achievements & progress', ‏'League' ו־'How to earn XP' (progress-english ✓1). האווטר ← 'Player card': ‏'Battle stats', והחודש של 'במשחק מאז' באנגלית (✓2). אין עברית, ושני המסכים משמאל לימין (✓3).\n6. חוזרים לעברית: Settings ← Language ← עברית ← אישור. מצלמים את הבית בעברית.",
+      "estMinutes": 14
+     },
+     {
+      "key": "ranked-duel-pair",
+      "title": "שני הטלפונים במדורג 2 שחקנים: לוח מלא, יציאה ב־Back, שלוש הגנות היציאה, כניעות עם נעילה ובלעדיה, והיסטוריה",
+      "tasks": [
+       "ranked-found-colors-shapes",
+       "ranked-duel-full-board",
+       "postgame-results-place-2p",
+       "ranked-duel-rating-card",
+       "ranked-duel-results-back",
+       "ranked-duel-guard-before-move",
+       "ranked-duel-guard-games-count",
+       "ranked-end-surrender-no-lock",
+       "ranked-duel-guard-leader",
+       "ranked-end-report-sheet-open",
+       "ranked-duel-guard-behind",
+       "ranked-end-opp-surrenders-my-lock",
+       "postgame-history-summary",
+       "postgame-history-card-score",
+       "ranked-duel-history"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "מתחילים אחרי ש־ranked-solo-bot ו־postgame-english הסתיימו. טלפון 1 (אורי) הוא א', וטלפון 3 (אחוותא) הוא ב'. שניהם בבית ובעברית. הבוט הסמוי נשאר פעיל, כי הבודק לא יכול לכבות אותו. שני טלפונים שמחפשים יחד נמצאים זה מול זה (stealth-search-two-phones V), אבל רק כשהדירוגים שלהם קרובים: הטווח ±50, ומתרחב ב־25 כל 5 שניות, והבוט מגיע אחרי 8–20 שניות. לכן לפני משחק 1 רושמים את הדירוג ב'מהיר' בשני הטלפונים. בכל משחק: בשני הטלפונים, בהפרש של עד 3 שניות, 'שחק' ← במדורג '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. ב'נמצא יריב!' מוודאים שכל טלפון רואה את השם של השני. אם אחד מהם קיבל יריב אחר, זה הבוט: הוא נכנע לפני מהלך (בלי ירידה בדירוג), 'לבית', ומחפשים שוב. לפני כל סוף משחק מפעילים screenrecord בשני הטלפונים. postgame-history-card-score נבדק מול טלפון 3 במקום Gil ב־fake-client: היריב נכנע ואני מנצח, ושאר הבדיקות זהות.",
+      "script": "משחק 1 (לוח מלא): ב'נמצא יריב!' מצלמים את שני הטלפונים: הכרטיס שלי במסגרת תכלת עם ● ו'אני', והיריב כתום עם ▲ (colors-shapes ✓1 ✓2). משחקים עד שהלוח מתמלא, בלי כניעה: א' פותר את רוב המשבצות, וב' רק 2–3. ה־screenrecord מראה שאין דיאלוג 'המשחק הסתיים', והלוח המלא נשאר כשנייה (full-board ✓1). בתוצאות: א' 'ניצחון!' בזהב ו'מקום 1 מתוך 2', ב' 'הפסד' ו'מקום 2 מתוך 2' בלי זהב (full-board ✓2, place-2p ✓1 ✓2). בשניהם 'משחק מדורג · מהיר · 2 שחקנים' ליד 'לבית', ו'איך זה נגמר: הלוח התמלא' (place-2p ✓3 ✓4). בהקלטות, כרטיס 'שינוי דירוג · מהיר' סופר מהישן לחדש, ולידו השינוי (rating-card ✓1). את השינוי בודקים מול נוסחת Elo לפי הדירוגים שלפני המשחק, עם K=64 אם 'זמני' (✓2). 'דירוג זמני: השינוי כפול ב־10 המשחקים הראשונים' (✓3) מופיע רק בחשבון שעוד ב־10 המשחקים הראשונים. 1200 ← 1232/1168, ו־✓3 כשאף אחד מהשניים כבר לא 'זמני', נשארים למשה, כי צריך חשבונות חדשים: ½. א' 'לבית'. ב' רושם את הדירוג החדש בתוצאות, ויוצא בכפתור Back של Android עד הבית: בעמודה 'מהיר' הדירוג מהתוצאות (results-back ✓).\nמשחק 2: ב' רושם בבית את מספר המשחקים. א' מזין ספרה נכונה אחת, ואחר כך אף טלפון לא בוחר משבצת. ב' לא מזין שום ספרה, לוחץ 'כניעה' ומצלם את הדיאלוג: 'המשחק ייחשב כהפסד · הדירוג שלך לא ירד, כי עוד לא ביצעת מהלך', באפור, בלי מספר אדום (before-move ✓1). ב' לוחץ 'כן, להיכנע'. בהקלטות: אצל ב' הדיאלוג נעלם ואז 'הפסד', ואצל א' הלוח נשאר כחצי שנייה ואז 'ניצחון!', בלי מסך שחור (no-lock משחק 1, ✓1 ✓2). בתוצאות: ב' 'הפסד', 0 באפור ו'מול <א'>: הדירוג לא ירד, כי יצאת לפני המהלך הראשון שלך' (before-move ✓2). א' 'ניצחון!' עם עלייה רגילה לפי הנוסחה, בלי שורת הסבר (✓3; ⁦+32⁩ רק בין חשבונות חדשים). ב' 'לבית', מחכה כמה שניות: מספר המשחקים עלה ב־1 (games-count ✓). א' 'לבית'.\nמשחק 3: א' מזין ספרה נכונה אחת. ב' מזין ספרות נכונות עד שמופיע '<ב'> מוביל'. בא': לחיצה ארוכה על הכרטיס של ב' ← 'דווח על שחקן', ומשאירים את הגיליון פתוח. ב' לוחץ 'כניעה' ומצלם את הדיאלוג: '…הדירוג שלך לא ירד, כי אין לך פיגור', בלי מספר אדום (leader ✓1). ב' מאשר. בהקלטה של א': הגיליון יורד לבד, ואז 'ניצחון!' (report-sheet ✓1), בלי מסך שחור או ריק (✓2). בתוצאות: ב' 0 באפור ו'מול <א'>: הדירוג לא ירד, כי לא היית בפיגור כשיצאת' (leader ✓2). א' 'ניצחון!' עם 0 באפור, לא ירוק, ו'מול <ב'>: אין תוספת לדירוג, כי היית בפיגור ברגע היציאה' (leader ✓3). שניהם 'לבית'.\nמשחק 4: ב' מזין ספרה נכונה אחת, וא' מזין ספרות עד שהוא מוביל. ב' לוחץ 'כניעה' ומצלם את הדיאלוג: 'המשחק ייחשב כהפסד · שינוי דירוג משוער', עם מספר אדום (behind ✓1). א' בוחר משבצת ריקה (טבעת ושניות), ומיד ב' מאשר. בהקלטות: אצל א' הטבעת דוהה, הלוח נשאר כחצי שנייה, ואז 'ניצחון!' עם 'היריב נכנע לפני שהלוח התמלא' (my-lock ✓1). אצל ב' הדיאלוג נעלם ואז 'הפסד' (✓2). בתוצאות: ב' יורד וא' עולה, לפי הנוסחה, ובלי שורות הסבר (behind ✓2; 1168/1232 רק בחשבונות חדשים, ואם לא: ½ על החלק הזה). אין מסך שחור, וב־א' 'לבית' מגיע לבית (my-lock ✓3).\nביקור היסטוריה בא' (אחרי ההפסדים מול הבוט, ניצח במשחקים 1–4, ולכן יש רצף): 'היסטוריה'. שורת הסיכום 'N משחקים · X% ניצחונות · M אימונים' (history-summary ✓1), ותג להבה 'רצף' עם מספר (✓3). הכרטיס העליון הוא משחק 4: שם היריב ו'ניצחון · מדורג · מהיר' (card-score ✓1). '<שלי> : <שלו>', והמספר שלי משמאל (✓2), בצבע P1, והמספר שלו באפור (✓3). שינוי הדירוג, 'היום', ו'צפייה חוזרת' עם חץ (✓4, חלק א'). הסינון 'מדורג': המשחק ראשון, עם התוצאה ושינוי הדירוג (duel-history ✓1). לחיצה עליו פותחת את 'צפייה חוזרת' של המשחק הזה, עם שם היריב (duel-history ✓2, card-score ✓4). אחר כך 'הישגים' ← האווטר ← 'נתוני קרב': N ו־X זהים ל'משחקים' ול'אחוז ניצחונות', והאימונים לא נספרים ב־N (history-summary ✓2). חוזרים לבית.\nמשחק 5: א' מזין ספרה נכונה אחת. אף טלפון לא בוחר משבצת, וא' לוחץ 'כניעה' ← 'כן, להיכנע'. בהקלטות: אצל א' הדיאלוג נעלם ואז 'הפסד', ואצל ב' הלוח נשאר כחצי שנייה ואז 'ניצחון!', בלי מסך שחור או ריק (no-lock משחק 2, ✓1 ✓2). שניהם 'לבית'.",
+      "estMinutes": 34
+     },
+     {
+      "key": "ranked-end-pair",
+      "title": "שני הטלפונים במדורג: מסך נעול בסוף משחק, ויריב שסוגר את האפליקציה",
+      "tasks": [
+       "ranked-end-screen-off-30s",
+       "ranked-end-screen-off-over-minute",
+       "ranked-end-opp-closes-app",
+       "ranked-end-opp-left-home"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none. נעילת מסך עם keyevent 26, ופתיחה עם WAKEUP והחלקה. סגירת האפליקציה בהחלקה מהמשימות האחרונות, ואחר כך מפעילים אותה שוב (monkey או am start). בלי clear data ובלי force-stop של נתונים.",
+      "setup": "ממשיכים מיד אחרי ranked-duel-pair. טלפון 1 הוא א' וטלפון 3 הוא ב', ושניהם בבית. בכל משחק שניהם מחפשים במדורג '2 שחקנים' ← 'מהיר', בהפרש של עד 3 שניות, ובודקים ב'נמצא יריב!' שהיריב הוא הטלפון השני. אם יריב הוא הבוט: מי שקיבל אותו נכנע לפני מהלך ומחפשים שוב. הבוט נשאר פעיל.",
+      "script": "משחק 6: באמצע המשחק, בלי משבצת נבחרת, א' נועל את המסך. ב': 'כניעה' ← 'כן, להיכנע'. אחרי 30 שניות פותחים את א', ומצלמים מיד: חזרה למשחק שנגמר, ובתוצאות 'ניצחון!' (screen-off-30s ✓1), בלי מסך של חיבור שאבד (✓2). שניהם 'לבית'.\nמשחק 7: א' נועל את המסך. ב' נכנע. אחרי 80 שניות פותחים את א': מסך 'החיבור אבד' עם 'לבית' (over-minute ✓1). 'לבית' מגיע לבית, בלי מסך שחור או ריק (✓2). ב' 'לבית'.\nמשחק 8: א' מזין ספרה נכונה אחת. ב' נסגר מהמשימות האחרונות. בא' לא נוגעים, ומצלמים כל 2 שניות במשך כ־40 שניות: נקודה כתומה (עד 10 שניות), ואז 'המשחק מוקפא', 'היריב מתנתק…' וטבעת שסופרת מ־15 (closes-app ✓1). אחר כך 'בודקים מול השרת…', ואז '<ב'> עזב את המשחק' עם 'ניצחת בנטישה' והכפתורים 'לתוצאות' ו'לבית' (✓2). 'לתוצאות' פותח 'ניצחון!' עם התג 'ניצחת בנטישה', בלי מסך שחור (✓3). מפעילים את ב' שוב ומחכים לבית.\nמשחק 9 (התפקידים הפוכים): באמצע המשחק א' נסגר מהמשימות האחרונות. ב' מחכה ל'<א'> עזב את המשחק' (כחצי דקה) ולוחץ 'לבית': מגיע לבית, ולא למסך שחור או ריק (left-home ✓). מפעילים את א' שוב.",
+      "estMinutes": 16
+     },
+     {
+      "key": "ranked-multi-full",
+      "title": "עם fake-client בלבד: יריב שלא התחבר, 3 שחקנים, ומשחק 4 שחקנים מלא",
+      "tasks": [
+       "ranked-search-no-show",
+       "ranked-three-recent-pair",
+       "ranked-four-found",
+       "ranked-four-recent-pair",
+       "ranked-four-surrender-no-loss-dialog",
+       "ranked-four-cards",
+       "ranked-four-interfere-target",
+       "ranked-four-results",
+       "ranked-four-elo-new",
+       "ranked-four-fake-client-summary",
+       "ranked-four-home-rating"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none (הבוט הסמוי נשאר פעיל: המתג דורש התחברות של משה לאתר הניהול)",
+      "setup": "תנאי סף: ID tokens של חשבונות הבדיקה Gil, ‏Cyd ו־Dan, שמשה מסר לפני הסבב. בסבב 4 לא היו לבודק tokens (avatars-pirates-api-catalog נשאר למשה בגלל זה), ואין לו דרך להשיג אותם בעצמו. אם אין tokens: לא נוגעים בטלפונים, ומסמנים את כל 11 המשימות 'לא נבדק: צריך ID tokens ממשה'. אם יש: מריצים מיד אחרי ranked-end-pair, כדי שטלפון 1 וטלפון 3 בדיוק שיחקו זה מול זה ב'מהיר'. ‏fake-client רץ מתיקיית הפרויקט עם ‎--url wss://sudoku-fight-staging.fly.dev ו־‎--token. שני הטלפונים בבית. הבוט הסמוי לא נכנס ל־3–4 שחקנים (stealth-search-3p-no-bot V).",
+      "script": "1. no-show: טלפון 3 לא מחפש. טלפון 1: '2 שחקנים' ← 'מהיר' ← 'מצא יריב', ותוך שנייה–שתיים fake-client ‎--queue fast-2p --name Gil --no-show. מצלמים כל 2 שניות במשך 15 שניות: 'נמצא יריב!' עם Gil (✓1), ואחרי כ־10 שניות חזרה למסך החיפוש עם 'השחקן השני לא התחבר בזמן. חזרת לראש התור.' (✓2). מיד אחר כך 'ביטול חיפוש', לפני שהבוט מגיע. אם ב'נמצא יריב!' מופיע יריב אחר ולא Gil, זה הבוט, כי Gil לא בטווח: נכנעים לפני מהלך, ומנסים פעם אחת נוספת. אם שוב לא Gil: ½, ונשאר למשה עם הבוט כבוי.\n2. 3 שחקנים: טלפון 1 וטלפון 3 מחפשים '3 שחקנים' ← 'מהיר' ← 'מצא יריבים', ומצלמים בשניהם 'כרגע אין מספיק שחקנים שמחפשים משחק כזה' (three ✓1). השחקן השלישי הוא Gil (fake-client ‎--queue fast-3p --name Gil), ולא Cyd, כדי ש־Cyd ו־Dan יישארו 'לא שיחקו' בשלב 3. מהרגע ש־Gil מתחיל, מצלמים את שני הטלפונים כל שנייה: 'נמצאו יריבים!' תוך 1–2 שניות, בלי פסק הזמן של דקה (✓2), ו'שיחקתם זה מול זה לאחרונה' בשניהם (✓3; השחקן השלישי הוא fake-client, ולכן החלק של טלפון ג' לא רלוונטי). נכנעים בשני הטלפונים, 'לבית', ועוצרים את Gil.\n3. 4 שחקנים: טלפון 1 וטלפון 3: '4 שחקנים' ← 'מהיר' ← 'מצא יריבים'. מריצים את Cyd ואז את Dan (‎--queue fast-4p --speed 2 --level 2). מהרגע ש־Dan מתחיל, מצלמים את שני הטלפונים כל שנייה: 'נמצאו יריבים!' תוך 1–2 שניות (four-recent ✓1), ו'שיחקתם זה מול זה לאחרונה' (✓2). אם Cyd או Dan שיחקו מול אחד הטלפונים בסבבים קודמים, רושמים את זה. בטלפון 1 מפעילים screenrecord עד GO: ארבעה כרטיסים בשתי עמודות, אני ראשון בתכלת עם ●, ואחריי ▲ ■ ◆ (four-found ✓1). לכל אחד אווטר, שם, דגל, דירוג ו'מוכן' (✓2). 'מוכנים' ⁦4/4⁩, ואז 3, 2, 1, GO! עם ארבעת השחקנים בשורה (✓3). רושמים את הדירוגים של ארבעתם.\n4. במשחק, בטלפון 1: מזינים ספרות נכונות עד ⁦#1⁩. 'כניעה': מצלמים את הדיאלוג '…הדירוג שלך לא ירד מול אף שחקן שנשאר במשחק.' (no-loss-dialog ✓1). אין מספר אדום. 'ביטול' סוגר את הדיאלוג, והמשחק ממשיך (✓2). לאורך המשחק מצלמים את הכרטיסים מעל הלוח: שורה אחת, ואני ראשון (four-cards ✓1). ⁦#1⁩–⁦#4⁩ על הכרטיסים (✓2). כשהמקומות מתחלפים, המספרים משתנים והכרטיסים לא זזים (✓3). עם 2 נקודות ומעלה: 'הפרעה' בכרטיס של Cyd, בלי גרירה. מצלמים: רק Cyd ממוסגר ומואר, השאר עמומים, והקשה על כרטיס אחר לא עושה כלום (interfere ✓1). 'אני ← Cyd' עם שני האווטרים והצורות (✓2). 'זיקוקים': החלון נסגר והניקוד שלי יורד במחיר. ההפרעה לא מגיעה לטלפון 3 (צילום שלו), ולא ל־Dan (בלוג שלו, אם הוא מדפיס הפרעות) (✓3). טלפון 3 מזין כמה ספרות נכונות, כדי שלא יישאר על 0 ולא יהיה תיקו.\n5. משחקים עד שהלוח מתמלא, בלי כניעות ובלי ניתוקים. מצלמים את התוצאות בשני הטלפונים: פודיום למקומות 1–3, שורה למקום 4, ושינוי דירוג ליד כל אחד (four-results ✓1). המיקום והשינויים זהים בשני הטלפונים (✓2). elo-new: בודקים שאין תיקו בניקוד (✓2), ומשווים את השינויים לנוסחה (K זוגי ⁦32/3⁩, כפול 2 בדירוג זמני) לפי הדירוגים שרשמת (✓1). ⁦+32⁩/⁦+11⁩/⁦−11⁩/⁦−32⁩ מדויק רק אם ארבעת החשבונות חדשים, ואם לא: ½ על החלק הזה, למשה. בחלונות של Cyd ושל Dan: כל אחד מדפיס את הדירוג לפי התוצאה, ואת הדירוג השמור לפני ואחרי (GET /v1/me) (fake-summary ✓1), ובכל אחד שני המספרים שווים (✓2). טלפון 1 רושם את הדירוג החדש ← 'לבית': אותו דירוג בעמודה 'מהיר' (four-home-rating ✓). טלפון 3 'לבית'.",
+      "estMinutes": 30
+     },
+     {
+      "key": "ranked-multi-surrender",
+      "title": "עם fake-client בלבד: כניעות במשחק 4 שחקנים, סדר מי שיצאו, חסימת חיפוש חדש, ויריב שיצא לפני המהלך שלי",
+      "tasks": [
+       "ranked-four-surrender",
+       "ranked-four-leavers-order",
+       "ranked-four-surrender-no-new-search",
+       "postgame-results-leaver-4p"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "none",
+      "setup": "אותו תנאי סף כמו ranked-multi-full: ID tokens של Cyd ו־Dan ממשה. בלעדיהם לא נוגעים בטלפונים, ומסמנים את ארבע המשימות 'לא נבדק: צריך ID tokens ממשה'. רץ מיד אחרי ranked-multi-full. שני הטלפונים בבית. בכל משחק: שני הטלפונים 'מדורג' ← '4 שחקנים' ← 'מהיר' ← 'מצא יריבים', ושני fake-client על fast-4p. הבוט הסמוי פעיל, אבל הוא לא נכנס ל־4 שחקנים.",
+      "script": "משחק 4p-2 (Cyd ו־Dan רגילים, ‎--speed 2 --level 2): טלפון 1 פותר כמה משבצות ← 'כניעה' ← 'כן, להיכנע'. מצלמים את טלפון 1: 'נכנעת · מקום N' ו'המשחק ממשיך עד הסוף', והקשה על הלוח לא עושה כלום (four-surrender ✓1). מצלמים את טלפון 3: הכרטיס של טלפון 1 עמום, והמשבצות שהוא פתר בצבע שלו (✓2). המשחק ממשיך ל־3 ול־fake-clients, ויש ספרות חדשות על הלוח (✓3). כמה שניות אחר כך טלפון 3 נכנע. שני הטלפונים נשארים במסך המשחק עד שה־fake-clients ממלאים את הלוח. בתוצאות, בשני הטלפונים: Cyd ו־Dan במקומות 1–2 לפי הניקוד (leavers ✓1), טלפון 3 במקום 3 וטלפון 1 במקום 4 (✓2), וזה זהה בשני הטלפונים (✓3). שניהם 'לבית'.\nמשחק 4p-3 (Cyd רגיל, ו־Dan עם ‎--leave-after 10): טלפון 3 הוא 'טלפון א'' של leaver-4p, ולא מזין ספרה ב־15 השניות הראשונות. אחרי ש־Dan יצא, טלפון 3 מזין 2–3 ספרות נכונות. רק אחרי שהניקוד של טלפון 3 גבוה מזה של טלפון 1, טלפון 1 מזין ספרה נכונה אחת, כך שהוא בפיגור מול טלפון 3 ולא תיווצר אצל טלפון 3 שורת הסבר נוספת. אחר כך 'כניעה' ← 'כן, להיכנע' ← 'לבית' ← מיד 'שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. מצלמים: 'החיפוש נעצר', 'כבר יש לך חיפוש או משחק מדורג פעיל, אולי במכשיר אחר.', והקוד alreadyQueued-… (no-new-search ✓1; את הצילום מצרפים גם כראיה ל־ranked-entry-already-queued של משה). 'חזרה לבית'. טלפון 3 משחק עד הסוף. בתוצאות שלו: ליד Dan 'יצא מהמשחק' (leaver-4p ✓1). בשורה של Dan בכרטיס 'שינוי דירוג · מהיר': 0 באפור (✓2). שורת הסבר אחת בלבד: 'מול Dan: אין תוספת לדירוג, כי היציאה הייתה לפני המהלך הראשון שלך' (✓3). סכום שלושת היריבים שווה לשינוי הכולל (✓4). אחרי שהמשחק נגמר, טלפון 1 שוב 'מצא יריב': החיפוש מתחיל כרגיל (no-new-search ✓2), ו'ביטול חיפוש' מיד, לפני שהבוט מגיע (8 שניות).",
+      "estMinutes": 20
+     }
+    ],
+    "duplicates": [],
+    "moshe": [
+     {
+      "id": "ranked-entry-unverified-email",
+      "reason": "צריך חשבון שהמייל שלו לא אומת. שני הטלפונים מחוברים לחשבונות מאומתים, ואסור להתחבר או להתנתק. אין דרך חלופית."
+     },
+     {
+      "id": "ranked-entry-already-queued",
+      "reason": "צריך את אותו חשבון בשני מכשירים, כלומר להתחבר בטלפון 3 לחשבון של טלפון 1, ואסור להתחבר. החלופה עם fake-client דורשת ID token של החשבון של אורי, ולבודק אין אותו. המסך 'החיפוש נעצר' עם alreadyQueued יצולם ב־ranked-four-surrender-no-new-search, אם הסבב הזה ירוץ, כראיה ל־✓1 ול־✓2. אבל המקרה שהמשימה בודקת (אותו חשבון במכשיר אחר, והחיפוש הראשון ממשיך) נשאר למשה."
+     }
+    ],
+    "notes": "61 משימות: 59 בשבעה סבבים, ו־2 למשה. אין כפולות אמיתיות. בדקתי בקטלוג את משימות ה־V הקרובות, ואף אחת לא מכסה את כל ה־✓ של משימה כאן:\n- account-home-after-ranked: בודקת שהדירוג השתנה, ולא שהוא שווה לתוצאות או שהוא נשאר אחרי 10 שניות.\n- stealth-after-history-card: בלי 'ניצחון', בלי סדר הניקוד ובלי הצבע.\n- postgame-results-v2-new-game-ranked: נגמרת בכניעה, ולא בודקת 'משחק מדורג · מהיר · 2 שחקנים' או 'הלוח התמלא'.\n- states-match-abandon-*: נבדקו עם מצב טיסה, בלי ההקפאה והטבעת מ־15, ובלי סגירת האפליקציה.\n- game-surrender-ranked-dialog: ½, ולכן לא מכסה את behind ✓1.\n\nסדר וזמן: (1) במקביל: ranked-solo-bot בטלפון 1 (22 דקות), ו־postgame-screens-he ואחריו postgame-english בטלפון 3 (36 דקות). (2) ranked-duel-pair (34). (3) ranked-end-pair (16). (4–5) ranked-multi-full ו־ranked-multi-surrender (50), רק אם משה מסר tokens. בלעדיהם אין להפעיל אותם בכלל: 15 המשימות עוברות למשה, והסבב הוא כ־86 דקות של זמן אמיתי.\n\nתלויות:\n- הבודק לא יכול להחליף את מתג הבוט הסמוי. ה־POST ‏/admin/stealth/switch דורש התחברות של משה, ומפתח ה־QA פותח רק את ‎/qa. לכן אף סבב לא מכבה אותו. ב־no-show בודקים ש־Gil הוא היריב.\n- אחרי ranked-solo-bot, הפער בין אורי לאחוותא ב'מהיר' צריך להיות קטן: הטווח ±50, ומתרחב ב־25 כל 5 שניות, והבוט מגיע אחרי 8–20 שניות. לכן רק 2 משחקים מול הבוט מורידים דירוג.\n- חלקים שתלויים בחשבון חדש מסמנים ½, והחלק הזה נשאר למשה: הערך 1200 ב־entry-type-ratings ✓2, ‏1200←1232/1168 ו'דירוג זמני' ב־rating-card, ‏⁦+32⁩ ב־before-move ✓3, ‏1168/1232 ב־behind ✓2, ו־⁦+32/+11/−11/−32⁩ ב־elo-new. הבודק מאמת את הנוסחה מול הדירוגים האמיתיים שלפני המשחק."
+   },
+   "changes": [
+    "fake-client אינו זמין: בסבב 4 לא היו לבודק ID tokens. ‏avatars-pirates-api-catalog נשאר למשה מאותה סיבה, ו־catalog-issues ‏C57 ו־C75 מתעדים את זה. לכן ranked-multi-full ו־ranked-multi-surrender (15 משימות) מקבלים תנאי סף: בלי tokens ממשה לא נוגעים בטלפונים ומסמנים 'לא נבדק'. בהערות כתוב שאם אין tokens, לא מפעילים אותם בכלל.",
+    "המתג של הבוט הסמוי דורש התחברות של משה לאתר הניהול, ומפתח ה־QA פותח רק את ‎/qa. לכן הסרתי את 'מכבים או מחזירים את הבוט' מ־no-show. במקומו: Gil מתחיל תוך 1–2 שניות, ובודקים שהוא היריב, ואם לא: ½.",
+    "ranked-four-type-and-search עבר מ־ranked-multi-full ל־ranked-solo-bot. כל ה־✓ שלו נבדקים בטלפון אחד, בלי fake-client, והבוט לא נכנס ל־4 שחקנים. כך הוא כבר לא תלוי ב־tokens.",
+    "ranked-duel-results-back עבר מ־ranked-solo-bot למשחק 1 של ranked-duel-pair: ב' יוצא ב־Back. בתוכנית הקודמת משחק 2 מול הבוט יצא ב־Back, ולכן 5x ✓2 ('לבית' מגיע לבית) נבדק רק 4 פעמים מתוך 5. עכשיו כל חמשת המשחקים נגמרים ב'לבית'.",
+    "ranked-duel-results-background ו־ranked-duel-gametype-new-rating מאוחדים באותו משחק מול הבוט: חוזרים מהרקע, 'לבית', ומיד 'שחק'. רק משחקים 1–2 מורידים דירוג, ומשחקים 3–5 (רק ל־5x) נכנעים כמובילים, עם 0 בגלל ההגנה. בתוכנית הקודמת היו 5 הפסדים, שמורידים את הדירוג של אורי ומרחיקים אותו מאחוותא, ואז שני הטלפונים עלולים לקבל את הבוט במקום זה את זה (טווח ±50, ‏+25 כל 5 שניות).",
+    "מול הבוט: ספרה שגויה מיד אחרי GO במקום 'ספרה נכונה ומחכים שהבוט יוביל'. היא נחשבת מהלך ושמה אותי בפיגור מיד, כמו ב־account-home-after-ranked וב־states-match-abandon-opponent-ahead. זה חוסך המתנה, ויש דרך חזרה אם מופיע 0 של 'לפני מהלך'.",
+    "ranked-duel-pair ו־ranked-end-pair: נוספה בדיקה ב'נמצא יריב!' שהיריב הוא הטלפון השני, ואם לא: כניעה לפני מהלך וחיפוש חוזר. ההפרש בין שני החיפושים קוצר ל־3 שניות, ונרשמים הדירוגים לפני משחק 1.",
+    "rating-card ✓3 ('דירוג זמני…') מסומן ½ כשאף חשבון כבר לא 'זמני', וגם ⁦+32⁩ ב־before-move ✓3 נבדק מול הנוסחה. התוכנית הקודמת התייחסה רק למספרים 1232/1168.",
+    "ranked-three-recent-pair: השחקן השלישי הוא Gil ולא Cyd. אחרת Cyd כבר שיחק מול שני הטלפונים לפני המשחק של 4, והתנאי של four-recent ('האחרים עוד לא שיחקו מול אף אחד') נשבר.",
+    "ranked-four-interfere-target ✓3: נוספה בדיקה שההפרעה לא הגיעה לטלפון 3 ולא ל־Dan. במשחק המלא של 4 טלפון 3 מזין כמה ספרות, כדי שלא יהיה תיקו ב־0, שמבטל את elo-new.",
+    "postgame-results-leaver-4p: הסדר מפורש. טלפון 1 נכנע רק אחרי שהניקוד של טלפון 3 גבוה משלו, כדי שלא תופיע שורת הסבר שנייה, ו־✓3 דורש שורה אחת בלבד.",
+    "postgame-leaderboard-no-rating: אם החשבון שיחק 'קשה', בודקים בלשונית 'רגיל', ורק אחר כך ½. ‏card-content ✓3 תלוי בהפרעות: רושמים אם החלק לא מופיע.",
+    "postgame-english: נוסף צילום של הבית בעברית אחרי השחזור. במקביליות, ranked-solo-bot בטלפון 1 (22 דקות), ו־postgame-screens-he ואחריו postgame-english בטלפון 3 (36 דקות).",
+    "ranked-entry-already-queued נשאר למשה: אין ID token של אורי, ולכן גם החלופה עם fake-client לא אפשרית. הצילום של alreadyQueued מ־no-new-search יצורף כראיה, אם הסבב ירוץ.",
+    "הזמנים: ranked-solo-bot ‏22 (תשעה משחקים פחות הפסדים, ונוסף חיפוש של 4 שחקנים), ‏ranked-duel-pair ‏34 (נוסף Back), ‏ranked-multi-full ‏30 (בלי four-type)."
+   ]
+  },
+  {
+   "key": "interference-avatars-general",
+   "plan": {
+    "sessions": [
+     {
+      "key": "interference-ranked-new-kinds",
+      "title": "Ranked game between the two phones: six kinds, ink, scramble, keypad and the avatar reactions",
+      "tasks": [
+       "interference-where-staging-new-new",
+       "avatars-react-hit-target",
+       "avatars-react-hit-sender",
+       "interference-new-ink-look",
+       "interference-new-ink-tap",
+       "interference-new-scramble-tap",
+       "interference-new-scramble-end",
+       "interference-new-keypad-shuffle",
+       "interference-new-keypad-cancel",
+       "interference-new-keypad-hold",
+       "interference-new-keypad-end",
+       "interference-new-keypad-digit",
+       "interference-new-fps"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "None changed. Both phones stay in Hebrew. The app's 'הפחתת תנועה' must read 'כבויה' on both phones: check it, and do not change it. If it is on, turn it off now and turn it back on at the end. Run screenrecord at 540x1170 with --time-limit 12, then pull each file and delete it from /sdcard. Never run logcat -c.",
+      "setup": "This replaces the dev-build steps (Development Build, dev:lan, fake-client --rules) with a real sender on staging: the other phone sends the kind from the picker. On staging the sender must be at least level 2 for 'מספרים מתערבלים', level 3 for 'דיו' and level 4 for 'מקלדת מתערבלת'.\n1. On both phones, read the level in 'הישגים'.\n   - S, the sender, is the phone with the higher level (expected: טלפון 1, RF8Y60PP2XZ, אורי).\n   - R, the receiver, is the other phone (expected: טלפון 3, RF8Y30L038L, אחוותא).\n2. If S is below level 3, mark the ink tasks untested ('sender level N'). If S is below level 4, mark the keypad tasks untested. Skip those hits and lower S's score target.\n3. On both phones: Home → 'שחק' → 'מדורג' → '2 שחקנים' → 'מהיר'. Tap 'מצא יריב' on both within 1 s, from a single shell command.\n4. Check that each phone's opponent is the other phone's player. If one of them got the stealth bot, both surrender and search again.",
+      "script": "1. R solves 1–2 cells, until its score is 2 or more. S solves until its score is 30 or more: ink 2 + scramble 4 + keypad 8 + keypad 16. Use correct digits only, so no score is lost.\n2. Six kinds (where-staging-new-new):\n   - R taps 'הפרעה' on S's card. Take a screenshot and a UI dump.\n   - Check that all six kinds are shown (✓1).\n   - Check that each kind above R's level is dimmed with 'רמה N' and is not hidden (✓2). If R is level 4 or higher, nothing is locked: write that, and judge ✓2 from the room session's picker-locked.\n   - Close with X. S opens the picker on R's card and checks ✓1 too, then closes it with X.\n3. Hit 1, ink (S → R, costs 2):\n   - Start screenrecord on both phones. Run gfxinfo reset on R: adb -s R shell dumpsys gfxinfo com.mosheg.sudokufight reset.\n   - S: 'הפרעה' on R's card → 'דיו'.\n   - R, from a script you wrote beforehand, starting about 1.5 s after the launch: pick 4 empty cells spread across the board. For each one, tap the cell, tap its correct digit, then screencap to /sdcard.\n   - At +7 s, run gfxinfo on R and save the output.\n   Check from the recordings and screencaps:\n   - ink-look ✓1: big blobs cover part of the board, not all of it. ✓2: the blobs wipe away gradually near the end, and none is left.\n   - ink-tap ✓: at least one of the 4 cells was under a blob when it was tapped (see the frames). It was selected, and the digit went in.\n   - avatars-react-hit-target, on S's opponent card and on R's own card:\n     - ✓1: R's avatar has spiral eyes and wobbles again and again.\n     - ✓2: the wobble lasts as long as the hit, and the dizziness ends with it.\n   - avatars-react-hit-sender:\n     - ✓1: on S, S's own avatar winks (one eye closed, no motion) for about 1.5 s.\n     - ✓2: on R, the banner '<S's name> התיז/ה עליך דיו!' shows S's avatar winking.\n   - Note the gfxinfo line for new-fps: Janky frames %, and the frames rendered in the 5 s.\n4. Hit 2, scramble (costs 4). Wait until at least 7 s have passed since the last launch.\n   - Take a screenshot of R before the hit. Run gfxinfo reset on R and start screenrecord on R.\n   - S: 'הפרעה' → 'מספרים מתערבלים'.\n   - R's script, at +1.5 s: tap an empty cell, then screencap. Do not enter a digit.\n   - When the banner has been gone for 1 s, take a screenshot. Then run gfxinfo.\n   Check:\n   - scramble-tap ✓1: the cell is selected and locked to R. ✓2: the keypad stays 1–9, left to right.\n   - scramble-end ✓1: compared with the 'before' shot, every digit is the real one, in its normal color. ✓2: no digit is still rolling, and no cell S did not solve shows a digit in S's color.\n5. Hit 3, keypad (costs 8):\n   - Take a screenshot of R before the hit. Write down where 'ביטול בחירה' is and the key order. No cell is selected.\n   - Run gfxinfo reset on R and start screenrecord on R.\n   - S: 'הפרעה' → 'מקלדת מתערבלת'.\n   - At +0.5 s, R holds one digit key for 3 s: input swipe x y x y 3000.\n   - Take a screenshot after the banner is gone. Then run gfxinfo.\n   Check, from frames about every 100 ms:\n   - keypad-shuffle ✓1: the digit keys swap places about every 1.5 s, sliding. ✓2: the board does not change.\n   - keypad-hold ✓: the held key does not move while the finger is on it.\n   - keypad-cancel ✓: 'ביטול בחירה' stays in the same place the whole time.\n   - keypad-end ✓: after the hit the keys are back in order 1–9, left to right.\n6. Hit 4, keypad (costs 16):\n   - R runs an on-device script from +0.5 s, 3 times: tap an empty cell, screencap, tap a key slot (a different slot each time), screencap.\n   - keypad-digit ✓: each time, the digit that went in is exactly the label the key had when it was tapped.\n   - If a swap happened between the screencap and the tap, read the label from the next frame. If it is still unclear, write it in the note.\n7. new-fps ✓1–2: for ink, scramble and keypad, about 55 fps or more (frames rendered ÷ 5 s), and no visible jank in the recordings.\n   - This replaces the dev-only Perf Monitor with gfxinfo on Release.\n   - R was recording and tapping at the same time, so the measurement is conservative: a pass stands.\n   - If a kind fails, write it down: it is measured again cleanly in the next session's step 11.\n8. Finish the game, or S surrenders. Return both phones to Home. Pull the recordings, and delete them from /sdcard.",
+      "estMinutes": 45
+     },
+     {
+      "key": "interference-room-classics-disconnect",
+      "title": "Friends room: the picker, fireworks/cats/warp hits and a target who disconnects",
+      "tasks": [
+       "interference-where-collection-list",
+       "interference-where-collection-soon",
+       "interference-where-collection-howto",
+       "interference-picker-locked",
+       "interference-picker-no-soon",
+       "interference-picker-rtl-he",
+       "interference-picker-double-tap",
+       "interference-picker-close",
+       "interference-picker-launch",
+       "interference-picker-launch-once",
+       "interference-picker-busy",
+       "interference-hit-sender",
+       "interference-hit-play",
+       "interference-hit-banner",
+       "interference-hit-dim-board",
+       "interference-hit-fireworks-look",
+       "interference-picker-next-price",
+       "interference-hit-lock-paused",
+       "interference-hit-cats-look",
+       "interference-hit-dim-ends",
+       "interference-hit-warp-dim",
+       "interference-hit-warp-look",
+       "interference-hit-fps-classic",
+       "interference-target-disconnects",
+       "avatars-react-reconnect",
+       "avatars-look-grey"
+      ],
+      "phones": 2,
+      "ranked": false,
+      "room": true,
+      "deviceSettings": "Both phones stay in Hebrew, and 'הפחתת תנועה' stays 'כבויה' (check it, do not change it). In step 12, turn on airplane mode on טלפון 3 for about 15 s: adb -s RF8Y30L038L shell cmd connectivity airplane-mode enable, then disable. Afterwards, check that Wi-Fi is back (dumpsys wifi, or a ping) and that the game connection is back. Run screenrecord at 540x1170 (pull each file, then delete it from /sdcard). Do not use screencap bursts for animation checks. Never run logcat -c.",
+      "setup": "Roles:\n- A is the sender: טלפון 3 (RF8Y30L038L, אחוותא, the lower-level account).\n- B is the receiver: טלפון 1 (RF8Y60PP2XZ, אורי).\n1. A: open the 'הישגים' tab and write down the level. Tap 'אוסף ההפרעות' (screen 'הפרעות'), take a UI dump and scroll to the end.\n   - collection-list ✓1: under 'הארסנל שלך', זיקוקים, חתולים and עיוות each read 'זמין'.\n   - collection-list ✓2: under 'נעולות', מספרים מתערבלים reads 'נפתח ברמה 2', דיו 'נפתח ברמה 3', מקלדת מתערבלת 'נפתח ברמה 4'. Judge only the kinds still locked at A's level. A kind that is already open is marked partial: 'needs a level-1 account'.\n   - collection-soon ✓: ערפל, פנס, רעידת אדמה and בועות each read 'בקרוב', at the end of 'נעולות'.\n   - collection-howto ✓1: the bottom reads 'במשחק: הקש על \"הפרעה\" בכרטיס היריב, ובחר הפרעה.'\n   - collection-howto ✓2: the facts show '2' with 'הקשות: \"הפרעה\" בכרטיס היריב, ואז ההפרעה'.\n   - collection-howto ✓3: nothing mentions dragging.\n2. A: Home → 'שחק' → 'צור חדר'.\n3. B: 'שחק' → 'הצטרף עם קוד', then type the 6 digits.\n4. A: tap 'התחל משחק · 2 שחקנים'.\n5. A solves cells (correct digits only) until its score is 14 or more. B solves nothing until step 11.",
+      "script": "1. picker-double-tap: A writes down its score, then double-taps 'הפרעה' on B's card fast (two input taps in one shell command).\n   ✓1: the window opens and stays open. ✓2: the score does not change, and B has no banner.\n2. With the window open, take a screenshot and a UI dump of A.\n   - picker-rtl-he ✓1: the title 'בחר הפרעה' is right-aligned.\n   - picker-rtl-he ✓2: 'זיקוקים' is top-right, and 'מקלדת מתערבלת' is bottom-left.\n   - picker-rtl-he ✓3: '⁦−2⁩' keeps its minus on the left, and the score reads correctly.\n   - picker-no-soon ✓1: there is no 'בקרוב' row or button. ✓2: no ערפל, פנס, רעידת אדמה or בועות.\n   - Keep this shot as the Hebrew reference for the English picker in the walk session.\n3. picker-locked: A taps 'מספרים מתערבלים', then 'דיו', then 'מקלדת מתערבלת', with a screenshot after each tap.\n   - ✓1: each one is dimmed with a lock and the badge 'רמה 2', 'רמה 3' or 'רמה 4'.\n   - ✓2: each stays in its place in the grid.\n   - ✓3: each tap shows a short explanation.\n   - ✓4: the window stays open, the score does not drop, and B has no banner.\n   - Judge only the kinds still locked at A's level. If one is already open, mark the task partial: 'needs a level-1 account'.\n4. picker-close: A closes the window 3 times. First tap the dark scrim. Then reopen it and close it with X. Then reopen it and press Back (keyevent 4).\n   ✓1: it closes each time. ✓2: the score is unchanged, and B has no banner.\n5. Fireworks:\n   - Write down A's score. Start screenrecord on B (--time-limit 12) and run gfxinfo reset on B.\n   - A taps 'הפרעה', waits 1 s, then double-taps 'זיקוקים' fast.\n   - picker-launch ✓1: it launches at once, with no confirmation. ✓2: the window closes and the score drops by 2. ✓3: A shows the toast 'זיקוקים ← <B's name>'. ✓4: B shows the banner.\n   - picker-launch-once ✓1: the score dropped by exactly 2, not 6. ✓2: B shows only one banner.\n6. Busy, and the sender's side:\n   - About 1.5 s after the launch, take a screenshot of A, then tap 'הפרעה' on B's card.\n   - picker-busy ✓1: the button is dimmed. ✓2: the toast reads '<השם> כבר תחת הפרעה. אפשר שוב בעוד N שניות'. For the vibration, read adb -s A shell dumpsys vibrator_manager (recent vibrations); if it shows nothing, say so in the note. ✓3: no window opens.\n   - Take screenshots of A at about +1, +3 and +5 s. hit-sender ✓1: A's board is not dimmed. ✓2: A has no banner and no effect.\n7. hit-play: at about +2 s, B taps an empty cell, then a digit (a script you wrote beforehand).\n   ✓1: the cell is selected and locked, under the effect and the dimming. ✓2: the digit goes in, and A shows it.\n8. From B's recording (frames about every 100 ms) and from gfxinfo, which you run on B at +6 s:\n   - hit-banner ✓1: '<A's name> שלח/ה לך זיקוקים!' with A's avatar. ✓2: the ring counts down 5 s, then the banner leaves. ✓3: fireworks play during that time.\n   - hit-dim-board ✓1: the board is dimmed to about 60% for all 5 s. ✓2: only the board; the keypad, the cards and the banner stay bright. Compare pixel brightness with a frame taken before the launch.\n   - hit-fireworks-look ✓1: fireworks cover the whole screen, keypad and cards included. ✓2: it looks good and ends after 5 s.\n   - Write down the Janky frames line for fps-classic (fireworks).\n9. Next price, cats and the paused lock:\n   - When the banner has been gone for about 7 s, A taps 'הפרעה' and takes a screenshot.\n   - picker-next-price ✓1: the price row reads '⁦−4⁩ נק׳' and '· הבאה: 8'. ✓2: every open kind's badge reads '⁦−4⁩ נק׳'.\n   - Keep the window open. Start screenrecord on B (--time-limit 15) and run gfxinfo reset on B.\n   - Then run one command: B taps an empty cell (the lock countdown starts), sleep 1.5, A taps 'חתולים'. B does not touch anything.\n   - Run gfxinfo on B at +6 s.\n   Check from the recording:\n   - hit-lock-paused ✓1: the lock countdown stops when the hit starts and does not drop for 5 s. ✓2: after the hit, it goes on from the same number.\n   - hit-cats-look ✓1: cartoon cats run over the whole screen, keypad and cards included. ✓2: they run smoothly and end after 5 s.\n   - hit-dim-ends ✓: the board's dimming goes away in the same frame as the banner (within about 100 ms), not before it and not after it.\n   - Write down the Janky frames line (cats).\n10. Warp:\n   - At least 7 s later: start screenrecord on B and run gfxinfo reset on B.\n   - A: 'הפרעה' → 'עיוות'. Run gfxinfo on B at +6 s.\n   - hit-warp-dim ✓1: the dark layer warps together with the board and stays exactly on it. ✓2: no straight dark rectangle moves separately.\n   - hit-warp-look ✓1: the whole screen warps (perspective, waves, color shift), keypad included. ✓2: at the end everything is back in place, with nothing left of the warp.\n   - hit-fps-classic ✓: Janky frames is 5% or less for fireworks, cats and warp alike. B was recording, so the measurement is conservative: a pass stands.\n11. Only if a fps measurement failed, here or in the previous session's new-fps:\n   - B solves until it has enough points, then sends each failing kind to A (at most 3, at least 7 s apart).\n   - Run gfxinfo reset and gfxinfo on A, with nothing recording or tapping on A.\n   - Use these clean numbers. B can send keypad only from level 4.\n12. Disconnect:\n   - B solves until its score is at least its next price. Start screenrecord on B (--time-limit 45).\n   - B taps 'הפרעה' on A's card and leaves the window open.\n   - Turn on airplane mode on A. Take a screenshot of B every 2 s. After 15 s, turn airplane mode off on A.\n   - target-disconnects ✓1: the window closes by itself when A is marked as offline, and no interference goes out (B's score is unchanged). ✓2: A's card shows an orange dot and a Wi-Fi icon instead of 'הפרעה'.\n   - avatars-react-reconnect ✓1: in the first 10 s, A's avatar on B neither greys nor reacts. ✓2: after 10 s, A's card is grey, and the avatar plays no reaction to the disconnect. ✓3: when A is back, the card's color returns, and A's avatar smiles for about 1.5 s without moving.\n   - avatars-look-grey ✓: in the shot taken about 12 s in, A's avatar on the grey card is still the same, recognizable character.\n13. Check that A's Wi-Fi and game connection are back. Finish the game, or surrender. Both phones go back to Home.",
+      "estMinutes": 55
+     },
+     {
+      "key": "general-walk-he-en",
+      "title": "One screen walk in Hebrew and English at 360dp and big font: display, screen-reader labels, no Hebrew, screen awake, English picker",
+      "tasks": [
+       "general-background-awake-font",
+       "general-background-awake",
+       "general-display-small-big-font",
+       "general-sr-names",
+       "general-lang-no-hebrew",
+       "interference-picker-ltr-en"
+      ],
+      "phones": 2,
+      "ranked": true,
+      "room": true,
+      "deviceSettings": "טלפון 1 (RF8Y60PP2XZ) only. First write down the original values: settings get system screen_off_timeout, settings get system font_scale, wm size, wm density.\n- Then set: screen_off_timeout 15000; wm size 1080x2340; wm density 480 (360dp); font_scale 1.3.\n- From Phase B: the app language is English.\n- In Phase C: wm size reset, wm density reset and the original font_scale, while the language stays English.\n- At the end, restore: the app language עברית ('Switch and restart'), the original screen_off_timeout, and check that wm size, wm density and font_scale are the originals.\n- TalkBack is not turned on: the labels are read from UI dumps, which hold the same accessibility tree.\n- טלפון 3 changes nothing. It only joins the room in Phase C.",
+      "setup": "טלפון 1 is on Home, in Hebrew, with the latest APK (a Release build).\n- During Phase A, טלפון 3 must not search 'מדורג · מהיר'. The search screen is checked there, and the two phones would find each other.\n- For every screen in the walk, do both of these:\n  (a) Take a screenshot and look for cut or hidden text, a button off the screen, and sideways scrolling. Try a horizontal swipe on each list.\n  (b) Take a uiautomator dump. Check that every clickable or focusable node has a clear text or content-desc in the current language: none is empty, and none reads only 'כפתור', 'button' or 'ללא תווית'. In English, also check that no text or desc has a Hebrew letter.\n- uiautomator sometimes fails on game screens ('could not get idle state'). Retry right after a tap, and never use an old file.",
+      "script": "Phase A, Hebrew:\n1. awake-font:\n   - Set screen_off_timeout to 15000. Open the app on Home, then press HOME (keyevent 3).\n   - Apply wm size 1080x2340, wm density 480 and font_scale 1.3.\n   - Return to the app. Do not touch it for 30 s. Every 5 s, read dumpsys power | grep mWakefulness.\n   - ✓: Awake the whole time. This also counts as the 30 s on Home for awake ✓1.\n2. Walk these screens, doing (a) and (b) on each. This covers display ✓1–2 for Hebrew, and sr-names ✓1–2 for Hebrew.\n   - Home.\n   - 'משחק חדש': stay 30 s without touching it, reading mWakefulness (awake).\n   - The game-type screen, then 'בחר יריב בוט'.\n   - A solo practice game: in the middle, stay 30 s without touching it (awake). Play it to the end with the solver.\n   - The results.\n   - 'היסטוריה', and a Replay from it.\n   - 'טבלת מובילים', 'הישגים' and 'הגדרות'.\n   - Edit profile: open it and leave without saving.\n   - My player card, and the level map.\n   - 'צור חדר': the friends room lobby. Leave it.\n   - 'הצטרף עם קוד'.\n   - The search: 'מדורג' → '2 שחקנים' → 'מהיר' → 'מצא יריב'. Dump at once, then stay 30 s without touching it (awake). If the stealth bot joins before 30 s, keep counting: the screen must stay on. Then surrender.\n3. awake ✓1: all four screens (Home, משחק חדש, mid-practice, the search) stayed Awake.\n   awake ✓2: on Home, press HOME and wait 30 s. mWakefulness turns Asleep or Dozing after about 15 s. Wake the phone (keyevent 224), unlock it, and return to the app.\n\nPhase B, English, still at 360dp and font 1.3:\n4. 'הגדרות' → 'שפה' → English → 'החלפה והפעלה מחדש'.\n5. Walk the same screens again with (a) and (b). This covers display in English, sr-names in English, and lang-no-hebrew ✓2 and ✓3 (no Hebrew letter on any screen, dialog or toast; everything left to right). Also:\n   - lang-no-hebrew ✓1: the bottom of New game shows 'New room' and 'Join with code'.\n   - Play the solo practice to the end, and check the results.\n   - 'Staged practice' → the map → one stage of each open kind → its result.\n   - Open the New room lobby, leave it, then open 'Join with code'.\n   - Read every dialog you meet: exit, surrender and leave.\n   - The browser page: adb shell am start -a android.intent.action.VIEW -d 'https://sudoku-fight-staging.fly.dev/r/123456?lang=en' com.android.chrome (or com.sec.android.app.sbrowser), so the app does not catch the link. Screenshot and dump it. Then go back to the app.\n\nPhase C, English at normal size (no false clipping from the small screen on the 2-player card):\n6. Run wm size reset, wm density reset, and set font_scale back to the original.\n   - טלפון 1: 'Play' → 'New room'. טלפון 3: 'שחק' → 'הצטרף עם קוד' → the code. טלפון 1: 'Start game · 2 players'.\n   - טלפון 1 solves cells until its score is 2 or more.\n   - picker-ltr-en ✓1: the button on טלפון 3's card reads 'Interfere'.\n   - Tap it, then take a screenshot and a dump.\n   - ✓2: the title 'Pick an interference' is on the left, and the grid runs left to right, with 'Fireworks' top-left.\n   - ✓3: the numbers match the Hebrew screenshot from the room session: the minus is left of the 2 in the price, and the score is the same.\n   - ✓4: the window has no Hebrew word. This is also lang-no-hebrew ✓2 for the picker.\n   - Close it with X. טלפון 1 surrenders: read the English dialog. טלפון 3 goes back to Home.\n7. Restore: Settings → Language → עברית → 'Switch and restart'. Set screen_off_timeout back to the original. Check that wm size, wm density and font_scale are the originals.",
+      "estMinutes": 100
+     },
+     {
+      "key": "interference-bot-games",
+      "title": "Bot games: no interferences against bots, plus the sad and sleepy avatar on the 2-player card",
+      "tasks": [
+       "interference-where-bot-select",
+       "interference-where-bot-no-button",
+       "interference-where-bot-never",
+       "avatars-look-sad-sleepy-sizes",
+       "interference-where-bot-from-search"
+      ],
+      "phones": 1,
+      "ranked": true,
+      "room": false,
+      "deviceSettings": "None. Hebrew. 'הפחתת תנועה' is 'כבויה' (check it, do not change it).",
+      "setup": "Use either phone, for example טלפון 3. It can run while the walk session uses טלפון 1, because the walk searches 'מהיר' and this session searches 'קשה'. The other phone must not search 'מדורג · קשה' at the same time.",
+      "script": "1. 'שחק' → 'אימון מול בוט' → 'מהיר' → 'בחירת יריב'. Dump the screen and scroll it: read all five cards, including '5 · גרנדמאסטר' (Overlord), and the explanation under them.\n   where-bot-select ✓: neither 'הפרעה' nor 'הפרעות' appears anywhere.\n2. Choose Overlord → 'יאללה, למשחק'. Take a screenshot.\n   where-bot-no-button ✓: Overlord's card has no 'הפרעה' button.\n3. Play at least 5 minutes, or to the end.\n   - Solve fast at the start with the solver, so I lead the bot at least once. Write down when I lead.\n   - Screencap every 5 s to files. Check them by script: the board brightness against the first shot, and the banner area. Open only the shots that look suspicious.\n   - where-bot-never ✓1: no interference banner in the whole game, and the board is never dimmed. ✓2: none while I lead either.\n4. In the same game, after I have led:\n   - Enter a wrong digit and take a screenshot at once.\n   - Then do not touch the phone for 25 s, and take another screenshot.\n   - sad-sleepy ✓1: on the 2-player card, the sad face (a sad mouth) is readable. ✓2: on the 2-player card, the sleepy look (heavy eyelids, looking down) is readable.\n   - The 3-player half needs 3 players: 2 phones plus fake-client with a Firebase token. Mark the task partial and leave that half to Moshe.\n5. Finish or leave the game.\n6. 'שחק' → 'מדורג' → '2 שחקנים' → 'קשה' → 'מצא יריב'.\n   - When 'כרגע אין שחקנים אחרים שמחפשים משחק כזה' shows (or the no-match screen, after a minute), tap 'שחק מול בוט בינתיים'.\n   - where-bot-from-search ✓1: a bot game starts, and the bot's card has no 'הפרעה' button.\n   - Play about 3 minutes, with screencaps every 5 s checked as in step 3. ✓2: no banner, and the board is never dimmed.\n   - Leave the game, and go back to Home.",
+      "estMinutes": 30
+     },
+     {
+      "key": "general-levels-background",
+      "title": "Staged practice: background freeze and no black screen in stage transitions",
+      "tasks": [
+       "general-background-freeze-stage",
+       "general-background-no-black-levels"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "None. Hebrew. Turn the screen off and on with keyevent 26, then unlock. Return from other apps with HOME, then the app (am start or recents).",
+      "setup": "Use either phone, on the Release APK, with the account signed in. Run screenrecord (--time-limit 30) around each transition.",
+      "script": "1. 'שחק' → 'אימון בשלבים' → a stage with a clock, for example L002 → 'שחק'.\n   - During 'מוכן?', switch to another app for 3–4 s and come back.\n   - freeze-stage ✓3: the 2 s of 'מוכן?' stood still while the app was in the background.\n2. In the middle of the stage, write down the time left. Switch to another app for 20 s, then come back.\n   - ✓1: the board is covered ('המשחק עצור') with 3, 2, 1 over it, and only then does the stage go on.\n   - ✓2: it goes on with the same time left.\n3. Turn the screen off with the side button (keyevent 26) for 20 s, then on, unlock and come back. Check ✓1–2 again.\n4. Switch quickly (under 1 s) to another app and back, 5 times in a row, while recording.\n   ✓4: no black screen, and the clock does not jump.\n5. Let a stage run until its time is exactly up.\n   no-black ✓1: it reaches the result.\n6. In a stage: X ('יציאה מהשלב') → 'יציאה' in 'לצאת מהשלב?'.\n7. Tap 'למפה' as soon as a result shows.\n8. On a result, tap 'לשלב הבא' 5 times in a row, fast.\n9. Switch to the background exactly as a stage ends, then come back.\nFor steps 5–9, from the recordings:\n- ✓1: every transition reaches the result, a stage or the map, never a black or empty screen.\n- ✓2: 'רגע…' is never followed by 'המסך לא נטען'. If it is, write down what was done just before.",
+      "estMinutes": 30
+     },
+     {
+      "key": "general-perf-startup",
+      "title": "Cold start time on a Release build with the startup log",
+      "tasks": [
+       "general-perf-startup"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "None. Do NOT run logcat -c (forbidden on these phones). Filter by time instead.",
+      "setup": "This needs a Release APK built with EXPO_PUBLIC_STARTUP_LOG=1. Suggestion: build the next QA APK (APK 11) with it:\n  EXPO_PUBLIC_STARTUP_LOG=1 npm run apk -- --resign-sha1 debug\nThen re-sign and install as usual. The flag only adds a log line.\nIf no such build is installed, mark the task untested: 'needs an APK with EXPO_PUBLIC_STARTUP_LOG=1'.",
+      "script": "1. Run 5 times:\n   - Read the device time: adb shell date +'%m-%d %H:%M:%S.000'.\n   - adb shell am force-stop com.mosheg.sudokufight.\n   - adb shell am start -W -n com.mosheg.sudokufight/.MainActivity.\n   - Wait 5 s.\n   - adb logcat -d -T '<that time>' -s ReactNativeJS, and filter for 'startup'.\n2. Check:\n   - ✓1: every run has the line '[startup] first screen: … ms after the app started'.\n   - ✓2: the median of the 5 numbers is below 2000 ms.\n   - Also write down TotalTime from am start -W.",
+      "estMinutes": 15
+     }
+    ],
+    "duplicates": [],
+    "moshe": [
+     {
+      "id": "interference-target-buttons",
+      "reason": "Needs 4 players (phone + Fake1–3 from fake-client on a local dev server with the Development Build). Only 2 phones, and fake-client on staging needs a Firebase ID token the AI tester does not have."
+     },
+     {
+      "id": "interference-target-english",
+      "reason": "Needs a 4-player game with the small cards (3 fake clients, Development Build). Only 2 phones exist, and there is no token for fake-client on staging."
+     },
+     {
+      "id": "interference-target-header",
+      "reason": "The checks name Fake2 in a 4-player game (3 fake clients). Not possible with 2 phones and no token. A 2-player picker header is seen in the room session, as a note only."
+     },
+     {
+      "id": "interference-target-highlight",
+      "reason": "Needs 4 players: other opponent cards dimmed while Fake2 is the target. Not possible with 2 phones."
+     },
+     {
+      "id": "interference-target-others-inert",
+      "reason": "Needs a second opponent card (Fake1) to tap while the window is open on Fake2. A 2-player game has none."
+     },
+     {
+      "id": "interference-target-switch",
+      "reason": "✓2 switches the target to Fake3 through its card. That needs 3 or more opponents."
+     },
+     {
+      "id": "interference-target-hit-only",
+      "reason": "Needs 3 opponents, to check that only Fake2 gets the badge. Not possible with 2 phones."
+     },
+     {
+      "id": "interference-target-3p",
+      "reason": "Needs a 3-player game: 2 fake clients on a dev server, or a third real player. The stealth bot only joins the 2-player queue."
+     },
+     {
+      "id": "interference-target-third-player",
+      "reason": "Needs 3 players (2 phones + Fake1 on a dev server with the Development Build on both phones)."
+     },
+     {
+      "id": "interference-target-leaves",
+      "reason": "Needs a 3-player game in which Fake2 leaves (--leave-after) and the game goes on against Fake1. In a 2-player game, the game ends."
+     },
+     {
+      "id": "interference-where-legacy-room",
+      "reason": "Needs fake-client --legacy-app in a private room on a local dev server, plus the Development Build. Staging has no private rooms with a dev identity."
+     },
+     {
+      "id": "interference-where-legacy-ranked",
+      "reason": "Needs fake-client --legacy-app in the ranked queue. On staging that needs a Firebase ID token the AI tester does not have; locally it needs the Development Build."
+     },
+     {
+      "id": "avatars-look-cell-distinct",
+      "reason": "Needs a 4-player ranked game (2 phones + Fake3/Fake4 with Firebase tokens). Not possible without tokens."
+     },
+     {
+      "id": "avatars-perf-android-4p",
+      "reason": "Needs a 4-player ranked game (2 phones + 2 fake clients with Firebase tokens), and phone B sending to A. Not possible without tokens."
+     }
+    ],
+    "notes": "Order:\n1. interference-ranked-new-kinds.\n2. interference-room-classics-disconnect: its step 11 cleanly re-measures any fps that failed in step 1.\n3. general-walk-he-en: טלפון 1, with טלפון 3 only for the room in Phase C.\ninterference-bot-games and general-levels-background are one phone each. They can run on טלפון 3 while the walk uses טלפון 1, but not during the walk's Phase C, and only one ranked search per queue at a time. general-perf-startup waits for an APK with EXPO_PUBLIC_STARTUP_LOG=1.\n\nWhat changed against the dev-build wording:\n- All the scramble, ink and keypad tasks run on staging, with the other phone sending the kind from the picker (the way run #2 already used).\n- The sender's level limits them: ink needs level 3 and keypad level 4. Read the levels first.\n- new-fps uses gfxinfo on Release instead of the dev-only Perf Monitor.\n- target-disconnects uses airplane mode on a real phone instead of fake-client --drop-after.\n\nPartial by nature (the AI tester marks ½ and says why):\n- picker-locked and collection-list, for any kind already open at טלפון 3's level. A level-1 account needs a new sign-in, which is not allowed.\n- The 3-player half of avatars-look-sad-sleepy-sizes.\n- general-sr-names is checked from UI dumps (the accessibility tree), not by listening to TalkBack.\n\nAnimation checks use screenrecord frames rather than screencap bursts: about 100 ms resolution, which dim-ends ('the same frame') and keypad-shuffle need. fps measured while recording counts as conservative.\n\nThere are no true duplicates: every pair that overlaps (launch/launch-once, banner/fireworks-look, reconnect/look-grey) has its own ✓ lines, so they are merged into the same action, not dropped."
+   },
+   "changes": [
+    "The proposal covered only 21 of the 67 ids, and one of them did not exist ('interference-avatars-react-reconnect-placeholder'). The second session's script and the notes were placeholders. Now all 67 ids appear exactly once: 53 in 6 sessions and 14 in moshe. Checked by script.",
+    "Added the missing interference-picker-ltr-en. It runs in the walk session's English Phase C, at normal display size, against a room with טלפון 3.",
+    "Added the missing interference-hit-fps-classic. gfxinfo is read on the receiver during the same fireworks, cats and warp hits. The measurement is conservative because of the recording, and step 11 gives a clean re-measure (B → A, nothing running on A) only if a kind fails.",
+    "Moved the 2-player checks of interference-hit-lock-paused, cats-look, dim-ends, warp-dim and warp-look into the same room game. The proposal's second session had no script. Cats is launched right from the picker-next-price check (one opening, no extra round), and lock-paused is timed with a single command run on both phones.",
+    "Replaced the 10 dev-build tasks (scramble, ink, keypad and new-fps) with a ranked game between the two phones on staging. The higher-level phone sends ink, then scramble, then keypad twice, for 30 points. This is the same alternative run #2 used. Perf Monitor became gfxinfo, and the sender's level limits ink (3) and keypad (4).",
+    "Moved avatars-react-hit-target and avatars-react-hit-sender (their own steps are ranked with ink) into that same ranked game's ink hit, with no extra game. The same game also covers where-staging-new-new: the six kinds and the 'רמה N' locks are checked on the lower-level phone.",
+    "Added interference-target-disconnects, avatars-react-reconnect and avatars-look-grey to the end of the room game. It is one 15-second airplane-mode step on טלפון 3, while טלפון 1 holds the picker open on its card. It replaces fake-client --drop-after and two separate ranked games. The step is last because the disconnect may end the game.",
+    "Added where-collection-list, collection-soon and collection-howto to the room session's setup. That setup already opens 'הישגים' on טלפון 3 to read the level, so the collection screen costs one extra screen.",
+    "Merged 6 tasks into one screen walk on טלפון 1: general-display-small-big-font, general-sr-names, general-lang-no-hebrew, general-background-awake, general-background-awake-font and picker-ltr-en. The display, screen-reader and no-Hebrew checks repeated the same screens in both languages. Now each screen gets one screenshot and one dump per language, instead of about 5 separate passes. The awake waits sit on the walk's own screens, and awake-font is the moment the walk's settings change.",
+    "general-sr-names is checked from uiautomator dumps (the accessibility tree), not by listening to TalkBack. The AI tester cannot hear speech, and earlier rounds did the same.",
+    "The lang-no-hebrew browser page is opened explicitly in Chrome or Samsung Internet, so the app's deep link does not catch it.",
+    "Added a new single-phone session: where-bot-select, where-bot-no-button, where-bot-never, where-bot-from-search, and the 2-player half of avatars-look-sad-sleepy-sizes during the Overlord game. Uses the 'קשה' queue, so it can run on טלפון 3 at the same time as the walk.",
+    "Added a new single-phone session: general-background-freeze-stage and general-background-no-black-levels, in staged practice, with screenrecord.",
+    "general-perf-startup: removed 'adb logcat -c' (forbidden on these phones) and replaced it with a filter by device time (logcat -d -T). It needs an APK with EXPO_PUBLIC_STARTUP_LOG=1; I suggest building APK 11 with the flag. Otherwise it is untested.",
+    "Moved 14 tasks to moshe, because they are truly impossible with 2 phones and no Firebase token or Development Build: the 10 interference-target-* tasks that need 3–4 players, interference-where-legacy-room and interference-where-legacy-ranked (fake-client --legacy-app), and avatars-look-cell-distinct and avatars-perf-android-4p (4 players).",
+    "Listed in notes the tasks that are partial by nature: picker-locked and collection-list when טלפון 3 is above level 1, the 3-player half of sad-sleepy, and sr-names through dumps.",
+    "Checked duplicates: none are real. launch/launch-once, banner/fireworks-look and reconnect/look-grey each have their own ✓ lines, so they share an action and are not dropped.",
+    "Animations are recorded with screenrecord (about 100 ms between frames) rather than one screenshot per second. One screenshot per second is too coarse for dim-ends ('the same frame'), keypad-shuffle (a slide every 1.5 s), the 5-second ring and the 1.5-second wink.",
+    "Estimates: 45 + 55 + 100 + 30 + 30 + 15 minutes, about 4.6 hours for 53 tasks, instead of a visit per task."
+   ]
+  },
+  {
+   "key": "network-friends",
+   "plan": {
+    "sessions": [
+     {
+      "key": "netfr-fakes-rooms-4p",
+      "title": "חדרי חברים עם fake-client: העתקת קוד, חבר ברקע, התחלה בלעדיו, ומשחק 4 שחקנים עד הסוף",
+      "tasks": [
+       "friends-room-copy-code",
+       "friends-game-away-count",
+       "friends-game-start-without",
+       "friends-game-join-started",
+       "friends-game-start-without-closed",
+       "friends-game-four-seats",
+       "friends-game-room-full",
+       "friends-game-countdown",
+       "friends-game-countdown-back",
+       "network-same-board",
+       "friends-game-four-play",
+       "network-full-game",
+       "friends-game-rating-xp",
+       "friends-game-history",
+       "friends-game-leaderboard",
+       "friends-results-no-rematch-home"
+      ],
+      "phones": 2,
+      "ranked": false,
+      "room": true,
+      "deviceSettings": "None. B only goes to the background and is swiped away from recents and reopened.",
+      "setup": "Phone A = phone 1 (אורי, host), phone B = phone 3 (אחוותא). Both on Wi-Fi, adb over USB only, no adb reverse. On the PC (from apps/server) prepare Firebase ID tokens of 3 extra registered staging accounts (Fake3, Fake4, Fake5), the same way as for Gil in friends-game-start-button. Command: npm run fake-client -- --friends <code> --name FakeN --token <ID token> --url wss://sudoku-fight-staging.fly.dev plus the flags given below. If the tokens cannot be obtained, mark only the fake-dependent checks as blocked (start-without, join-started, start-without-closed, four-seats, room-full, four-play) and still play a 2p room game to the end for the rest. Run it after netfr-single-offline-links on phone 1, so the solo practice there is A's last non-friends game.",
+      "script": "1. A home: screenshot the 'עוד סיבוב' line. If it does not show 'אימון לבד · לוח מלא', play one solo full-board 'מהיר' practice to the end and read it again. Write the line down as L (friends-results-no-rematch-home step 2).\n2. ROOM 1. A: 'משחק חדש' → 'צור חדר' (if asked, 'סגור ופתח חדש'). Start a 4 s screenrecord and tap 'העתק קוד': 'הקוד הועתק' at once (friends-room-copy-code ✓1), gone after ~2.5 s (✓2).\n3. B: 'הצטרף עם קוד' + the code. B: input keyevent KEYCODE_HOME. Screenshot A: B's player dimmed with 'לא בחדר כרגע' (friends-game-away-count ✓1); 'התחל משחק' counts one player and is disabled (✓2).\n4. B stays in the background. PC: Fake3 --friends <code> --surrender-after 25. A: 'התחל משחק' → screenshot: 'להתחיל בלי <B>?', '<B> לא בחדר כרגע. מי שלא בחדר נשאר בחוץ.', 'כן, להתחיל' and 'לא, נחכה' (friends-game-start-without ✓1) → 'כן, להתחיל': the board on A with A and Fake3 only (✓2).\n5. Right away: Fake4 --friends <same code>: error gameStarted (friends-game-join-started ✓1).\n6. B: back to the app from recents: 'המשחק התחיל בלעדיך.' (friends-game-start-without ✓3). Fake3 surrenders by itself; A reaches results.\n7. ROOM 2. A: 'משחק חדש' → 'צור חדר' ('סגור ופתח חדש' if asked). B joins with the code. Fake3 (a new run, --surrender-after 25) joins. B: swipe the app away from recents. A: 'התחל משחק' → 'כן, להתחיל'. B: open the app: 'המשחק התחיל בלעדיך.' and not 'המשחק בחדר הזה כבר התחיל.' (friends-game-start-without-closed ✓1). B: swipe away and open again: home without the message (✓2). Wait until the game ends on A.\n8. A and B home: screenshot rating and XP on both. This is the baseline for friends-game-rating-xp; it is taken now so that only the game of room 3 can change it.\n9. ROOM 3. A: 'צור חדר' ('סגור ופתח חדש' if asked), type 'מהיר'. B joins. Fake3, then Fake4, with --speed 3 --no-interfere (no surrender). Screenshot A and B: four seats in four colors and shapes ● ▲ ■ ◆ by join order (friends-game-four-seats ✓1), '4 מתוך 4' (✓2). Fake5 --friends <same code>: error roomFull (friends-game-room-full ✓1).\n10. Start screenrecord on both phones. A: 'התחל משחק · 4 שחקנים'. During 3, 2, 1 send input keyevent 4 on B: nothing happens and the game starts on both (friends-game-countdown-back ✓1). From the frames: 3, 2, 1, GO, then the board on both (friends-game-countdown ✓1).\n11. Board screenshot on both: same digits in the same cells (network-same-board ✓1). On each phone my card is cyan with ●, the others in other colors and shapes (network-same-board ✓2, friends-game-countdown ✓2). Four players in the game (friends-game-four-play ✓1).\n12. A and B enter correct digits; the fakes fill the rest until the board is full. Screenshot results on both: both reach results (network-full-game ✓1), the same score per player and the same place on both (✓2), podium and 4th place (friends-game-four-play ✓2), no rating change (✓3).\n13. A and B home: rating equal to step 8 (friends-game-rating-xp ✓1), XP higher than step 8 (✓2; if the daily practice cap was already reached, mark ½ with a note). A: the 'עוד סיבוב' line is exactly L (friends-results-no-rematch-home ✓1) and offers no friends game (✓2).\n14. A: 'היסטוריה' → the room-3 game shows 'עם חברים · בלי דירוג' (friends-game-history ✓1); open its Replay (✓2); filter 'מדורג' hides it, 'הכל' shows it (✓3).\n15. A: 'טבלת מובילים' → tab 'חברים': B's player is among the recent rivals (friends-game-leaderboard ✓1).\n16. Stop every fake-client process (Ctrl+C). Both phones back to home.",
+      "estMinutes": 45
+     },
+     {
+      "key": "netfr-hard-block-manage",
+      "title": "משחק 'קשה' בשני טלפונים: אותה משבצת וביטול בחירה בלי חיבור, חסימה באמצע, כניעה, ואחר כך ניהול חדר וחסימות",
+      "tasks": [
+       "network-silent-same-cell",
+       "network-silent-cancel-selection",
+       "friends-manage-block-mid-game",
+       "network-surrender-result",
+       "friends-manage-block-hides-room",
+       "friends-manage-block-blocker-joins",
+       "friends-manage-host-leaves",
+       "friends-manage-kick",
+       "friends-manage-block-in-room"
+      ],
+      "phones": 2,
+      "ranked": false,
+      "room": true,
+      "deviceSettings": "Airplane mode on phone B in two short episodes (cmd connectivity airplane-mode enable/disable). Each time check Wi-Fi is off with dumpsys wifi; if it is not, svc wifi disable, and svc wifi enable afterwards. Restore: airplane off and Wi-Fi on. A's block of B is removed twice (steps 8 and 12); at the end 'שחקנים חסומים' on A must be empty.",
+      "setup": "Phone A = phone 1 (host), phone B = phone 3. adb over USB only, no adb reverse. No fake-client is needed. The 'קשה' game played here is the shared history game for step 11, so this session does not depend on another session.",
+      "script": "PART 1, 'קשה' 2p game:\n1. A: 'משחק חדש' → 'צור חדר' (if asked, 'סגור ופתח חדש'), type 'קשה'. B: 'הצטרף עם קוד' + the code. A: 'התחל משחק · 2 שחקנים'. Wait for the board on both.\n2. Pick an empty cell, e.g. D5. Start screenrecord on both. B airplane on (Wi-Fi off). At once on B: select D5 and type a digit (pending). On A: select D5 (leave it locked, or type the correct digit). Before 10 s, B airplane off. B: D5 shakes and toast 'D5 נתפסה בזמן שלא היה לך חיבור · בלי קנס' (network-silent-same-cell ✓1); my score and mistakes unchanged (✓2). A: D5 is still his (✓3).\n3. Wait ≥10 s until both are normal. B selects another empty cell; a screenshot of A shows it locked to B. Start screenrecord on both. B airplane on; at once on B tap 'ביטול בחירה'; at ~5 s airplane off. A: the cell is released when B comes back, not after 18 s (network-silent-cancel-selection ✓1). B: the cell is not locked to me again (✓2).\n4. A: open B's card in the game → 'חסום שחקן' → 'חסום'. B: swipe the app away from recents and open it again: the same game, no 'לא מצאנו חדר' (friends-manage-block-mid-game ✓1). After B is back in the game: A swipes away and reopens: the same game (✓2). Keep each phone's absence under ~20 s.\n5. B: 'כניעה' on my card → 'כן, להיכנע'. B: 'הפסד' and 'איך זה נגמר: נכנעת לפני שהלוח התמלא' (network-surrender-result ✓1). A: 'ניצחון!' and 'איך זה נגמר: היריב נכנע לפני שהלוח התמלא' (✓2).\nPART 2, A still blocks B (no new block needed):\n6. A: 'משחק חדש' → 'צור חדר' ('סגור ופתח חדש' if asked). B: 'הצטרף עם קוד' + A's code: 'לא מצאנו חדר עם הקוד הזה.' (friends-manage-block-hides-room ✓1), no hint of a block (✓2). A: 'יציאה מהחדר'.\n7. B: 'צור חדר'. A: 'הצטרף עם קוד' + B's code: 'חסמת שחקן שנמצא בחדר הזה.' (friends-manage-block-blocker-joins ✓1). B: 'יציאה מהחדר'.\n8. A: 'הגדרות' → 'שחקנים חסומים' → 'בטל חסימה'.\nPART 3, room management:\n9. A: 'צור חדר'; B joins. A: 'יציאה מהחדר': A leaves with no question (friends-manage-host-leaves ✓1). B: my player is now host, with 'מארח', and 'התחל משחק' shows (✓2). A: 'הצטרף עם קוד' + the same code: A enters as a guest with the same code (✓3).\n10. Same room, now B is host and A the friend: B taps X next to A: 'להוציא את <A> מהחדר?', 'לא תהיה לו דרך לחזור לחדר הזה.' and 'הוצא' (friends-manage-kick ✓1) → 'הוצא': A shows 'המארח הוציא אותך מהחדר.' (✓2). A: join with the same code: the same message, A is not in (✓3). B: 'יציאה מהחדר'.\n11. A: 'צור חדר'; B joins. A: 'היסטוריה' → the 'קשה' game → B's card → 'חסום שחקן' → 'חסום' → back to the room. B: 'יצאת מהחדר.' (friends-manage-block-in-room ✓1), no 'נחסמת' and no hint (✓2).\n12. A: 'הגדרות' → 'שחקנים חסומים' → 'בטל חסימה'; the list is empty. A: leave the room. Both phones: airplane off, Wi-Fi on.",
+      "estMinutes": 40
+     },
+     {
+      "key": "netfr-fast-2p-network",
+      "title": "משחק 'מהיר' אחד בשני טלפונים: סנכרון, שעון מוזז, הפרעה ותגובה, ניתוק שקט, הקפאה, רקע, שניהם בלי חיבור ונטישה",
+      "tasks": [
+       "network-lock-pending",
+       "network-digit-sync",
+       "network-timers-clock",
+       "network-relay",
+       "friends-game-play",
+       "network-silent-opponent-mark",
+       "network-silent-opponent-plays",
+       "network-silent-self-no-overlay",
+       "network-silent-keep-playing",
+       "network-silent-return-counted",
+       "network-silent-return-opponent",
+       "network-silent-return-same-state",
+       "network-freeze-opponent",
+       "network-freeze-self",
+       "network-freeze-self-back",
+       "network-freeze-opponent-back",
+       "network-bg-short-opponent",
+       "network-bg-short-return",
+       "network-bg-long-opponent",
+       "network-bg-long-return",
+       "network-both-offline",
+       "network-abandon-countdown",
+       "network-abandon-screen",
+       "network-abandon-results",
+       "network-abandon-leaver"
+      ],
+      "phones": 2,
+      "ranked": false,
+      "room": true,
+      "deviceSettings": "Phone B, before the game: settings put global auto_time 0, then in the phone's Settings → Date & time set the time 2 minutes ahead; check with adb shell date. Restore after step 2 with settings put global auto_time 1 and check adb shell date again. Airplane mode on B in several episodes, and on both phones in one episode. Each time check Wi-Fi is off (dumpsys wifi; svc wifi disable if needed). Restore at the end: airplane off and Wi-Fi on for both, auto_time 1 on B.",
+      "setup": "Phone A = phone 1, phone B = phone 3. adb over USB only, no adb reverse. Set B's clock first. Then A: 'צור חדר', type 'מהיר'; B joins with the code; A 'התחל משחק · 2 שחקנים'; wait for the board on both. All episodes run in this one game, so it must not end before step 13. Between episodes wait until both phones show the normal game for ≥5 s. For every timing check run adb shell screenrecord on both phones in parallel and read the frames afterwards.",
+      "script": "1. Screenrecord both. A taps an empty cell: a pending ring at once (network-lock-pending ✓1), then my lock with an 8 s timer (✓2). Compare the countdown of that lock in A and B frames: the same seconds despite B's clock (network-timers-clock ✓1), 8 s on both (✓2). The lock also shows on B (friends-game-play ✓2, lock part).\n2. B taps an empty cell; compare its countdown on both phones (network-timers-clock step 4, second half).\n3. Restore B's clock: settings put global auto_time 1; check adb shell date.\n4. Screenrecord both. A types a digit: on A the right/wrong mark appears only with the server answer, no temporary mark that changes (network-digit-sync ✓1); the same digit in the same state on B within a moment (✓2).\n5. A enters correct digits until my card has ≥2 points (scoring, friends-game-play ✓1). A: 'הפרעה' on B's card → 'זיקוקים': B shows '<A> שלח/ה לך זיקוקים!' with a 5 s ring (network-relay ✓1). After it ends, A: 'תגובות' on my card → 😂: on B it flies from A's card (network-relay ✓2; friends-game-play ✓1 ✓2, interference and reaction part). A then enters correct digits again until A has ≥2 points, so 'הפרעה' is offered on B's card before step 6.\n6. SILENT EPISODE (~6–7 s). A selects an empty cell (A's lock); B selects another empty cell (B's lock). Start screenrecord on both. B airplane on (Wi-Fi off). At once on B: select empty cell X1 + a digit, then empty cell X2 + a digit (both pending). On A, when B's orange dot appears (~4 s): select a different empty cell + type a digit. Screenshot B at ~4–5 s. B airplane off at ~6–7 s. Keep recording ~10 s more.\n   A frames: orange dot on B's avatar and a Wi-Fi icon instead of 'הפרעה' within 3–5 s (network-silent-opponent-mark ✓1); no countdown, no banner, B's avatar not grey (✓2). A's selection and digit work and the timers run (network-silent-opponent-plays ✓1); no 'הפרעה' on B, a Wi-Fi icon instead (✓2).\n   B frames: no screen, banner or dialog over the game (network-silent-self-no-overlay ✓1); orange dot on my card, 'כניעה' and 'תגובות' disabled (✓2). X1 locks with a countdown although offline (network-silent-keep-playing ✓1). The digits stay in my color with a half-transparent ring and a small Wi-Fi icon, not yet right or wrong (✓2).\n   After return: on B each pending digit turns right (+score) or wrong (penalty) (network-silent-return-counted ✓1), no 'חזרת למשחק' or other screen (✓2). On A the orange dot and Wi-Fi icon go and 'הפרעה' is back (network-silent-return-opponent ✓1); B's offline digits are on A's board (✓2). A few seconds after return, screenshot both: the same board, scores, locks and timer (network-silent-return-same-state ✓1).\n7. FREEZE 15 s. Start screenrecord on both. B airplane on (Wi-Fi off); at once on B select an empty cell + a digit (pending). Within the first ~6 s: run uiautomator dump on B and read that cell's label, which must contain 'ממתין לחיבור'; take two screenshots of B 1 s apart, the pending digit stands still with no animation (network-silent-keep-playing ✓3). B airplane off at 15 s; record 10 s more.\n   A frames: first only the orange dot and Wi-Fi icon (network-freeze-opponent ✓1); at ~13–15 s 'היריב מתנתק…', 'המשחק מוקפא' with 'כל הטיימרים עצורים', and the ring 'Reconnecting... 15' counting down (✓2). During the freeze tap A's board and keypad: no reaction, the cards stay visible (✓3). After return the freeze is gone, A can select cells and the timers run (network-freeze-opponent-back ✓1).\n   B frames: ~10 s with no screen, B can play (network-freeze-self ✓1); then 'החיבור שלך אבד' with 'מתחבר מחדש…', 'הלוח נעול עד שתחזור' and 'יש לך עוד … שניות לחזור' (✓2); the pending digit is still under the overlay (✓3). On return 'חזרת למשחק' with 'הכל סונכרן · המשחק ממשיך', and the banner is gone after ~2.5 s (network-freeze-self-back ✓1); the pending digit is counted right or wrong (✓2).\n8. BACKGROUND 5 s. Screenrecord both. B: input keyevent KEYCODE_HOME, wait 5 s, return from recents. A: almost at once only the orange dot and Wi-Fi icon (network-bg-short-opponent ✓1); no freeze, banner or countdown (✓2). B: the game is back at once, no screen and no banner (network-bg-short-return ✓1). A: B's mark is gone and the game goes on on both (✓2).\n9. BACKGROUND ~15 s (never over 20). Screenrecord both. B: Home, wait 15 s, return. A: ~10 s of mark only, then 'המשחק מוקפא' and 'Reconnecting... 15' (network-bg-long-opponent ✓1). B: 'חזרת למשחק' with 'הכל סונכרן · המשחק ממשיך', and the game goes on (network-bg-long-return ✓1).\n10. BOTH OFFLINE. Screenrecord both. Airplane on for both (Wi-Fi off on both). At once on B: two empty cells with a digit each. At ~15 s B airplane off; ~5 s later A airplane off. B, back first: the opponent freeze 'Reconnecting...', its digits still pending, no 'לא נספר' (network-both-offline ✓1). When A is back: the game goes on and B's digits are counted (✓2).\n11. Before the abandon check that the board still has ≥10 empty cells; if not, note it, since the game must not end by a full board.\n12. ABANDON (Hebrew). Screenrecord A for ≥90 s. B airplane on and keep it on ~40 s. A: ~10 s of mark only (network-abandon-countdown ✓1), 'Reconnecting... 15' down to 0 (✓2), then 'הזמן נגמר' with 'בודקים מול השרת…' (✓3). Then '<B> עזב/ה את המשחק', 'ניצחת בנטישה' and 'הזמן נגמר · 25 שניות בלי חיבור' (network-abandon-screen ✓1); the score row with 'לתוצאות' and 'לבית' (✓2). Do not touch A for ~30 s: the screen stays (✓3).\n13. During those 30 s: B airplane off, screenrecord B. Either 'שגיאת חיבור' with 'החיבור לשרת המשחק אבד ולא הצלחנו לחזור אליו.', a small error code, 'נסה שוב', 'עבור לאימון' and 'לבית' → tap 'נסה שוב' within a minute → B is back in the room and shows the loss; or straight to results with 'הפסד' and 'איך זה נגמר: לא חזרת למשחק בזמן' (network-abandon-leaver ✓ header, ✓א, ✓ב).\n14. A: screenrecord, tap 'לתוצאות': 'ניצחון!' with the tag 'ניצחת בנטישה' (network-abandon-results ✓1), 'איך זה נגמר' = 'היריב איבד חיבור ולא חזר בזמן' (✓2), no black frame on the way (✓3).\n15. Restore: airplane off and Wi-Fi on for both; on B check that auto_time is 1 and the clock is right.",
+      "estMinutes": 50
+     },
+     {
+      "key": "netfr-english-room-freeze-abandon",
+      "title": "באנגלית בשני טלפונים: משחק חדש, חדר, הקפאה ונטישה עם 'Home'",
+      "tasks": [
+       "friends-a11y-new-game-fit",
+       "friends-a11y-english",
+       "network-en-freeze",
+       "network-en-abandon",
+       "network-abandon-home"
+      ],
+      "phones": 2,
+      "ranked": false,
+      "room": true,
+      "deviceSettings": "Both phones: app language English (הגדרות → שפה → English → החלפה והפעלה מחדש). Restore both to עברית at the end (Settings → Language → עברית → Switch and restart). Airplane mode on phone B in two episodes; check Wi-Fi is off each time. Restore: airplane off and Wi-Fi on.",
+      "setup": "Phone A = phone 1, phone B = phone 3. adb over USB only, no adb reverse. Start in Hebrew, both phones on home.",
+      "script": "1. A in Hebrew: home → 'משחק חדש': a screenshot without scrolling. The six rows and 'צור חדר' + 'הצטרף עם קוד' all fit (friends-a11y-new-game-fit ✓1, Hebrew), each button on one line with no '…' (✓2, Hebrew).\n2. Switch both phones to English.\n3. A: 'New game': a screenshot without scrolling. The six rows and 'New room' + 'Join with code' fit (friends-a11y-new-game-fit ✓1, English; friends-a11y-english ✓1), one line each, no '…' (friends-a11y-new-game-fit ✓2, English). A: 'New room', type 'Fast'.\n4. B: 'New game' → 'Join with code': first a code that does not exist (the message in English), then A's code. Screenshots of the room and the messages on both: English, left to right (friends-a11y-english ✓2), no Hebrew word (✓3).\n5. A: 'Start game · 2 players'. FREEZE 15 s: screenrecord both. B airplane on (Wi-Fi off); at once B selects an empty cell; off at 15 s. A: 'Opponent reconnecting…', 'Game frozen' with 'All timers stopped', ring 'Reconnecting... 15' (network-en-freeze ✓1). B after ~10 s: 'You lost your connection' with 'Reconnecting…' and 'The board is locked until you're back' (✓2); on return 'You're back in the game' with 'All synced · the game goes on' (✓3). No Hebrew, left to right, numbers don't jump (✓4).\n6. ABANDON in the same game, after both are normal for ≥5 s. Screenrecord A for ≥90 s. B airplane on for ~35–40 s. A: '<B> left the game', 'You win by abandonment', 'Time's up · 25 seconds without a connection', 'See results' and 'Home' (network-en-abandon ✓1). B airplane off, screenrecord B: 'Connection error' with 'Try again', 'Go to practice' and 'Home', or straight 'Defeat' with 'You did not come back in time' (✓2). No Hebrew, left to right, numbers don't jump (✓3).\n7. A: screenrecord, tap 'Home': a full, valid home screen and no black frame on the way (network-abandon-home ✓1; the check is the same in any language, and the Hebrew abandon in netfr-fast-2p-network uses 'לתוצאות').\n8. B: go home. Both phones back to עברית; airplane off and Wi-Fi on.",
+      "estMinutes": 25
+     },
+     {
+      "key": "netfr-single-offline-links",
+      "title": "טלפון אחד ומחשב: קישורים, צור חדר וחזור, אותו חשבון ב־fake-client, ומסכים במצב טיסה",
+      "tasks": [
+       "friends-link-not-found",
+       "friends-link-web-invalid-code",
+       "friends-manage-create-cancel",
+       "friends-error-other-device",
+       "friends-error-network-join",
+       "network-offline-game-type",
+       "network-offline-attempts",
+       "network-offline-home"
+      ],
+      "phones": 1,
+      "ranked": false,
+      "room": false,
+      "deviceSettings": "Airplane mode on the phone from step 6 to the end, with one short break in step 7; check Wi-Fi is off each time (svc wifi disable if needed). Restore: airplane off and Wi-Fi on.",
+      "setup": "Phone 1 (אורי), not in any room, online, adb over USB only. The PC for curl and for one fake-client signed in as אורי: a Firebase ID token of the account אורי (the same way as the other fake tokens). If that token cannot be obtained, mark friends-error-other-device blocked and hand it to Moshe. Run this session before netfr-fakes-rooms-4p, so its solo practice is phone 1's last non-friends game.",
+      "script": "1. adb shell am start -a android.intent.action.VIEW -d \"sudokufight://no-such-page\": screenshot: the title 'הקישור הזה לא מוכר', the text 'אולי הוא ישן, או שהוא לא של סודוקו פייט. אפשר להמשיך מהבית.' and 'למסך הבית' (friends-link-not-found ✓1); no expo-router 'Unmatched Route' (✓2). Tap 'למסך הבית': home (✓3).\n2. PC: curl -s -H \"Accept-Language: he\" https://sudoku-fight-staging.fly.dev/r/12ab: the title 'הקישור לא שלם' and the full text from the task (friends-link-web-invalid-code ✓1); no room code and no 'פתח באפליקציה' (✓2).\n3. Home → 'משחק חדש' → tap 'צור חדר' and send input keyevent 4 in the same adb command, during 'פותח חדר…'. Back on 'משחק חדש'. Start 'אימון לבד · לוח מלא' (type 'מהיר') and play ≥1 min: the practice is not closed suddenly (friends-manage-create-cancel ✓1). Play this practice to the end; it is the solo game that netfr-fakes-rooms-4p step 1 needs. Then, within a minute of the first 'צור חדר' if possible (otherwise note the time): 'משחק חדש' → 'צור חדר'; if 'לסגור את החדר הקודם?' appears, 'סגור ופתח חדש' opens a new room (✓2).\n4. SAME ACCOUNT. Phone in the room from step 3. PC: npm run fake-client -- --friends <code> --name Uri2 --token <אורי's ID token> --url wss://sudoku-fight-staging.fly.dev. Phone: 'החדר נפתח במכשיר אחר.' with 'צור חדר' and 'לבית' (friends-error-other-device ✓1).\n5. Phone (now the later device): 'משחק חדש' → 'הצטרף עם קוד' + the same code: the phone is in the room with the same code, and its seat has the tag 'מארח' (friends-error-other-device ✓2; the fake gets otherDevice). Stop the fake (Ctrl+C). Phone: 'יציאה מהחדר'.\n6. Online: 'משחק חדש' → 'הצטרף עם קוד'. Airplane on (Wi-Fi off). Type any 6 digits: 'אין חיבור לאינטרנט.' (friends-error-network-join ✓1); not in a room and no crash (✓2). (Offline, the join button is replaced by 'בדוק שוב', so the join screen must be opened before airplane mode.)\n7. Airplane off; wait on 'משחק חדש' until the ranked rows are back. Then airplane on and tap '2 שחקנים' under 'מדורג' in the same adb command, before the list folds into the 'מדורג ועם חברים' lock row. If the list folds first, open 'סוג משחק' of ranked 2p online and turn airplane on there, and note which way was used. 'סוג משחק' shows the banner 'אין חיבור לאינטרנט' and, instead of 'מצא יריב', 'עבור לאימון' + 'בדוק שוב' (network-offline-game-type ✓1). Tap 'עבור לאימון': 'סוג משחק' of 'אימון לבד' with the same type and 'התחל אימון' (✓2).\n8. Back to 'משחק חדש': the banner at the top, 'עבור לאימון' + 'בדוק שוב' at the bottom (network-offline-attempts ✓1). Screenrecord, tap 'בדוק שוב': 'בודק חיבור…' on the button and 'בודק…' in the banner (✓2). After it fails, 'עדיין אין חיבור · ניסיון N'; wait ~25 s without touching: N rises about every 10 s (✓3).\n9. Swipe the app away from recents and open it again: on home, under the player card, the banner 'אין חיבור לאינטרנט' with 'משחקים מדורגים לא זמינים' and a crossed Wi-Fi icon in a red circle (network-offline-home ✓1).\n10. Airplane off, Wi-Fi on.",
+      "estMinutes": 30
+     }
+    ],
+    "duplicates": [
+     {
+      "id": "friends-game-results",
+      "of": "postgame-results-v2-new-game-friends",
+      "ofStatus": "passed",
+      "reason": "Both ✓ lines are covered by postgame-results-v2-new-game-friends (V in this run), which ends a 2p friends game and checks ✓1: 'בסוף התוצאות משחק עם חברים · בלי דירוג' and 'אין כרטיס שינוי דירוג'. friends-game-results ✓1 = the same text; ✓2 'אין שינוי דירוג' = the missing rating card. Its steps also allow ending by surrender, as that task did. In addition, the room-3 results screenshot in netfr-fakes-rooms-4p shows the same screen again."
+     }
+    ],
+    "moshe": [],
+    "notes": "Changes in short: 5 sessions instead of 6, one duplicate, and nothing left for Moshe. All 64 ids appear once (63 in sessions + 1 duplicate).\n\nRun order: netfr-single-offline-links (phone 1) → netfr-fakes-rooms-4p → netfr-hard-block-manage → netfr-fast-2p-network → netfr-english-room-freeze-abandon. Only the first step of this order is a hard dependency (the solo practice); netfr-hard-block-manage makes its own shared history game.\n\nGames that end with a result: room 1 and room 2 (the fake surrenders), room 3 (full board, 4 players), the 'קשה' game (surrender), the 'מהיר' game (abandon, Hebrew), the English game (abandon). Every two-phone session plays a friends room, so none of them collides with a ranked search on another phone; but they need both phones, so they cannot run while one phone works on another area.\n\nFake-client flags used: --surrender-after 25 (rooms 1 and 2 end by themselves), --speed 3 --no-interfere (room 3: the fakes finish the board fast and do not block the phones with interferences). Tokens: Fake3, Fake4, Fake5 and אורי.\n\nTimings: every timing check uses screenrecord on both phones in parallel and is read from the frames afterwards. Airplane mode is always cmd connectivity airplane-mode enable/disable over USB, with a Wi-Fi check.\n\nA validated copy of this plan is in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/plan/netfr-corrected.json."
+   },
+   "changes": [
+    "Coverage: checked that all 64 ids of todo-network and todo-friends appear exactly once. None was missing or unknown.",
+    "friends-game-results moved to duplicates of postgame-results-v2-new-game-friends (V). Both ✓ lines match ('משחק עם חברים · בלי דירוג' in results, no rating card). The earlier plan had no duplicates; general-lang19-fit-new-game and account-home-offline were checked and are not duplicates: they test other languages, and a warm home not a cold start (½).",
+    "friends-error-other-device moved from moshe to netfr-single-offline-links. A fake-client with אורי's own ID token is a second device of the same account. Phone first, fake second gives ✓1 on the phone; then the phone joins again with the same code as the later device, which gives ✓2 ('מארח', same code). No sign-in on the phone is needed. It goes back to Moshe only if that token cannot be obtained.",
+    "The 'start without' tasks (start-without, join-started, start-without-closed) moved from the 'קשה' session into the fake-client session. friends-game-start-without reuses the room of friends-game-away-count: the same state, with B in the background, and Fake3 only added after the away-count screenshot. This saves a room, a background cycle and separate fake setup; the 'קשה' session no longer needs tokens.",
+    "Rating/XP baseline moved to just before room 3 (after the two 'start without' games). Otherwise XP from those games could make friends-game-rating-xp pass by mistake. An added note: ½ if the daily cap was already reached.",
+    "Fake flags added: --surrender-after 25 in rooms 1 and 2 (no extra taps to end them), --speed 3 --no-interfere in room 3.",
+    "netfr-hard-block-manage reordered to save a block/unblock cycle: the mid-game block stays active for block-hides-room and block-blocker-joins, then one unblock. Host-leaves and kick share one room (after A leaves, B is host and kicks A; the ✓ lines are about roles, not phones). block-in-room uses the 'קשה' game in history, so the session no longer depends on the 4p session.",
+    "Fix in blocker-joins: A first leaves its own room before joining B's code (otherwise 'לסגור את החדר הקודם?' or the 'busy in another room' flow gets in the way). Each airplane episode in the 'קשה' game starts after ≥10 s of normal state.",
+    "netfr-sync-silent-fast and netfr-freeze-bg-abandon merged into one session (netfr-fast-2p-network): one game, one setup, and no risk that the game ends between the two sessions.",
+    "network-silent-keep-playing ✓3 (uiautomator dump 'ממתין לחיבור' and no animation) moved into the first ~6 s of the 15 s freeze episode. Those seconds are the same silent phase, so the separate second airplane episode was dropped.",
+    "Added before the silent episode: A must have ≥2 points again after paying for the fireworks. Otherwise the 'הפרעה' button on B's card may be missing for another reason, and silent-opponent-mark ✓1 and silent-return-opponent ✓1 can't be judged. Also added a check for ≥10 empty cells before the abandon, so the game doesn't end by a full board.",
+    "B's clock is restored right after the two lock comparisons (step 3), not after the relay, and checked with adb shell date. auto_time is checked again at the end.",
+    "Single-phone session order fixed. Offline, 'משחק חדש' shows 'עבור לאימון'/'בדוק שוב' instead of 'הצטרף עם קוד' (network-offline-back, pregame-offline-ranked-dimmed). So friends-error-network-join opens the join screen online first and only then turns airplane on, as the task says.",
+    "network-offline-game-type: offline, the ranked rows fold into a 'מדורג ועם חברים' lock row. The script now turns airplane on and taps '2 שחקנים' in one adb command, with a noted fallback.",
+    "Solo full-board practice in friends-manage-create-cancel is played to the end, which is the precondition of friends-results-no-rematch-home. The session therefore runs first, on phone 1.",
+    "The 'Unmatched Route' and invalid-link checks keep the full expected texts. curl is valid because the /r page's language is chosen on the server from Accept-Language (friends/links.ts).",
+    "Estimates made realistic for adb driving plus reading recordings: 45 + 40 + 50 + 25 + 30 = 190 min. That replaces 163 min over 6 sessions, whose two-phone parts were underestimated."
+   ]
+  }
+ ],
+ "plan": {
+  "merges": [
+   {
+    "into": "pregame-bot-and-solo",
+    "from": [
+     "pregame-newgame-screen",
+     "game-bot-pip-locks",
+     "postgame-screens-he"
+    ],
+    "why": "All four start at Home with 'שחק' and use the same practice screens on one phone. One visit to 'משחק חדש' covers newgame-screen steps 2–8 together with bot-and-solo step 1, so the 'אימון מול בוט' and 'אימון לבד' type screens are opened once. The one Pip ('1 · טירון', fast) game covers four things in order: pregame-bot-start; the bot-lock look and tapping its cell (pip-locks: do not lock anything until the bot has locked twice); the replay setup of postgame-screens-he (2 correct digits, then 1 wrong); and, after 'סיום אימון', pregame-bot-results-robot on its results screen. From there go straight to 'צפייה חוזרת', history, leaderboard and achievements. Lock look and replay do not depend on the game type ('מהיר' instead of 'רגיל' in pip-locks)."
+   },
+   {
+    "into": "pregame-offline",
+    "from": [
+     "game-practice-end-offline",
+     "netfr-single-offline-links"
+    ],
+    "why": "All three need phone 1 on USB with airplane mode. They also check the same offline screens: pregame-offline-gametype-practice is the same check as network-offline-game-type, and pregame-offline-bottom is the same as network-offline-attempts ('בדוק שוב', 'ניסיון N' rising). So airplane mode is turned on once, and each screen is read once against both tasks' wording. Order: (1) online first: the netfr links, create-cancel and other-device steps, plus one solo practice ended with 'כן, לסיים' under screenrecord (game-surrender-practice-confirm). (2) one airplane block: start 'אימון לבד' from pregame step 6, enter 1 right and 1 wrong digit (game-practice-solo-offline). In pregame step 8 pick '3 · מתקדם' instead of Pip and play about 1 min, which covers both pregame-offline-bot-practice and game-practice-bot-offline. join-with-code offline: open the join screen before airplane mode. network-offline-home: swipe away and reopen. (3) airplane off."
+   },
+   {
+    "into": "game-bot-grandmaster",
+    "from": [
+     "interference-bot-games"
+    ],
+    "why": "Same opponent and same game: Overlord = '5 · גרנדמאסטר', fast. Pairs: game-practice-bot-no-button = interference-where-bot-no-button, and game-practice-bot-no-hits = interference-where-bot-never (screencaps every 5 s). One 'בחירת יריב' dump covers where-bot-select. Lead early with the solver, then enter a wrong digit and stay idle 25 s for sad-sleepy. After that come the reactions and mute steps, and the bot finishes the board. Only after that: one 'מדורג · קשה' search → 'שחק מול בוט בינתיים' (where-bot-from-search). That search makes the session ranked, so it goes in lane P3."
+   },
+   {
+    "into": "general-walk-he-en",
+    "from": [
+     "game-ranked-en-bot",
+     "postgame-english"
+    ],
+    "why": "Walk Phase B already visits every postgame screen in English and searches ranked in English, so one switch to English covers all three. In Phase B, play a practice game against Novice with one right and one wrong digit, and step through its whole Replay (postgame-replay-english). Read history (All, Ranked, Practice), all leaderboard tabs, achievements and the player card against postgame-english ✓1–3. When the stealth bot joins the English search, check game-online-2p-cards-en ✓1–4 before surrendering: card sides, LTR board, 'Cancel selection', 'Your cell', no Hebrew. These are layout-direction checks, so they still hold at 360dp and font 1.3. The walk's Phase C (room, English picker) moves to netfr-english-room-freeze-abandon. That leaves the walk single-phone, so it runs on phone 3 in lane P3."
+   },
+   {
+    "into": "ranked-duel-pair",
+    "from": [
+     "game-ranked-2p"
+    ],
+    "why": "Same setup: phones 1 and 3 in ranked 2p fast, and the same long first game to a full board. Pairs: game-online-2p-board-end = ranked-duel-full-board / postgame-results-place-2p, and game-online-2p-cards-he goes with ranked-found-colors-shapes. guard-first-move is the same dialog as guard-before-move ✓1, and guard-not-behind is the same as guard-leader ✓1. So game 1 covers cards, same board, both guards, cancel, back, tried-everyone, reactions, gfxinfo perf and the full-board end. The 10 surrender games of game-ranked-2p collapse into games that are already played. Each S/W pair below means one game recorded on both phones, giving one S view and one W view. No-lock: duel games 2, 3 and 5, plus 2 short extra games, make 5. Lock (S and W both hold a cell): duel game 4 (S must lock too), the surrender that ends interference-ranked-new-kinds, and pregame-stealthoff games 1–3 make 5. If stealthoff cannot run, add the missing lock games here."
+   },
+   {
+    "into": "interference-ranked-new-kinds",
+    "from": [
+     "ranked-end-pair"
+    ],
+    "why": "Both are ranked 2p fast between the two phones, so they run in one sitting. The interference game ends with a lock surrender recorded on both phones (it counts as one of the 5 lock runs). Then end-pair games 6–9 follow at once."
+   },
+   {
+    "into": "ranked-multi-full",
+    "from": [
+     "game-ranked-3p",
+     "game-ranked-4p",
+     "ranked-multi-surrender"
+    ],
+    "why": "All four are blocked on the same Firebase tokens and use the same fake-client setup. Merged, the games become: two 3p games and three 4p games, instead of 2 + 1 + 1 + 2 + 3.\n- First 3p game (Gil): covers ranked-three-recent-pair. Then play it on as game-ranked-3p game 1 instead of surrendering at once.\n- Second 3p game: narrow phone and font 1.3, for requeue and last-player.\n- The full 4p game (Cyd, Dan): covers ranked-four-* and game-online-4p-cards, pips and overflow.\n- 4p-2 game: phone 3 narrow + font 1.3 for game-online-4p-small. game-online-exit-order = ranked-four-leavers-order.\n- 4p-3 game: leaver and no-new-search."
+   }
+  ],
+  "batches": [
+   {
+    "lane": "P1",
+    "order": 1,
+    "sessions": [
+     "pregame-bot-and-solo"
+    ],
+    "estMinutes": 48,
+    "rankedOk": false
+   },
+   {
+    "lane": "P1",
+    "order": 2,
+    "sessions": [
+     "game-solo-full-board",
+     "general-perf-startup"
+    ],
+    "estMinutes": 60,
+    "rankedOk": false
+   },
+   {
+    "lane": "P1",
+    "order": 3,
+    "sessions": [
+     "general-levels-background",
+     "pregame-offline"
+    ],
+    "estMinutes": 72,
+    "rankedOk": false
+   },
+   {
+    "lane": "P3",
+    "order": 1,
+    "sessions": [
+     "ranked-solo-bot",
+     "game-bot-grandmaster",
+     "game-bot-advanced"
+    ],
+    "estMinutes": 69,
+    "rankedOk": true
+   },
+   {
+    "lane": "P3",
+    "order": 2,
+    "sessions": [
+     "general-walk-he-en"
+    ],
+    "estMinutes": 100,
+    "rankedOk": true
+   },
+   {
+    "lane": "BOTH",
+    "order": 1,
+    "sessions": [
+     "ranked-duel-pair"
+    ],
+    "estMinutes": 62,
+    "rankedOk": true
+   },
+   {
+    "lane": "BOTH",
+    "order": 2,
+    "sessions": [
+     "interference-ranked-new-kinds"
+    ],
+    "estMinutes": 58,
+    "rankedOk": true
+   },
+   {
+    "lane": "BOTH",
+    "order": 3,
+    "sessions": [
+     "pregame-stealthoff",
+     "netfr-english-room-freeze-abandon"
+    ],
+    "estMinutes": 73,
+    "rankedOk": true
+   },
+   {
+    "lane": "BOTH",
+    "order": 4,
+    "sessions": [
+     "interference-room-classics-disconnect"
+    ],
+    "estMinutes": 55,
+    "rankedOk": false
+   },
+   {
+    "lane": "BOTH",
+    "order": 5,
+    "sessions": [
+     "netfr-fast-2p-network"
+    ],
+    "estMinutes": 50,
+    "rankedOk": false
+   },
+   {
+    "lane": "BOTH",
+    "order": 6,
+    "sessions": [
+     "netfr-hard-block-manage"
+    ],
+    "estMinutes": 40,
+    "rankedOk": false
+   },
+   {
+    "lane": "BOTH",
+    "order": 7,
+    "sessions": [
+     "ranked-multi-full"
+    ],
+    "estMinutes": 70,
+    "rankedOk": true
+   },
+   {
+    "lane": "BOTH",
+    "order": 8,
+    "sessions": [
+     "netfr-fakes-rooms-4p"
+    ],
+    "estMinutes": 45,
+    "rankedOk": false
+   }
+  ],
+  "wallHours": 10.6,
+  "notes": "TIMING\n- Solo stage: P1 180 min, P3 169 min, so about 3.0 h.\n- BOTH stage: 453 min, about 7.55 h. Total about 10.6 h.\n- If the Firebase tokens are still missing: BOTH batch 7 costs nothing (mark it 'needs ID tokens from Moshe'), and BOTH batch 8 shrinks to its fallback (below). Total then about 8.9 h.\n\nLANES\n- P1 = phone 1 (אורי), never ranked. P3 = phone 3 (אחוותא), the only solo lane allowed to search ranked.\n- Sessions that named a specific phone now run on their lane's phone:\n  - postgame-screens-he moves to phone 1 (inside pregame-bot-and-solo).\n  - ranked-solo-bot moves to phone 3. Phone 3 loses rating in its games 1–2, not phone 1, so the gap logic is mirrored.\n  - general-walk-he-en runs on phone 3, and its deviceSettings apply to phone 3.\n- pregame-offline (with the netfr part) must run on phone 1 over USB. It needs the fake-client token of אורי for friends-error-other-device; without it, mark that task blocked.\n- general-perf-startup needs an APK built with EXPO_PUBLIC_STARTUP_LOG=1. Build APK 11 with that flag before the solo stage, or the task is untested.\n\nCHECK MOVES INSIDE SESSIONS (no ✓ dropped; each shared screen is read once against all the tasks named)\n1. general-walk-he-en Phase C moves into netfr-english-room-freeze-abandon. In step 5, before the freeze: phone 1 solves to 2 points or more, taps 'Interfere' on phone 3's card, takes a screenshot and a dump (picker-ltr-en ✓1–4), and closes it with X.\n   - Compare against the Hebrew picker shot taken in interference-ranked-new-kinds step 2.\n   - lang-no-hebrew ✓1 uses the same 'New game' shot as friends-a11y-english ✓1.\n   - Read the English surrender dialog with 'Surrender', then 'Cancel', before the abandon.\n2. pregame-stealthoff and netfr-english-room sit in one batch to save a language round trip. At the end of stealthoff, phone 1 stays in English and only phone 3 switches.\n   - Take the Hebrew new-game fit shot for netfr-english step 1 on phone 3, before it switches. It is the same phone model.\n   - At the end, switch both phones back to Hebrew.\n3. ranked-solo-bot's 5 'I surrender with my lock' runs against the bot also give the S side of game-surrender-confirm-lock ✓1. The W side comes from the 2-phone games listed in the ranked-duel-pair merge.\n4. If there are no tokens, netfr-fakes-rooms-4p's 2p fallback goes into netfr-hard-block-manage's 'קשה' room game:\n   - countdown and countdown-back, same-board, history 'עם חברים · בלי דירוג', the friends leaderboard tab;\n   - rating-xp: take the before shot just before that game;\n   - no-rematch-home.\n   Batch 8 then drops to 0 min.\n5. interference-ranked-new-kinds: the sender is phone 1 (higher level) and the receiver is phone 3. It ends with a lock surrender recorded on both phones, then end-pair games 6–9.\n\nSTEALTH BOT\n- Ask Moshe to turn the stealth bot OFF before BOTH batch 1 and back ON after batch 3. With it off, the two phones always match each other whatever their rating gap, and nobody has to retry after getting the bot.\n- pregame-stealthoff runs last of the three, because its games deliberately push the gap D into the 100–300 range.\n- If Moshe is not available: batches 1–2 run with the bot on, using the existing rule (whoever gets the bot surrenders before any move, then search again). Batch 3 waits for him. In that case, add the missing lock-surrender games to batch 1.\n- Batches 4–6 are friends rooms and do not care about the bot. Batches 7–8 depend on tokens and run last.\n- The solo stage needs the bot ON: game-ranked-en-bot, the walk's search, ranked-solo-bot.\n\nBATCH SIZE\ngeneral-walk-he-en is one session of about 100 min, over the 40–70 target. If one tester cannot carry it, split it at the Phase A / Phase B boundary: Hebrew walk, then English walk with the postgame checks. Nothing else changes."
+ }
+}

@@ -30,27 +30,39 @@
       "box": "בריבוע {{label}} חסר רק {{digit}}."
     },
     "missing": {
-      "row": "בשורה {{label}} חסרים {{digits}}.",
-      "col": "בעמודה {{label}} חסרים {{digits}}.",
-      "box": "בריבוע {{label}} חסרים {{digits}}."
+      "row_one": "בשורה {{label}} חסר {{digits}}.",
+      "row_two": "בשורה {{label}} חסרים {{digits}}.",
+      "row_other": "בשורה {{label}} חסרים {{digits}}.",
+      "col_one": "בעמודה {{label}} חסר {{digits}}.",
+      "col_two": "בעמודה {{label}} חסרים {{digits}}.",
+      "col_other": "בעמודה {{label}} חסרים {{digits}}.",
+      "box_one": "בריבוע {{label}} חסר {{digits}}.",
+      "box_two": "בריבוע {{label}} חסרים {{digits}}.",
+      "box_other": "בריבוע {{label}} חסרים {{digits}}."
     },
     "seen": {
-      "row": "בשורה {{label}} כבר יש {{digits}}.",
-      "col": "בעמודה {{label}} כבר יש {{digits}}.",
-      "box": "בריבוע {{label}} כבר יש {{digits}}."
+      "row_one": "בשורה {{label}} כבר יש {{digits}}.",
+      "row_two": "בשורה {{label}} כבר יש {{digits}}.",
+      "row_other": "בשורה {{label}} כבר יש {{digits}}.",
+      "col_one": "בעמודה {{label}} כבר יש {{digits}}.",
+      "col_two": "בעמודה {{label}} כבר יש {{digits}}.",
+      "col_other": "בעמודה {{label}} כבר יש {{digits}}.",
+      "box_one": "בריבוע {{label}} כבר יש {{digits}}.",
+      "box_two": "בריבוע {{label}} כבר יש {{digits}}.",
+      "box_other": "בריבוע {{label}} כבר יש {{digits}}."
     },
     "eliminated": "{{digit}} נמחק מ־{{cell}} בצעד {{step}}.",
     "only": "לכן רק {{digit}}."
   },
   "hidden": {
     "alone": {
-      "row": "הספרה {{digit}} חייבת להופיע בשורה {{label}}, ו־{{cell}} היא המשבצת הריקה היחידה בו. לכן {{result}}.",
-      "col": "הספרה {{digit}} חייבת להופיע בעמודה {{label}}, ו־{{cell}} היא המשבצת הריקה היחידה בו. לכן {{result}}.",
+      "row": "הספרה {{digit}} חייבת להופיע בשורה {{label}}, ו־{{cell}} היא המשבצת הריקה היחידה בה. לכן {{result}}.",
+      "col": "הספרה {{digit}} חייבת להופיע בעמודה {{label}}, ו־{{cell}} היא המשבצת הריקה היחידה בה. לכן {{result}}.",
       "box": "הספרה {{digit}} חייבת להופיע בריבוע {{label}}, ו־{{cell}} היא המשבצת הריקה היחידה בו. לכן {{result}}."
     },
     "blocked": {
-      "row": "הספרה {{digit}} חייבת להופיע בשורה {{label}}. כל שאר המשבצות הריקות בו חסומות: {{clauses}}. לכן {{result}}.",
-      "col": "הספרה {{digit}} חייבת להופיע בעמודה {{label}}. כל שאר המשבצות הריקות בו חסומות: {{clauses}}. לכן {{result}}.",
+      "row": "הספרה {{digit}} חייבת להופיע בשורה {{label}}. כל שאר המשבצות הריקות בה חסומות: {{clauses}}. לכן {{result}}.",
+      "col": "הספרה {{digit}} חייבת להופיע בעמודה {{label}}. כל שאר המשבצות הריקות בה חסומות: {{clauses}}. לכן {{result}}.",
       "box": "הספרה {{digit}} חייבת להופיע בריבוע {{label}}. כל שאר המשבצות הריקות בו חסומות: {{clauses}}. לכן {{result}}."
     },
     "clause": {

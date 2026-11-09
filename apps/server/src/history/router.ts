@@ -1,8 +1,11 @@
 import {
+  AVATAR_CATALOG_HEADER,
+  avatarCatalogOf,
   decodeHistoryCursor,
   GAME_ID_PATTERN,
   HISTORY_PATHS,
   type HistoryError,
+  historyGameForCatalog,
   type HistoryPage,
   type ReplayAnswer,
 } from '@sudoku-fight/protocol';
@@ -132,7 +135,9 @@ export function createHistoryRouter({
     const userId = await accountOf(res);
     if (userId === undefined) return;
     const page: HistoryPage = await listUserGames(db, userId, cursor);
-    res.json(page);
+    // an older app refuses the whole page over one avatar it does not know: it gets none for a newer one
+    const catalog = avatarCatalogOf(req.get(AVATAR_CATALOG_HEADER));
+    res.json({ ...page, games: page.games.map((g) => historyGameForCatalog(g, catalog)) });
   });
 
   router.get(HISTORY_PATHS.replay, ...before, async (req, res) => {
@@ -145,7 +150,8 @@ export function createHistoryRouter({
     if (read.kind === 'notFound') return send(res, 404, { error: 'notFound' });
     if (read.kind === 'notFinished')
       return send(res, 409, { error: 'notFinished', message: 'the game is not over (or not stored yet)' });
-    const answer: ReplayAnswer = { game: read.game, events: read.events };
+    const catalog = avatarCatalogOf(req.get(AVATAR_CATALOG_HEADER));
+    const answer: ReplayAnswer = { game: historyGameForCatalog(read.game, catalog), events: read.events };
     res.json(answer);
   });
 

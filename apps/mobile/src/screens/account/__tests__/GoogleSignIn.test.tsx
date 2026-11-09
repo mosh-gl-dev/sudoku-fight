@@ -554,6 +554,30 @@ describe('settings: the sign-in method, and deletion with Google', () => {
     expect(within(ask).queryByTestId('delete-google-use-password')).toBeNull();
   });
 
+  it('a Google-only account in a build without Google sign-in is told where to delete it, never asked for a password', async () => {
+    // QA loop 3: an APK whose signing key Firebase doesn't list has no Google sign-in (app.config.ts), and the
+    // account signed in with Google earlier. Deleting it asked for a password it doesn't have.
+    await signedInWithGoogle();
+    useAuth.setState({ google: false });
+    await renderAccount('/settings');
+    await fireEvent.press(screen.getByRole('button', { name: 'מחיקת חשבון' }));
+    const notice = await screen.findByTestId('delete-google-off');
+    expect(within(notice).getByRole('header', { name: 'צריך כניסה עם Google' })).toBeOnTheScreen();
+    expect(within(notice).getByText(/באפליקציה מהחנות \(Google Play\)/)).toBeOnTheScreen();
+    // One action, "הבנתי", which closes it: no password, no Google, nothing deleted.
+    expect(
+      within(notice)
+        .getAllByRole('button')
+        .map((b) => b.props.accessibilityLabel),
+    ).toEqual(['הבנתי']);
+    expect(screen.queryByTestId('delete-password')).toBeNull();
+    expect(screen.queryByTestId('delete-google')).toBeNull();
+    await fireEvent.press(within(notice).getByRole('button', { name: 'הבנתי' }));
+    await waitFor(() => expect(screen.queryByTestId('delete-google-off')).toBeNull());
+    expect(auth.server.users.size).toBe(1);
+    expect(useAuth.getState().status).toBe('ready');
+  });
+
   it('delete: another Google account chosen says so, and deletes nothing', async () => {
     await signedInWithGoogle();
     await renderAccount('/settings');

@@ -30,14 +30,26 @@
       "box": "En el cuadro {{label}} solo falta el {{digit}}."
     },
     "missing": {
-      "row": "En la fila {{label}} faltan {{digits}}.",
-      "col": "En la columna {{label}} faltan {{digits}}.",
-      "box": "En el cuadro {{label}} faltan {{digits}}."
+      "row_one": "En la fila {{label}} falta el {{digits}}.",
+      "row_many": "En la fila {{label}} faltan {{digits}}.",
+      "row_other": "En la fila {{label}} faltan {{digits}}.",
+      "col_one": "En la columna {{label}} falta el {{digits}}.",
+      "col_many": "En la columna {{label}} faltan {{digits}}.",
+      "col_other": "En la columna {{label}} faltan {{digits}}.",
+      "box_one": "En el cuadro {{label}} falta el {{digits}}.",
+      "box_many": "En el cuadro {{label}} faltan {{digits}}.",
+      "box_other": "En el cuadro {{label}} faltan {{digits}}."
     },
     "seen": {
-      "row": "La fila {{label}} ya tiene {{digits}}.",
-      "col": "La columna {{label}} ya tiene {{digits}}.",
-      "box": "El cuadro {{label}} ya tiene {{digits}}."
+      "row_one": "La fila {{label}} ya tiene el {{digits}}.",
+      "row_many": "La fila {{label}} ya tiene {{digits}}.",
+      "row_other": "La fila {{label}} ya tiene {{digits}}.",
+      "col_one": "La columna {{label}} ya tiene el {{digits}}.",
+      "col_many": "La columna {{label}} ya tiene {{digits}}.",
+      "col_other": "La columna {{label}} ya tiene {{digits}}.",
+      "box_one": "El cuadro {{label}} ya tiene el {{digits}}.",
+      "box_many": "El cuadro {{label}} ya tiene {{digits}}.",
+      "box_other": "El cuadro {{label}} ya tiene {{digits}}."
     },
     "eliminated": "En el paso {{step}} se descartó el {{digit}} en {{cell}}.",
     "only": "Así que solo queda el {{digit}}."

@@ -65,6 +65,7 @@
     "noLogic": "Cevap: {{cell}} → {{digit}}",
     "scoreLine": "Puan",
     "penaltyLine": "Ceza: doğru rakamın değeri",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Seçim iptal edildi",
       "timeout": "Süre doldu",

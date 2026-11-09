@@ -108,6 +108,7 @@
     },
     "code": "Código de error: {{code}}",
     "retry": "Buscar de nuevo",
+    "backToGame": "Volver a la partida",
     "verify": "Verificar correo",
     "practice": "Ir a practicar",
     "practiceNote": "La práctica a solas o contra un bot también funciona sin conexión.",
@@ -124,11 +125,11 @@
     "retry": "Volver a comprobar",
     "retrying": "Comprobando la conexión…",
     "stillOffline": "Todavía sin conexión · intento {{count}}",
-    "rankedNote": "Disponible con conexión",
+    "rankedNote": "Con conexión",
     "needsConnection": "Requiere conexión",
     "needsConnectionLabel": "Requiere conexión a internet",
     "practiceNote": "Disponible sin internet",
-    "availableOffline": "Funciona sin conexión",
+    "availableOffline": "Sin conexión",
     "back": "Volviste a estar en línea. Las partidas clasificatorias están disponibles."
   },
   "modes": {

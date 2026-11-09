@@ -40,6 +40,8 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: space[8],
     paddingHorizontal: tokens.layout.gutterGame,
+    // Opaque, unlike the other screens (D126): the root layout's error boundary shows it in place of the whole
+    // layout, the wandering digits' layer with it, so nothing else paints the ground under it.
     backgroundColor: color.bg,
   },
   icon: {

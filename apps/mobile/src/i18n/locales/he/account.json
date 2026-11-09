@@ -68,7 +68,8 @@
       "timeout": "השרת לא ענה בזמן. נסה שוב.",
       "signedOut": "אתה לא מחובר. התחבר שוב.",
       "unexpected": "קיבלנו מהשרת תשובה לא צפויה. נסה שוב, או עדכן את האפליקציה."
-    }
+    },
+    "avatarUnavailable": "האווטאר הזה עוד לא זמין בשרת. בחר אווטאר אחר."
   },
   "splash": {
     "tagline": "לוח אחד. כולם פותרים. רק אחד מנצח.",
@@ -251,6 +252,9 @@
     "deleteGoogleBody": "כדי למחוק את החשבון, בחר שוב את חשבון Google ‏{{email}}.",
     "deleteGoogleSubmit": "אשר עם Google ומחק",
     "deleteGoogleAgain": "כדי למחוק את החשבון צריך אישור טרי. נסה שוב ובחר את חשבון Google שלך.",
-    "deleteWithPassword": "אישור עם הסיסמה במקום"
+    "deleteWithPassword": "אישור עם הסיסמה במקום",
+    "deleteGoogleOffTitle": "צריך כניסה עם Google",
+    "deleteGoogleOffBody": "החשבון הזה נכנס עם Google, ולכן המחיקה שלו דורשת אישור עם Google. בגרסה הזו של האפליקציה אין כניסה עם Google, אז אי אפשר למחוק ממנה את החשבון. אפשר למחוק אותו באפליקציה מהחנות (Google Play).",
+    "deleteGoogleOffOk": "הבנתי"
   }
 }

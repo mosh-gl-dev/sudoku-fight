@@ -57,6 +57,9 @@
     "title": "새 게임",
     "footnote": "랭크 게임은 인터넷 연결이 필요해요 · 연습은 언제든 할 수 있어요",
     "soon": "곧 출시",
+    "needsConnection": {
+      "rankedAndFriends": "랭크와 친구 게임"
+    },
     "groups": {
       "ranked": {
         "title": "랭크",

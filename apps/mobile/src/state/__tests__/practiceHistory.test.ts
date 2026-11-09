@@ -33,6 +33,31 @@ describe('the recent practices', () => {
     expect(useHistory.getState().recent.map((g) => g.id)).toEqual(['new']);
   });
 
+  it('a list already read stays as it is while read again, and the same games change nothing (B14)', async () => {
+    const repo = await openPracticeRepo(await memoryDb());
+    await repo.createGame(game('a', 1));
+    const useHistory = createPracticeHistory(async () => repo);
+    await useHistory.getState().refresh();
+    const first = useHistory.getState().recent;
+    const changes = jest.fn();
+    const stop = useHistory.subscribe(changes);
+    // Read again (Home shown again): never 'loading', and no change at all for the same games.
+    const again = useHistory.getState().refresh();
+    expect(useHistory.getState().status).toBe('ready');
+    await again;
+    expect(changes).not.toHaveBeenCalled();
+    expect(useHistory.getState().recent).toBe(first);
+    // A game that changed, or a new one: the new list.
+    await repo.markInterrupted('a');
+    await useHistory.getState().refresh();
+    expect(useHistory.getState().recent.map((g) => [g.id, g.status])).toEqual([['a', 'interrupted']]);
+    await repo.createGame(game('b', 2));
+    await useHistory.getState().refresh();
+    expect(useHistory.getState().recent.map((g) => g.id)).toEqual(['b', 'a']);
+    expect(changes).toHaveBeenCalledTimes(2);
+    stop();
+  });
+
   it('without a database the list is empty and says so', async () => {
     const useHistory = createPracticeHistory(async () => null);
     await useHistory.getState().refresh();

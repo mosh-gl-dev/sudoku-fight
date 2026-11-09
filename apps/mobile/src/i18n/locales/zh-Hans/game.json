@@ -128,10 +128,12 @@
     "error": {
       "title": "连接错误",
       "offlineTitle": "没有网络连接",
+      "expiredTitle": "你没有及时回来",
       "body": {
         "offline": "你的手机现在没有网络。请连接网络后再试。",
         "unreachable": "无法连接游戏服务器。请检查网络后再试。",
         "lost": "与游戏服务器的连接中断了，并且无法恢复。",
+        "expired": "连接没有及时恢复，因此本局按弃赛处理。",
         "refused": "服务器没有让我们进入房间。"
       },
       "refusal": {
@@ -167,7 +169,9 @@
       "confirm": "是，认输",
       "cancel": "取消",
       "footnote": "对局会在后台继续",
-      "dialog": "确认认输"
+      "dialog": "确认认输",
+      "notSent": "你没有认输，对局继续。可以再试一次",
+      "notSentOffline": "无法连接服务器，所以你没有认输。连接恢复后可以再试一次"
     },
     "lobby": {
       "title": "私人房间",
@@ -391,9 +395,27 @@
       "title": "本局最佳一步",
       "move": "{{cell}} → {{digit}}",
       "label_other": "本局最佳一步：{{points}}分，{{cell}}填{{digit}}",
-      "formula": "得分方式",
-      "formulaLabel": "得分方式：{{line}}",
-      "none": "这次练习没有正确的一步"
+      "before": "这一步之前已填",
+      "count": {
+        "row": "本行",
+        "col": "本列",
+        "box": "本宫",
+        "num": "盘面上的{{digit}}"
+      },
+      "filled": {
+        "row_other": "本行{{count}}格",
+        "col_other": "本列{{count}}格",
+        "box_other": "本宫{{count}}格",
+        "num_other": "{{digit}}在盘面上出现{{count}}次"
+      },
+      "countName": {
+        "row": "行",
+        "col": "列",
+        "box": "宫",
+        "num": "盘面上的{{digit}}"
+      },
+      "why": "格子周围越空，这一步越值钱。得分由最满的两项决定：{{highest}}按全额计，{{next}}按一半计。",
+      "none": "本局你没有走对任何一步"
     },
     "stats": {
       "time": "对局时间",
@@ -425,6 +447,13 @@
     "actions": {
       "home": "首页",
       "newGame": "新对局"
+    },
+    "again": {
+      "solo": "立即再开始一局单人练习，{{type}}",
+      "bot": "立即再与{{bot}}对战一局，{{type}}",
+      "botAny": "立即再与机器人对战一局，{{type}}",
+      "ranked": "再来一局排位赛，{{type}}",
+      "friends": "回到好友对战"
     },
     "loading": "正在加载结果…",
     "missing": "找不到这次练习",

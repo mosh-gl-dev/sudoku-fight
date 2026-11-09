@@ -12,6 +12,16 @@ export interface ToastContent {
   icon?: IconName;
   /** Overrides the variant's hold time; `null` keeps it until `hide`. */
   holdMs?: number | null;
+  /**
+   * Its top, from the top of the window, in place of "under the safe area plus 8": the sender's chip goes under
+   * the cards (motion.md `sender.toast`), so it never hides the avatars and the score it is about.
+   */
+  top?: number;
+  /**
+   * The most lines its message takes, in place of every line it needs. Only where the tail is a name, which may
+   * shorten (the sender's chip under the cards, which must end above the board); never to cut words.
+   */
+  maxLines?: number;
 }
 
 export interface ToastItem extends ToastContent {

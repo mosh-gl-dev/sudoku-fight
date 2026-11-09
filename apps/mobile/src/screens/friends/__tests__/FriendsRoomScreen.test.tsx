@@ -1,10 +1,11 @@
 import type { LobbyPlayer } from '@sudoku-fight/protocol';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useToast } from '../../../components/ui/toastStore';
 import { FRIENDS_UI } from '../../../config/friends';
 import { cue } from '../../../services/feedback';
-import { color } from '../../../theme';
+import { color, space } from '../../../theme';
 import { iso, type Setup, setUp, styleOf, wait } from '../../game/connection/testing/setup';
 import type { FriendsLobby } from '../friendsModel';
 import { type FriendsRoomPhase, FriendsRoomScreen, type FriendsRoomScreenProps } from '../FriendsRoomScreen';
@@ -187,10 +188,19 @@ describe('the friends room (Hebrew, friends-room.md §3.2)', () => {
     expect(screen.getByText('רק המארח משנה')).toBeOnTheScreen();
     // No kick on my own row.
     expect(screen.queryByTestId('friends-seat-0-kick')).not.toBeOnTheScreen();
+    // The type radios are cards (D125), as GameType's: checked = the accent border.
+    expect(styleOf(screen.getByRole('radio', { checked: true }))).toMatchObject({
+      borderColor: color.accent,
+    });
     await fireEvent.press(screen.getByRole('radio', { name: 'קשה' }));
     expect(host.onSetGameType).toHaveBeenCalledWith('hard');
+    // One tick, the screen's: the card plays none of its own.
+    expect(jest.mocked(cue).mock.calls).toEqual([['toggle']]);
+    jest.mocked(cue).mockClear();
     await fireEvent.press(screen.getByRole('button', { name: 'התחל משחק · 2 שחקנים' }));
     expect(host.onStart).toHaveBeenCalledWith([]);
+    // Starting plays the press once (the screen's, not the button's too).
+    expect(jest.mocked(cue).mock.calls).toEqual([['primaryPress']]);
   });
 
   it('"התחל" is off with one connected player, and says why', async () => {
@@ -204,11 +214,36 @@ describe('the friends room (Hebrew, friends-room.md §3.2)', () => {
     expect(p.onStart).not.toHaveBeenCalled();
   });
 
+  it('the start and "יציאה מהחדר" sit in a footer above the navigation bar, out of the scroll (QA B40, B53)', async () => {
+    const p = props(inLobby([MOSHE]));
+    const insets = { top: 32, bottom: 48, left: 0, right: 0 };
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 411, height: 891 }, insets }}>
+        <FriendsRoomScreen {...p} />
+      </SafeAreaProvider>,
+    );
+    const footer = screen.getByTestId('friends-lobby-footer');
+    // The 3-button bar's 48 dp are under the footer's own padding: nothing to tap sits on the bar.
+    expect(styleOf(footer).paddingBottom).toBe(48 + space[6]);
+    for (const id of ['friends-start', 'friends-start-hint', 'friends-leave'])
+      expect(within(footer).getByTestId(id)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('friends-lobby')).queryByTestId('friends-leave')).toBeNull();
+    await fireEvent.press(within(footer).getByRole('button', { name: 'יציאה מהחדר' }));
+    expect(p.onLeave).toHaveBeenCalledTimes(1);
+    // A guest's wait line stands there too.
+    await render(<FriendsRoomScreen {...props(inLobby([MOSHE, DANA], 'p-dana'))} />);
+    expect(
+      within(screen.getByTestId('friends-lobby-footer')).getByTestId('friends-waiting'),
+    ).toBeOnTheScreen();
+  });
+
   it('with a guest away, the button counts the connected only and asks "להתחיל בלי Avi?" [D83]', async () => {
     const p = props(inLobby([MOSHE, DANA, { ...AVI, away: true }]));
     await render(<FriendsRoomScreen {...p} />);
     await fireEvent.press(screen.getByRole('button', { name: 'התחל משחק · 2 שחקנים' }));
     expect(p.onStart).not.toHaveBeenCalled();
+    // Asking is not starting: no press cue yet.
+    expect(cue).not.toHaveBeenCalled();
     expect(screen.getByRole('header', { name: `להתחיל בלי ${iso('Avi')}?` })).toBeOnTheScreen();
     expect(screen.getByText(`${iso('Avi')} לא בחדר כרגע. מי שלא בחדר נשאר בחוץ.`)).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'לא, נחכה' }));
@@ -216,6 +251,8 @@ describe('the friends room (Hebrew, friends-room.md §3.2)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'התחל משחק · 2 שחקנים' }));
     await fireEvent.press(screen.getByRole('button', { name: 'כן, להתחיל' }));
     expect(p.onStart).toHaveBeenCalledWith(['p-avi']);
+    // The dialog's gold confirm plays the press, once; the screen adds none.
+    expect(jest.mocked(cue).mock.calls).toEqual([['primaryPress']]);
   });
 
   it('"הוצא מהחדר" asks first [D85a]', async () => {

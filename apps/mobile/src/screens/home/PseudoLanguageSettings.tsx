@@ -68,6 +68,7 @@ export function PseudoLanguageSettings({ onOpenPlurals = openPlurals }: { onOpen
           options={options}
           value={setting}
           onChange={choose}
+          ground={color.surface}
           testID="setting-pseudo"
         />
       </View>

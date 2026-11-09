@@ -1,20 +1,23 @@
 import type { GameMode, GameType } from '@sudoku-fight/engine';
 import type { QueuePlayerCount, RatingEntry } from '@sudoku-fight/protocol';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../auth/authStore';
 import { Icon } from '../../components/Icon';
 import { ltr, Rating } from '../../components/player';
 import { Button, useToast } from '../../components/ui';
+import { Enter } from '../../components/ui/Enter';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { useConnectivityWatch } from '../../net/connectivity';
 import { cue } from '../../services/feedback';
-import { color, radius, size, space, text, tokens } from '../../theme';
+import { color, size, space, text, tokens } from '../../theme';
 import { Announcer } from '../game/connection/Announcer';
+import { GAME_WARM_CHOICE_DELAY_MS, warmGameLater } from '../match/warmGame';
 import {
   DEFAULT_RANKED_PLAYERS,
   type GameTypeInfo,
@@ -68,6 +71,9 @@ export function GameTypeScreen({
   const typeName = t(`gameTypes.${selected}.name`);
   // The words of this mode: a ranked table of 3–4 looks for opponents, not one (stage 10).
   const words = mode === 'ranked' && players > 2 ? 'rankedGroup' : mode;
+  // The first game's sounds and code, made while the player chooses (../match/warmGame.ts, QA K2), not under GO!
+  // or the game screen's first frame. Stops once covered: the search goes on with what is left.
+  useFocusEffect(useCallback(() => warmGameLater(undefined, GAME_WARM_CHOICE_DELAY_MS), []));
 
   const select = (type: GameType) => {
     if (type === selected || starting) return;
@@ -75,9 +81,9 @@ export function GameTypeScreen({
     setSelected(type);
   };
 
+  // The primary button plays its own press cue (MOT-4).
   const start = async () => {
     if (starting || offline) return;
-    cue('primaryPress');
     if (mode === 'bot') {
       router.push({ pathname: '/bot-select', params: { gameType: selected } });
       return;
@@ -94,7 +100,6 @@ export function GameTypeScreen({
 
   /** Offline: "עבור לאימון", a solo practice of the type chosen here, in this screen's place. */
   const practice = () => {
-    cue('primaryPress');
     router.replace({ pathname: '/game-type', params: { mode: 'solo', gameType: selected } });
   };
 
@@ -109,14 +114,15 @@ export function GameTypeScreen({
       <ScrollView contentContainerStyle={styles.content}>
         {offline ? <OfflineBanner checking={connectivity.checking} /> : null}
         <View accessibilityRole="radiogroup" accessibilityLabel={t('gameType.title')} style={styles.list}>
-          {infos.map((info) => (
-            <TypeCard
-              key={info.gameType}
-              info={info}
-              checked={info.gameType === selected}
-              rating={mode === 'ranked' ? rankedRatingIn(ratings, info.gameType, players) : null}
-              onPress={() => select(info.gameType)}
-            />
+          {infos.map((info, index) => (
+            <Enter key={info.gameType} index={index}>
+              <TypeCard
+                info={info}
+                checked={info.gameType === selected}
+                rating={mode === 'ranked' ? rankedRatingIn(ratings, info.gameType, players) : null}
+                onPress={() => select(info.gameType)}
+              />
+            </Enter>
           ))}
         </View>
         <Text style={styles.note}>{t(`gameType.note.${words}`)}</Text>
@@ -200,17 +206,16 @@ function TypeCard({
     .filter(Boolean)
     .join(t('player:listSep'));
 
+  // A tappable card (D125): checked is the accent's border over the accent's 10%; `select` plays the tick.
   return (
-    <Pressable
+    <PressableCard
       accessibilityRole="radio"
       accessibilityLabel={label}
       accessibilityState={{ checked }}
+      selected={checked}
+      cue={null}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        checked && styles.cardChecked,
-        pressed && !checked && styles.cardPressed,
-      ]}
+      style={styles.card}
       testID={`type-${type}`}
     >
       {/* The GameType board's order: the radio at the start, the type, and my rating at the end (ranked). */}
@@ -243,7 +248,7 @@ function TypeCard({
           </View>
         ))}
       </View>
-    </Pressable>
+    </PressableCard>
   );
 }
 
@@ -251,7 +256,7 @@ function TypeCard({
 const RADIO = 24;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: GUTTER.screen },
   content: {
     paddingHorizontal: GUTTER.screen,
@@ -260,15 +265,11 @@ const styles = StyleSheet.create({
     gap: space[8],
   },
   list: { gap: space[6] },
+  // The card surface (PressableCard, D125) gives the fill, the border, the base and the checked look.
   card: {
     padding: space[8],
     gap: space[7],
-    borderRadius: radius.card,
-    borderWidth: tokens.border.hairline,
-    borderColor: color.border,
   },
-  cardChecked: { borderColor: color.accent, backgroundColor: color.surface },
-  cardPressed: { backgroundColor: color.surface },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space[6] },
   names: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: space[2] },
   rating: { alignItems: 'flex-end', gap: space[2] },
@@ -294,6 +295,5 @@ const styles = StyleSheet.create({
     paddingTop: space[6],
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
-    backgroundColor: color.bg,
   },
 });

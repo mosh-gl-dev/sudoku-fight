@@ -1,14 +1,17 @@
-import { cellName, formatScoreLine } from '@sudoku-fight/engine';
+import { cellName } from '@sudoku-fight/engine';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
-import { ltr, signedText } from '../../../components/player';
+import { formatScore, ltr, signedText } from '../../../components/player';
 import i18n from '../../../i18n';
+import { decimalSeparator } from '../../../i18n/compose';
 import { useSettings } from '../../../state/settings';
+import { scoreCountsOf } from '../../results/resultsModel';
 import { buildReplay, stepView } from '../replayModel';
 import { ReplayScreen } from '../ReplayScreen';
 import { loadReplay, type ReplayLoad, type ReplaySourceDeps } from '../replaySource';
 import { softDropDuel, soloGame } from '../testing/games';
-import { fakeHistoryApi, memoryRepo, rankedDuel, savePractice } from '../testing/sources';
+import { botDuelTable, fakeHistoryApi, memoryRepo, rankedDuel, savePractice } from '../testing/sources';
 
 /**
  * The replay screen (spec §13; work plan stage 11): a practice from the phone and a ranked game from the
@@ -32,6 +35,12 @@ async function show(load: (id: string) => Promise<ReplayLoad>, id: string) {
 }
 
 const next = () => fireEvent.press(screen.getByTestId('replay-next'));
+
+/** A move as the card draws it (MoveText, B20): its words, each its own text ("A2", "→", "4"). */
+const moveWords = (testID: string): string[] =>
+  within(screen.getByTestId(testID, hidden))
+    .getAllByText(/\S/, hidden)
+    .map((w) => String(w.props.children));
 
 beforeEach(async () => {
   await i18n.changeLanguage('he');
@@ -94,13 +103,17 @@ describe('a practice from the phone', () => {
     expect(screen.getByTestId('replay-explain-me-status', hidden)).toHaveTextContent(
       `נכון ${signedText(correct.points!)}`,
     );
-    expect(screen.getByTestId('replay-explain-me-move', hidden)).toHaveTextContent(
-      ltr(`${cellName(correct.cell!)} → ${correct.digit}`),
-    );
+    expect(moveWords('replay-explain-me-move')).toEqual([
+      cellName(correct.cell!),
+      '→',
+      String(correct.digit),
+    ]);
     expect(screen.getByTestId('replay-explain-me-text', hidden)).toHaveTextContent(x.text!);
     expect(screen.getByTestId('replay-explain-me-technique', hidden)).toHaveTextContent(x.techniqueName!);
+    const b = correct.breakdown!;
     expect(screen.getByTestId('replay-explain-me-score', hidden)).toHaveTextContent(
-      ltr(formatScoreLine(correct.breakdown!)),
+      ltr(`9 − ${b.X} + (9 − ${b.Y}) / 2 = ${b.points}`),
+      { exact: true },
     );
 
     await fireEvent.press(screen.getByTestId('replay-prev'));
@@ -119,9 +132,11 @@ describe('a practice from the phone', () => {
       const x = stepView(replay, k, 'he').explanations[0]!;
       if (x.status !== 'none') {
         expect(screen.getByTestId('replay-explain-me-text', hidden)).toHaveTextContent(x.text!);
-        expect(screen.getByTestId('replay-explain-me-move', hidden)).toHaveTextContent(
-          ltr(`${cellName(x.cell!)} → ${table.config.puzzle.solution[x.cell!]}`),
-        );
+        expect(moveWords('replay-explain-me-move')).toEqual([
+          cellName(x.cell!),
+          '→',
+          String(table.config.puzzle.solution[x.cell!]),
+        ]);
       }
       if (s.kind === 'correct')
         expect(x).toMatchObject({ status: 'correct', played: s.digit, answer: s.digit });
@@ -148,13 +163,99 @@ describe('a practice from the phone', () => {
       expect.stringContaining(`${wrong.digit} במקום ${wrong.answer}`),
     );
     // The penalty's calculation (§6.5, §13.2): what the right digit would have scored there.
-    const { penaltyLine } = stepView(replay, wrong.index, 'he').explanations[0]!;
-    expect(penaltyLine).toMatch(new RegExp(`= ${wrong.penalty}$`));
-    expect(screen.getByTestId('replay-explain-me-penalty', hidden)).toHaveTextContent(ltr(penaltyLine!));
+    const missed = stepView(replay, wrong.index, 'he').explanations[0]!.penaltyScore!;
+    expect(missed.points).toBe(wrong.penalty);
+    const formula = ltr(`9 − ${missed.X} + (9 − ${missed.Y}) / 2 = ${wrong.penalty}`);
+    expect(screen.getByTestId('replay-explain-me-penalty', hidden)).toHaveTextContent(formula, {
+      exact: true,
+    });
     expect(screen.getByTestId('replay-explain-me')).toHaveProp(
       'accessibilityLabel',
-      expect.stringContaining(`הקנס: כמה הייתה שווה הספרה הנכונה: ${ltr(penaltyLine!)}`),
+      expect.stringContaining(`הקנס: כמה הייתה שווה הספרה הנכונה: ${formula}, `),
     );
+  });
+
+  it('the calculation in the viewer’s language (B1): the formula in numbers, and the two counts it came from', async () => {
+    const { deps, id, table } = await practiceDeps();
+    const replay = buildReplay(table.log, { me: 'me' });
+    const correct = replay.steps.find((s) => s.kind === 'correct')!;
+    const b = correct.breakdown!;
+    const { highest, next: second } = scoreCountsOf(b);
+    for (const lng of ['ar', 'ja', 'de', 'he'] as const) {
+      await act(async () => {
+        await i18n.changeLanguage(lng);
+      });
+      await show((g) => loadReplay(g, null, deps), id);
+      for (let k = 0; k < correct.index; k++) await next();
+      const score = screen.getByTestId('replay-explain-me-score', hidden);
+      const points = formatScore(b.points, decimalSeparator(i18n.t));
+      expect(score).toHaveTextContent(ltr(`9 − ${b.X} + (9 − ${b.Y}) / 2 = ${points}`), { exact: true });
+      expect(score).not.toHaveTextContent(/points/);
+      const counts = [highest, second]
+        .map((c) => i18n.t(`game:results.best.filled.${c.count}`, { count: c.value, digit: correct.digit! }))
+        .join(i18n.t('game:listSep'));
+      expect(screen.getByTestId('replay-explain-me-score-counts', hidden)).toHaveTextContent(counts, {
+        exact: true,
+      });
+      expect(screen.getByTestId('replay-explain-me')).toHaveProp(
+        'accessibilityLabel',
+        expect.not.stringContaining('points'),
+      );
+    }
+  });
+
+  it('my card says "אני", as in the game and the explanations (B18/B24): not "שחקן"', async () => {
+    const { deps, id } = await practiceDeps();
+    await show((g) => loadReplay(g, null, deps), id);
+    expect(screen.getByTestId('replay-card-me-summary')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(/^אני · מקום 1 · /),
+    );
+    expect(screen.getByTestId('replay-card-me-summary')).not.toHaveProp(
+      'accessibilityLabel',
+      expect.stringContaining('שחקן'),
+    );
+  });
+
+  it('against a bot too (B31/B34): "אני" on my card, the bot by its name', async () => {
+    const repo = await memoryRepo();
+    const table = botDuelTable();
+    await savePractice(repo, table);
+    const deps = { practice: async () => repo, ranked: null, myAvatar: 'lava-lamp' as const };
+    await show((g) => loadReplay(g, null, deps), table.config.id);
+    expect(screen.getByText(/^אימון מול בוט · /)).toBeOnTheScreen();
+    expect(screen.getByTestId('replay-card-me-summary')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(/^אני · /),
+    );
+    const bot = table.config.players.find((p) => p.isBot)!;
+    expect(screen.getByTestId(`replay-card-${bot.id}-summary`)).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(new RegExp(`^${bot.name!.replace('.', '\\.')} · `)),
+    );
+  });
+
+  it('"A2 → 4" is three words side by side, so nothing can go to a hidden line (B20, Replay.dc.html)', async () => {
+    const { deps, id, table } = await practiceDeps();
+    await show((g) => loadReplay(g, null, deps), id);
+    const replay = buildReplay(table.log, { me: 'me' });
+    const at = replay.steps.findIndex((s) => s.kind === 'correct');
+    for (let k = 0; k < at; k++) await next();
+    const step = replay.steps[at]!;
+    // Not one "⁦A2 → 4⁩" text, which Android broke before the 4: cell, arrow and digit, each a text with no
+    // space and no isolate (MoveText), left to right in a row that never wraps.
+    expect(moveWords('replay-explain-me-move')).toEqual([cellName(step.cell!), '→', String(step.digit)]);
+    const move = screen.getByTestId('replay-explain-me-move', hidden);
+    expect(StyleSheet.flatten(move.props.style)).toMatchObject({ flexDirection: 'row', direction: 'ltr' });
+    expect(StyleSheet.flatten(move.props.style)).not.toHaveProperty('flexWrap');
+    expect(StyleSheet.flatten(move.parent?.props.style)).not.toHaveProperty('flexWrap');
+    // The card still says the whole move.
+    expect(screen.getByTestId('replay-explain-me', hidden).props.accessibilityLabel).toContain(
+      ltr(`${cellName(step.cell!)} → ${step.digit}`),
+    );
+    const technique = screen.getByTestId('replay-explain-me-technique', hidden);
+    expect(StyleSheet.flatten(technique.props.style)).toMatchObject({ flexShrink: 1 });
+    expect(technique.props.numberOfLines).toBe(2);
   });
 
   it('the timeline: an adjustable control, with the step and the clock; key moments jump', async () => {
@@ -204,6 +305,35 @@ describe('a ranked game from the server', () => {
     }
     expect(screen.getByTestId('replay-narration')).toHaveTextContent('המשחק נגמר', { exact: false });
   }, 60_000);
+
+  it('a friends room’s game is "עם חברים", as its history card says, not "מדורג" (B44/B52)', async () => {
+    const table = rankedDuel('friends-1');
+    const api = fakeHistoryApi([table]);
+    // The server sends it as mode 'ranked' with friends: true (protocol HistoryGame.friends).
+    const friendsApi = {
+      ...api,
+      replay: async (gameId: string) => {
+        const answer = await api.replay(gameId);
+        return { ...answer, game: { ...answer.game, friends: true } };
+      },
+    };
+    await show(
+      (g) =>
+        loadReplay(g, 'ranked', { practice: async () => null, ranked: friendsApi, myAvatar: 'microphone' }),
+      table.config.id,
+    );
+    expect(screen.getByText(/^עם חברים · מהיר · /)).toBeOnTheScreen();
+    expect(screen.queryByText(/^מדורג · /)).toBeNull();
+    // And my card is "אני" here too, the opponent by today's name.
+    expect(screen.getByTestId('replay-card-me-summary')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(/^אני · /),
+    );
+    expect(screen.getByTestId('replay-card-nina-summary')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringMatching(/^NinaVolt · /),
+    );
+  });
 
   it('says why it can not show a game: missing, still being saved, offline (with a retry), signed out', async () => {
     const table = rankedDuel();

@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "解锁下一章需{{need}}星",
     "chapterOpen": "下一章已解锁",
+    "chapterNeedSentence": "解锁下一章需{{need}}星",
+    "chapterOpenSentence": "下一章已解锁",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "本章：已获{{stars}}星，共{{max}}星。{{gate}}",
     "mistakes_other": "{{count}}次错误",
@@ -315,6 +317,8 @@
     "button": "离开关卡",
     "title": "离开关卡？",
     "body": "你将获得0星，下一关会解锁。",
+    "bodyLocked": "你将获得0星，下一关仍不会解锁。",
+    "bodyLast": "你将获得0星。",
     "confirm": "离开",
     "cancel": "继续玩"
   },

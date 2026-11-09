@@ -1,0 +1,739 @@
+{
+ "fixcheck": [
+  {
+   "checks": [
+    {
+     "id": "levels-exit (fix check apk8)",
+     "result": "pass",
+     "detail": "Back during 'מוכן?' (L047, L073; early and full 'מוכן?') -> map, no dialog. L073 still 'השלב הבא' 30 s later; 'שחק' -> fresh 'מוכן?' and the stage from zero (chain, 0.8 s). Boss L070 Back during 'שלב בוס!' -> map, map unchanged (3 stars, best 27.5); 25 s later a fresh boss intro and the stage at 0:29, 0/30. Mid-stage Back (L072) -> 'לצאת מהשלב?', 'המשך לשחק' returns; X on L034 -> 'יציאה' -> 'יצאת מהשלב'. Back on the result screen (L070/L073/L034) -> map, then 'שחק' -> fresh ready. 'איך משחקים' did not show, so it was not tested. Early 'instant timeout' results were my own artifact: 'ui' dumps on stage screens take 25-40 s, so the stage really timed out meanwhile."
+    },
+    {
+     "id": "levels-freeze-background (fix check apk8)",
+     "result": "pass",
+     "detail": "Recents mid-stage (L074 at 0:13): the app card is plain/blank with only the icon, no board. Return after ~40 s: cover 'ממשיכים בעוד' 3,2,1, then 0:15. With 'לצאת מהשלב?' open (L034 at 0:37), Recents for 15 s: card still blank; on return the cover counts 3,2,1 under the dialog and the clock did not run in Recents. Home 8 s mid L070 (0:17): the first frame of the open animation already shows the grey cover with 3, then 0:16. Notification shade mid L070: no freeze, no cover, the clock ran 0:28->0:22 in 6 s real time (as the rework intended, needs Moshe's OK). Samsung Recents opened centred on the Settings card, with the app card to its left (system behaviour). Power+Vol screenshot not tested."
+    },
+    {
+     "id": "levels-freeze-ready (fix check apk8)",
+     "result": "pass",
+     "detail": "L034: Home after ~0.9 s of 'מוכן?' for 6 s; on return 'מוכן?' still showed, then the stage started at 0:00. First board frame after 'מוכן?': L035 duel x 96-984 in the first frame and identical later, no full-width frame. L070 boss duel the same. L034 puzzle (on-device raw screencap every 0.3 s) x 46-1034, y 801-1790 from its first frame. L074 fill-box y 659-1648 identical. L072 race identical. Practice game not checked."
+    }
+   ],
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, apk8 = 1.1.0 07.11 23:45 loop-2 fixes, already installed, no install needed). After the run: adb.ts reset (font scale 1, animations 1, airplane mode off), app locale he, app relaunched and on Home ('אורי'). Temporary /sdcard/qaraw files deleted. Side effect: plays during the test marked L047 and L073 as played with 0 stars (they were unplayed before), so 'השלב הבא' moved to L075. Screenshots are in C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-*.png. Tooling note: 'adb.ts ui' on a running stage screen takes 25-40 s instead of failing, so use screencap there."
+  },
+  {
+   "checks": [
+    {
+     "id": "K2-first-game-GO",
+     "result": "partial",
+     "detail": "apk9 (1.1.0 08.11 03:55) installed on טלפון 3 (was apk8); טלפון 1 already apk9. Two cold runs (force-stop, launch, Settings, back, שחק→2 שחקנים→wait 3 s on סוג משחק→מהיר→מצא יריב on both at once), screenrecord at 50 ms frames. First GO! frame to first board frame: cold g1 p1 1.40 s, p3 1.40 s; cold g6 p1 1.30 s, p3 1.40 s. Later games (warm, motion off) g2 p1 1.25 / p3 1.50, g5 1.30 / 1.30. So the first game is now the same as later ones (no 1.75 s). GO! reaches full size ~0.3 s after its first frame (pop), so 'GO! fully visible → board' ≈1.0–1.15 s, matching the target. But the sounds regressed in the first game (see appBugs): AudioService playback log shows only the tap and 2 beats ~1 s apart in both cold runs on both phones, against 5 sounds (matchFound, 3 beats, GO) in warm games g2 and g7. A single empty dark frame (50 ms) between the search and the VS in cold g6 on p1. In g2 on p3, 250–300 ms of empty screen between GO! and the board."
+    },
+    {
+     "id": "K3a-B43-VS-under-count",
+     "result": "pass",
+     "detail": "12 recordings (6 games × 2 phones; g3, g4 with reduced motion on, g1, g2, g5, g6 with it off), 50 ms frames. In every cross-fade frame into '3', both tiles show 'מוכן' and the line shows '2/2 · כל השחקנים מוכנים · המשחק מתחיל'. There was never a 'מתחבר…' or '1/2' under '3'. With reduced motion on, the VS opens on '0/2 מחכים שכולם יתחברו…' / 'מתחבר…' (the real state) and changes to 2/2 within ~150 ms."
+    },
+    {
+     "id": "K3b-badges-no-jump",
+     "result": "pass",
+     "detail": "Motion off, VS at full resolution (crop y 600–1600), row-profile cross-correlation against a reference frame for the title, tile and status bands: tiles and status band 0 px shift in every frame of g2 p3, g6 p1 and g6 p3, including the badge pop. The title moves 1–3 px only in the first ~250 ms (the 1.4→1 slam). Badges grow from small and fade in over ~0.25–0.3 s (g2 p3 3150–3400 ms). Reduced motion on: badges are there from the start, nothing moves. Largest font size was not tried."
+    },
+    {
+     "id": "K3c-ready-nod",
+     "result": "partial",
+     "detail": "Avatar-region frame diffs. g6 (cold): badges at about found+0.6 s, then the avatars change in every frame for 4 frames (~0.2 s, 3650–3800 on p1 and 3500–3650 on p3) right up to the cross-fade. g2 p3: no change for 0.3 s after the badges, then only 2 changed frames (3450, 3500). So the nod now runs continuously in some games, but only about 0.2 s of it is visible (expected 0.4–0.6 s). Showing more needs Moshe's decision on badgesAtMs or FOUND_HOLD. Between reactions the avatars are still: 0.00 diff, no blink."
+    },
+    {
+     "id": "surrender-early-tap",
+     "result": "pass",
+     "detail": "10 tries of 'כניעה' (785,499) then 'כן, להיכנע' (258,1970), both injected from one device shell: 0.3 s (×2), 0.6 s (×3), 1.0 s (×3), 1.5 s (×2). 2 of them with reduced motion on, 9 against the other phone and 1 against the stealth bot. 9 surrendered at once (Results: 'הפסד', 'איך זה נגמר: נכנעת לפני שהלוח התמלא'). One 0.3 s tap (g8, טלפון 1) landed while the panel was still rising: the dialog stayed open, and a second tap surrendered. The dialog never closed without a surrender, and no toast appeared."
+    },
+    {
+     "id": "surrender-scrim",
+     "result": "pass",
+     "detail": "טלפון 3, motion off: a scrim tap (540,300) 0.1 s after 'כניעה' left the dialog open. A scrim tap 2 s later closed it; the game went on with no toast. Airplane-mode connection path (4) and the stage X spot check (5) were not run (not in my assigned items)."
+    },
+    {
+     "id": "avatars-search-still",
+     "result": "pass",
+     "detail": "טלפון 1, 3-player ranked search alone, 15 s at 100 ms frames on my avatar: max diff 1.5/255, in one frame and uniform over the whole area (a brightness change, not part of the avatar). No blink or movement. 'ביטול חיפוש' returned to 'סוג משחק'."
+    }
+   ],
+   "phoneState": "Both phones on apk9 (installed-RF8Y30L038L.txt updated to apk9; טלפון 1 was already apk9). In-app reduced motion set back to 'כבויה' on both. adb.ts reset run on both (font scale 1, animations 1, colour correction off, airplane off). App locale is he. App relaunched and left on Home on both. Fast ratings now: אורי 1275, אחוותא 1228. Run #2 marks: pregame-found-countdown-reduced partial, avatars-idle-still pass, postgame-results-v2-new-game-ranked pass. Recordings and analysis tools are in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/rec. Screenshots: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/*postgame-results-v2-new-game-ranked-*.png"
+  }
+ ],
+ "batches": [
+  {
+   "lane": "טלפון 1",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי) נשאר על build apk8, שכבר היה מותקן, ולא הותקן שום דבר. הרצתי adb.ts reset (font 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי). שפת האפליקציה he. האפליקציה הופעלה מחדש והיא במסך הבית. במהלך הבדיקות שוחקו 3 משחקים מדורגים 'מהיר' מול הבוט הסמוי, ודירוג 'מהיר' של אורי עבר מ־1311 ל־1292. מה שראיתי בדרך: במשחק 1, כ־10 ש' אחרי ששלחתי 'זיקוקים', הודעת הנגישות (game-live) אמרה 'ההפרעה נגמרה, הטיימר שלך ממשיך'. זו מחרוזת HitLayer של הפרעה שאני מקבל, כך שייתכן שהבוט שלח לי הפרעה. לא בדקתי לעומק. ב־FoundView היה כתוב 'שיחקתם זה מול זה לאחרונה' מול שי_Pro, וזה נכון: בהיסטוריה יש משחק מולו מ־3 בנוב׳.",
+   "ids": [
+    "stealth-search-found-timing",
+    "stealth-search-no-alone-message",
+    "stealth-search-opponent-details",
+    "stealth-search-vs-countdown",
+    "stealth-search-two-phones",
+    "stealth-search-high-rating",
+    "stealth-search-3p-no-bot",
+    "stealth-play-pace",
+    "stealth-play-mistakes",
+    "stealth-play-no-reactions"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ) עודכן ל־apk9 (installed-RF8Y60PP2XZ.txt = apk9). בסוף הורץ adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה he. האפליקציה הופעלה מחדש ונשארה במסך הבית. לא שיניתי שום הגדרה. שוחקו 3 משחקים מדורגים מול הבוט הסמוי (Shaked_Pro ‏−16, אבי43 ‏−16, Guy_Fox ‏+16), ודירוג מהיר של אורי עומד על 1276. נשלח דיווח 'אחר' על Shaked_Pro.",
+   "ids": [
+    "stealth-play-interfere-back",
+    "stealth-play-never-first",
+    "stealth-play-bg-short",
+    "stealth-play-bg-long",
+    "stealth-play-bg-interfere-pause",
+    "stealth-after-results",
+    "stealth-after-history-card",
+    "stealth-after-replay",
+    "stealth-after-player-card",
+    "stealth-after-report"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ), apk9, כבר היה מותקן. האפליקציה פתוחה במסך הבית, בעברית. הרצתי reset: גודל גופן 1, אנימציות 1, מצב טיסה כבוי. Guy_Fox חסום והחסימה בוטלה, ורשימת החסומים ריקה. שיחקתי משחק מדורג אחד מול עמית_23 ונכנעתי, ולכן הדירוג המהיר של אורי ירד מ־1276 ל־1260. הדפדפן של Samsung נשאר פתוח ברקע, על דף תנאי השימוש.",
+   "ids": [
+    "stealth-after-block",
+    "stealth-after-leaderboard",
+    "stealth-after-friends-tab",
+    "stealth-after-terms",
+    "interference-picker-button",
+    "interference-picker-no-points",
+    "interference-picker-opens",
+    "interference-picker-price-row",
+    "interference-picker-grid",
+    "interference-picker-grid-small"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על הבית של סודוקו פייט, בעברית (app locale he), מחובר כ'אחוותא', על build apk8 (לא נדרשה התקנה). הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. השפה עברה לאנגלית לבדיקה והוחזרה לעברית. בדפדפן של סמסונג נשארו כרטיסיות פתוחות מדפי הפרטיות והתנאים. בהגדרות הבדיקה 'פתח את כל השלבים (בדיקה)' היה מופעל כבר לפני הבדיקה, ולא שיניתי אותו.",
+   "ids": [
+    "account-settings-delete-success",
+    "account-settings-delete-name-free",
+    "account-settings-legal-links",
+    "account-settings-licenses",
+    "account-settings-licenses-expand",
+    "account-settings-english",
+    "states-empty-leaderboard-table",
+    "states-empty-friends",
+    "states-empty-achievements",
+    "states-account-verify-resend"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על apk8, שכבר היה מותקן ולא היה צריך להתקין. האפליקציה פתוחה בבית, בעברית (app locale he). בוצע adb.ts reset: גודל גופן 1, אנימציות 1, מצב טיסה כבוי. הפרופיל של אחוותא הוחזר לאווטאר 'מחשבון' ולמדינה ישראל, ושמירה אחרונה אישרה את זה. הגדרת 'הפחתת תנועה' באפליקציה הייתה 'כבויה' כבר כשהתחלתי, ולא שיניתי אותה. בדפדפן Samsung Internet נשארו פתוחות 2 לשוניות חדשות של דפי המדיניות.",
+   "ids": [
+    "states-account-verify-not-yet",
+    "states-account-edit-save-only-changed",
+    "states-account-edit-avatar-country-anytime",
+    "states-settings-legal-links",
+    "states-match-already-queued",
+    "states-match-fallback-never",
+    "states-match-abandon-win-tag",
+    "states-match-abandon-before-my-move",
+    "states-match-abandon-opponent-ahead",
+    "states-match-abandon-full-win"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L): build apk8 (לא נדרשה התקנה). מצב טיסה כבוי, Wi-Fi פועל ומחובר. הרצתי adb reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי. שפת האפליקציה he. האפליקציה הופעלה מחדש ונמצאת במסך הבית. אימון מול הבוט Pip נסגר דרך 'סיום אימון' ← 'כן, לסיים', ונשמר בהיסטוריה של המכשיר. 'הפחתת תנועה' בהגדרות האפליקציה כבר הייתה על 'כבויה' כשהגעתי, ולא שיניתי אותה. מחקתי את תיקיית הצילומים הזמנית /sdcard/qa3.",
+   "ids": [
+    "states-match-abandon-screen-off",
+    "states-lists-leaderboard-offline",
+    "states-lists-history-offline",
+    "states-lists-replay-offline",
+    "states-lists-player-card-offline",
+    "states-lists-achievements-offline",
+    "avatars-react-correct",
+    "avatars-react-wrong",
+    "avatars-react-streak",
+    "avatars-react-emoji"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "שני הטלפונים (RF8Y60PP2XZ = טלפון 1 'אורי', RF8Y30L038L = טלפון 3 'אחוותא') על apk9. האפליקציה הופעלה מחדש ועומדת על הבית. בוצע adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבעים כבוי, מצב טיסה כבוי. שפת האפליקציה he. שני הטלפונים יצאו מהחדרים 089533 ו-424646. לא שונתה אף הגדרה. נוספו משחקים להיסטוריה: בטלפון 3 שני משחקים מדורגים (מהיר) מול בוט החיפוש, שבהם הדירוג ירד 1228←1196, שני משחקי חדר שבהם טלפון 3 נכנע, אימון לבד·רגיל שהופסק, ושני ניסיונות בשלב 7 בלי כוכבים. בטלפון 1 נוספו שני ניצחונות בחדר. צילומי מסך נשמרו ב-qa-shots/RF8Y30L038L-friends-busy-*.png.",
+   "ids": [
+    "friends-link-sign-up",
+    "friends-link-sign-up-resume",
+    "friends-link-unverified-email",
+    "friends-busy-ranked",
+    "friends-busy-ranked-later",
+    "friends-busy-countdown",
+    "friends-busy-search",
+    "friends-busy-practice"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "שני הטלפונים במסך הבית של האפליקציה (הופעלו מחדש), עם שפת אפליקציה עברית. הרצתי adb.ts reset לשניהם: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. בטלפון 1 (RF8Y60PP2XZ) שיניתי את 'הגדלת מסך' לגודל הכי גדול (540). wm density reset לא הספיק, כי סמסונג החיל את 540 מחדש, אז החזרתי דרך ההגדרות: עכשיו density ‏450, בלי override, ו־display_density_forced ריק. הניווט נשאר בשלושה לחצנים (navigation_mode=0, כמו בהתחלה). אין משחק פתוח. שיחקתי 3 משחקים מדורגים ושני משחקים בחדר חברים בין אורי לאחוותא. הדירוג של אורי עלה מ־1275 ל־1287, ושל אחוותא נשאר 1196. build ‏apk9 כבר היה מותקן בשניהם, ולא התקנתי כלום.",
+   "ids": [
+    "account-home-after-ranked",
+    "stealth-search-two-phones",
+    "interference-picker-button",
+    "interference-picker-no-points",
+    "interference-picker-opens",
+    "interference-picker-price-row",
+    "interference-picker-grid",
+    "interference-picker-grid-small"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "שני הטלפונים במסך הבית של האפליקציה, מצב טיסה כבוי (טלפון 3 הוחזר מכל מצב טיסה), שפת אפליקציה he, הורץ reset (font 1, אנימציות 1). גרסה apk9 בשניהם (לא נדרשה התקנה). הדירוג המהיר של אורי עלה 1287→1299 ואחר כך עוד משחק מלא שנוצח; אחוותא הפסידה משחק מלא ונכנעה במשחק אחד מול הבוט הסמוי איתמר84 (בלי ירידת דירוג). קבצי צילום ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/ ; קבצים זמניים ב־/sdcard נמחקו.",
+   "ids": [
+    "states-match-already-queued",
+    "states-match-fallback-never",
+    "states-match-abandon-win-tag",
+    "states-match-abandon-before-my-move",
+    "states-match-abandon-opponent-ahead",
+    "states-match-abandon-full-win",
+    "states-match-abandon-screen-off"
+   ]
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "title": "First ranked game after launch: the matchFound chime, the '3' beat and the GO sound don't play",
+   "severity": "major",
+   "what": "Build apk9 1.1.0 (08.11 03:55, loop-3 fixes), SM-A165F, Hebrew, sound on (default), reduced motion off, both טלפון 1 and טלפון 3. Steps: force-stop the app, launch it, Settings, back, 'שחק' → '2 שחקנים' → wait 3 s on 'סוג משחק' → 'מהיר' → 'מצא יריב' on both phones at the same moment, and play through the VS and the 3·2·1·GO count. Evidence from 'adb shell dumpsys audio' (PlaybackActivityMonitor events, 'player piid:X event:started' for the app's uid): in both cold runs (03:30 and 03:52), on both phones, only 3 starts appear after the search tap: the tap sound, then 2 identical sounds 1.0 s apart (5733 frames at 22050 Hz each, so countdown beats). The warm-up players made at launch for matchFound and go (e.g. piid 5543 and 5559 on טלפון 3) never start. In the next game without a relaunch (g2 03:38, g7 03:57), 5 sounds start as expected: matchFound (~1.4 s after the tap), 3 beats ~1 s apart, and GO ~1 s after the last beat. Likely linked to the new warm-up (warmGame.ts / warmGameLater on 'סוג משחק' and in the search): in the first game, a cue whose player was pre-built (or is being built) by the warm-up seems to be dropped instead of played. Videos and logs: scratchpad rec/RF8Y*-g1.mp4, g6.mp4."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "title": "Empty dark screen for ~250 ms between GO! and the board",
+   "severity": "minor",
+   "what": "apk9, טלפון 3 (SM-A165F), ranked 2P 'מהיר' against טלפון 1, reduced motion off, second game after launch (g2, 03:38). In the 50 ms screenrecord frames, GO! is fully shown until 7700 ms. Frames 7750–7950 show only the ambient background with no GO!, no header and no board. The header appears at 7950 and the board fades in at 8000–8150. In the other 11 recordings the gap is 0–100 ms (one or two frames). Similar single empty frame (50 ms) between the search radar and the VS in cold g6 on טלפון 1 (2800 ms). Video: scratchpad rec/RF8Y30L038L-g2.mp4."
+  },
+  {
+   "taskId": "stealth-play-bg-long",
+   "title": "אחרי רקע של 15 שניות מוצג לרגע 'החיבור שלך אבד' ו'יש לך עוד 10 שניות לחזור', אף שהמשתמש כבר חזר",
+   "what": "טלפון 1 SM-A165F, ‏Android 16, עברית, 1.1.0 (08.11 03:55, loop-3 fixes, Google on), שרת staging. צעדים: משחק מדורג מהיר מול הבוט הסמוי ← כפתור הבית ← 15 שניות ← חזרה מהאפליקציות האחרונות. בצילום הראשון אחרי החזרה (כשנייה) מופיעים יחד: באנר 'החיבור שלך אבד · מתחבר מחדש… · ניסיון 1', שכבה 'הלוח נעול עד שתחזור' (לוח/ניקוד/נעילות/טייימרים) ובתחתית 'יש לך עוד 10 שניות לחזור · לפני שהמשחק ייחשב כנטישה'. רק אחר כך מופיע 'חזרת למשחק · הכל סונכרן · המשחק ממשיך'. קרה בשני ניסיונות (02:08:32 ו־02:48:42). המשתמש כבר בתוך האפליקציה, כך ש'יש לך עוד 10 שניות לחזור' מטעה; עדיף להציג מיד 'מתחבר מחדש' בלי ספירת הנטישה. צילומים: RF8Y60PP2XZ-stealth-play-bg-long-2.png ו־RF8Y60PP2XZ-bip-1.png בתיקייה qa-shots.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "title": "בחלון ההפרעות, בשורת 'יעד:' במשחק של 2 שחקנים, אין את הצורה של היריב",
+   "what": "טלפון 1, SM-A165F, ‏1.1.0 (08.11 03:55, loop-3 fixes, Google on), עברית. צעדים: משחק מדורג 2 שחקנים, מהיר, מול עמית_23 (בוט סמוי). פותרים עד שיש 2 נקודות לפחות, ומקישים 'הפרעה' בכרטיס היריב. בשורת היעד מופיעים 'יעד:', האווטאר במסגרת כתומה, 'עמית_23' ודגל, אבל בלי הסימן ▲ שמופיע לפני השם בכרטיס היריב במשחק. הקטלוג מצפה גם לצורה (● ▲ ■ ◆), ו־CLAUDE.md קובע שלכל שחקן יש צורה. לפי הקוד זה כך בכוונה: TargetLine ב־apps/mobile/src/screens/game/arsenal/ArsenalOverlay.tsx מציג אווטאר, שם ודגל, וצורות יש רק במסלול של 3–4 שחקנים. צריך להחליט אם להוסיף את הצורה או לתקן את הקטלוג. צילום: qa-shots/RF8Y60PP2XZ-interference-ranked-3.png",
+   "severity": "minor"
+  },
+  {
+   "taskId": "account-settings-licenses-expand",
+   "title": "מסך הרישיונות: הטקסט האנגלי מיושר לימין בממשק העברי",
+   "what": "Build: טלפון 3 SM-A165F, Android 16, 1.1.0 (07.11 23:45, loop-2 fixes), ממשק בעברית. צעדים: בית, 'הגדרות', 'רישיונות', לוחצים על 'SIL Open Font License 1.1' שתחת 'גופנים'. אחר כך גוללים לסוף ולוחצים 'MIT' תחת 'נוסחי הרישיונות'. צפוי: הטקסט האנגלי מיושר לשמאל ונקרא משמאל לימין. בפועל: הנוסח המלא של OFL ושל MIT מיושר לימין, וכל שורה צמודה לקצה הימני (למשל 'PREAMBLE', 'MIT License', 'Permission is hereby granted...'). גם בשורות החבילות: '@babel/code-frame' צמוד לימין והגרסה '7.29.7' משמאלו, כלומר סדר השורה מימין לשמאל, ו־'MIT' ו־'Copyright (c) 2014-present...' מיושרים לימין. כך גם Rubik ו־Teko ושורות זכויות היוצרים שלהם. הסיבה כנראה בקובץ apps/mobile/src/screens/legal/LicensesScreen.tsx: הסגנון LTR = { writingDirection: 'ltr', textAlign: 'left' } לא עובד, כי באנדרואיד עם RTL הערך textAlign:'left' מתהפך לימין ו־writingDirection לא נתמך. גם rowTop עם flexDirection:'row' מתהפך. פתיחה וסגירה של הרישיונות עצמן עובדות. צילומי מסך: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y30L038L-account-settings-licenses-expand-1.png ו־-2.png",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "title": "מסך 360dp: כרטיס היריב במשחק של 2 שחקנים חורג משמאל למסך",
+   "what": "טלפון 1 SM-A165F עם build ‏1.1.0 (08.11 03:55, loop-3 fixes), בעברית וגודל גופן 1.0. בהגדרות ← תצוגה ← הגדלת מסך בוחרים בגודל הכי גדול (density 540, כלומר 360×780dp, הגודל של Galaxy S22). מפעילים את האפליקציה מחדש (cold start), ופותחים חדר חברים או משחק מדורג של 2 שחקנים. מה רואים: כרטיס היריב בראש מסך המשחק נחתך בקצה השמאלי. card-opponent בגבולות [0,114][489,654], ו־card-opponent-avatar ב־[0,114][101,262], אז חצי מהאווטר בחוץ. גם הניקוד '0' (‏[0,296][53,485]) חתוך, וגם 'חושב…'. כרטיס 'אני' ברוחב 537px (‏489–1026), ולכן כרטיס היריב צריך היה להתחיל ב־‎−48. כשפותחים את חלון ההפרעות, תג 'יעד' שמתחת למסגרת הכרטיס מוצג רק כ'…'. בגודל התצוגה הרגיל (384dp) זה לא קורה. צילומים: qa-shots/RF8Y60PP2XZ-interference-picker-grid-small-1.png ו־-4.png.",
+   "severity": "major"
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "title": "בחלון ההפרעות ב־2 שחקנים חסרה הצורה של היריב בשורת היעד",
+   "what": "שני טלפונים, חדר חברים, משחק של 2 שחקנים. צוברים 2 נקודות ומקישים 'הפרעה' בכרטיס היריב. שורת היעד היא 'יעד: [אווטר] אחוותא 🇮🇱', בלי ▲, למרות שבכרטיס היריב מופיע ▲ ליד השם. אותו דבר בטלפון 3 ('יעד: [אווטר] אורי 🇮🇱'). בקוד, TargetLine ב־apps/mobile/src/screens/game/arsenal/ArsenalOverlay.tsx מציג רק אווטר, שם ודגל, והצורות מופיעות רק במסלול של 3–4 שחקנים. זה נראה בכוונה, אבל הקטלוג וכלל CLAUDE.md ('לכל שחקן יש גם צורה') מצפים לצורה. צריך החלטה של משה.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "title": "הפעלה מחדש אחרי משחק בחדר חברים: 'משהו השתבש בשרת', ואחרי 'נסה שוב' מופיע 'החדר נסגר.'",
+   "what": "טלפון 1: משחק בחדר חברים מול טלפון 3 נגמר בכניעה (טלפון 3 היה על מסך התוצאות). בטלפון 1 עשיתי force-stop (adb.ts stop) ואז launch. האפליקציה עלתה ישר ל'חדר עם חברים' עם 'משהו השתבש בשרת. נסה שוב בעוד רגע.'. בלוגקאט: 'Room connection was closed unexpectedly (4002)'. הקשה על 'נסה שוב' הציגה 'החדר נסגר.'. ההודעה הראשונה מטעה, כי החדר פשוט נסגר. לא בדקתי לעומק, ולא בטוח שהכניעה נקלטה לפני ה־stop. בהפעלה מחדש אחרי זה עלה הבית כרגיל.",
+   "severity": "minor"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "stealth-search-3p-no-bot",
+   "issue": "שלב 3 אומר לחכות 40 ש' ואז להקיש 'ביטול חיפוש'. בפועל, בגלל K4, כבר ב־~0:35–0:40 מופיע מסך ה־timeout ('עדיין אין מספיק שחקנים…', '1:00'), ואין בו 'ביטול חיפוש' אלא 'חזרה לבית'. כדאי לקצר את ההמתנה ל־~30 ש', או לכתוב 'ביטול חיפוש / חזרה לבית'."
+  },
+  {
+   "taskId": "stealth-after-player-card",
+   "issue": "בצעד כתוב 'מקישים על השם של היריב' בכרטיס ההיסטוריה, אבל הקשה על השם פותחת את הצפייה החוזרת (כל הכרטיס לחיץ). כרטיס השחקן נפתח רק מהאווטאר שבצד ימין של הכרטיס (testID history-card-<id>-player-<uid>). צריך לנסח: 'מקישים על האווטאר של היריב'."
+  },
+  {
+   "taskId": "stealth-after-report",
+   "issue": "אותו ניסוח בצעד 1 ('מקישים על השם של היריב בכרטיס המשחק') פותח את הצפייה החוזרת. צריך: 'מקישים על האווטאר של היריב'."
+  },
+  {
+   "taskId": "stealth-play-bg-long",
+   "issue": "בצפוי כתוב 'חזרת למשחק', ואחריו 'הכל סונכרן · המשחק ממשיך', כאילו אלה שני שלבים. באפליקציה זה באנר אחד: כותרת 'חזרת למשחק' ומתחתיה 'הכל סונכרן · המשחק ממשיך'. לפניו מופיע לרגע 'החיבור שלך אבד', והצפוי לא מזכיר את זה."
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "issue": "לפי הצפוי, ב'יעד:' מופיעה גם הצורה של היריב (● ▲ ■ ◆). אבל לפי ArsenalOverlay (TargetLine, components.md §13), במשחק של 2 שחקנים הכותרת היא רק אווטאר, שם ודגל, וצורות יש רק במסלול של 3–4 שחקנים. צריך ליישר את הקטלוג עם העיצוב, או את העיצוב עם הקטלוג."
+  },
+  {
+   "taskId": "stealth-after-block",
+   "issue": "ההודעה 'החסימה של <השם> נשמרה.' היא טוסט שנעלם תוך כשנייה–שתיים. כדאי לכתוב בצעדים להסתכל מיד אחרי ההקשה על 'חסום'. גם את הכרטיס פותחים מההיסטוריה בהקשה על האווטאר, ולא על הכרטיס כולו, שפותח צפייה חוזרת. כדאי לכתוב את זה בצעד 1."
+  },
+  {
+   "taskId": "states-empty-leaderboard-table",
+   "issue": "צעד 2 מבקש לבחור 'מספר שחקנים' ← '4 שחקנים', אבל ב־staging הבורר לא מוצג באף לשונית. הסיבה: showsPlayersPicker מחזיר false כי השרת מחזיר board.players=null. בנוסף, בכל הלשוניות כבר יש שחקנים, כך שבמצב הנוכחי אי אפשר להגיע לטבלה ריקה. כדאי להוסיף תנאי מקדים (שרת או טבלה ריקה) או דרך אחרת להגיע למצב הריק."
+  },
+  {
+   "taskId": "account-settings-delete-success",
+   "issue": "בעותק של הריצה (qa.ts task) הכפתור מתואר כ'גלגל השיניים', ובקטלוג v6 כ'סמל המחוונים'. זה הבדל ניסוח בלבד, הריצה עדיין על הנוסח הישן."
+  },
+  {
+   "taskId": "states-account-edit-save-only-changed",
+   "issue": "בעותק של הריצה (#2) צעד 1 עדיין אומר 'סמל גלגל השיניים'. בקטלוג v6 כתוב נכון 'סמל המחוונים', כמו באפליקציה"
+  },
+  {
+   "taskId": "avatars-react-emoji",
+   "issue": "בועת האימוג'י עולה מעל האווטר של השולח ומכסה אותו רוב זמן התגובה, ולכן אי אפשר לבדוק מצילומי מסך את התנועות 'קפיצה', 'מעיכה' ו'הנהון'. כדאי לציין בבדיקה שצריך להסתכל על האווטר ברגע שהבועה עוזבת אותו, או לסמן את המשימה למשה בלבד (who: moshe)."
+  },
+  {
+   "taskId": "friends-busy-countdown",
+   "issue": "שלב 3 דורש טלפון שלישי שפותח חדר אחר. אפשר לבדוק את השורה הצפויה גם עם קישור לקוד שלא קיים (למשל /r/123456): ההודעה 'אתה באמצע משחק' מופיעה לפני שהאפליקציה בודקת אם החדר קיים. כדאי לכתוב את זה כחלופה בצעדים."
+  },
+  {
+   "taskId": "friends-busy-practice",
+   "issue": "שלב 7 (פאזל) בפרק 1 נמשך רק 45 שניות. בניסיון הראשון הזמן נגמר לפני שהקישור נפתח, ואז השאלה הופיעה כבר על מסך התוצאה של השלב. כדאי לכתוב שפותחים את הקישור בתוך כמה שניות מתחילת השלב, או לבחור שלב בלי זמן קצוב."
+  },
+  {
+   "taskId": "friends-busy-ranked",
+   "issue": "עותק הריצה (#2) עדיין כותב 'משחק חדש' בשלב 2, ובאפליקציה ובקטלוג v6 הכפתור נקרא 'שחק'. זה תקף לכל המשימות בקבוצת friends-link/friends-busy."
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "issue": "לפי הצפוי, בשורת היעד יש צורה (● ▲ ■ ◆). אבל ב־2 שחקנים האפליקציה מציגה בכוונה רק אווטר, שם ודגל (ArsenalOverlay TargetLine), והצורות מופיעות רק במסלול של 3–4 שחקנים. צריך ליישר בין הקטלוג לקוד לפי החלטת משה."
+  },
+  {
+   "taskId": "interference-picker-grid",
+   "issue": "ההכנה דורשת מסך של כ־360×780dp. ב־Galaxy A16 בגודל תצוגה רגיל המסך 384×832dp, ואת 360×780 מקבלים רק בגודל התצוגה הכי גדול. גם 'רמה N' לסוג נעול לא נבדק, כי בשני החשבונות (רמה 8 ורמה 4) כל הסוגים פתוחים."
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "issue": "ב־A16, 'גודל התצוגה הגדול ביותר' (הגדלת מסך, density 540) נותן 360×780dp, ולא גובה של כ־640dp. כדאי לציין שבסמסונג החלופה הזאת לא נמוכה כמו טלפון של 640dp."
+  },
+  {
+   "taskId": "stealth-search-two-phones",
+   "issue": "מספרים את מצב המתג 'פעיל' רק באדמין, ומהטלפון אי אפשר לאמת אותו. בנוסף, עם הפרש דירוג של כ־90 (1287 מול 1196) ההתאמה לוקחת כ־10 שניות, עד שהטווח מתרחב."
+  },
+  {
+   "taskId": "states-match-abandon-screen-off",
+   "issue": "הסדר בצעדים הופך את התוצאה. בצעד 3 מכבים את המסך בטלפון א', ובצעד 4 מפעילים מצב טיסה בטלפון ב'. אבל האפליקציה מתנתקת מהשרת ברגע שהיא עוברת לרקע (remoteGameHost.onAppState, 'in the background: disconnecting'), ולכן טלפון א' מתנתק ראשון. ב־05:14:49 כיביתי את המסך והפעלתי מצב טיסה שנייה אחר כך. טלפון א' קיבל 'הפסד', 'מקום 2 מתוך 2' ו'לא חזרת למשחק בזמן', וטלפון ב' קיבל 'שגיאת חיבור'. כשהפעלתי קודם מצב טיסה בטלפון ב' וכיביתי את המסך בטלפון א' 3 שניות אחר כך, כל השורות הצפויות עברו. הצעה: להחליף את הסדר של צעדים 3 ו־4 (קודם מצב טיסה בב', ומיד אחר כך מסך כבוי בא'). אפשרות אחרת: משה מחליט אם מסך כבוי צריך בכלל לנתק משחק מדורג מיד."
+  },
+  {
+   "taskId": "states-match-abandon-full-win",
+   "issue": "כתוב 'בתוצאות הכוכב מציג את שינוי הדירוג בזהב', אבל הכוכב עם השינוי מופיע בחלון 'עזב את המשחק' שלפני התוצאות. במסך התוצאות יש כרטיס 'שינוי דירוג · מהיר', בלי כוכב, ושם ‎+12 מוצג בירוק."
+  },
+  {
+   "taskId": "states-match-abandon-before-my-move",
+   "issue": "הכוכב עם '0' באפור והשורה 'הדירוג לא השתנה: היציאה הייתה לפני המהלך הראשון שלך' מופיעים בחלון 'עזב את המשחק', ולא במסך התוצאות. במסך התוצאות כתוב במקומם 'מול <שם>: אין תוספת לדירוג, כי היציאה הייתה לפני המהלך הראשון שלך'. צריך לעדכן את הנוסח: 'בחלון העזיבה' במקום 'בתוצאות'."
+  },
+  {
+   "taskId": "states-match-abandon-opponent-ahead",
+   "issue": "כמו ב־before-my-move: השורה 'הדירוג לא השתנה: היית בפיגור ברגע היציאה' והכוכב עם '0' מופיעים בחלון 'עזב את המשחק'. במסך התוצאות כתוב 'מול <שם>: אין תוספת לדירוג, כי היית בפיגור ברגע היציאה'."
+  },
+  {
+   "taskId": "states-match-abandon-win-tag",
+   "issue": "החלון 'עזב את המשחק' הופיע רק כ־40 עד 60 שניות אחרי שהופעל מצב טיסה, כי השרת ממתין 25 שניות בלי חיבור ועוד זמן עד שהחיבור נחשב שאבד. 'מחכים 30 שניות' קצר מדי, וכדאי לכתוב 'מחכים כדקה'. בנוסף, uiautomator לא קורא את החלון הזה ואת מסך 'שגיאת חיבור' (הוא מחזיר את מסך המשחק שמתחתיהם), ולכן צריך לבדוק אותם בצילום מסך."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "levels-exit",
+   "result": "pass",
+   "summary": "חזרה בזמן 'מוכן?' ובזמן 'שלב בוס!' (L073, L070) מחזירה למפה בלי דיאלוג. 'שחק' אחרי 25–30 ש' נותן 'מוכן?' חדש ושלב מאפס, והמפה לא השתנתה. חזרה ו־X באמצע שלב מציגים 'לצאת מהשלב?' ועובדים. חזרה על מסך התוצאה מחזירה למפה."
+  },
+  {
+   "taskId": "levels-freeze-background",
+   "result": "pass",
+   "summary": "כרטיס Recents ריק (בלי הלוח), גם כש'לצאת מהשלב?' פתוח. בחזרה מוצג כיסוי עם 3,2,1 והשעון עמד (0:13→0:15). ביציאה לבית רואים את הכיסוי כבר בפריים הראשון. וילון ההתראות לא מקפיא, כמו שהתיקון התכוון."
+  },
+  {
+   "taskId": "levels-freeze-ready",
+   "result": "pass",
+   "summary": "'מוכן?' עמד בזמן 6 ש' ברקע (L034). הפריים הראשון של הלוח כבר בגודל הסופי: L035 בטווח x 96–984, וגם L070, L034, L074 ו־L072, בלי קפיצה."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "result": "partial",
+   "summary": "בהפחתת תנועה: הספרות בדהייה, בלי טבעת ובלי נחיתה, כל ספרה כ־1 ש׳; הלוח מופיע 0.95–1.05 ש׳ אחרי GO! (צפוי כ־0.4), באג ידוע K2. במשחק הראשון אחרי הפעלה GO! כבר לא 1.75 ש׳"
+  },
+  {
+   "taskId": "avatars-idle-still",
+   "result": "pass",
+   "summary": "בחיפוש 15 ש׳ האווטר לא זז ולא ממצמץ; VS כ־1 ש׳ עם תגי 'מוכן'; ההנהון קצר (כ־0.2 ש׳ או 2 פריימים), ובין התגובות האווטרים עומדים"
+  },
+  {
+   "taskId": "postgame-results-v2-new-game-ranked",
+   "result": "pass",
+   "summary": "ניצחון/הפסד והתגים נכונים, דירוג 1260→1275; 'משחק חדש' פותח ישר חיפוש עם 'אני 1275'; 'ביטול חיפוש' עובד; 10 ניסיונות כניעה מוקדמת ואף אחד לא נסגר בלי כניעה"
+  },
+  {
+   "taskId": "stealth-search-found-timing",
+   "result": "pass",
+   "summary": "נמצא יריב (שי_Pro) כשזמן החיפוש 0:10–0:11, ב־0:10 עדיין 'מחפש יריב…'"
+  },
+  {
+   "taskId": "stealth-search-no-alone-message",
+   "result": "pass",
+   "summary": "בצילומים ב־0:01, 0:06, 0:08, 0:09 ו־0:10 הופיע פס 'טווח דירוג' (1243–1343 ← 1193–1393), בלי הודעת 'אין שחקנים' ובלי 'שחק מול בוט בינתיים'"
+  },
+  {
+   "taskId": "stealth-search-opponent-details",
+   "result": "pass",
+   "summary": "'שי_Pro' עם אווטאר פעמון, דגל ישראל ודירוג 1277 (זמני), בתוך הטווח 1193–1393. גם Shaked_Pro (1260) ו־יובל94 (1311) נראו כמו שמות של שחקנים"
+  },
+  {
+   "taskId": "stealth-search-vs-countdown",
+   "result": "pass",
+   "summary": "VS עם שני השחקנים, שניהם 'מוכן' (2/2) תוך פחות מ־2 ש'. אחר כך 3, 2, 1, GO! ולוח עם שני הכרטיסים ב־17 ש' מתחילת החיפוש"
+  },
+  {
+   "taskId": "stealth-search-high-rating",
+   "result": "untested",
+   "summary": "נשאר למשה: צריך חשבון עם דירוג 'מהיר' מעל 1500. לאורי יש 1293, ואסור להחליף חשבון"
+  },
+  {
+   "taskId": "stealth-search-3p-no-bot",
+   "result": "pass",
+   "summary": "מ־0:03 עד 0:32 הופיע 'כרגע אין מספיק שחקנים…' עם 'שחק מול בוט בינתיים', 0/2 יריבים ואף אחד לא נכנס. ב־~0:40 מסך timeout של '1:00' (באג ידוע K4)"
+  },
+  {
+   "taskId": "stealth-play-pace",
+   "result": "pass",
+   "summary": "3 משחקים מלאים. הבוט מוסיף 1–2 משבצות בכל ~10 ש', בלי פרצים ובלי עצירות. משחק נמשך ~4 דק' (המשוער ל'מהיר': 4–6)"
+  },
+  {
+   "taskId": "stealth-play-mistakes",
+   "result": "pass",
+   "summary": "טעות אחת במשחק 1, אפס במשחק 2, טעות אחת במשחק 3 (3 ב־B9). בכל משחק ~31–35 מהלכים נכונים"
+  },
+  {
+   "taskId": "stealth-play-no-reactions",
+   "result": "pass",
+   "summary": "שלחתי תגובות 😎 ו־😂 והפרעת 'זיקוקים'. בצילומים רצופים ובקריאות מסך עד סוף המשחקים לא הופיעה אף תגובה מהיריב"
+  },
+  {
+   "taskId": "stealth-play-bg-short",
+   "result": "pass",
+   "summary": "רקע 5 שניות: חזרה לאותו לוח בלי 'החיבור שלך אבד' ובלי 'מוקפא'; היריב המשיך להזין (F4, C2)"
+  },
+  {
+   "taskId": "stealth-play-bg-long",
+   "result": "pass",
+   "summary": "רקע 15 שניות: היריב הוסיף רק משבצת אחת, 'חזרת למשחק · הכל סונכרן · המשחק ממשיך', המשחק נמשך והיריב המשיך; לפני כן הבזק של כשנייה של 'החיבור שלך אבד'"
+  },
+  {
+   "taskId": "stealth-after-results",
+   "result": "pass",
+   "summary": "תוצאות 'משחק מדורג · מהיר', הפסד ⁦−16⁩ (1292→1276), אין 'בלי דירוג' ואין 'בוט'; ליריב בדירוג זמני ⁦+32⁩"
+  },
+  {
+   "taskId": "stealth-after-history-card",
+   "result": "pass",
+   "summary": "כרטיס 'Shaked_Pro · הפסד · מדורג · מהיר · ⁦−16⁩' בלי 'בוט', ומופיע בסינון 'מדורג'"
+  },
+  {
+   "taskId": "stealth-after-replay",
+   "result": "pass",
+   "summary": "צפייה חוזרת מההיסטוריה, 94 שלבים עם מהלכי 'אני' ו־'Shaked_Pro', אין 'בוט' באף שלב"
+  },
+  {
+   "taskId": "stealth-play-never-first",
+   "result": "pass",
+   "summary": "משחק שלם (3:52) בלי הפרעה שלי: לא הגיעה הפרעה, ובצפייה החוזרת אין רגע 'הפרעות'"
+  },
+  {
+   "taskId": "stealth-after-player-card",
+   "result": "pass",
+   "summary": "כרטיס Shaked_Pro (נפתח מהאווטאר): דגל, 'בדירוג זמני · רמה 2', 8 משחקים כולל שני המשחקים שלי, 'דווח' ו'חסום', בלי 'בוט'"
+  },
+  {
+   "taskId": "stealth-after-report",
+   "result": "pass",
+   "summary": "דיווח 'אחר' ← 'תודה. נבדוק את הדיווח תוך 48 שעות.' עם 'סגירה', בלי שגיאה"
+  },
+  {
+   "taskId": "stealth-play-interfere-back",
+   "result": "pass",
+   "summary": "שלחתי זיקוקים ב־02:28:04; 'אבי43 שלח/ה לך זיקוקים!' אחרי 14 שניות; עד סוף המשחק 'הפרעות · 2' בלבד"
+  },
+  {
+   "taskId": "stealth-play-bg-interfere-pause",
+   "result": "pass",
+   "summary": "הפרעה ← רקע 15 שניות: בחזרה לא הייתה הפרעה; הבוט החזיר הפרעה אחת כ־3 שניות אחרי החזרה (בצפייה: 1:13 חזרה, 1:14 הפרעה); סה״כ 'הפרעות · 2'"
+  },
+  {
+   "taskId": "stealth-after-block",
+   "result": "pass",
+   "summary": "חסמתי את Guy_Fox מהכרטיס שנפתח מההיסטוריה (הקשה על האווטאר). הופיעה ההודעה 'החסימה של Guy_Fox נשמרה.' (טוסט קצר). בחיפוש המדורג הבא היריב היה דמות אחרת, עמית_23. בסוף ביטלתי את החסימה בהגדרות, והרשימה ריקה."
+  },
+  {
+   "taskId": "stealth-after-leaderboard",
+   "result": "pass",
+   "summary": "Guy_Fox, אבי43, Shaked_Pro, יובל94 ו־שי_Pro לא מופיעים בלשונית כללי (6 שורות) ולא בלשונית מהיר (6 שורות)."
+  },
+  {
+   "taskId": "stealth-after-friends-tab",
+   "result": "pass",
+   "summary": "בלשונית חברים, 'היריבים האחרונים שלך': Guy_Fox ראשון ברשימה, עם אווטאר, דגל, 'כסף · רמה 3', דירוג 1243 ומקום #2, כמו כל יריב אחר."
+  },
+  {
+   "taskId": "stealth-after-terms",
+   "result": "pass",
+   "summary": "תנאי השימוש נפתחו בדפדפן Samsung. בקטע 'זמינות השירות' כתוב המשפט המלא: 'כשאין שחקנים זמינים, ייתכן שתשובצו מול יריב ממוחשב...נספרים בדירוג.'"
+  },
+  {
+   "taskId": "account-settings-delete-success",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה לחשבון חדש, מחיקה והתחברות מחדש"
+  },
+  {
+   "taskId": "account-settings-delete-name-free",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה אחרי מחיקת חשבון"
+  },
+  {
+   "taskId": "account-settings-legal-links",
+   "result": "pass",
+   "summary": "בעברית נפתחו 'מדיניות פרטיות' ו'תנאי שימוש' בעברית מ־sudoku-fight-staging.fly.dev/legal/...?lang=he, ובאנגלית נפתחו 'Privacy Policy' ו'Terms of Use'"
+  },
+  {
+   "taskId": "account-settings-licenses",
+   "result": "pass",
+   "summary": "הכותרת והפתיח, Rubik ו־Teko עם OFL 1.1 וזכויות יוצרים, '673 רכיבי קוד פתוח' עם שם, גרסה, רישיון וזכויות, ובסוף 'נוסחי הרישיונות' עם 7 רישיונות"
+  },
+  {
+   "taskId": "account-settings-licenses-expand",
+   "result": "partial",
+   "summary": "פתיחה וסגירה עובדות והחץ מתהפך, אבל כל הטקסט האנגלי (נוסחי OFL ו־MIT, שמות החבילות והגרסאות) מיושר לימין בממשק העברי ולא לשמאל"
+  },
+  {
+   "taskId": "account-settings-english",
+   "result": "pass",
+   "summary": "Settings משמאל לימין עם כל הקטעים, ו־Licenses מציג Fonts, '673 open-source packages' ו־'License texts'. אין עברית, והשפה הוחזרה לעברית"
+  },
+  {
+   "taskId": "states-empty-leaderboard-table",
+   "result": "untested",
+   "summary": "בכל הלשוניות יש שחקנים, ובורר 'מספר שחקנים' לא מוצג, כך שאי אפשר להגיע לטבלה ריקה"
+  },
+  {
+   "taskId": "states-empty-friends",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש חשבון חדש. אצל אחוותא בלשונית 'חברים' מופיעים 3 יריבים אחרונים"
+  },
+  {
+   "taskId": "states-empty-achievements",
+   "result": "pass",
+   "summary": "הכותרת 'הישגים והתקדמות', ובאזור 'הישגים' מופיעים תג 'בקרוב' והטקסט '12 הישגים בדרך...', בלי רשימה ריקה ובלי שגיאה"
+  },
+  {
+   "taskId": "states-account-verify-resend",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש חשבון מייל שלא אומת. אחוותא מחובר עם Google ואין באנר אימות"
+  },
+  {
+   "taskId": "states-account-verify-not-yet",
+   "result": "untested",
+   "summary": "נשאר למשה: צריך חשבון שהמייל שלו לא אומת. אחוותא נכנס עם Google, ואין באנר אימות בבית"
+  },
+  {
+   "taskId": "states-account-edit-save-only-changed",
+   "result": "pass",
+   "summary": "לפני שינוי 'שמירה' אפור (enabled=false) והלחיצה לא עשתה כלום. אחרי בחירת אווטאר 'מספריים' הוא נהיה פעיל"
+  },
+  {
+   "taskId": "states-account-edit-avatar-country-anytime",
+   "result": "pass",
+   "summary": "3 שמירות ברצף (מספריים, יפן, ואז חזרה למחשבון וישראל). בכל אחת הופיע 'הפרופיל נשמר' והאפליקציה חזרה להגדרות. הכרטיס בבית התעדכן"
+  },
+  {
+   "taskId": "states-settings-legal-links",
+   "result": "pass",
+   "summary": "מדיניות פרטיות ותנאי שימוש נפתחו ב־Samsung Internet, בעברית ובלי שגיאה"
+  },
+  {
+   "taskId": "states-lists-leaderboard-offline",
+   "result": "pass",
+   "summary": "במצב טיסה הופיעו 'אין חיבור לשרת', 'הטבלה תתעדכן כשיחזור החיבור.', קוד network ו'נסה שוב'; אחרי שהרשת חזרה 'נסה שוב' טען את הטבלה (פודיום ושורות)"
+  },
+  {
+   "taskId": "states-lists-player-card-offline",
+   "result": "pass",
+   "summary": "טבלה נטענה עם רשת, במצב טיסה נלחץ שני_הנסיכה: 'אין חיבור לשרת', 'הכרטיס נטען מהשרת. נסה שוב כשיחזור החיבור.', קוד network ו'נסה שוב', בלי קריסה"
+  },
+  {
+   "taskId": "states-lists-history-offline",
+   "result": "pass",
+   "summary": "אחרי פתיחה מחדש ומצב טיסה: האימונים מהמכשיר מוצגים עם השורה 'אין חיבור לשרת: מוצגים רק האימונים שבמכשיר.' ו'לנסות שוב', בלי מסך שגיאה"
+  },
+  {
+   "taskId": "states-lists-replay-offline",
+   "result": "pass",
+   "summary": "משחק מדורג שלא נפתח קודם, במצב טיסה: 'אין חיבור לשרת. משחק מדורג נטען מהשרת' עם 'לנסות שוב'; עם רשת 'לנסות שוב' פתח את הצפייה החוזרת"
+  },
+  {
+   "taskId": "states-lists-achievements-offline",
+   "result": "pass",
+   "summary": "הנתונים כבר היו שמורים: הוצגה השורה 'אין חיבור לשרת: מוצגים הנתונים השמורים.' עם 'נסה שוב' ורמה/XP/ליגה, בלי קריסה"
+  },
+  {
+   "taskId": "avatars-react-correct",
+   "result": "pass",
+   "summary": "צילומים כל ~0.3 ש׳ אחרי C1=3: חיוך עם תזוזת הנהון מ־~0.5 עד ~1.5 ש׳ ואז הבעה רגילה; האווטר של Pip לא השתנה"
+  },
+  {
+   "taskId": "avatars-react-wrong",
+   "result": "pass",
+   "summary": "אחרי B3=5 (שגוי): פה עצוב והטיה/ניעור, נשאר ~1.2–1.5 ש׳ ואז רגיל; Pip לא השתנה"
+  },
+  {
+   "taskId": "avatars-react-streak",
+   "result": "pass",
+   "summary": "4 מהלכים נכונים עם חיוך, החמישי (F8) צחוק (עיניים עצומות, פה פתוח) וקפיצה; E8 שהשלים את שורה E: צחוק וקפיצה"
+  },
+  {
+   "taskId": "avatars-react-emoji",
+   "result": "untested",
+   "summary": "ההבעות נראו (😂 צחוק, 😱 פה O, 😎 קריצה+הטיה, 🤦 בלבול, 🔥 צחוק+סיבוב, 👀 O+הטיה) ורק האווטר שלי הגיב; סוג התנועה (קפיצה/מעיכה/הנהון) מוסתר מתחת לבועת האימוג'י, ולכן נשאר למשה"
+  },
+  {
+   "taskId": "friends-link-sign-up",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות בטלפון ב' והרשמה חדשה מקישור"
+  },
+  {
+   "taskId": "friends-link-sign-up-resume",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והרשמה חדשה שנקטעת באמצע"
+  },
+  {
+   "taskId": "friends-link-unverified-email",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש כניסה לחשבון מייל+סיסמה שהמייל שלו לא אומת"
+  },
+  {
+   "taskId": "friends-busy-ranked",
+   "result": "pass",
+   "summary": "במדורג מול בוט החיפוש: 'אתה באמצע משחק' + 'אפשר להצטרף אחריו. ההזמנה לחדר 089 533 תחכה לך.' + 'חזרה למשחק'; בסוף המשחק 'יש לך הזמנה לחדר 089 533' עם 'הצטרף'"
+  },
+  {
+   "taskId": "friends-busy-ranked-later",
+   "result": "pass",
+   "summary": "נסגר עם 'חזור' של אנדרואיד באמצע מדורג; בסוף המשחק הופיע 'יש לך הזמנה לחדר 089 533' עם 'הצטרף', והצטרפות העבירה לחדר של טלפון 1"
+  },
+  {
+   "taskId": "friends-busy-countdown",
+   "result": "pass",
+   "summary": "בזמן 3 ו-1 של הספירה בחדר חברים הופיע 'אתה באמצע משחק' (לא 'לעבור לחדר…'); בלי טלפון שלישי הקישור 'לחדר אחר' היה קוד שלא קיים (123456)"
+  },
+  {
+   "taskId": "friends-busy-search",
+   "result": "pass",
+   "summary": "בזמן 'מצא יריב' (מדורג 2) הקישור הציג 'לבטל את החיפוש ולהצטרף?' + 'החיפוש של היריב ייעצר.' עם 'הצטרף לחדר'/'הישאר'"
+  },
+  {
+   "taskId": "friends-busy-practice",
+   "result": "pass",
+   "summary": "באימון לבד ובשלב 7: 'לעזוב את האימון ולהצטרף לחדר?' עם 'הצטרף לחדר'/'הישאר'; ההצטרפות העבירה לחדר 424646; האימון לבד נשמר בבית/היסטוריה כ'הופסק, 12 נקודות'"
+  },
+  {
+   "taskId": "account-home-after-ranked",
+   "result": "pass",
+   "summary": "דירוג מהיר בבית 1275 → 1287 מיד אחרי Back ממסך התוצאות (ניצחון כשהיריב נכנע), XP ‏722 → 773, בלי להפעיל מחדש"
+  },
+  {
+   "taskId": "stealth-search-two-phones",
+   "result": "pass",
+   "summary": "3 חיפושים שהתחילו באותה שנייה: בכל פעם 'נמצא יריב!' בשני הטלפונים, אורי מול אחוותא (התאמה אחרי ~10 ש׳ כשהטווח התרחב), אף פעם לא בוט"
+  },
+  {
+   "taskId": "interference-picker-button",
+   "result": "pass",
+   "summary": "רק בכרטיס היריב יש כפתור עם אייקון ו'הפרעה' בלי מחיר, באותו גובה כמו התגובות (437–560px). בכרטיס שלי אין"
+  },
+  {
+   "taskId": "interference-picker-no-points",
+   "result": "untested",
+   "summary": "Claude בדק: בניקוד 0 הכפתור עמום, מופיעה ההודעה 'אין מספיק נקודות להפרעה הבאה (2 נק׳)' והחלון לא נפתח. נשאר למשה: הרטט"
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "result": "partial",
+   "summary": "החלון למטה מעל שכבה כהה, 'בחר הפרעה', ו'יעד:' עם אווטר במסגרת כתומה, שם ודגל. אבל בשורת היעד אין צורה (▲), גם בטלפון 1 וגם בטלפון 3"
+  },
+  {
+   "taskId": "interference-picker-price-row",
+   "result": "pass",
+   "summary": "'מחיר −2 נק׳ · הבאה: 4', המינוס צמוד משמאל ל־2. ובצד השני 'הניקוד שלך 3.5 ← 1.5'"
+  },
+  {
+   "taskId": "interference-picker-grid",
+   "result": "pass",
+   "summary": "6 הסוגים ב־3×2 לפי הסדר, עם ציור, שם ותג '−2 נק׳'. אין גלילה ושום דבר לא חתוך. המסך 384×832dp, ואין סוג נעול ברמה 8 או 4"
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "result": "pass",
+   "summary": "בגודל התצוגה הכי גדול (360×780dp) עם ניווט בשלושה לחצנים, הרשת 3×2 בלי גלילה ובלי חיתוך, והניווט לא מסתיר. גודל התצוגה הוחזר ל־450"
+  },
+  {
+   "taskId": "states-match-already-queued",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות - צריך אותו חשבון בשני הטלפונים (אורי/אחוותא שונים), אסור להחליף חשבון"
+  },
+  {
+   "taskId": "states-match-abandon-win-tag",
+   "result": "pass",
+   "summary": "טלפון 3 במצב טיסה: בטלפון 1 'אחוותא עזב את המשחק' + 'ניצחת בנטישה' + לתוצאות/לבית; בתוצאות התג 'ניצחת בנטישה' ליד 'מקום 1 מתוך 2'"
+  },
+  {
+   "taskId": "states-match-abandon-full-win",
+   "result": "pass",
+   "summary": "A2=6 נכון ואז נטישה: כוכב '+12 דירוג · מהיר' בזהב בחלון העזיבה, בתוצאות +12 (1287→1299), אין 'הדירוג לא השתנה'"
+  },
+  {
+   "taskId": "states-match-abandon-before-my-move",
+   "result": "pass",
+   "summary": "בלי מהלך: כוכב '0' באפור ו'הדירוג לא השתנה: היציאה הייתה לפני המהלך הראשון שלך' (בחלון העזיבה); בתוצאות 0 עם הסבר מקביל"
+  },
+  {
+   "taskId": "states-match-abandon-opponent-ahead",
+   "result": "pass",
+   "summary": "טעות A6=9 (−3.5) ואז נטישה: כוכב '0' באפור ו'הדירוג לא השתנה: היית בפיגור ברגע היציאה'; בתוצאות 0 עם הסבר מקביל"
+  },
+  {
+   "taskId": "states-match-abandon-screen-off",
+   "result": "partial",
+   "summary": "לפי הסדר בקטלוג (מסך כבוי ואז מצב טיסה) טלפון 1 קיבל 'הפסד, לא חזרת למשחק בזמן' כי הרקע מנתק ראשון; בסדר הפוך הופיע 'ניצחת בנטישה' בלי 'שגיאת חיבור'"
+  },
+  {
+   "taskId": "states-match-fallback-never",
+   "result": "pass",
+   "summary": "לבד, בוט ומדורג עד הסוף ו־5 נטישות: 'המסך לא נטען' לא הופיע; תוצאות תוך ≤2.8 ש' במדורג, 2.8–3.9 ש' מול בוט, פחות מ־3 ש' לבד"
+  }
+ ],
+ "missing": []
+}

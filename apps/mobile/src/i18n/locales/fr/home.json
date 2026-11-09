@@ -63,6 +63,9 @@
     "title": "Nouvelle partie",
     "footnote": "Le mode classé nécessite Internet · L’entraînement est toujours disponible",
     "soon": "Bientôt",
+    "needsConnection": {
+      "rankedAndFriends": "Classée et entre amis"
+    },
     "groups": {
       "ranked": {
         "title": "Classée",
@@ -75,13 +78,13 @@
       },
       "practice": {
         "title": "Entraînement",
-        "note": "Sans pression, sans classement"
+        "note": "Sans pression ni classement"
       }
     },
     "chips": {
       "rated": "Classée",
       "unrated": "Non classée",
-      "offline": "Fonctionne hors ligne"
+      "offline": "Jouable hors ligne"
     },
     "ranked": {
       "name": "Classée"

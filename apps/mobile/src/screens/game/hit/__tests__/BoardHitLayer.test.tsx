@@ -115,9 +115,11 @@ describe('BoardHitLayer: the dim [D46]', () => {
   it('fades in over 240 ms, and out over the last 240 ms, gone exactly at endsAt', async () => {
     await render(layer(hitOn()));
     between(await dimOpacity(), 0, 0.6 * (40 / 240));
+    // A hit that reaches this phone 120 ms into its time still fades in from its first frame here (QA measure of
+    // APK 17: read from the server's clock, the first frame anyone saw was past the fade-in, at full strength).
     clock.advance(120);
     await render(layer(hitOn({ id: 4 })));
-    between(await dimOpacity(), 0.3, 0.6 * (160 / 240));
+    between(await dimOpacity(), 0, 0.6 * (40 / 240));
     clock.advance(4_760); // 4880 ms in: half way out
     await render(layer(hitOn({ id: 5 })));
     between(await dimOpacity(), 0.3, 0.6 * (80 / 240));
@@ -140,7 +142,8 @@ describe('BoardHitLayer: the dim [D46]', () => {
   it('with reduced motion: the same dim, only faded in (200 ms), never moving', async () => {
     clock.advance(100);
     await render(layer(hitOn(), { reduceMotion: true }));
-    between(await dimOpacity(), 0.3, 0.6 * (140 / 200));
+    // It reached me 100 ms into its time: it still fades in from its first frame here.
+    between(await dimOpacity(), 0, 0.6 * (40 / 200));
     clock.advance(900);
     await render(layer(hitOn({ id: 8 }), { reduceMotion: true }));
     expect(await dimOpacity()).toBeCloseTo(0.6, 5);

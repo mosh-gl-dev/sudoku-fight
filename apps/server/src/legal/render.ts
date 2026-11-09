@@ -83,10 +83,13 @@ export const LEGAL_CSS = [
   'body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Hebrew","Noto Sans",Arial,sans-serif;overflow-wrap:anywhere}',
   '.wrap{max-width:46rem;margin:0 auto;padding:0 16px}',
   '.top{background:var(--surface);border-bottom:1px solid var(--border)}',
-  '.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px}',
-  '.brand{font-weight:700;letter-spacing:.02em}',
-  '.langs{display:flex;gap:4px}',
-  '.langs a{display:inline-block;min-height:44px;line-height:44px;padding:0 10px}',
+  // The 19 language names wrap as whole names, under the brand when they don't fit beside it. Without the wraps and
+  // nowrap, the body's overflow-wrap:anywhere let each flex item shrink to one letter, and the row still ran off the
+  // screen (B6).
+  '.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 12px;min-height:56px}',
+  '.brand{font-weight:700;letter-spacing:.02em;line-height:44px;white-space:nowrap}',
+  '.langs{display:flex;flex-wrap:wrap;gap:4px}',
+  '.langs a{display:inline-block;min-height:44px;line-height:44px;padding:0 10px;white-space:nowrap}',
   'a{color:var(--accent);text-underline-offset:3px}',
   'a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}',
   'a[aria-current]{color:var(--text);text-decoration:none;font-weight:600}',

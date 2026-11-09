@@ -2,7 +2,7 @@ import { Canvas, Group, Path, Rect, RoundedRect, type Transforms3d } from '@shop
 import type { Clock, InterferenceKind } from '@sudoku-fight/engine';
 import { type ReactNode, useMemo } from 'react';
 import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useDerivedValue } from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle, useDerivedValue } from 'react-native-reanimated';
 
 import { radius } from '../../theme';
 import { useReduceMotion } from '../../theme/motion';
@@ -14,7 +14,7 @@ import {
   type InterferenceScope,
 } from './config';
 import type { EffectProps } from './effectProps';
-import { hitAlpha, type HitTime, remainingOf, useHitClock } from './hitClock';
+import { hitAlpha, type HitTime, remainingOf, useLayerHitClock } from './hitClock';
 import {
   GHOST_STEPS,
   GLITCH_BANDS,
@@ -51,6 +51,8 @@ export interface WarpFrameProps {
   /** Defaults to the player's setting (useReduceMotion). */
   reduceMotion?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** The screen's one clock for the hit (useHitClock), shared with the dim, the overlay and the banner. */
+  elapsed?: SharedValue<number>;
   children: ReactNode;
   testID?: string;
 }
@@ -61,7 +63,9 @@ export interface WarpFrameProps {
  * clock, on the UI thread; the content stays live, so I can still play (spec §7.2). Otherwise it is a plain
  * view: its children are never re-mounted when a warp starts or ends.
  *
- * Reduced motion: a fixed tilt for the hit's 5 s, then straight again.
+ * The tilt starts once the hit's banner and dim have faded in (HIT_FADE_IN_MS), then eases in over that fade.
+ *
+ * Reduced motion: a fixed tilt from the end of the (reduced) fade-in to the hit's end, then straight again.
  */
 export function WarpFrame({
   hit,
@@ -71,21 +75,29 @@ export function WarpFrame({
   scope = INTERFERENCE_SCOPE,
   reduceMotion,
   style,
+  elapsed: shared,
   children,
   testID,
 }: WarpFrameProps) {
   const reducedSetting = useReduceMotion();
   const reduce = reduceMotion ?? reducedSetting;
   const active = hit !== null && hit.kind === 'warp' && region === scope && remainingOf(hit, now) > 0;
-  const elapsed = useHitClock(active ? hit : null, clock);
+  // The screen's shared clock runs for any hit; a frame reads it only while it tilts, so an idle frame (another
+  // kind, or the other region) keeps its own idle clock and pushes nothing to its view on each frame.
+  const elapsed = useLayerHitClock(active ? hit : null, clock, active ? shared : undefined);
   const totalMs = hit?.totalMs ?? 0;
   const fadeIn = reduce ? HIT_FADE_IN_REDUCED_MS : HIT_FADE_IN_MS;
 
   const motionStyle = useAnimatedStyle(() => {
-    if (!active) return { transform: warpTransform(NO_WARP) };
+    if (!active) return STRAIGHT;
     const t = elapsed.get();
-    const a = hitAlpha(t, totalMs, fadeIn, HIT_FADE_OUT_MS);
-    return { transform: warpTransform(reduce ? warpStill(a > 0, region) : warpPose(t, a, region)) };
+    // The tilt waits until the overlay, the banner and the dim are in (their fade-in), then tilts in over the same
+    // fade, and is straight again at the hit's end as before. The hit's first frames (its mount, its cue, its
+    // haptic) never change the content's transform: QA loop 8 saw the content vanish for ~160 ms and stand still
+    // without banner or dim at the very start of a warp, never of a fireworks or cats hit.
+    const a = t < fadeIn ? 0 : hitAlpha(t - fadeIn, totalMs - fadeIn, fadeIn, HIT_FADE_OUT_MS);
+    if (a <= 0) return STRAIGHT;
+    return { transform: warpTransform(reduce ? warpStill(true, region) : warpPose(t, a, region)) };
   });
 
   return (
@@ -94,6 +106,9 @@ export function WarpFrame({
     </Animated.View>
   );
 }
+
+/** The frame's style when straight: one object, so an unchanged style is not sent to the view again. */
+const STRAIGHT = { transform: warpTransform(NO_WARP) };
 
 /** The instant the reduced-motion overlay shows. */
 const STILL_AT_MS = 400;

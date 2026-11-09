@@ -138,10 +138,12 @@
     "error": {
       "title": "Errore di connessione",
       "offlineTitle": "Nessuna connessione a internet",
+      "expiredTitle": "Non hai fatto ritorno in tempo",
       "body": {
         "offline": "Al momento il telefono non ha rete. Connettiti a internet e riprova.",
         "unreachable": "Non siamo riusciti a raggiungere il server di gioco. Controlla la connessione e riprova.",
         "lost": "La connessione al server di gioco si è interrotta e non siamo riusciti a ripristinarla.",
+        "expired": "La connessione non è tornata in tempo, quindi la partita conta come abbandono.",
         "refused": "Il server non ci ha fatto entrare nella stanza."
       },
       "refusal": {
@@ -177,7 +179,9 @@
       "confirm": "Sì, mi arrendo",
       "cancel": "Annulla",
       "footnote": "La partita continua in sottofondo",
-      "dialog": "Conferma la resa"
+      "dialog": "Conferma la resa",
+      "notSent": "La resa non è stata registrata, e la partita continua. Puoi riprovare",
+      "notSentOffline": "Nessuna connessione al server, quindi la resa non è stata registrata. Puoi riprovare quando torna"
     },
     "lobby": {
       "title": "Stanza privata",
@@ -431,9 +435,35 @@
       "label_one": "Mossa della partita: {{points}} punto, {{digit}} in {{cell}}",
       "label_many": "Mossa della partita: {{points}} di punti, {{digit}} in {{cell}}",
       "label_other": "Mossa della partita: {{points}} punti, {{digit}} in {{cell}}",
-      "formula": "Calcolo dei punti",
-      "formulaLabel": "Calcolo dei punti: {{line}}",
-      "none": "Nessuna mossa giusta in questo allenamento"
+      "before": "Caselle piene prima della mossa",
+      "count": {
+        "row": "nella riga",
+        "col": "nella colonna",
+        "box": "nel riquadro",
+        "num": "numeri {{digit}} sulla griglia"
+      },
+      "filled": {
+        "row_one": "{{count}} nella riga",
+        "row_many": "{{count}} nella riga",
+        "row_other": "{{count}} nella riga",
+        "col_one": "{{count}} nella colonna",
+        "col_many": "{{count}} nella colonna",
+        "col_other": "{{count}} nella colonna",
+        "box_one": "{{count}} nel riquadro",
+        "box_many": "{{count}} nel riquadro",
+        "box_other": "{{count}} nel riquadro",
+        "num_one": "il numero {{digit}} presente una volta",
+        "num_many": "il numero {{digit}} presente {{count}} di volte",
+        "num_other": "il numero {{digit}} presente {{count}} volte"
+      },
+      "countName": {
+        "row": "la riga",
+        "col": "la colonna",
+        "box": "il riquadro",
+        "num": "i numeri {{digit}}"
+      },
+      "why": "Più è vuoto intorno alla casella, più la mossa vale. I due conteggi più alti fissano i punti: {{highest}} a peso pieno, {{next}} a metà peso.",
+      "none": "Non hai fatto nessuna mossa giusta in questa partita"
     },
     "stats": {
       "time": "Tempo di gioco",
@@ -465,6 +495,13 @@
     "actions": {
       "home": "Alla home",
       "newGame": "Nuova partita"
+    },
+    "again": {
+      "solo": "Avvia subito un altro allenamento in solitario, {{type}}",
+      "bot": "Avvia subito un’altra partita contro {{bot}}, {{type}}",
+      "botAny": "Avvia subito un’altra partita contro il bot, {{type}}",
+      "ranked": "Un’altra partita classificata, {{type}}",
+      "friends": "Torna al gioco con gli amici"
     },
     "loading": "Caricamento del risultato…",
     "missing": "Non abbiamo trovato questo allenamento",

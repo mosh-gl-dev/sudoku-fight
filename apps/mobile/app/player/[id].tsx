@@ -8,6 +8,7 @@ import { ROUTES } from '../../src/auth/redirect';
 import { refreshLevels, useLevelsSummary } from '../../src/levels/levelsStore';
 import { currentOwner, signedInProgressApi } from '../../src/progress/appProgress';
 import { useMyCard, useMyProgress } from '../../src/progress/hooks';
+import { useMyProfile } from '../../src/progress/myProfile';
 import { adoptCard } from '../../src/progress/progressStore';
 import { goBack } from '../../src/screens/home';
 import { ModerationButtons } from '../../src/screens/moderation';
@@ -54,6 +55,8 @@ export default function PlayerRoute() {
   const { id = '', gameId } = useLocalSearchParams<{ id: string; gameId?: string }>();
   const myId = useAuth((s) => s.me?.id ?? null);
   const suspended = useAuth((s) => isSuspended(s.me));
+  // My name, avatar and flag from me: the card shows an edit as soon as Edit profile comes back here.
+  const myProfile = useMyProfile();
   const cached = useMyCard();
   const progress = useMyProgress();
   const levels = useLevelsSummary();
@@ -74,6 +77,7 @@ export default function PlayerRoute() {
       myId={myId}
       cached={cached}
       myProgress={progress}
+      myProfile={myProfile}
       levels={myId !== null && id === myId ? levels : null}
       onBack={goBack}
       onEditProfile={suspended ? undefined : openEditProfile}

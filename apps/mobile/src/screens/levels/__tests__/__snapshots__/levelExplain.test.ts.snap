@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): chain 1`] = `
-"Step 1: 3 must appear in column 8. All the other empty cells in it are blocked: D8 sees a 3 in row D, E8 sees a 3 in row E and F8 sees a 3 in row F. So A8 = 3.
-Step 2: 1 must appear in box 3. All the other empty cells in it are blocked: A7 sees a 1 in column 7, B9 sees a 1 in row B, C7 sees a 1 in row C and C9 sees a 1 in row C. So A9 = 1.
-Step 3: 7 must appear in box 3. All the other empty cells in it are blocked: B9 sees a 7 in row B, C7 sees a 7 in row C and C9 sees a 7 in row C. So A7 = 7."
+"Step 1: 3 must appear in column 8. All the other empty cells in it are blocked: D8 sees the 3 in row D, E8 sees the 3 in row E and F8 sees the 3 in row F. So A8 = 3.
+Step 2: 1 must appear in box 3. All the other empty cells in it are blocked: A7 sees the 1 in column 7, B9 sees the 1 in row B, C7 sees the 1 in row C and C9 sees the 1 in row C. So A9 = 1.
+Step 3: 7 must appear in box 3. All the other empty cells in it are blocked: B9 sees the 7 in row B, C7 sees the 7 in row C and C9 sees the 7 in row C. So A7 = 7."
 `;
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): duel, a mistake 1`] = `
@@ -15,22 +15,22 @@ exports[`"למה?" (en) a sentence for every kind (snapshot): duel, my best move
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): fillBox, a mistake 1`] = `
 "Your mistake: 9 in ⁦A1⁩. 9 is already in column 1 (H1).
-1 must appear in box 1. All the other empty cells in it are blocked: A3 sees a 1 in column 3. So A1 = 1."
+1 must appear in box 1. All the other empty cells in it are blocked: A3 sees the 1 in column 3. So A1 = 1."
 `;
 
-exports[`"למה?" (en) a sentence for every kind (snapshot): fillBox, no mistake 1`] = `"1 must appear in box 1. All the other empty cells in it are blocked: A3 sees a 1 in column 3. So A1 = 1."`;
+exports[`"למה?" (en) a sentence for every kind (snapshot): fillBox, no mistake 1`] = `"1 must appear in box 1. All the other empty cells in it are blocked: A3 sees the 1 in column 3. So A1 = 1."`;
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): find 1`] = `
-"7 must appear in box 4. All the other empty cells in it are blocked: F2 sees a 7 in row F and F3 sees a 7 in row F. So D1 = 7.
-F2 can't hold 7: row F has a 7."
+"7 must appear in box 4. All the other empty cells in it are blocked: F2 sees the 7 in row F and F3 sees the 7 in row F. So D1 = 7.
+F2 can't hold 7: row F already has one."
 `;
 
-exports[`"למה?" (en) a sentence for every kind (snapshot): findDuel 1`] = `"Spot 1: 2 must appear in box 1. All the other empty cells in it are blocked: A3 sees a 2 in column 3 and C2 sees a 2 in row C. So A1 = 2."`;
+exports[`"למה?" (en) a sentence for every kind (snapshot): findDuel 1`] = `"Spot 1: 2 must appear in box 1. All the other empty cells in it are blocked: A3 sees the 2 in column 3 and C2 sees the 2 in row C. So A1 = 2."`;
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): pointHunter 1`] = `
 "You scored 6 of 18 points, ⁦33%⁩ of the board’s best.
 The best line: 5 in ⁦A4⁩ ⁦+6⁩ · 2 in ⁦D9⁩ ⁦+6⁩ · 7 in ⁦E6⁩ ⁦+6⁩.
-5 must appear in box 2. All the other empty cells in it are blocked: A5 sees a 5 in column 5, B6 sees a 5 in column 6 and C6 sees a 5 in row C. So A4 = 5."
+5 must appear in box 2. All the other empty cells in it are blocked: A5 sees the 5 in column 5, B6 sees the 5 in column 6 and C6 sees the 5 in row C. So A4 = 5."
 `;
 
 exports[`"למה?" (en) a sentence for every kind (snapshot): spotError 1`] = `
@@ -42,7 +42,7 @@ The 7 in ⁦B1⁩ is right: tapping it cost ⁦+5⁩ s."
 `;
 
 exports[`"למה?" (he) a sentence for every kind (snapshot): chain 1`] = `
-"צעד 1: הספרה 3 חייבת להופיע בעמודה 8. כל שאר המשבצות הריקות בו חסומות: ב־⁦D8⁩ יש 3 בשורה D, ב־⁦E8⁩ יש 3 בשורה E, וב־⁦F8⁩ יש 3 בשורה F. לכן ⁦A8 = 3⁩.
+"צעד 1: הספרה 3 חייבת להופיע בעמודה 8. כל שאר המשבצות הריקות בה חסומות: ב־⁦D8⁩ יש 3 בשורה D, ב־⁦E8⁩ יש 3 בשורה E, וב־⁦F8⁩ יש 3 בשורה F. לכן ⁦A8 = 3⁩.
 צעד 2: הספרה 1 חייבת להופיע בריבוע 3. כל שאר המשבצות הריקות בו חסומות: ב־⁦A7⁩ יש 1 בעמודה 7, ב־⁦B9⁩ יש 1 בשורה B, ב־⁦C7⁩ יש 1 בשורה C, וב־⁦C9⁩ יש 1 בשורה C. לכן ⁦A9 = 1⁩.
 צעד 3: הספרה 7 חייבת להופיע בריבוע 3. כל שאר המשבצות הריקות בו חסומות: ב־⁦B9⁩ יש 7 בשורה B, ב־⁦C7⁩ יש 7 בשורה C, וב־⁦C9⁩ יש 7 בשורה C. לכן ⁦A7 = 7⁩."
 `;
@@ -75,9 +75,9 @@ exports[`"למה?" (he) a sentence for every kind (snapshot): pointHunter 1`] = 
 `;
 
 exports[`"למה?" (he) a sentence for every kind (snapshot): spotError 1`] = `
-"⁦A2⁩, נמצאה: 5 כבר נמצא בעמודה 2 (⁦F2⁩).
+"‏⁦A2⁩, נמצאה: 5 כבר נמצא בעמודה 2 (⁦F2⁩).
 ⁦A2 → 8⁩. בעמודה 2 חסר רק 8.
-⁦F3⁩, לא נמצאה: 8 כבר נמצא בעמודה 3 (⁦H3⁩).
+‏⁦F3⁩, לא נמצאה: 8 כבר נמצא בעמודה 3 (⁦H3⁩).
 ⁦F3 → 2⁩. בעמודה 3 חסרים 2 ו־5. בשורה F כבר יש 5. לכן רק 2.
 ב־⁦B1⁩ ה־7 נכון: ההקשה עליו עלתה ⁦+5⁩ ש׳."
 `;

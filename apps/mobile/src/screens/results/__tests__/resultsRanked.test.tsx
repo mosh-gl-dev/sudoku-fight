@@ -1,14 +1,17 @@
 import { type PlayerInfo, toView } from '@sudoku-fight/engine';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet } from 'react-native';
+import * as safeArea from 'react-native-safe-area-context';
 
 import { scoreText, signedText } from '../../../components/player';
 import i18n from '../../../i18n';
-import { color } from '../../../theme';
+import { color, space } from '../../../theme';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
 import { configOf, fourPlayerGame, Table } from '../../replay/testing/games';
 import { type ResultsSession, sessionResultsModel } from '../resultsModel';
 import { ResultsScreen } from '../ResultsScreen';
+import { REVEAL_MAX_SHARE, revealOffset } from '../useScrolledIntoView';
 
 /**
  * Stage 11 results (spec §12) for rated games, on real engine games: my rating change counting from the old
@@ -147,6 +150,200 @@ describe('a rated two-player game', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  /** The layouts the phone reports: the scroll view's height, the rating card's top, its number's bottom. */
+  async function lay(scrollHeight: number, cardTop: number) {
+    const layout = (y: number, height: number) => ({
+      nativeEvent: { layout: { x: 0, y, width: 400, height } },
+    });
+    await fireEvent(screen.getByTestId('results-scroll'), 'layout', layout(0, scrollHeight));
+    await fireEvent(screen.getByTestId('results-rating-block', hidden), 'layout', layout(cardTop, 260));
+    await fireEvent(screen.getByTestId('results-rating-row', hidden), 'layout', layout(40, 40));
+  }
+  const scrollTo = (y: number) =>
+    fireEvent.scroll(screen.getByTestId('results-scroll'), {
+      nativeEvent: { contentOffset: { x: 0, y }, contentSize: { width: 400, height: 1800 } },
+    });
+  const ratingShows = (rating: number) =>
+    expect(screen.getByTestId('results-rating-value', hidden)).toHaveAnimatedProps({
+      text: String(Math.round(rating)),
+    });
+
+  it('below the fold, the count waits until the number is scrolled into view (QA loop 8, A16 1080 × 2340)', async () => {
+    useSettings.setState({ reduceMotion: 'off' });
+    jest.useFakeTimers();
+    try {
+      await show(table, 'me', { fakeTimers: true });
+      // The scroll view ends at 700 (the action bar under it); the card starts at 900, its number ends 80 lower.
+      await lay(700, 900);
+      await act(async () => {
+        jest.advanceTimersByTime(3_000);
+      });
+      // Past ratingCountAt and the count's time: still the old rating, as nobody has seen it.
+      expect(screen.getByTestId('results-rating-value', hidden)).toHaveAnimatedProps({
+        text: String(Math.round(mine.before)),
+      });
+
+      // Not seen yet: the scroll view reports its offset.
+      expect(screen.getByTestId('results-scroll').props.onScroll).toEqual(expect.any(Function));
+
+      // Scrolled to: the count runs, from the old rating to the new one.
+      await scrollTo(300);
+      // Seen: nothing waits on the offset any more, so the scroll view stops sending it to JS.
+      expect(screen.getByTestId('results-scroll').props.onScroll).toBeUndefined();
+      expect(screen.getByTestId('results-scroll').props.scrollEventThrottle).toBeUndefined();
+      await act(async () => {
+        jest.advanceTimersByTime(1_000);
+      });
+      ratingShows(mine.after);
+      // Scrolled away again: it stays counted.
+      await scrollTo(0);
+      await act(async () => {
+        jest.advanceTimersByTime(1_000);
+      });
+      ratingShows(mine.after);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('in view from the start, the count runs at ratingCountAt as before', async () => {
+    useSettings.setState({ reduceMotion: 'off' });
+    jest.useFakeTimers();
+    try {
+      await show(table, 'me', { fakeTimers: true });
+      await lay(1400, 900);
+      await act(async () => {
+        jest.advanceTimersByTime(1_200);
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(1_000);
+      });
+      ratingShows(mine.after);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  describe('a number just under the bar is brought into view as it would count (fixcheck APK 14, abandon win)', () => {
+    // The mock ScrollView's methods are shared on its prototype.
+    const scrollToMock = () => ScrollView.prototype.scrollTo as unknown as jest.Mock;
+    beforeEach(() => scrollToMock().mockClear());
+
+    it('glides just far enough at ratingCountAt, and the count runs once the number is in view', async () => {
+      useSettings.setState({ reduceMotion: 'off' });
+      jest.useFakeTimers();
+      try {
+        await show(table, 'me', { fakeTimers: true });
+        // The A16 after an abandon win: the card's title is in view, its number (ending at 650 + 80) is not.
+        await lay(700, 650);
+        await act(async () => {
+          jest.advanceTimersByTime(1_199);
+        });
+        expect(scrollToMock()).not.toHaveBeenCalled();
+        await act(async () => {
+          jest.advanceTimersByTime(1);
+        });
+        // 730 − 700 under the edge, plus a margin of space[8].
+        expect(scrollToMock()).toHaveBeenCalledTimes(1);
+        expect(scrollToMock()).toHaveBeenCalledWith({ y: 30 + space[8], animated: true });
+        // Still the old rating while the view glides.
+        ratingShows(mine.before);
+        await scrollTo(30 + space[8]);
+        await act(async () => {
+          jest.advanceTimersByTime(1_000);
+        });
+        ratingShows(mine.after);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('not after the user has dragged the view, nor by more than a part of the screen', async () => {
+      useSettings.setState({ reduceMotion: 'off' });
+      jest.useFakeTimers();
+      try {
+        await show(table, 'me', { fakeTimers: true });
+        await lay(700, 650);
+        await fireEvent(screen.getByTestId('results-scroll'), 'scrollBeginDrag');
+        await act(async () => {
+          jest.advanceTimersByTime(2_000);
+        });
+        expect(scrollToMock()).not.toHaveBeenCalled();
+      } finally {
+        jest.useRealTimers();
+      }
+      expect(revealOffset({ y: 0, height: 700 }, 980, space[8], REVEAL_MAX_SHARE)).toBeNull();
+      expect(revealOffset({ y: 0, height: 700 }, 690, space[8], REVEAL_MAX_SHARE)).toBeNull();
+      expect(revealOffset({ y: 0, height: 0 }, 900, space[8], REVEAL_MAX_SHARE)).toBeNull();
+      expect(revealOffset({ y: 20, height: 700 }, 760, 16, REVEAL_MAX_SHARE)).toBe(76);
+    });
+
+    it('"לבית" and the header stay put below the status bar as the view glides (fixcheck APK 16: it went under it)', async () => {
+      useSettings.setState({ reduceMotion: 'off' });
+      // The mock's own hook is a jest.fn: its implementation is set back after this test.
+      const hook = jest.mocked(safeArea.useSafeAreaInsets);
+      const mockInsets = hook.getMockImplementation()!;
+      hook.mockImplementation(() => ({ top: 47, bottom: 0, left: 0, right: 0 }));
+      jest.useFakeTimers();
+      try {
+        await show(table, 'me', { fakeTimers: true });
+        await lay(700, 650);
+        await act(async () => {
+          jest.advanceTimersByTime(1_200);
+        });
+        // The glide still happens (loop 10: the number counts in view)...
+        expect(scrollToMock()).toHaveBeenCalledWith({ y: 30 + space[8], animated: true });
+        // ...but moves only the scroll view's content: the home button and the header are outside it, fixed
+        // under the safe area's top, so no scroll offset can carry them under the clock.
+        const scroll = screen.getByTestId('results-scroll');
+        expect(within(scroll).queryByTestId('results-home')).toBeNull();
+        expect(within(scroll).queryByTestId('results-header')).toBeNull();
+        const top = screen.getByTestId('results-top');
+        expect(within(top).getByTestId('results-home')).toBeOnTheScreen();
+        expect(within(top).getByTestId('results-header')).toBeOnTheScreen();
+        expect(StyleSheet.flatten(top.props.style)).toMatchObject({ paddingTop: 47 + space[4] });
+      } finally {
+        jest.useRealTimers();
+        hook.mockImplementation(mockInsets);
+      }
+    });
+
+    it('never with a screen reader on (the screen must not move under its focus); the gate still holds the count', async () => {
+      useSettings.setState({ reduceMotion: 'off' });
+      // RN's Jest setup makes it a mock of its own: swapped here, put back after.
+      const original = AccessibilityInfo.isScreenReaderEnabled;
+      AccessibilityInfo.isScreenReaderEnabled = () => Promise.resolve(true);
+      jest.useFakeTimers();
+      try {
+        await show(table, 'me', { fakeTimers: true });
+        await lay(700, 650);
+        await act(async () => {
+          jest.advanceTimersByTime(2_000);
+        });
+        expect(scrollToMock()).not.toHaveBeenCalled();
+        ratingShows(mine.before);
+      } finally {
+        jest.useRealTimers();
+        AccessibilityInfo.isScreenReaderEnabled = original;
+      }
+    });
+
+    it('never under Reduced Motion (the new rating is simply there)', async () => {
+      jest.useFakeTimers();
+      try {
+        await show(table, 'me', { fakeTimers: true });
+        await lay(700, 650);
+        await act(async () => {
+          jest.advanceTimersByTime(2_000);
+        });
+        expect(scrollToMock()).not.toHaveBeenCalled();
+        ratingShows(mine.after);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   it('every award says what it is for', async () => {

@@ -1,10 +1,14 @@
 import { toView } from '@sudoku-fight/engine';
 import { act, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import * as safeArea from 'react-native-safe-area-context';
 
 import { paletteAt } from '../../../components/player';
+import { SLANT } from '../../../components/ui/slant';
 import i18n from '../../../i18n';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
+import { tokens } from '../../../theme';
 import { BOT } from '../../game/testing/duel';
 import { fourPlayerGame, type Table } from '../../replay/testing/games';
 import { loadPracticeResults, type ResultsSession, sessionResultsModel } from '../resultsModel';
@@ -57,6 +61,25 @@ beforeEach(async () => {
   useProfile.setState({ avatarId: 'lava-lamp' });
 });
 
+describe('the status bar', () => {
+  it("a band in the screen's colour covers it, so the cards never scroll under the clock", async () => {
+    // The mock's own hook is a jest.fn: its implementation is set back after this test.
+    const hook = jest.mocked(safeArea.useSafeAreaInsets);
+    const mockInsets = hook.getMockImplementation()!;
+    hook.mockImplementation(() => ({ top: 47, bottom: 0, left: 0, right: 0 }));
+    const table = fourPlayerGame();
+    await show(table, table.state.result!.ranking[0]!.playerId);
+    const band = StyleSheet.flatten(screen.getByTestId('results-status-band').props.style);
+    expect(band).toMatchObject({
+      position: 'absolute',
+      top: 0,
+      height: 47,
+      backgroundColor: tokens.color.bg,
+    });
+    hook.mockImplementation(mockInsets);
+  });
+});
+
 describe('Results-4P: the place is the headline behind the winner', () => {
   const table = fourPlayerGame();
   const ranking = table.state.result!.ranking;
@@ -106,6 +129,13 @@ describe('Results-4P: the place is the headline behind the winner', () => {
     expect(screen.getByTestId('results-new-game-shadow', hidden)).toBeTruthy();
     expect(screen.queryByTestId('results-replay-shadow', hidden)).toBeNull();
     expect(newGame.parent?.parent).toBe(replay.parent?.parent);
+    // The pair rule (D130, components.md §1.0): beside the gold one, the secondary skews with it (slant.tsx).
+    expect(StyleSheet.flatten(screen.getByTestId('results-replay-edge', hidden).props.style)).toMatchObject({
+      transform: SLANT.outer,
+    });
+    expect(
+      StyleSheet.flatten(screen.getByTestId('results-replay-face-shape', hidden).props.style),
+    ).toMatchObject({ transform: SLANT.inner });
   });
 });
 

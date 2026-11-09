@@ -155,9 +155,11 @@ describe('the game store: a ranked game (stage 9)', () => {
     table.cutMe();
     const again = useStore.getState().retryOnline()!;
     expect(again).not.toBeNull();
-    // The match's game type goes along: the loading card says "מדורג · מהיר" before the game does.
-    expect(again.request).toEqual({ kind: 'join', code: CODE, gameType: 'fast' });
+    // The match's game type goes along: the loading card says "מדורג · מהיר" before the game does. Its queue
+    // too: the results' "משחק חדש" searches there again (not the rooms screen).
+    expect(again.request).toEqual({ kind: 'join', code: CODE, gameType: 'fast', queueKey: 'fast-3p' });
     expect(again.gameType).toBe('fast');
+    expect(again.queueKey).toBe('fast-3p');
     expect(used).toEqual([table, rejoin]);
     expect(again.host).toBe(rejoin.host);
     expect(again.profiles).toEqual(before.profiles);

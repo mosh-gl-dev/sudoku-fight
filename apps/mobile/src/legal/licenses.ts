@@ -6,7 +6,8 @@
  * - every package of apps/mobile's production dependency closure: name, version, license (an SPDX id or
  *   expression) and the copyright lines of its license file;
  * - the full text of each common license (MIT, ISC, BSD, Apache-2.0…), from an installed package's own file.
- * License texts stay in English: they are legal texts, shown as they are, left to right.
+ * License texts stay in English: they are legal texts, shown left to right, word for word (only their
+ * 80-column line breaks are joined on the screen: reflowLicense).
  */
 
 export interface FontNotice {
@@ -60,4 +61,54 @@ export function licenseTexts(data: LicensesData): { id: string; text: string; pa
   return Object.entries(data.texts)
     .map(([id, text]) => ({ id, text, packages: uses.get(id) ?? 0 }))
     .sort((a, b) => b.packages - a.packages || (a.id < b.id ? -1 : 1));
+}
+
+/** A rule like "-----" or "=====": a line of its own. */
+const RULE = /^[-=_*~]{3,}$/;
+/** A list item's marker: "1)", "1.", "(a)", "*", "-", "•", followed by its text. */
+const MARKER = /^(?:\d+[.)]|\([a-z0-9]+\)|[*•-])\s+/i;
+/** A copyright notice ("Copyright (c) 2020 …", "© …"), not "Copyright Holder(s) …" inside a sentence. */
+const COPYRIGHT = /^(?:copyright\s+(?:\(c\)|©|\d{4})|\(c\)\s|©)/i;
+
+/**
+ * A license file is wrapped at about 80 columns; on a phone those hard breaks, on top of the screen's own
+ * wrapping, leave ragged lines of one or two words (QA account-settings-licenses-expand). Each paragraph becomes
+ * one line, its own breaks joined by spaces; blank-line breaks stay. A line stays on its own line when it is
+ * a rule ("-----"), a heading (a "# …" line, or a short all-capitals first line like "PREAMBLE"), a list item
+ * ("1)", "2.", "(a)", "*"), a copyright notice, or is indented differently from the paragraph's text (the
+ * Apache header's centered lines). A list item's hanging indent ("(a) You must…" / "    Derivative Works…")
+ * or a line flush with its marker continues the item. The paragraph keeps its first line's indent.
+ */
+export function reflowLicense(text: string): string {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split(/\n[ \t]*\n/)
+    .map(reflowBlock)
+    .join('\n\n');
+}
+
+function reflowBlock(block: string): string {
+  const out: string[] = [];
+  /** The columns a continuation line of the current paragraph may start at; null: the next line starts anew. */
+  let columns: number[] | null = null;
+  block.split('\n').forEach((raw, index) => {
+    const line = raw.trimEnd();
+    const body = line.trimStart();
+    const indent = line.length - body.length;
+    const alone =
+      RULE.test(body) ||
+      body.startsWith('#') ||
+      (index === 0 && body.length <= 32 && /[A-Z]/.test(body) && !/[a-z]/.test(body) && !/[,;]$/.test(body));
+    const marker = MARKER.exec(body)?.[0].length ?? 0;
+    const starts = alone || marker > 0 || COPYRIGHT.test(body);
+    if (columns !== null && !starts && columns.includes(indent) && body) {
+      out[out.length - 1] += ` ${body}`;
+      return;
+    }
+    // No leading indent on a phone line: Apache-2.0's 6-27 space indents became a ragged first line (loop-6 review).
+    out.push(body);
+    // A list item continues under its text (a hanging indent) or flush with its marker (the OFL's "1)").
+    columns = alone ? null : [indent, indent + marker];
+  });
+  return out.join('\n');
 }

@@ -32,6 +32,7 @@ export function recordingCanvas() {
     drawCircle: record('drawCircle'),
     drawPath: record('drawPath'),
     drawRect: record('drawRect'),
+    drawColor: record('drawColor'),
     save: record('save'),
     restore: record('restore'),
     translate: record('translate'),
@@ -50,13 +51,18 @@ export function fakePaint() {
     setStyle: noop,
     setStrokeCap: noop,
     setAntiAlias: noop,
+    dispose: noop,
   };
 }
 
 type Children = { children?: ReactNode };
 
-function Canvas({ children, style, testID, pointerEvents }: ViewProps & Children) {
-  return createElement(View, { style, testID, pointerEvents }, children);
+/** Skia's Canvas props the tests look at; `opaque` is Skia's own (a View has none), passed through to be seen. */
+type CanvasProps = ViewProps & { opaque?: boolean };
+
+function Canvas({ children, style, testID, pointerEvents, opaque }: CanvasProps & Children) {
+  const props: CanvasProps = { style, testID, pointerEvents, opaque };
+  return createElement(View, props, children);
 }
 function Through({ children }: Children) {
   return createElement(Fragment, null, children);
@@ -87,6 +93,8 @@ export const skiaModule = {
     Paint: fakePaint,
     Color: (c: string) => c,
     XYWHRect: (x: number, y: number, width: number, height: number) => ({ x, y, width, height }),
+    // The ambient digits' outlines (components/ambient): a path that remembers its SVG.
+    Path: { MakeFromSVGString: (svg: string) => ({ svg, dispose: () => {} }) },
   },
   PaintStyle: { Fill: 0, Stroke: 1 },
   StrokeCap: { Butt: 0, Round: 1, Square: 2 },

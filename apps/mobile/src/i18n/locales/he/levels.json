@@ -65,7 +65,7 @@
     "label": "בוס, {{kind}}",
     "versus": "הבוס: {{bot}}",
     "band": "בוס · פרק {{chapter}}",
-    "botLabel": "{{name}}, הבוס",
+    "botLabel": "‏{{name}}, הבוס",
     "intro": {
       "title": "שלב בוס!",
       "sub": "שלב {{n}} · {{kind}}",
@@ -74,7 +74,7 @@
     },
     "traits": {
       "firstBot": "הבוט הראשון: {{bot}}",
-      "faster": "{{bot}} מהיר ב־{{percent}}",
+      "faster": "‏{{bot}} מהיר ב־{{percent}}",
       "overlord": "Overlord",
       "moreCells_one": "משבצת חסרה אחת במקום {{usual}}",
       "moreCells_two": "{{cells}} משבצות חסרות במקום {{usual}}",
@@ -217,7 +217,7 @@
     "best": "שיא {{metric}}",
     "bestLabel": "השיא שלך: {{stars}}, {{metric}}",
     "bestStars": "השיא שלך: {{stars}}",
-    "bot": "{{name}} · רמה {{level}} · {{title}}",
+    "bot": "‏{{name}} · רמה {{level}} · {{title}}",
     "continue": "המשך · שלב {{n}}",
     "play": "שחק",
     "lockedTitle": "שלב {{n}} · נעול",
@@ -228,7 +228,7 @@
     "lockedGate_other": "פרק {{chapter}} נעול: צריך {{need}} כוכבים בפרק {{prev}}. יש לך {{stars}}.",
     "gateTitleOpen": "פרק {{n}} פתוח",
     "gateTitleClosed": "פרק {{n}} נעול",
-    "gateSub": "{{name}} · שלבים {{range}}",
+    "gateSub": "‏{{name}} · שלבים {{range}}",
     "gateOpenBody_one": "נפתח: צברת כוכב אחד בפרק {{prev}}, והשער דורש {{need}}.",
     "gateOpenBody_two": "נפתח: צברת {{stars}} כוכבים בפרק {{prev}}, והשער דורש {{need}}.",
     "gateOpenBody_other": "נפתח: צברת {{stars}} כוכבים בפרק {{prev}}, והשער דורש {{need}}.",
@@ -312,7 +312,7 @@
       "timeUp": "הזמן נגמר",
       "failed": "שתי הקשות שגויות",
       "quit": "יצאת מהשלב",
-      "botWon": "{{bot}} הגיע ראשון"
+      "botWon": "‏{{bot}} הגיע ראשון"
     },
     "metric": {
       "spotsOf_one": "מתוך מקום אחד",
@@ -332,6 +332,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "לשער צריך {{need}}",
     "chapterOpen": "השער פתוח",
+    "chapterNeedSentence": "לשער צריך {{need}}",
+    "chapterOpenSentence": "השער פתוח",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "בפרק הזה: כוכב אחד מתוך {{max}}. {{gate}}",
     "chapterLine_two": "בפרק הזה: {{stars}} כוכבים מתוך {{max}}. {{gate}}",
@@ -347,7 +349,7 @@
     "swaps_other": "{{count}} החלפות · המינימום {{min}}",
     "time": "זמן: {{s}} ש׳",
     "youWon": "ניצחת",
-    "botWon": "{{bot}} ניצח",
+    "botWon": "‏{{bot}} ניצח",
     "tie": "תיקו",
     "bossTie": "תיקו: הבוס נשאר",
     "opponentLabel": "{{bot}}: {{value}}. {{verdict}}",
@@ -375,17 +377,19 @@
     "continue": "המשך",
     "label": "פרק חדש נפתח: פרק {{n}}, {{name}}. {{news}}",
     "bots": {
-      "1": "Pip: \"אני רק מתחיל, אבל אני מהיר מכפי שנראה.\"",
-      "2": "Biscuit: \"רגוע, אבל לא נותן לך לברוח.\"",
-      "3": "Mr. Hoot: \"אני רואה כל משבצת. תיזהר.\"",
-      "4": "Maestro: \"מהר, מדויק, ובסטייל.\"",
-      "5": "Overlord: \"הגעת רחוק. כאן זה נגמר.\""
+      "1": "‏Pip: \"אני רק מתחיל, אבל אני מהיר מכפי שנראה.\"",
+      "2": "‏Biscuit: \"רגוע, אבל לא נותן לך לברוח.\"",
+      "3": "‏Mr. Hoot: \"אני רואה כל משבצת. תיזהר.\"",
+      "4": "‏Maestro: \"מהר, מדויק, ובסטייל.\"",
+      "5": "‏Overlord: \"הגעת רחוק. כאן זה נגמר.\""
     }
   },
   "exit": {
     "button": "יציאה מהשלב",
     "title": "לצאת מהשלב?",
     "body": "תקבל 0 כוכבים, והשלב הבא ייפתח.",
+    "bodyLocked": "תקבל 0 כוכבים, והשלב הבא יישאר נעול.",
+    "bodyLast": "תקבל 0 כוכבים.",
     "confirm": "יציאה",
     "cancel": "המשך לשחק"
   },
@@ -403,7 +407,7 @@
       "news": "מיקום מדויק, מלא את הריבוע, פאזל ומלא את השורה"
     },
     "2": {
-      "name": "Pip מאתגר",
+      "name": "‏Pip מאתגר",
       "news": "מלא את העמודה, ומרוץ מול הבוט"
     },
     "3": {
@@ -569,10 +573,10 @@
       "out": "בחוץ עד המקום הבא",
       "botTag": "{{n}} · {{title}}",
       "meLabel": "{{name}}, {{spots}}",
-      "botLabel": "{{name}}, בוט רמה {{n}}, {{title}}, {{spots}}",
-      "botSearching": "{{name}} מחפש",
+      "botLabel": "‏{{name}}, בוט רמה {{n}}, {{title}}, {{spots}}",
+      "botSearching": "‏{{name}} מחפש",
       "mine": "לקחת את מקום {{n}}",
-      "theirs": "{{name}} לקח את מקום {{n}}",
+      "theirs": "‏{{name}} לקח את מקום {{n}}",
       "void": "אף אחד לא לקח את מקום {{n}}",
       "next": "מקום {{n}}: ה־{{digit}} {{scope}}"
     },
@@ -653,12 +657,12 @@
       "gapLabel": "הפער: {{gap}}. כוכב אחד אם תוביל בסוף, 2 כוכבים בפער {{two}}, 3 כוכבים בפער {{three}}",
       "lead": "מוביל",
       "of": "/{{target}}",
-      "meLabel_one": "{{name}}, {{score}} מתוך נקודה אחת",
-      "meLabel_two": "{{name}}, {{score}} מתוך {{target}} נקודות",
-      "meLabel_other": "{{name}}, {{score}} מתוך {{target}} נקודות",
-      "botLabel_one": "{{name}}, בוט רמה {{n}}, {{score}} מתוך נקודה אחת",
-      "botLabel_two": "{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות",
-      "botLabel_other": "{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות",
+      "meLabel_one": "‏{{name}}, {{score}} מתוך נקודה אחת",
+      "meLabel_two": "‏{{name}}, {{score}} מתוך {{target}} נקודות",
+      "meLabel_other": "‏{{name}}, {{score}} מתוך {{target}} נקודות",
+      "botLabel_one": "‏{{name}}, בוט רמה {{n}}, {{score}} מתוך נקודה אחת",
+      "botLabel_two": "‏{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות",
+      "botLabel_other": "‏{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות",
       "finishLabel": "השלב נגמר כשמישהו מגיע $t(levels:hud.duel.reachPoints, {\"count\": {{target}} }), או $t(levels:hud.duel.atSeconds, {\"count\": {{s}} })",
       "reachPoints_one": "לנקודה אחת",
       "reachPoints_two": "ל־{{count}} נקודות",
@@ -741,8 +745,8 @@
     "spot": "מקום {{n}}: {{text}}",
     "mistake": "הטעות שלך: {{digit}} ב־{{cell}}. {{reason}}",
     "best": "המהלך הכי שווה שלך, {{digit}} ב־{{cell}}: {{text}}",
-    "errorFound": "{{cell}}, נמצאה: {{reason}}",
-    "errorMissed": "{{cell}}, לא נמצאה: {{reason}}",
+    "errorFound": "‏{{cell}}, נמצאה: {{reason}}",
+    "errorMissed": "‏{{cell}}, לא נמצאה: {{reason}}",
     "rightTap": "ב־{{cell}} ה־{{digit}} נכון: ההקשה עליו עלתה {{penalty}} ש׳.",
     "points_one": "צברת {{points}} מתוך {{max}} נקודה, {{percent}} מהמקסימום של הלוח.",
     "points_two": "צברת {{points}} מתוך {{max}} נקודות, {{percent}} מהמקסימום של הלוח.",

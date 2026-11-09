@@ -1,14 +1,24 @@
 import type { PlayerId } from '@sudoku-fight/engine';
-import { useCallback } from 'react';
-import { type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  type LayoutChangeEvent,
+  type StyleProp,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from 'react-native';
 
 import type { AvatarFace, AvatarIdOrNone } from '../../avatars';
 import {
   type CardModel,
+  duelCardWidth,
   type InterferenceModel,
   PlayerCard,
+  type PlayerCardProps,
   type ScoreDelta,
   VsBadge,
+  vsInset,
 } from '../../components/player';
 import { tokens } from '../../theme';
 import type { ArsenalCardProps, Measurable } from './arsenal';
@@ -40,8 +50,11 @@ export interface DuelHudProps {
   opponentCountry?: string | null;
   myDelta?: ScoreDelta | null;
   opponentDelta?: ScoreDelta | null;
-  /** A bot opponent's level under its name (Game-Bot), drawn and said; null for anyone else. */
-  opponentBotLevel?: { text: string; label: string } | null;
+  /**
+   * A bot opponent's level under its name (Game-Bot), drawn and said; null for anyone else. Its `shorter` forms
+   * take the whole tag's place where it doesn't fit (PlayerCard botLevelForm).
+   */
+  opponentBotLevel?: PlayerCardProps['botLevel'];
   /** "סיום אימון" (practice) or "כניעה" on my card: the screen asks first (spec §6.6). */
   onSurrender: () => void;
   /** My card's reactions button: opens or closes my picker (spec §8). */
@@ -102,6 +115,24 @@ export function DuelHud({
   );
   const theirName = opponent.name ?? '';
 
+  // Both cards share the row: 159 each where they fit (360 dp and wider), an equal share on a narrower screen
+  // (duelCardWidth). The row's width before it is measured: the window less the game's gutters.
+  const windowSize = useWindowDimensions();
+  const [rowWidth, setRowWidth] = useState<number | null>(null);
+  const row = rowWidth ?? windowSize.width - 2 * tokens.layout.gutterGame;
+  const cardWidth = duelCardWidth(row);
+  // Where the cards are closer than the VS badge is wide (360 dp and narrower), their name blocks keep clear of
+  // it, so it never covers a flag (QA loop 6).
+  const innerInset = vsInset(row, cardWidth);
+  const onRowLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { width } = e.nativeEvent.layout;
+      setRowWidth((was) => (was === width ? was : width));
+      onLayout?.(e);
+    },
+    [onLayout],
+  );
+
   const theirCard = (
     <PlayerCard
       model={opponent}
@@ -114,12 +145,14 @@ export function DuelHud({
       onInterfere={onInterfere}
       onInterfereBlocked={onInterfereBlocked}
       {...opponentTarget}
+      width={cardWidth}
+      innerInset={innerInset}
       testID="card-opponent"
     />
   );
 
   return (
-    <View style={[styles.row, style]} onLayout={onLayout} testID={testID}>
+    <View style={[styles.row, style]} onLayout={onRowLayout} testID={testID}>
       <View onLayout={onMine} testID={`${testID}-mine`}>
         <PlayerCard
           model={me}
@@ -132,6 +165,8 @@ export function DuelHud({
           onReactions={onReactions}
           reactionsExpanded={reactionsExpanded}
           {...myTarget}
+          width={cardWidth}
+          innerInset={innerInset}
           testID="card-me"
         />
       </View>

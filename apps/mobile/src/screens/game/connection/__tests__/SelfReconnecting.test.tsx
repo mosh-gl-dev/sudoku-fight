@@ -72,6 +72,37 @@ describe('SelfReconnecting (Hebrew)', () => {
     );
   });
 
+  it('past the time to come back, still trying for the result: "הזמן נגמר · בודקים מול השרת…", never "עוד 0 שניות" (connection-lost-no-recovery)', async () => {
+    await render(
+      <SelfReconnecting
+        model={lost({ attempt: 30, secondsLeft: 0, remainingMs: 0 })}
+        topInset={0}
+        bottomInset={0}
+      />,
+    );
+    expect(screen.getByTestId('self-reconnecting-timer-title', hidden)).toHaveTextContent('הזמן נגמר');
+    expect(screen.queryByTestId('self-reconnecting-timer-seconds', hidden)).toBeNull();
+    expect(screen.getByText('בודקים מול השרת…', hidden)).toBeOnTheScreen();
+    expect(screen.getByRole('timer')).toHaveAccessibleName('הזמן נגמר. בודקים מול השרת…');
+  });
+
+  it('back from the background (returning): "מסנכרן…", no "הלוח נעול עד שתחזור" and no countdown', async () => {
+    // QA stealth-play-bg-long: the player is already back while the host reconnects.
+    await render(
+      <SelfReconnecting
+        model={lost({ attempt: 1, secondsLeft: null, remainingMs: null, returning: true })}
+        topInset={0}
+        bottomInset={0}
+      />,
+    );
+    expect(screen.getByTestId('self-reconnecting-banner-sub')).toHaveTextContent('מתחבר מחדש…');
+    expect(screen.getByTestId('self-reconnecting-card-title', hidden)).toHaveTextContent('מסנכרן…');
+    expect(screen.queryByText('הלוח נעול עד שתחזור', hidden)).toBeNull();
+    expect(screen.getByText('המשחק נשמר בשרת וממשיך מאותה נקודה', hidden)).toBeOnTheScreen();
+    expect(screen.queryByTestId('self-reconnecting-timer', hidden)).toBeNull();
+    expect(screen.queryByText('לפני שהמשחק ייחשב כנטישה', hidden)).toBeNull();
+  });
+
   it('blocks the game while lost: modal, touches taken, the board dimmed to 50 %', async () => {
     await render(<SelfReconnecting model={lost()} />);
     const root = screen.getByTestId('self-reconnecting');
@@ -115,6 +146,12 @@ describe('SelfReconnecting (Hebrew)', () => {
       'החיבור שלך אבד. מתחבר מחדש, ניסיון 3',
       'עוד 5 שניות המשחק ייחשב כנטישה',
     ]);
+  });
+
+  it('time up while the host still checks: announced as "הזמן נגמר", not "עוד 5 שניות" (connection-lost-no-recovery)', async () => {
+    const { rerender } = await render(<SelfReconnecting model={lost({ attempt: 3, secondsLeft: 2 })} />);
+    await rerender(<SelfReconnecting model={lost({ attempt: 3, secondsLeft: 0, remainingMs: 0 })} />);
+    expect(env.announced()).toEqual(['עוד 5 שניות המשחק ייחשב כנטישה', 'הזמן נגמר. בודקים מול השרת…']);
   });
 
   it('back and syncing: green, still locked, "חזרת בזמן"', async () => {

@@ -138,10 +138,12 @@
     "error": {
       "title": "Erro de conexão",
       "offlineTitle": "Sem conexão com a internet",
+      "expiredTitle": "Você não voltou a tempo",
       "body": {
         "offline": "Seu celular está sem rede agora. Conecte-se à internet e tente de novo.",
         "unreachable": "Não conseguimos acessar o servidor do jogo. Confira sua conexão e tente de novo.",
         "lost": "A conexão com o servidor do jogo caiu e não conseguimos recuperá-la.",
+        "expired": "A conexão não voltou a tempo, então a partida conta como abandono.",
         "refused": "O servidor não nos deixou entrar na sala."
       },
       "refusal": {
@@ -177,7 +179,9 @@
       "confirm": "Sim, desistir",
       "cancel": "Cancelar",
       "footnote": "A partida continua em segundo plano",
-      "dialog": "Confirmar desistência"
+      "dialog": "Confirmar desistência",
+      "notSent": "Você não desistiu, e a partida continua. Você pode tentar de novo",
+      "notSentOffline": "Sem conexão com o servidor, então você não desistiu. Tente de novo quando ela voltar"
     },
     "lobby": {
       "title": "Sala privada",
@@ -431,9 +435,35 @@
       "label_one": "Jogada da partida: {{points}} ponto, {{digit}} em {{cell}}",
       "label_many": "Jogada da partida: {{points}} de pontos, {{digit}} em {{cell}}",
       "label_other": "Jogada da partida: {{points}} pontos, {{digit}} em {{cell}}",
-      "formula": "Como pontuou",
-      "formulaLabel": "Como pontuou: {{line}}",
-      "none": "Nenhuma jogada certa neste treino"
+      "before": "Células preenchidas antes da jogada",
+      "count": {
+        "row": "na linha",
+        "col": "na coluna",
+        "box": "no quadrado",
+        "num": "números {{digit}} no tabuleiro"
+      },
+      "filled": {
+        "row_one": "{{count}} na linha",
+        "row_many": "{{count}} na linha",
+        "row_other": "{{count}} na linha",
+        "col_one": "{{count}} na coluna",
+        "col_many": "{{count}} na coluna",
+        "col_other": "{{count}} na coluna",
+        "box_one": "{{count}} no quadrado",
+        "box_many": "{{count}} no quadrado",
+        "box_other": "{{count}} no quadrado",
+        "num_one": "o {{digit}} no tabuleiro: {{count}}",
+        "num_many": "o {{digit}} já aparecia {{count}} de vezes",
+        "num_other": "o {{digit}} já aparecia {{count}} vezes"
+      },
+      "countName": {
+        "row": "a linha",
+        "col": "a coluna",
+        "box": "o quadrado",
+        "num": "os {{digit}}"
+      },
+      "why": "Quanto mais vazio em volta da célula, mais vale a jogada. As duas contagens mais altas definem os pontos: {{highest}} com peso total e {{next}} com meio peso.",
+      "none": "Você não fez nenhuma jogada certa nesta partida"
     },
     "stats": {
       "time": "Tempo de partida",
@@ -465,6 +495,13 @@
     "actions": {
       "home": "Início",
       "newGame": "Nova partida"
+    },
+    "again": {
+      "solo": "Começa outro treino solo na hora, {{type}}",
+      "bot": "Começa outra partida contra {{bot}} na hora, {{type}}",
+      "botAny": "Começa outra partida contra o robô na hora, {{type}}",
+      "ranked": "Outra partida ranqueada, {{type}}",
+      "friends": "Volta para o jogo com amigos"
     },
     "loading": "Carregando o resultado…",
     "missing": "Não encontramos este treino",

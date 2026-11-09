@@ -6,6 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { color, radius, text, tokens } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { Icon } from '../Icon';
+import { Slant } from '../ui/slant';
 import { Text } from '../ui/Text';
 import { easing, NEVER_REDUCE } from './anim';
 import { metrics } from './metrics';
@@ -50,7 +51,11 @@ export function ReconnectPill({
         color={iconOnly ? color.status.unstable : color.textMuted}
       />
       {iconOnly ? null : (
-        <Text style={[compact ? metrics.interfere.compactCostStyle : text('scoreSm'), styles.text]}>
+        // BRD-3: in a pill of fixed height, up to the HUD's cap.
+        <Text
+          scale="hud"
+          style={[compact ? metrics.interfere.compactCostStyle : text('scoreSm'), styles.text]}
+        >
           {String(seconds)}
         </Text>
       )}
@@ -63,7 +68,9 @@ export function HitChip({ seconds, style }: { seconds: number; style?: StyleProp
   return (
     <View style={[styles.hit, style]} testID="hit-chip" {...hidden}>
       <Icon name="bolt" size={metrics.hitChip.icon} color={color.textMuted} />
-      <Text style={[metrics.hitChip.secondsStyle, styles.muted]}>{String(seconds)}</Text>
+      <Text scale="hud" style={[metrics.hitChip.secondsStyle, styles.muted]}>
+        {String(seconds)}
+      </Text>
     </View>
   );
 }
@@ -98,25 +105,24 @@ export function RankBadge({ place, style }: { place: number; style?: StyleProp<V
       style={[styles.rank, first ? styles.rankFirst : styles.rankOther, anim, style]}
       {...hidden}
     >
-      <Text style={[metrics.rankBadge.style, { color: first ? color.onAccent : color.text }]}>
+      {/* BRD-3: up to the HUD's cap, so the badge stays in its corner and off the avatar (QA 2026-11-03). */}
+      <Text scale="hud" style={[metrics.rankBadge.style, { color: first ? color.onAccent : color.text }]}>
         {t('rank', { place })}
       </Text>
     </Animated.View>
   );
 }
 
-/** The skewed "VS" between the two cards (§3.5). */
+/** The skewed "VS" between the two cards (§3.5): a slanted plate (Android draws it too), the word upright. */
 export function VsBadge({ style }: { style?: StyleProp<ViewStyle> }) {
   const { t } = useTranslation('player');
   return (
     <View style={[styles.vs, style]} {...hidden}>
+      <Slant shapeStyle={styles.vsPlate} />
       <Text style={[text('vsBadge'), styles.vsText]}>{t('vs')}</Text>
     </View>
   );
 }
-
-const SKEW = `${tokens.effects.skewXDeg}deg`;
-const UNSKEW = `${-tokens.effects.skewXDeg}deg`;
 
 const styles = StyleSheet.create({
   pill: {
@@ -160,13 +166,14 @@ const styles = StyleSheet.create({
   vs: {
     width: metrics.vs.width,
     height: metrics.vs.height,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vsPlate: {
     borderRadius: radius.xs,
     backgroundColor: color.vsBadge.bg,
     borderWidth: tokens.border.hairline,
     borderColor: color.vsBadge.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ skewX: SKEW }],
   },
-  vsText: { color: color.vsBadge.text, transform: [{ skewX: UNSKEW }] },
+  vsText: { color: color.vsBadge.text },
 });

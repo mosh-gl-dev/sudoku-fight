@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { wordsFitLines, wordsOf } from '../components/player/statusFit';
 import { localeBundle } from '../i18n';
 import { isPseudoLanguage, PSEUDO_LANGUAGES } from '../i18n/languages';
 import { layoutLanguages, notePseudoMiss, PHONE, widthIn } from '../components/ui/testing/layout';
@@ -13,9 +14,10 @@ import { size, space, text, tokens, type TypeName } from '../theme';
  * The width budget of every text that must stay on one line (localization plan 6.1 #10), built from the code
  * (testing/singleLineTexts.ts), in every layout language the app has strings for (layoutLanguages: Hebrew and
  * English in stage 0; each language as its folder arrives; en-XA once registered):
- * - Where the width is known (a toast's line; a sheet's title and subtitle, the dialogs' titles), a translation
- *   wider than it fails, measured in the language's font (Rubik's file, or an estimate by script). A few toasts
- *   are already longer than their line in Hebrew or English (OVER_TODAY): there the rule is the next one.
+ * - Where the width is known (a sheet's title and subtitle, the dialogs' titles), a translation wider than it
+ *   fails, measured in the language's font (Rubik's file, or an estimate by script).
+ * - A toast wraps between words and grows (components.md §15.1, QA loop 9: "Not enough points for the next i…"
+ *   hid the cost): each of its words must fit the toast's line, and the whole of it TOAST_LINES lines.
  * - Elsewhere, a translation more than 15 % wider than the wider of Hebrew and English is a warning (printed,
  *   not failed): someone looks at that screen in that language.
  * - A text whose key the code doesn't say (a name, a helper's result) is "not checked": the list is printed with
@@ -102,39 +104,26 @@ const style = (name: TypeName): Font => ({
 });
 
 /**
- * The widths known from the components (on Moshe's phone, 360 dp):
- * - a toast (Toast.tsx): 16 from each side of the screen, its padding 12 and border, the 24 icon and a 10 gap;
- * - a sheet's title and subtitle (Sheet.tsx): its gutters, and the close button (44) with its 12 gap.
+ * The widths known from the components (on Moshe's phone, 360 dp): a sheet's title and subtitle (Sheet.tsx): its
+ * gutters, and the close button (44) with its 12 gap.
  */
 const KNOWN: Partial<Record<SingleLineKind, { room: number; font: Font }>> = {
-  toast: {
-    room: PHONE.width - 2 * space[8] - 2 * space[6] - 2 * tokens.border.hairline - size.toastIcon - space[5],
-    font: style('buttonSm'),
-  },
   sheetTitle: { room: PHONE.width - 2 * SHEET_GUTTER - space[6] - size.iconButton, font: style('h1') },
   sheetSubtitle: { room: PHONE.width - 2 * SHEET_GUTTER - space[6] - size.iconButton, font: style('label') },
 };
 
+/** A toast's line (Toast.tsx): 16 from each side of the screen, its padding 12 and border, the 24 icon, a 10 gap. */
+const TOAST_ROOM =
+  PHONE.width - 2 * space[8] - 2 * space[6] - 2 * tokens.border.hairline - size.toastIcon - space[5];
 /**
- * Toasts already longer than their one line in Hebrew or English on a 360 dp phone (found by this test on
- * 2026-10-23, before any translation: the phone ends them with "…"). Not a localization change: reported to
- * Moshe. A translation of one of these is held to the relative rule (a warning past 15 % over Hebrew and English);
- * any other toast or title that outgrows its line, in any language, fails.
+ * The most lines a toast's words may take at 360 dp (font 1.0): it grows with them, and a longer message is a
+ * paragraph, not a toast. 4: "account:settings.deletedPartly" (at the top of the settings, after deleting the
+ * account) takes 4 in German, Polish, Vietnamese, Dutch…; every other toast 3 at most. The sender's chip, the one
+ * toast under the cards, has its own 2 (fitAt360Loop9.test.tsx).
  */
-const OVER_TODAY: ReadonlySet<string> = new Set([
-  'account:google.existing',
-  'account:settings.deletedPartly',
-  'friends:invite.afterSignIn',
-  'friends:invite.expired',
-  'game:arsenal.busyToast',
-  'game:arsenal.notEnough',
-  'game:arsenal.refused',
-  'game:live.offlineLost',
-  'game:live.offlineLostTaken',
-  'levels:map.gateToast',
-  'match:verify.required',
-  'moderation:suspended.ranked',
-]);
+const TOAST_LINES = 4;
+/** Scripts written without spaces: the phone breaks their lines between letters. */
+const NO_SPACES = /^(ja|zh|th)/;
 
 const checked = texts.filter((item) => keysOf(item, strings.en!).length > 0);
 const where = (item: SingleLineText) => `${item.file}:${item.line}`;
@@ -160,11 +149,11 @@ describe('the single-line texts, from the code', () => {
     expect(count('text')).toBeGreaterThan(150);
     expect(count('toast')).toBeGreaterThan(20);
     expect(count('sheetTitle')).toBeGreaterThanOrEqual(5);
-    // The toast's one line, wherever it is in Toast.tsx.
+    // The toast's message, wherever it is in Toast.tsx: no one-line Text any more (QA loop 9, components.md §15.1).
     const toast = readFileSync(join(__dirname, '..', 'components', 'ui', 'Toast.tsx'), 'utf8').split(/\r?\n/);
-    const line = toast.findIndex((l) => l.includes('<Text style={styles.message} numberOfLines={1}>')) + 1;
-    expect(line).toBeGreaterThan(0);
-    expect(texts.map(where)).toEqual(expect.arrayContaining([`src/components/ui/Toast.tsx:${line}`]));
+    const line = toast.findIndex((l) => l.trim() === 'style={styles.message}'); // the line after its "<Text"
+    expect(toast[line - 1]?.trim()).toBe('<Text');
+    expect(texts.map(where)).not.toContain(`src/components/ui/Toast.tsx:${line}`);
     expect(
       texts.filter((t) => t.file === 'src/screens/levels/LevelMapScreen.tsx' && t.kind === 'toast'),
     ).toEqual(
@@ -189,9 +178,9 @@ describe('the single-line texts, from the code', () => {
   it('prints the "not checked" report on request (I18N_WIDTH_REPORT=1)', () => {
     const unchecked = texts.filter((item) => !checked.includes(item)).map(where);
     if (process.env.I18N_WIDTH_REPORT) {
-      const over = SOURCES.flatMap((lang) => overflows(lang, 'toast').map((o) => `${lang} ${o.line}`));
+      const over = SOURCES.flatMap((lang) => toastsOver(lang).map((line) => `${lang} ${line}`));
       console.log(
-        `Not checked (${unchecked.length}):\n${unchecked.join('\n')}\n\nOver their line in Hebrew or English:\n${over.join('\n')}`,
+        `Not checked (${unchecked.length}):\n${unchecked.join('\n')}\n\nToasts over their lines in Hebrew or English:\n${over.join('\n')}`,
       );
     }
     expect(unchecked.length + checked.length).toBe(texts.length);
@@ -200,10 +189,39 @@ describe('the single-line texts, from the code', () => {
 
 describe.each(LANGUAGES)('%s: where the width is known, the words fit', (lang) => {
   it.each(Object.keys(KNOWN) as SingleLineKind[])('%s', (kind) => {
-    const over = overflows(lang, kind)
-      .filter(({ key }) => !OVER_TODAY.has(key))
-      .map((o) => o.line);
+    const over = overflows(lang, kind).map((o) => o.line);
     // en-XA, English about 40 % longer (plan 0יג): a place to watch, not a failure (layout.ts pseudoMisses).
+    if (isPseudoLanguage(lang)) over.forEach((line) => notePseudoMiss(lang, line));
+    else expect(over).toEqual([]);
+  });
+});
+
+/** The lines `line` takes in a toast in `lang`, broken between words (between letters where it has no spaces). */
+function toastLines(lang: string, line: string): number {
+  const font = style('buttonSm');
+  const parts = NO_SPACES.test(lang) ? [...line.replace(/\s+/g, '')] : wordsOf(line);
+  const widths = parts.map((p) => widthIn(lang, p, font));
+  const gap = NO_SPACES.test(lang) ? 0 : widthIn(lang, 'a b', font) - widthIn(lang, 'ab', font);
+  for (let n = 1; n <= parts.length; n++) if (wordsFitLines(widths, gap, TOAST_ROOM, n)) return n;
+  return Infinity;
+}
+
+/** The toasts of a language whose words take more than TOAST_LINES lines (or a word is wider than one). */
+function toastsOver(lang: string): string[] {
+  const dict = strings[lang]!;
+  return checked
+    .filter((item) => item.kind === 'toast')
+    .flatMap((item) =>
+      keysOf(item, dict).flatMap((key) => {
+        const lines = toastLines(lang, shown(dict.get(key)!, key.slice(0, key.indexOf(':')), dict));
+        return lines > TOAST_LINES ? [`${where(item)} ${key}: ${lines} lines > ${TOAST_LINES}`] : [];
+      }),
+    );
+}
+
+describe.each(LANGUAGES)('%s: a toast’s words fit its lines, none broken', (lang) => {
+  it(`each word within a line, ${TOAST_LINES} lines at most`, () => {
+    const over = toastsOver(lang);
     if (isPseudoLanguage(lang)) over.forEach((line) => notePseudoMiss(lang, line));
     else expect(over).toEqual([]);
   });

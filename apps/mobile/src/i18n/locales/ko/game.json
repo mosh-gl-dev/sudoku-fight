@@ -128,10 +128,12 @@
     "error": {
       "title": "연결 오류",
       "offlineTitle": "인터넷 연결 없음",
+      "expiredTitle": "제때 돌아오지 않았어요",
       "body": {
         "offline": "지금 휴대폰이 네트워크에 연결되어 있지 않아요. 인터넷에 연결하고 다시 시도하세요.",
         "unreachable": "게임 서버에 연결하지 못했어요. 연결을 확인하고 다시 시도하세요.",
         "lost": "게임 서버와의 연결이 끊겼고, 다시 연결하지 못했어요.",
+        "expired": "제때 연결이 돌아오지 않아 게임이 이탈로 처리됐어요.",
         "refused": "서버가 방 입장을 허락하지 않았어요."
       },
       "refusal": {
@@ -167,7 +169,9 @@
       "confirm": "네, 기권할게요",
       "cancel": "취소",
       "footnote": "그동안에도 게임은 계속 진행돼요",
-      "dialog": "기권 확인"
+      "dialog": "기권 확인",
+      "notSent": "항복하지 않았고 대전은 계속됩니다. 다시 시도할 수 있어요",
+      "notSentOffline": "서버에 연결되지 않아 항복하지 않았어요. 연결이 돌아오면 다시 시도하세요"
     },
     "lobby": {
       "title": "비공개 방",
@@ -391,9 +395,27 @@
       "title": "게임 최고의 수",
       "move": "{{cell}} → {{digit}}",
       "label_other": "게임 최고의 수: {{points}}점, {{cell}}에 {{digit}}",
-      "formula": "점수 계산",
-      "formulaLabel": "점수 계산: {{line}}",
-      "none": "이번 연습에는 맞힌 수가 없어요"
+      "before": "이 수 전에 채워진 칸",
+      "count": {
+        "row": "같은 행",
+        "col": "같은 열",
+        "box": "같은 박스",
+        "num": "판 위의 {{digit}}"
+      },
+      "filled": {
+        "row_other": "같은 행에 {{count}}칸",
+        "col_other": "같은 열에 {{count}}칸",
+        "box_other": "같은 박스에 {{count}}칸",
+        "num_other": "판 위의 {{digit}}: {{count}}개"
+      },
+      "countName": {
+        "row": "행",
+        "col": "열",
+        "box": "박스",
+        "num": "판 위의 {{digit}}"
+      },
+      "why": "칸 주변이 비어 있을수록 수의 가치가 높아요. 점수는 가장 큰 두 수치로 정해져요. {{highest}} 전부 반영, {{next}} 절반 반영.",
+      "none": "이번 게임에서는 맞힌 수가 없어요"
     },
     "stats": {
       "time": "게임 시간",
@@ -425,6 +447,13 @@
     "actions": {
       "home": "홈",
       "newGame": "새 게임"
+    },
+    "again": {
+      "solo": "{{type}} 혼자 연습을 바로 한 번 더 시작해요",
+      "bot": "{{bot}} 상대로 {{type}} 게임을 바로 한 번 더 시작해요",
+      "botAny": "봇 상대로 {{type}} 게임을 바로 한 번 더 시작해요",
+      "ranked": "{{type}} 랭크 게임 한 번 더",
+      "friends": "친구와 함께하는 게임으로 돌아가요"
     },
     "loading": "결과를 불러오는 중…",
     "missing": "이 연습을 찾지 못했어요",

@@ -23,6 +23,16 @@ type CountdownModel = Extract<MatchScreenModel, { kind: 'countdown' }>;
 export interface CountdownViewProps {
   model: CountdownModel;
   reduce: boolean;
+  /**
+   * False while it gets ready unseen behind the VS (MatchScreen): the players and the board are there, but no
+   * digit (each slams in as it is seen) and nothing is said. Default true.
+   */
+  revealed?: boolean;
+  /**
+   * Drawn as it already is on screen, from the first frame: nothing comes in or slams, no ring, nothing said
+   * (the game screen's GoCover, standing for the count's GO! as the game takes over). Default false.
+   */
+  still?: boolean;
   testID?: string;
 }
 
@@ -34,11 +44,17 @@ export interface CountdownViewProps {
  * stand across a "VS", me at the start edge as my card sits in the game; a table of 3–4 (stage 10) is a row of
  * small columns in the game's order (me first, then the others by seat), so four names fit on a phone.
  */
-export function CountdownView({ model: m, reduce, testID = 'match-countdown' }: CountdownViewProps) {
+export function CountdownView({
+  model: m,
+  reduce,
+  revealed = true,
+  still = false,
+  testID = 'match-countdown',
+}: CountdownViewProps) {
   const { t } = useTranslation('match');
   const { t: tp } = useTranslation('player');
   const insets = useSafeAreaInsets();
-  const enter = useEnter(reduce);
+  const enter = useEnter(reduce, 'fade', still);
   const others = m.seats.filter((s) => !s.isMe);
   const me = m.seats.find((s) => s.isMe);
   const group = m.seats.length > 2;
@@ -59,11 +75,11 @@ export function CountdownView({ model: m, reduce, testID = 'match-countdown' }: 
         <View style={[styles.strip, group && styles.stripGroup]} testID={`${testID}-players`}>
           {strip.map((seat, k) =>
             group ? (
-              <MiniSeat key={seat.id} seat={seat} compact />
+              <MiniSeat key={seat.id} seat={seat} compact frozen={still} />
             ) : (
               <View key={seat.id} style={styles.stripItem}>
                 {k > 0 ? <Text style={styles.vs}>{tp('vs')}</Text> : null}
-                <MiniSeat seat={seat} />
+                <MiniSeat seat={seat} frozen={still} />
               </View>
             ),
           )}
@@ -72,7 +88,15 @@ export function CountdownView({ model: m, reduce, testID = 'match-countdown' }: 
         <View style={styles.stage}>
           <GhostBoard label={t('countdown.boardLabel')} />
           <View style={styles.overlay} pointerEvents="none">
-            <Step key={String(m.step)} step={m.step} reduce={reduce} testID={`${testID}-step`} />
+            {revealed ? (
+              <Step
+                key={String(m.step)}
+                step={m.step}
+                reduce={reduce}
+                still={still}
+                testID={`${testID}-step`}
+              />
+            ) : null}
           </View>
         </View>
 
@@ -81,17 +105,27 @@ export function CountdownView({ model: m, reduce, testID = 'match-countdown' }: 
           <Text style={styles.note}>{t('countdown.reveal', { count: m.seats.length - 1 })}</Text>
         </View>
       </Animated.View>
-      <Announcer line={line} testID={`${testID}-live`} />
+      <Announcer line={revealed && !still ? line : null} testID={`${testID}-live`} />
     </View>
   );
 }
 
 /** One step: the digit (or GO!) slams in, and a P1 ring grows out of a digit and fades. */
-function Step({ step, reduce, testID }: { step: CountdownStep; reduce: boolean; testID: string }) {
+function Step({
+  step,
+  reduce,
+  still,
+  testID,
+}: {
+  step: CountdownStep;
+  reduce: boolean;
+  still: boolean;
+  testID: string;
+}) {
   const { t } = useTranslation('match');
-  const slam = useSlam(reduce);
+  const slam = useSlam(reduce, still);
   const grow = useSharedValue(0);
-  const ring = step !== 'go' && !reduce;
+  const ring = step !== 'go' && !reduce && !still;
 
   useEffect(() => {
     if (!ring) return;
@@ -126,7 +160,16 @@ function Step({ step, reduce, testID }: { step: CountdownStep; reduce: boolean; 
  * A player across the top: avatar in the seat's colour, the shape, the name and the rating. Side by side for
  * two players; `compact` (3–4 players) stacks them in a narrow column.
  */
-function MiniSeat({ seat, compact = false }: { seat: SeatModel; compact?: boolean }) {
+function MiniSeat({
+  seat,
+  compact = false,
+  frozen = false,
+}: {
+  seat: SeatModel;
+  compact?: boolean;
+  /** `still`'s: the picture as drawn, nothing moving (it goes a while after it fades: retire.ts). */
+  frozen?: boolean;
+}) {
   const { t } = useTranslation('match');
   return (
     <View style={compact ? styles.miniCompact : styles.mini} testID={`mini-${seat.id}`}>
@@ -137,6 +180,7 @@ function MiniSeat({ seat, compact = false }: { seat: SeatModel; compact?: boolea
         colorIndex={seat.colorIndex}
         idle={AVATAR_STAGES.countdown}
         expression={AVATAR_REACTIONS.moods.ready}
+        frozen={frozen}
       />
       <View style={[styles.miniTexts, compact && styles.miniTextsCompact]}>
         <View style={styles.miniName}>
@@ -171,7 +215,7 @@ function GhostBoard({ label }: { label: string }) {
 const CELL = Math.floor((metrics.ghostBoard.size - space[3] * 2) / 9) - 1;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg, paddingHorizontal: tokens.layout.gutterGame },
+  root: { flex: 1, paddingHorizontal: tokens.layout.gutterGame },
   column: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[10] },
   strip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[4] },
   stripGroup: { alignSelf: 'stretch', alignItems: 'flex-start' },

@@ -1,13 +1,13 @@
 import type { CellIndex } from '@sudoku-fight/engine';
 import { memo, type ReactNode, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
 import { color, space, text, tokens } from '../../theme';
 import { Text } from '../ui/Text';
 import type { BoardModel } from './boardModel';
 import { Cell, type CellFlash, sameCell } from './Cell';
-import { boardGeometry, cellHitSlop, cornerOf, px } from './geometry';
+import { boardGeometry, cellHitSlop, cornerOf, isLargeText, px } from './geometry';
 import { boardLabel } from './labels';
 
 /**
@@ -62,7 +62,9 @@ function BoardView({
   testID = 'board',
 }: BoardProps) {
   const { t } = useTranslation('board');
-  const g = useMemo(() => boardGeometry(width), [width]);
+  // BRD-3: the cells' digits never follow the system text size, but large text gets their larger digits.
+  const largeText = isLargeText(useWindowDimensions().fontScale);
+  const g = useMemo(() => boardGeometry(width, { largeText }), [width, largeText]);
   // One stable inset object per cell, so memoised cells don't redraw on every board render.
   const hitSlops = useMemo(() => NINE.flatMap((r) => NINE.map((c) => cellHitSlop(r, c, g))), [g]);
   const flashAt = new Map(flashes?.map((f) => [f.cell, f] as const));
@@ -139,6 +141,7 @@ function BoardView({
       ]}
     >
       <Text
+        scale="board"
         style={[text('plateNameCompact'), { color: isActive ? color.players[0].ring : color.textMuted }]}
         testID={horizontal ? `rail-col-${k + 1}` : `rail-row-${ROW_LETTERS[k]}`}
       >

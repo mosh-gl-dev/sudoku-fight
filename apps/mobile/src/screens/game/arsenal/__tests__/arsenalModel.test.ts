@@ -1,5 +1,6 @@
 import { type GameView, INTERFERENCE_KINDS } from '@sudoku-fight/engine';
 
+import { metrics as playerMetrics } from '../../../../components/player/metrics';
 import { answerIn, testHost } from '../../../../game/testing/practice';
 import i18n from '../../../../i18n';
 import { BOT, type Duel, duel, ME } from '../../testing/duel';
@@ -229,8 +230,18 @@ describe('arsenalModel (spec §7.2, §7.3; D10, D11, D17, D44, D47)', () => {
 describe('where the target is', () => {
   const card = { x: 16, y: 48, width: 159, height: 160 };
 
-  it('the card’s target frame: 6 + 2 dp around it', () => {
-    expect(targetFrameOf(card)).toEqual({ x: 8, y: 40, width: 175, height: 176 });
+  it('the card’s target frame: 6 + 2 dp around it, 14 + 2 under it', () => {
+    expect(targetFrameOf(card)).toEqual({ x: 8, y: 40, width: 175, height: 184 });
+  });
+
+  // QA loop 6: the "יעד" chip hung 8 dp past the hole, so the scrim dimmed its lower half. The hole is the frame
+  // as drawn (TargetFrame), which now holds the chip (PlayerCard.test).
+  it('the hole is the frame as drawn: as far past the card on each side', () => {
+    const tf = playerMetrics.targetFrame;
+    const hole = targetFrameOf(card);
+    expect(card.x - hole.x).toBe(tf.padding + tf.outline);
+    expect(card.y - hole.y).toBe(tf.padding + tf.outline);
+    expect(hole.y + hole.height - (card.y + card.height)).toBe(tf.paddingBottom + tf.outline);
   });
 
   it('moves a window rect into the overlay’s own coordinates', () => {

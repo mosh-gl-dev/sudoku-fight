@@ -234,6 +234,68 @@ describe('LevelsSync', () => {
     expect(r.sync.waiting).toBe(false);
   });
 
+  it('QA levels-xp-offline: the connection back, retryNow sends at once, past the backoff, with my new XP', async () => {
+    const r = await rig({ random: 0.999_999 });
+    await r.play(48);
+    await r.play(84);
+    r.server.state.mode = 'offline';
+    // A stretch offline: the backoff grows (5 s, 10 s, 20 s, 40 s…).
+    await r.sync.flush();
+    for (let i = 0; i < 3; i++) await r.fireRetry();
+    expect(r.timers.map((t) => t.ms)).toEqual([40_000]);
+    r.server.state.mode = 'modern';
+    // A plain trigger still waits for the timer.
+    await expect(r.sync.flush()).resolves.toMatchObject({ status: 'waiting' });
+    await expect(r.sync.retryNow()).resolves.toEqual({ status: 'done', sent: 2, rejected: 0, xp: 60 });
+    expect(r.timers).toHaveLength(0);
+    expect(r.sync.waiting).toBe(false);
+    expect(r.progress.at(-1)).toEqual(['uid-1', expect.objectContaining({ xp: 60 })]);
+    // Still offline: retryNow fails and backs off again, further (the failures stay counted).
+    await r.play(85);
+    r.server.state.mode = 'offline';
+    await r.sync.flush();
+    expect(r.timers.map((t) => t.ms)).toEqual([5000]);
+    await expect(r.sync.retryNow()).resolves.toMatchObject({ status: 'offline' });
+    expect(r.timers.map((t) => t.ms)).toEqual([10_000]);
+  });
+
+  it('QA levels-xp-offline (loop 5): retryNow while a request is still on its way sends again once it fails, past its new backoff', async () => {
+    const r = await rig();
+    await r.play(48);
+    await r.sync.flush();
+    await r.play(84);
+    // A retry that went out just before the connection came back: still on its way, and it will fail.
+    r.server.state.mode = 'offline';
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let released = false;
+    Object.defineProperty(r.hold, 'put', {
+      configurable: true,
+      get: () => {
+        if (!released) return gate;
+        // The PUT after it: the connection is back.
+        r.server.state.mode = 'modern';
+        return null;
+      },
+    });
+    const first = r.sync.flush();
+    await settle();
+    // The connection is back (connectivity offline → online): what waits goes now.
+    const again = r.sync.retryNow();
+    released = true;
+    release();
+    await expect(first).resolves.toMatchObject({ status: 'offline' });
+    await expect(again).resolves.toMatchObject({ status: 'offline' });
+    await settle();
+    // The failed request set a backoff; the retry asked meanwhile went past it, and paid the stage's XP.
+    const stage = (n: number) => ({ levels: [expect.objectContaining({ id: levelIdOf(n) })] });
+    // 48 online; 84 failed on its way; 84 again at once.
+    expect(r.puts()).toEqual([stage(48), stage(84), stage(84)]);
+    expect(r.timers).toHaveLength(0);
+    expect(r.sync.waiting).toBe(false);
+    expect(r.progress.at(-1)).toEqual(['uid-1', expect.objectContaining({ xp: 60 })]);
+  });
+
   it('an old server (404 notFound): unsupported, the rows kept, no retry for 6 hours, then asked again', async () => {
     const r = await rig();
     await r.play(1);

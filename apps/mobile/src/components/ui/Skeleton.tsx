@@ -1,17 +1,10 @@
-import { createContext, type ReactNode, useContext, useEffect } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import { type DimensionValue, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  type SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { css } from 'react-native-reanimated';
 
 import { color, radius, size, space, tokens } from '../../theme';
-import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
-import { curve } from './motion';
+import { motion, useReduceMotion } from '../../theme/motion';
+import { cssCurve } from './cssMotion';
 
 /**
  * Loading placeholders (spec §4.1 #27 "טעינה"; Loading.dc.html in direction C, motion.md `skeleton`): blocks in
@@ -20,13 +13,34 @@ import { curve } from './motion';
  * Reduced motion: they stand still at 0.7 (no shimmer, no pulse).
  *
  * A group is one element for screen readers ("טוען את המשחקים…", busy); its blocks are hidden. Every block of
- * a group shares the group's one pulse.
+ * a group pulses with the group: they mount together, so their pulses start together.
+ *
+ * The pulse is a Reanimated CSS animation, not a worklet style (./cssMotion.ts): a skeleton is always replaced by
+ * its content, and on Android a worklet-moved block deleted while the content's avatars are drawn for the first
+ * time froze the History for 6.5–7.4 s (QA run #3, T3-HISTORY-FREEZE: 24 blocks × ~370 new shapes).
  */
 
 /** motion.md `skeleton`: the two ends of the pulse, and the still opacity of reduced motion. */
 export const SKELETON_OPACITY = { low: 0.5, high: 1, still: 0.7 } as const;
 
-const Pulse = createContext<SharedValue<number> | null>(null);
+/** The pulse: 0.5 → 1 in 600 ms on the `loop` curve, then back, for ever. */
+export const SKELETON_PULSE = {
+  animationName: css.keyframes({
+    from: { opacity: SKELETON_OPACITY.low },
+    to: { opacity: SKELETON_OPACITY.high },
+  }),
+  animationDuration: motion.loop.skeleton / 2,
+  animationTimingFunction: cssCurve('loop'),
+  animationIterationCount: 'infinite',
+  animationDirection: 'alternate',
+} as const;
+
+/** A block's opacity: pulsing (from the low end), or still. */
+const PULSING = { opacity: SKELETON_OPACITY.low, ...SKELETON_PULSE };
+const STILL = { opacity: SKELETON_OPACITY.still };
+
+/** Whether the blocks inside pulse: in a group, without Reduced Motion. */
+const Pulse = createContext(false);
 
 export interface SkeletonGroupProps {
   /** What a screen reader hears while it loads ("טוען את המשחקים…"). */
@@ -38,29 +52,6 @@ export interface SkeletonGroupProps {
 
 export function SkeletonGroup({ label, children, style, testID }: SkeletonGroupProps) {
   const reduce = useReduceMotion();
-  const pulse = useSharedValue<number>(reduce ? SKELETON_OPACITY.still : SKELETON_OPACITY.low);
-
-  useEffect(() => {
-    cancelAnimation(pulse);
-    if (reduce) {
-      pulse.set(SKELETON_OPACITY.still);
-      return;
-    }
-    pulse.set(SKELETON_OPACITY.low);
-    pulse.set(
-      withRepeat(
-        withTiming(SKELETON_OPACITY.high, {
-          duration: motion.loop.skeleton / 2,
-          easing: curve('loop'),
-          reduceMotion: reduceMotionFlag(false),
-        }),
-        -1,
-        true,
-      ),
-    );
-    return () => cancelAnimation(pulse);
-  }, [reduce, pulse]);
-
   return (
     <View
       style={style}
@@ -71,7 +62,7 @@ export function SkeletonGroup({ label, children, style, testID }: SkeletonGroupP
       accessibilityLiveRegion="polite"
       testID={testID}
     >
-      <Pulse.Provider value={pulse}>{children}</Pulse.Provider>
+      <Pulse.Provider value={!reduce}>{children}</Pulse.Provider>
     </View>
   );
 }
@@ -96,13 +87,12 @@ export function Skeleton({
   testID,
 }: SkeletonProps) {
   const pulse = useContext(Pulse);
-  const fade = useAnimatedStyle(() => ({ opacity: pulse ? pulse.get() : SKELETON_OPACITY.still }));
   return (
     <Animated.View
       style={[
         styles.block,
         { width: circle ? height : width, height, borderRadius: circle ? height / 2 : rounded },
-        fade,
+        pulse ? PULSING : STILL,
         style,
       ]}
       testID={testID}

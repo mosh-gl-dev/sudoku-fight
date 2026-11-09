@@ -1,0 +1,32 @@
+[
+ {
+  "taskId": "levels-new-game-small-phone",
+  "title": "New game: row texts truncated with '…' at font scale 2.0 on a 360dp-wide screen",
+  "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), SM-A165F with the screen set to 360x780dp (adb shell wm density 480) and phone font size at maximum (settings put system font_scale 2.0). Home → Play ('שחק') → 'New game'. English: the Ranked section subtitle shows 'Real opponents, in …' (instead of 'Real opponents, in real time') and the bot row title shows 'Practice vs b…' (instead of 'Practice vs bot'). Hebrew: after scrolling, the solo row title shows 'אימון לבד • לוח …' (instead of 'אימון לבד • לוח מלא'). At font scale 1.3 nothing is cut (the list scrolls), and at 1.0 all six rows fit without scrolling in both languages. Screenshots: qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-en-480-f2.0.png and -he-480-f2.0-b.png.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-lang-english",
+  "title": "Stage result chapter accessibility label has lowercase sentence start in English",
+  "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), English. End or leave any stage → result screen. The accessibility label (content-desc of level-result-chapter) is 'This chapter: 0 stars of 30. the gate is open': after the period, 'the' starts lowercase. TalkBack reads it as is. The visible text ('This chapter · 0/30 · the gate is open') is fine.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-xp-offline",
+  "title": "XP מהשלבים לא מתעדכן בבית אחרי חזרה לרשת, רק אחרי הפעלה מחדש של האפליקציה",
+  "what": "טלפון 1 SM-A165F, Android 16, עברית, build 1.1.0 (07.11 21:45, loop-1 fixes), חשבון אורי. צעדים: 1) בבית רשום 1,178 XP. 2) מפעילים מצב טיסה (adb: cmd connectivity airplane-mode enable). 3) משחקים בשלבים: 48 (פאזל) ★★★ ו־84 (פאזל) ★★★, ובכל תוצאה מופיע '+30 XP'. 4) מכבים את מצב הטיסה: Wi-Fi חוזר ו־ping לשרת עובד. מחכים 65 ש', עוברים להיסטוריה וחוזרים לבית. צפוי: הבית מראה 1,238 XP. בפועל: הבית עדיין מראה 1,178 XP, וגם כרטיס השחקן שלי מראה 1,178, אף שבאותו כרטיס שורת השלבים כבר התעדכנה ל'שלבים: 97 · ★ 121' (לפני כן 93 · ★ 115). רק אחרי סגירה ופתיחה מחדש של האפליקציה הבית מראה 1,238 (+60 = 6 כוכבים × 10, הסכום נכון). כנראה שה־XP (me) לא נטען מחדש אחרי סנכרון השלבים כשהרשת חוזרת, אלא רק בהפעלה.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "account-settings-delete-password",
+  "title": "בבניית apk7 התחברות Google כבויה: למשתמש Google בלבד מוצג חלון סיסמה למחיקה, ואחרי התנתקות אין דרך לחזור",
+  "what": "ב־apk7 (1.1.0, 07.11 21:45, build 87760ce-dirty) הקובץ assets/app.config מכיל \"googleSignIn\":{\"android\":false,...}. לכן useAuth.google=false. החשבון 'אחוותא' (achvata.chess@gmail.com) מחובר עם Google בלבד, וההגדרות מציגות 'כניסה עם Google'. צעדים: הגדרות ← 'מחיקת חשבון' ← 'המשך למחיקה'. במקום החלון של Google (delete-google) נפתח 'אישור בסיסמה' לחשבון שאין לו סיסמה, כך שאי אפשר למחוק אותו. הסיבה כנראה ב־app.config.ts: ב־APK מקומי signingKeyListed=false, כי ה־SHA-1 של SF_LOCAL_APK_SHA1 לא מופיע ב־google-services.json. ההשלכה: מי שיתנתק על הטלפונים האלה לא יראה כפתור Google במסך ההתחברות, ולא יוכל להתחבר שוב לחשבונות 'אחוותא' או 'אורי'. כנראה בעיה בהגדרות הבנייה (המפתח המקומי) ולא בקוד.",
+  "severity": "major"
+ },
+ {
+  "taskId": "account-settings-delete-password",
+  "title": "התווית של הכפתור 'מחק את החשבון לצמיתות' מתכווצת לגופן זעיר",
+  "what": "טלפון 3 SM-A165F, עברית, גודל גופן 1.0, apk7. צעדים: הגדרות ← 'מחיקת חשבון' ← 'המשך למחיקה'. בחלון 'אישור בסיסמה' התווית של הכפתור האדום 'מחק את החשבון לצמיתות' מוצגת בגופן קטן בהרבה מזה של 'ביטול' שלידה (בערך שליש מגובה האותיות), כי היא מתכווצת כדי להיכנס לחצי רוחב. צילום: qa-shots/RF8Y30L038L-account-settings-delete-password-2.png. זה בדיוק סוג הבעיה 'ספרות/טקסט זעירים' שמשה העיר עליה.",
+  "severity": "minor"
+ }
+]

@@ -30,14 +30,14 @@
       "box": "第{{label}}宮只缺{{digit}}。"
     },
     "missing": {
-      "row": "橫列{{label}}缺{{digits}}。",
-      "col": "直行{{label}}缺{{digits}}。",
-      "box": "第{{label}}宮缺{{digits}}。"
+      "row_other": "橫列{{label}}缺{{digits}}。",
+      "col_other": "直行{{label}}缺{{digits}}。",
+      "box_other": "第{{label}}宮缺{{digits}}。"
     },
     "seen": {
-      "row": "橫列{{label}}已有{{digits}}。",
-      "col": "直行{{label}}已有{{digits}}。",
-      "box": "第{{label}}宮已有{{digits}}。"
+      "row_other": "橫列{{label}}已有{{digits}}。",
+      "col_other": "直行{{label}}已有{{digits}}。",
+      "box_other": "第{{label}}宮已有{{digits}}。"
     },
     "eliminated": "{{cell}}的{{digit}}在第{{step}}步已被排除。",
     "only": "所以只能是{{digit}}。"

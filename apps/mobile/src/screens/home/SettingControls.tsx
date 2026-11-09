@@ -2,11 +2,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { opaqueOver } from '../../theme/blend';
 
 /**
  * The controls of the settings screen (spec §4.1 "הגדרות"; no board draws it, so these follow direction C's
  * flat look). A switch row and a segmented choice. Both are whole-row targets of at least 44, with the role and
- * state a screen reader needs, and nothing in them moves: a change of state is an instant redraw.
+ * state a screen reader needs, and nothing in them moves: a change of state is an instant redraw. Their fills
+ * are opaque, the wandering digits behind the screen (D126) never show through them (B12).
  */
 
 export interface SwitchRowProps {
@@ -51,13 +53,28 @@ export interface ChoiceProps<T extends string> {
   options: readonly ChoiceOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  /** The opaque colour it sits on: the screen's ground, or a card's surface. Its fills are laid over it (B12). */
+  ground?: string;
   testID?: string;
 }
 
 /** A segmented choice: one option of a few, each a radio button. */
-export function Choice<T extends string>({ label, options, value, onChange, testID }: ChoiceProps<T>) {
+export function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  ground = color.bg,
+  testID,
+}: ChoiceProps<T>) {
+  const checkedFill = { backgroundColor: opaqueOver(color.accentSubtle, ground) };
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.choice} testID={testID}>
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel={label}
+      style={[styles.choice, { backgroundColor: ground }]}
+      testID={testID}
+    >
       {options.map((o) => {
         const checked = o.value === value;
         return (
@@ -71,12 +88,17 @@ export function Choice<T extends string>({ label, options, value, onChange, test
             }}
             style={({ pressed }) => [
               styles.segment,
-              checked && styles.segmentChecked,
+              checked && [styles.segmentChecked, checkedFill],
               pressed && !checked && styles.pressed,
             ]}
             testID={testID && `${testID}-${o.value}`}
           >
-            <Text style={[styles.segmentText, checked && styles.segmentTextChecked]} numberOfLines={1}>
+            {/* Two lines in the segment's 44 rather than "…": "Как на устр…", "Come il disp…" in a third of a
+                360 phone (QA run #2, after B3; settingsFit.test). */}
+            <Text
+              style={[styles.segmentText, checked && styles.segmentTextChecked]}
+              numberOfLines={SEGMENT_LINES}
+            >
               {o.label}
             </Text>
           </Pressable>
@@ -85,6 +107,9 @@ export function Choice<T extends string>({ label, options, value, onChange, test
     </View>
   );
 }
+
+/** A segment's words: up to two lines, which its 44 holds in every script (buttonSm's line, D106's taller ones). */
+export const SEGMENT_LINES = 2;
 
 /** The switch track of iOS proportions, flat: 44 × 26 with a 20 thumb. */
 const TRACK = { width: 44, height: 26, thumb: 20 } as const;
@@ -115,6 +140,7 @@ const styles = StyleSheet.create({
   thumb: { width: TRACK.thumb, height: TRACK.thumb, borderRadius: TRACK.thumb / 2 },
   thumbOn: { backgroundColor: color.onAccent },
   thumbOff: { backgroundColor: color.textMuted },
+  // Filled with what it sits on (`ground`): it looks as before, and hides the digits behind it.
   choice: {
     flexDirection: 'row',
     gap: space[2],
@@ -134,7 +160,8 @@ const styles = StyleSheet.create({
     borderWidth: tokens.border.hairline,
     borderColor: 'transparent',
   },
-  segmentChecked: { backgroundColor: color.accentSubtle, borderColor: color.accent },
+  // Its fill is accentSubtle laid over the ground (checkedFill).
+  segmentChecked: { borderColor: color.accent },
   segmentText: { ...text('buttonSm'), color: color.textMuted, textAlign: 'center' },
   segmentTextChecked: { color: color.accent },
 });

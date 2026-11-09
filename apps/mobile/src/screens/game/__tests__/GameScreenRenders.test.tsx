@@ -38,6 +38,9 @@ jest.mock('../../../services/feedback', () => ({
   preloadCues: jest.fn(),
   cueCountUp: jest.fn(() => jest.fn()),
 }));
+// The hit rehearsal (hit/HitRehearsal: each effect mounted once, unseen, ~2.5 s into a game with interferences)
+// commits once per piece, once per game: not a render per tick, which is what is counted here.
+jest.mock('../hit/HitRehearsal', () => ({ HitRehearsal: () => null }));
 // Each label is computed once per render of its component: they count the renders.
 jest.mock('../../../components/board/labels', () => {
   const actual = jest.requireActual<typeof import('../../../components/board/labels')>(
@@ -245,7 +248,10 @@ describe('GameScreen renders while a lock counts down (spec §22)', () => {
     await play(table.scheduler, FIVE_SECONDS);
     const c = counts();
     console.log('[renders] 3 players, 5 s of two locks', c);
-    expect(c.commits).toBeLessThanOrEqual(22);
+    // +1, once per game: the warp's standby canvas, made on an idle moment once the screen has settled (warpStart).
+    // +1, once per game: the hit banner's standby, on an idle moment of its own (bannerStandby).
+    // +2, once per game: each opponent's avatar in that banner, one per idle moment (never all in one commit).
+    expect(c.commits).toBeLessThanOrEqual(26);
     expect(c.keys).toBe(0);
     // Two rings, each with its seconds inside: 5 changes each (before: 2 rings × 20 ticks = 40).
     expect(c.rings).toBeLessThanOrEqual(12);
@@ -273,8 +279,10 @@ describe('GameScreen renders while a score counts up (motion.md §6)', () => {
     expect(c.commits).toBeLessThanOrEqual(COUNT_TICKS + 1);
     // At most a whole second of the clock on my card (before: a render per step of the count, 10).
     expect(c.scores).toBeLessThanOrEqual(2);
-    // The solved cell once, as its flash is cleared (FLASH_CLEAR_MS); the keys never.
-    expect(c.cells).toBeLessThanOrEqual(1);
+    // The solved cell once, as its flash is cleared (FLASH_CLEAR_MS); the keys never. That one render runs the
+    // cell's function twice, one commit: the flash is kept, unseen, as it goes (ui/retire.ts useRetired, derived
+    // during render; QA run #3 T3-MOVE-UIPROPS).
+    expect(c.cells).toBeLessThanOrEqual(2);
     expect(c.keys).toBe(0);
   });
 

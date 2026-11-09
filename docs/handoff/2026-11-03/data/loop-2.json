@@ -1,0 +1,642 @@
+{
+ "fixcheck": [
+  {
+   "checks": [
+    {
+     "id": "apk7-1 T3-FIRST-PLAY-SLOW / general-ambient-screen-change",
+     "result": "pass",
+     "detail": "apk7, phone 1, sound on (default), Reduced Motion off. Force-stop, launch, wait 8-12 s on Home, gfxinfo reset, tap 'שחק', framestats. First frame of 'משחק חדש' after the first tap: 278, 289, 278, 300 ms in 4 runs (apk6: 533-606). One more run had no gap at all (continuous frames). Frames settle (under 30 ms) at about 0.50-0.58 s. A second visit in the same process gives the first frame at 267 ms and settles at about 0.52 s, so the first visit now matches the second. Cost on Home (no touch, framestats dumped 3.3 s after launch): one 117 ms frame followed by a 100 ms gap, about 2.8 s after launch (the press player being built). Whether this shows as a stutter is left for Moshe. Ambient digits: a shot before tapping 'שחק' and a shot 0.45 s after it ('משחק חדש' full and in place, no slide) show the same digits within about 8 dp. Re-marked general-ambient-screen-change: pass."
+    },
+    {
+     "id": "apk7-2 levels-puzzle-solved",
+     "result": "pass",
+     "detail": "L034. Clean solve in 3 swaps with motion on: gold frame on all 9 boxes at the last swap, ends at once, result '3 החלפות · המינימום 3' (7.9 s). After a wrong swap (Reduced Motion on): '3 החלפות · המינימום 3', 'טעות אחת', 10.5 s. Time-up: '0 החלפות · המינימום 3'. Quit with no swaps: '0 החלפות · המינימום 3'. Quit after one wrong swap: 'החלפה אחת · המינימום 3'. A non-puzzle result (L033, race vs bot, quit) has no swaps line. Side effect: Uri's L034 best is now 3 stars and 7.9 s, from the auto-solve."
+    },
+    {
+     "id": "apk7-3 levels-puzzle-fixed",
+     "result": "pass",
+     "detail": "L034. Tapping a fixed box shows a toast with a lock icon at the top, 'הריבוע הזה קבוע', for about 2 s. Dragging a movable box onto a fixed one: the fixed box stays, the dragged box goes back, swaps stay 0, and the toast shows. Selecting a movable box and then tapping a fixed one shows the same toast, and the movable box stays selected. 4 fast taps on a fixed box give a single toast, with no stacking. With Reduced Motion on, the toast appears in place and the lock gets a lit red frame for a moment. TalkBack was not checked."
+    }
+   ],
+   "phoneState": "RF8Y60PP2XZ (טלפון 1) is on apk7 (installed-RF8Y60PP2XZ.txt was already apk7, so nothing was installed). The app is relaunched and on Home ('שחק' is visible). App locale is he. adb.ts reset done: font scale 1, animations 1, colour correction off, airplane mode off. show_touches is off (null). The in-app Reduced Motion setting is back to 'כבויה', and sound is still on. No crash or ANR. Side effect: account אורי now has L034 at 3 stars with a best of 7.9 s, from the automatic puzzle solves. The puzzle solver script (screenshot digit matching) is at C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/puz.cjs, and the framestats parser is fs.cjs in the same folder. The shots are in the run's qa-shots folder (RF8Y60PP2XZ-ambient7-*, RF8Y60PP2XZ-levels-puzzle-*)."
+  }
+ ],
+ "batches": [
+  {
+   "lane": "טלפון 1",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, אורי), apk7 already installed (no install needed). Left on Home in Hebrew (app locale he; in-app language set back to עברית). adb.ts reset run: font scale 1.0, animations 1, density reset to 450. The hidden testing switch 'פתח את כל השלבים (בדיקה)' was already ON when I started. I turned it off for a moment to see a locked node and turned it back ON. Progress changed because of the tests: stages 34–46 were played/left with 0 stars, and the 'next' pointer is now stage 47 (115/900 stars, unchanged).",
+   "ids": [
+    "levels-freeze-repeat",
+    "levels-app-closed-not-counted",
+    "levels-no-black-screen",
+    "levels-lang-ltr",
+    "levels-lang-english",
+    "levels-lang-signed-numbers",
+    "levels-talkback-map",
+    "levels-new-game-small-phone",
+    "levels-sync-restore",
+    "levels-sync-merge"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ): האפליקציה על הבית (1,238 XP). מצב טיסה כבוי ו־Wi-Fi מחובר. adb.ts reset רץ: font scale 1, אנימציות 1, תיקון צבע כבוי. שפת האפליקציה he. המתג 'פתח את כל השלבים (בדיקה)' הוחזר למצב דלוק, כמו שהיה. לא הותקן APK, כי apk7 כבר היה מותקן. נוספו לחשבון אורי: אימון לבד אחד (0 נק'), אימון מול Maestro, משחק מדורג מהיר מול בוט סמוי שבו נכנעתי לפני מהלך (דירוג ‎0, לפי guard 'leftBeforeMoving'), ו־6 כוכבים חדשים בשלבים 48 ו־84. ניסיונות בשלבים 49 ו־50 הסתיימו בלי כוכבים.",
+   "ids": [
+    "levels-xp-offline",
+    "levels-xp-no-double",
+    "levels-player-card",
+    "levels-server-health",
+    "levels-practice-freeze-solo",
+    "levels-practice-freeze-bot",
+    "levels-practice-freeze-time",
+    "levels-ranked-no-freeze",
+    "levels-testing-unlock-off",
+    "levels-modes-row-progress"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ): הותקן apk8 ('1.1.0 (07.11 23:45, loop-2 fixes)'), והקובץ installed-RF8Y60PP2XZ.txt עודכן ל־apk8. בסוף הורץ reset (font 1, animations 1, airplane off), שפת האפליקציה he, והאפליקציה פתוחה במסך הבית. ההגדרות הוחזרו: 'הפחתת תנועה' כבויה כמו שהייתה, ו'פתח את כל השלבים (בדיקה)' דלוק כמו שהיה (כיביתי אותו זמנית). במהלך ההרצה החשבון של אורי התקדם: שלב 48 נוגן שוב (נשאר שיא 19.5 ש׳ ★★★), בוס 70 נוצח (פרק 8 נפתח, 124 כוכבים), ושלבים 71 ו־72 שוחקו בלי כוכבים. באמצע ההרצה הטלפון עבר ל־offline ואחר כך ל־unauthorized ב־adb. אחרי adb reconnect הוא חזר ל־device, וחלון 'האם לאפשר ניפוי באגים ב-USB?' שנשאר פתוח נסגר ב'ביטול'. החיבור עובד, אבל ייתכן שבחיבור מחדש הבא משה יצטרך לאשר את המחשב על הטלפון.",
+   "ids": [
+    "levels-modes-row-new",
+    "levels-map-header",
+    "levels-map-path",
+    "levels-map-open-position",
+    "levels-panel-current",
+    "levels-panel-played",
+    "levels-chapter-list",
+    "levels-chapter-list-motion",
+    "levels-result-your-best",
+    "levels-new-chapter-after-chain"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L), מחובר בתור \"אחוותא\". על הטלפון כבר הותקן apk7, ולא היה צורך בהתקנה. האפליקציה פתוחה בבית. הרצתי reset: גודל הגופן 1, האנימציות 1, תיקון הצבעים כבוי ומצב הטיסה כבוי. שפת האפליקציה עברית (he). שום דבר לא שונה ולא נשאר דבר להחזיר.",
+   "ids": [
+    "account-signup-confirm",
+    "account-signup-terms-links",
+    "account-signup-email-taken",
+    "account-signup-offline",
+    "account-signup-success",
+    "account-signup-name-race",
+    "account-signup-server-down",
+    "account-signup-large-font",
+    "account-signup-english",
+    "account-recovery-forgot-look"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על apk7, שכבר היה מותקן, ולא הותקן עליו דבר. בוצע adb reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה עברית. האפליקציה הופעלה מחדש ונמצאת בבית, מחוברת כ'אחוותא'. לא נשלח שום מייל ולא שונתה שום הגדרה.",
+   "ids": [
+    "account-recovery-forgot-validation",
+    "account-recovery-forgot-sent",
+    "account-recovery-forgot-unknown",
+    "account-recovery-verify-look",
+    "account-recovery-verify-not-yet",
+    "account-recovery-verify-resend",
+    "account-recovery-verify-practice",
+    "account-recovery-verify-ranked",
+    "account-recovery-english",
+    "account-home-after-ranked"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L): apk7 כבר היה מותקן, לא הותקן דבר. הורץ adb.ts reset: גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה עברית ([he]). האפליקציה הופעלה מחדש ועומדת בבית, מחובר כ'אחוותא'. לא נשמר שום שינוי בפרופיל: הקלדתי Fake1 ו־Moshe בשדה השם וחזרתי בלי לשמור. שפה הוחלפה לאנגלית והוחזרה לעברית. במקלדת Samsung נפתח בטעות מסך ההגדרות, ונסגר ב־Back בלי שינוי. בהגדרות 'בדיקה' המתג 'פתח את כל השלבים (בדיקה)' דלוק: הוא היה כך עוד לפניי, ולא נגעתי בו.",
+   "ids": [
+    "account-profile-rename",
+    "account-profile-name-taken",
+    "account-profile-english",
+    "account-settings-version",
+    "account-settings-language-cancel",
+    "account-settings-language-he",
+    "account-settings-sign-out",
+    "account-settings-sign-out-practice",
+    "account-settings-delete-warning",
+    "account-settings-delete-password"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "שני הטלפונים במסך הבית של האפליקציה, apk8 1.1.0 (07.11 23:45, loop-2 fixes) מותקן בשניהם. טלפון 3 עודכן מ-apk7 ל-apk8 בתחילת הבאץ', ו-installed-RF8Y30L038L.txt עודכן. שני הטלפונים יצאו מחדר 629192. בוצע reset בשניהם (font scale 1, animations 1, airplane off) ושפת האפליקציה he. טלפון 1 מחובר כאורי וטלפון 3 כאחוותא, בלי שינוי בחשבונות.",
+   "ids": [
+    "friends-link-opens-room",
+    "friends-link-cold-start",
+    "friends-link-web-page",
+    "friends-link-web-page-en",
+    "friends-link-web-page-private",
+    "friends-link-assetlinks",
+    "friends-link-verified",
+    "friends-link-signed-out"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "שני הטלפונים על הבית של האפליקציה, בגרסה apk8 (לא הותקן שום דבר חדש). הרצתי adb reset על שניהם: גודל גופן 1, מהירות אנימציה 1, מצב טיסה כבוי. שפת האפליקציה עברית. בטלפון 1 שיניתי זמנית את animator_duration_scale ל־0 והחזרתי ל־1. ‏טלפון 1 (אורי): מהיר 1311, ‏XP ‏1,369/1,400, ‏57 משחקים. גם הוסיף כוכבים או שיא בשלב 10 (5/5, ‏10.4 ש׳). טלפון 3 (אחוותא): מהיר 1243, הפסד אחד נוסף (כניעה).",
+   "ids": [
+    "levels-race-rules",
+    "account-signup-name-race",
+    "account-home-after-ranked"
+   ]
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "levels-new-game-small-phone",
+   "title": "New game: row texts truncated with '…' at font scale 2.0 on a 360dp-wide screen",
+   "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), SM-A165F with the screen set to 360x780dp (adb shell wm density 480) and phone font size at maximum (settings put system font_scale 2.0). Home → Play ('שחק') → 'New game'. English: the Ranked section subtitle shows 'Real opponents, in …' (instead of 'Real opponents, in real time') and the bot row title shows 'Practice vs b…' (instead of 'Practice vs bot'). Hebrew: after scrolling, the solo row title shows 'אימון לבד • לוח …' (instead of 'אימון לבד • לוח מלא'). At font scale 1.3 nothing is cut (the list scrolls), and at 1.0 all six rows fit without scrolling in both languages. Screenshots: qa-shots/RF8Y60PP2XZ-levels-new-game-small-phone-en-480-f2.0.png and -he-480-f2.0-b.png.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-lang-english",
+   "title": "Stage result chapter accessibility label has lowercase sentence start in English",
+   "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), English. End or leave any stage → result screen. The accessibility label (content-desc of level-result-chapter) is 'This chapter: 0 stars of 30. the gate is open': after the period, 'the' starts lowercase. TalkBack reads it as is. The visible text ('This chapter · 0/30 · the gate is open') is fine.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-xp-offline",
+   "title": "XP מהשלבים לא מתעדכן בבית אחרי חזרה לרשת, רק אחרי הפעלה מחדש של האפליקציה",
+   "what": "טלפון 1 SM-A165F, Android 16, עברית, build 1.1.0 (07.11 21:45, loop-1 fixes), חשבון אורי. צעדים: 1) בבית רשום 1,178 XP. 2) מפעילים מצב טיסה (adb: cmd connectivity airplane-mode enable). 3) משחקים בשלבים: 48 (פאזל) ★★★ ו־84 (פאזל) ★★★, ובכל תוצאה מופיע '+30 XP'. 4) מכבים את מצב הטיסה: Wi-Fi חוזר ו־ping לשרת עובד. מחכים 65 ש', עוברים להיסטוריה וחוזרים לבית. צפוי: הבית מראה 1,238 XP. בפועל: הבית עדיין מראה 1,178 XP, וגם כרטיס השחקן שלי מראה 1,178, אף שבאותו כרטיס שורת השלבים כבר התעדכנה ל'שלבים: 97 · ★ 121' (לפני כן 93 · ★ 115). רק אחרי סגירה ופתיחה מחדש של האפליקציה הבית מראה 1,238 (+60 = 6 כוכבים × 10, הסכום נכון). כנראה שה־XP (me) לא נטען מחדש אחרי סנכרון השלבים כשהרשת חוזרת, אלא רק בהפעלה.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "account-settings-delete-password",
+   "title": "בבניית apk7 התחברות Google כבויה: למשתמש Google בלבד מוצג חלון סיסמה למחיקה, ואחרי התנתקות אין דרך לחזור",
+   "what": "ב־apk7 (1.1.0, 07.11 21:45, build 87760ce-dirty) הקובץ assets/app.config מכיל \"googleSignIn\":{\"android\":false,...}. לכן useAuth.google=false. החשבון 'אחוותא' (achvata.chess@gmail.com) מחובר עם Google בלבד, וההגדרות מציגות 'כניסה עם Google'. צעדים: הגדרות ← 'מחיקת חשבון' ← 'המשך למחיקה'. במקום החלון של Google (delete-google) נפתח 'אישור בסיסמה' לחשבון שאין לו סיסמה, כך שאי אפשר למחוק אותו. הסיבה כנראה ב־app.config.ts: ב־APK מקומי signingKeyListed=false, כי ה־SHA-1 של SF_LOCAL_APK_SHA1 לא מופיע ב־google-services.json. ההשלכה: מי שיתנתק על הטלפונים האלה לא יראה כפתור Google במסך ההתחברות, ולא יוכל להתחבר שוב לחשבונות 'אחוותא' או 'אורי'. כנראה בעיה בהגדרות הבנייה (המפתח המקומי) ולא בקוד.",
+   "severity": "major"
+  },
+  {
+   "taskId": "account-settings-delete-password",
+   "title": "התווית של הכפתור 'מחק את החשבון לצמיתות' מתכווצת לגופן זעיר",
+   "what": "טלפון 3 SM-A165F, עברית, גודל גופן 1.0, apk7. צעדים: הגדרות ← 'מחיקת חשבון' ← 'המשך למחיקה'. בחלון 'אישור בסיסמה' התווית של הכפתור האדום 'מחק את החשבון לצמיתות' מוצגת בגופן קטן בהרבה מזה של 'ביטול' שלידה (בערך שליש מגובה האותיות), כי היא מתכווצת כדי להיכנס לחצי רוחב. צילום: qa-shots/RF8Y30L038L-account-settings-delete-password-2.png. זה בדיוק סוג הבעיה 'ספרות/טקסט זעירים' שמשה העיר עליה.",
+   "severity": "minor"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "levels-lang-signed-numbers",
+   "issue": "'+50 XP' only shows on the 'new chapter opened' screen. For an account that has already opened its chapters, that means earning 20 stars in the next chapter, and there is no testing switch to show it. Suggest: add a dev trigger, or say which account or precondition to use."
+  },
+  {
+   "taskId": "levels-app-closed-not-counted",
+   "issue": "The steps never say to finish the stage, but in 1.1.0 leaving a stage (X → 'יציאה') or running out of time does open the next stage ('תקבל 0 כוכבים, והשלב הבא ייפתח'). Only killing the app should not count. The expected line 'השלב הבא לא נפתח בגללו' is right, but a note on this would help."
+  },
+  {
+   "taskId": "levels-talkback-map",
+   "issue": "The expected line says 'הזמן שנשאר מוקרא', but the stage clock's label is the time used out of the total ('זמן: 20 שניות מתוך 20'), not the time left. Decide which is intended and fix either the line or the label."
+  },
+  {
+   "taskId": "levels-new-game-small-phone",
+   "issue": "Step 1 ends with a stray comma ('טלפון קטן (360×780),.'). It could also say how to simulate the phone: 'wm density 480' on a 1080x2340 phone gives 360×780dp."
+  },
+  {
+   "taskId": "levels-practice-freeze-solo",
+   "issue": "השורה הצפויה 'הלוח מכוסה (\"המשחק עצור\")' לא מתאימה למה שרואים בחזרה: בחזרה הכותרת מעל הלוח המכוסה היא 'ממשיכים בעוד' עם 3, 2, 1. הכותרת 'המשחק עצור' (resume.paused) מוצגת רק לפני שהספירה מתחילה, בזמן שהאפליקציה עדיין ברקע. כדאי לכתוב: 'הלוח מכוסה, ומעליו \"ממשיכים בעוד\" 3, 2, 1'."
+  },
+  {
+   "taskId": "levels-practice-freeze-time",
+   "issue": "השלב 'מסתכלים על הזמן ... בהיסטוריה' לא מתאים לאפליקציה: בכרטיס ההיסטוריה אין זמן משחק, רק ניקוד ותאריך יחסי. הקשה על הכרטיס פותחת את ה־Replay. כדאי לכתוב 'בתוצאות וב־Replay (גם כשפותחים אותו מההיסטוריה)'."
+  },
+  {
+   "taskId": "levels-xp-offline",
+   "issue": "השלב 'מכבים את מצב הטיסה, ומחכים דקה. חוזרים לבית' לא אומר אם צריך להפעיל מחדש את האפליקציה. כרגע ה־XP מתעדכן רק אחרי הפעלה מחדש (ראו appBugs). גם שורת ה־50 XP לשער קשה לבדוק כשהמתג 'פתח את כל השלבים' דלוק: בתוצאת הבוס של שלב 50 כתוב 'השער לפרק 6: ★ 3/20 · נפתח!', ולא ניתנו 50 XP. כדאי לציין שמכבים את המתג לפני הבדיקה."
+  },
+  {
+   "taskId": "levels-xp-no-double",
+   "issue": "המשימה מסומנת who: both, אבל היא דורשת שני טלפונים עם אותו חשבון. בהרצה של סוכן זה אומר התחברות. כדאי לסמן אותה למשה."
+  },
+  {
+   "taskId": "levels-modes-row-new",
+   "issue": "בשורת 'אימון בשלבים' כתוב עכשיו 'שלבים קצרים · עד 3 כוכבים', כך שזה כנראה גם הנוסח אצל שחקן חדש. הצפוי בקטלוג ('300 שלבים קצרים · ⁦0–3⁩ כוכבים') ישן. גם הצ'יפ נקרא 'גם אופליין' בתצוגה, ו'עובד גם בלי אינטרנט' נמצא רק בתווית הנגישות."
+  },
+  {
+   "taskId": "levels-map-open-position",
+   "issue": "האפליקציה ממקמת את השלב הנוכחי ב־40% מגובה אזור המפה, מעל הפאנל, ולא ב־40% מגובה המסך. על A16 זה יוצא בערך 32% מגובה המסך. כדאי לנסח 'בערך ב־40% מגובה המפה (מעל הפאנל)'."
+  },
+  {
+   "taskId": "levels-chapter-list",
+   "issue": "המילים 'פתוח'/'נעול' לא כתובות בשורה עצמה. בשורה נעולה מופיע אייקון מנעול, והמילה נמצאת רק בתווית הנגישות. בחשבון עם 'פתח את כל השלבים (בדיקה)' דלוק כל הפרקים פתוחים, כך שכדאי לציין בצעדים לכבות אותו כדי לראות שורה נעולה."
+  },
+  {
+   "taskId": "levels-new-chapter-after-chain",
+   "issue": "הצעדים אומרים שבחשבונות טלפוני הבדיקה אין פרק מתאים, אבל אצל 'אורי' פרק 7 התאים (61–69 שוחקו, 27 כוכבים, בוס 70 לא שוחק, פרק 8 נעול). אחרי ההרצה הזאת פרק 8 כבר פתוח, ובפעם הבאה צריך פרק אחר."
+  },
+  {
+   "taskId": "levels-map-path",
+   "issue": "בכותרת הפרק המספר והשם מופיעים בשתי שורות ('פרק 1' ומתחתיו 'צעדים ראשונים'), ולא כמחרוזת אחת 'פרק 1 · צעדים ראשונים' כמו בדוגמה."
+  },
+  {
+   "taskId": "account-recovery-verify-ranked",
+   "issue": "המשימה מסומנת who: claude, אבל היא דורשת הרשמה של חשבון חדש עם מייל לא מאומת. סוכן בלי התחברות לא יכול לבצע אותה. כדאי לסמן 'moshe', או להגדיר חשבון בדיקה קבוע עם מייל לא מאומת. אותו דבר נכון לכל משימות account-recovery-verify-* ו־account-recovery-forgot-*, שדורשות להתחיל במצב מנותק."
+  },
+  {
+   "taskId": "account-profile-name-taken",
+   "issue": "המשימה מבקשת 'שם של שחקן אחר שקיים (באותיות לטיניות)', אבל ב־staging אין שם כזה: כל השמות בטבלה בעברית, וכ־40 שמות לטיניים נפוצים פנויים ב־/v1/names/available. כדאי לרשום במשימה שם קבוע של חשבון בדיקה לטיני, או לבקש ליצור אחד."
+  },
+  {
+   "taskId": "account-profile-rename",
+   "issue": "המשימה דורשת חשבון חדש שעוד לא שינה שם ושמירה של שם חדש, וזה סותר את הכלל 'לא משנים שם לתצוגה' בריצות של סוכן. כדאי לסמן אותה who: moshe."
+  },
+  {
+   "taskId": "account-settings-delete-password",
+   "issue": "המשימה מניחה חשבון עם סיסמה. בחשבון Google בבנייה שבה Google פעיל נפתח החלון delete-google ולא 'אישור בסיסמה'. כדאי לציין שנדרש חשבון מייל וסיסמה."
+  },
+  {
+   "taskId": "friends-link-web-page-en",
+   "issue": "השורה 'אין בו אף מילה בעברית' לא מחריגה את בורר השפות. בבורר מופיעה המילה 'עברית' (שם השפה בשפתה, lang=he), וזה מכוון. מוצע לנסח: 'אין בו עברית, חוץ משם השפה בבורר השפות'."
+  },
+  {
+   "taskId": "friends-link-web-page",
+   "issue": "השורה הצפויה כתובה כאילו זו שורה אחת: 'הוזמנת למשחק סודוקו פייט · קוד החדר ⁦123 456⁩'. בדף בפועל יש כותרת h1 ('הוזמנת למשחק סודוקו פייט'), ומתחתיה התווית 'קוד החדר' והקוד בגדול. ה-'·' עם הקוד מופיע רק בכותרת הלשונית: 'הזמנה לחדר ⁦123 456⁩ · סודוקו פייט'."
+  },
+  {
+   "taskId": "friends-link-cold-start",
+   "issue": "צעד 5 (החלקה מרשימת האפליקציות האחרונות) בוצע ב-am force-stop, וזה שקול: הבדיקה אישרה שאין pid והפתיחה הייתה LaunchState COLD."
+  },
+  {
+   "taskId": "account-home-after-ranked",
+   "issue": "כשטלפון ב' נכנע לפני שעשה מהלך, הדיאלוג אומר 'הדירוג שלך לא ירד, כי עוד לא ביצעת מהלך', והדירוג של היריב נשאר 1243→1243. אצל המנצח הדירוג כן עלה (+13). המשימה עברה, אבל כדאי שהצעדים יאמרו במפורש שהדירוג של מי שנכנע בלי מהלך לא ישתנה, כדי שבודק לא יחשוב שזה באג."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "general-ambient-screen-change",
+   "result": "pass",
+   "summary": "בדיקת תיקון apk7: הפריים הראשון של 'משחק חדש' בהקשה הראשונה אחרי 278–300 ms (היה 533–606), כמו בביקור שני (267 ms); נרגע תוך כ־0.5 ש׳; הספרות לא קופצות, ואין החלקה"
+  },
+  {
+   "taskId": "levels-puzzle-solved",
+   "result": "pass",
+   "summary": "בדיקת תיקון apk7: מסגרת זהב ותוצאה '3 החלפות · המינימום 3'; גם אחרי החלפה שגויה, כשהזמן נגמר ('0 החלפות'), וביציאה ('החלפה אחת'); בשלב שאינו פאזל אין שורה"
+  },
+  {
+   "taskId": "levels-puzzle-fixed",
+   "result": "pass",
+   "summary": "בדיקת תיקון apk7: הקשה על ריבוע קבוע מציגה למעלה הודעה עם מנעול 'הריבוע הזה קבוע'; גרירה אל ריבוע קבוע מחזירה את הריבוע הגרור למקומו; הקשות מהירות לא יוצרות ערימה של הודעות; עם הפחתת תנועה המנעול מואר"
+  },
+  {
+   "taskId": "levels-freeze-repeat",
+   "result": "pass",
+   "summary": "שלב 36: 3 יציאות לרקע ו־2 מעברים מהירים; בכל חזרה 'ממשיכים בעוד 3…', השעון 1.4→3.5→4.8 בלי קפיצה, בלי מסך שחור"
+  },
+  {
+   "taskId": "levels-app-closed-not-counted",
+   "result": "untested",
+   "summary": "נשאר למשה: אתר הניהול. בטלפון עבר: שלב 37 נסגר מהאחרונות, אחרי פתיחה 37 עדיין 'השלב הבא' בלי כוכבים, 38 לא שוחק, 115/900"
+  },
+  {
+   "taskId": "levels-no-black-screen",
+   "result": "pass",
+   "summary": "זמן נגמר, יציאה ← למפה מיד, 5 הקשות על 'לשלב הבא', רקע בסוף שלב: אין מסך שחור ואין 'המסך לא נטען'"
+  },
+  {
+   "taskId": "levels-lang-ltr",
+   "result": "pass",
+   "summary": "10 סוגי שלבים בעברית ובאנגלית: לוח ומקלדת משמאל לימין, משבצות D5/F4/C8"
+  },
+  {
+   "taskId": "levels-lang-english",
+   "result": "pass",
+   "summary": "New game, מפה, Ready?, 10 שלבים, דיאלוג יציאה, תוצאה ושער: Stage/Staged practice, בלי Level ובלי עברית"
+  },
+  {
+   "taskId": "levels-lang-signed-numbers",
+   "result": "untested",
+   "summary": "'+5 ש׳' ו־'−6' תקינים (הסימן משמאל); '+50 XP' של פרק חדש לא הושג (צריך 20 כוכבים בפרק 8)"
+  },
+  {
+   "taskId": "levels-talkback-map",
+   "result": "untested",
+   "summary": "נשאר למשה: הקראה בפועל ב־TalkBack; יש תוויות לצמתים (כולל 'שלב 50, נעול'), לשער, לכפתורים, למטרה ולשעון ('זמן: X שניות מתוך 20')"
+  },
+  {
+   "taskId": "levels-new-game-small-phone",
+   "result": "partial",
+   "summary": "360×780dp: בגודל רגיל 6 שורות בלי גלילה בשתי השפות; בטקסט 2.0 נחתך: 'Real opponents, in …', 'Practice vs b…', 'אימון לבד • לוח …'"
+  },
+  {
+   "taskId": "levels-sync-restore",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות בטלפון אחר או התקנה מחדש"
+  },
+  {
+   "taskId": "levels-sync-merge",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש שני טלפונים מחוברים לאותו חשבון"
+  },
+  {
+   "taskId": "levels-server-health",
+   "result": "pass",
+   "summary": "curl ל־/health החזיר {\"ok\":true,\"engine\":\"0.4.0\",\"protocol\":1}"
+  },
+  {
+   "taskId": "levels-player-card",
+   "result": "pass",
+   "summary": "בכרטיס שלי 'שלבים: 93 · ★ 115'; בכרטיס של אחוותא מטבלת המובילים אין שורת שלבים"
+  },
+  {
+   "taskId": "levels-modes-row-progress",
+   "result": "pass",
+   "summary": "שורה 6: 'שלבים קצרים · עד 3 כוכבים', צ'יפ 'שלב 47 · ★ 115', 'גם אופליין', אריח 47; במפה השלב הבא 47 והכותרת 115/900"
+  },
+  {
+   "taskId": "levels-testing-unlock-off",
+   "result": "pass",
+   "summary": "המתג היה דלוק; אחרי כיבוי 48–50 נעולים, ושלבים ששוחקו עם המתג (51–55, 58–60) נשארו פתוחים. המתג הוחזר למצב דלוק"
+  },
+  {
+   "taskId": "levels-practice-freeze-solo",
+   "result": "pass",
+   "summary": "A9 נעולה עם 7 ש' ושעון 3:27; אחרי 60 ש' ברקע: לוח מכוסה עם 'ממשיכים בעוד' 3,2,1, ואחריו A9 עדיין עם 7 ש' והשעון 3:28"
+  },
+  {
+   "taskId": "levels-practice-freeze-bot",
+   "result": "pass",
+   "summary": "מול Maestro: 33.5 נקודות ו־8 משבצות לפני ואחרי 62 ש' ברקע; אחרי 3,2,1 הבוט לא הניח ספרה מיד"
+  },
+  {
+   "taskId": "levels-practice-freeze-time",
+   "result": "pass",
+   "summary": "משחק של 8:40 בשעון הקיר, מתוכן 6:02 ברקע: בתוצאות 'זמן משחק 2:31'; ב־Replay השעון עולה בקפיצות של 2–8 ש' עד 2:31, בלי קפיצה במקום ההקפאה; בכרטיס ההיסטוריה אין זמן"
+  },
+  {
+   "taskId": "levels-ranked-no-freeze",
+   "result": "pass",
+   "summary": "במדורג מול בוט סמוי, יציאה לרקע ל־6 ש' ול־4 ש': אין כיסוי ואין 3,2,1, והנעילה ירדה מ־8 ל־2 ש'. הנקודה שלי צהובה לרגע (השלב השקט של D42)"
+  },
+  {
+   "taskId": "levels-xp-offline",
+   "result": "partial",
+   "summary": "במצב טיסה: 48 ו־84 עם ★★★ ו־'+30 XP' בכל אחד. אחרי חזרה לרשת, 65 ש' וחזרה לבית ה־XP נשאר 1,178. רק אחרי הפעלה מחדש עלה ל־1,238 (+60, נכון)"
+  },
+  {
+   "taskId": "levels-xp-no-double",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש שני טלפונים עם אותו חשבון (התחברות)"
+  },
+  {
+   "taskId": "levels-modes-row-new",
+   "result": "untested",
+   "summary": "נשאר למשה: צריך חשבון חדש שלא שיחק (התחברות). אצל אורי השורה מראה 'שלבים קצרים · עד 3 כוכבים' עם הצ'יפים 'שלב 47 · ★ 121' ו'גם אופליין'."
+  },
+  {
+   "taskId": "levels-map-header",
+   "result": "pass",
+   "summary": "בכותרת: כפתור חזרה, 'אימון בשלבים' והצ'יפ '121/900 ★'."
+  },
+  {
+   "taskId": "levels-map-path",
+   "result": "pass",
+   "summary": "שלב 1 בראש המפה, השביל בזיגזג כלפי מטה. בכותרות הפרקים: 'פרק 1 / צעדים ראשונים ★27/30' ו'פרק 2 / Pip מאתגר ★17/30'."
+  },
+  {
+   "taskId": "levels-map-open-position",
+   "result": "pass",
+   "summary": "שלב 47 מופיע ישר במקומו בלי גלילה (נבדק בצילומים רצופים). הוא בגובה 40% מאזור המפה, שהם בערך 32% מגובה המסך."
+  },
+  {
+   "taskId": "levels-panel-current",
+   "result": "pass",
+   "summary": "בפאנל: 'שלב 47 · דו־קרב ל־30' עם 'השלב הבא', 'פרק 5 · מול Biscuit', משפט המטרה, סרגל הפערים 15/8/מוביל והכפתור 'המשך · שלב 47'."
+  },
+  {
+   "taskId": "levels-panel-played",
+   "result": "pass",
+   "summary": "בשלב 48 הפאנל מציג ★★★ ו'שיא 24.2 ש׳', והכפתור הוא 'שחק'."
+  },
+  {
+   "taskId": "levels-chapter-list",
+   "result": "pass",
+   "summary": "נפתח 'קפיצה לפרק' עם 30 שורות: מספר, שם ו־★N/30. עם 'פתח הכל' דלוק כל הפרקים פתוחים, וכשכיביתי אותו פרקים 8 ומעלה סומנו 'נעול'. הקשה על פרק 28 מגללת אליו, והכותרת שלו נראית."
+  },
+  {
+   "taskId": "levels-chapter-list-motion",
+   "result": "pass",
+   "summary": "עם הפחתת תנועה, הקשה על פרק 1 קופצת אליו מיד, בלי גלילה מונפשת (נבדק בצילומים רצופים). ההגדרה הוחזרה ל'כבויה'."
+  },
+  {
+   "taskId": "levels-result-your-best",
+   "result": "pass",
+   "summary": "שלב 48 ב־41.8 ש׳ קיבל 2 כוכבים. בתוצאה 'השיא שלך: ★★★', בלי 'שיא חדש!' ובלי שורת XP."
+  },
+  {
+   "taskId": "levels-new-chapter-after-chain",
+   "result": "pass",
+   "summary": "בוס 70 ← 'לשלב הבא' ← 71 ← 'לשלב הבא' ← 72: אין חגיגה בין השלבים. אחרי 'למפה' מופיע 'פרק חדש נפתח!' עם 'פרק 8 · שתי טעויות', ‏‎+50 XP והכפתור 'המשך'."
+  },
+  {
+   "taskId": "account-signup-confirm",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה זמין רק למשתמש מנותק, ומשתמש מחובר מופנה לבית."
+  },
+  {
+   "taskId": "account-signup-terms-links",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות כדי להגיע להרשמה, שלב 2."
+  },
+  {
+   "taskId": "account-signup-email-taken",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות וניסיון הרשמה."
+  },
+  {
+   "taskId": "account-signup-offline",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והרשמה חדשה (יוצר חשבון ומחליף משתמש)."
+  },
+  {
+   "taskId": "account-signup-success",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והרשמה חדשה (יוצר חשבון ומחליף משתמש)."
+  },
+  {
+   "taskId": "account-signup-server-down",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש APK מול שרת מקומי, עצירה של השרת, התנתקות והרשמה."
+  },
+  {
+   "taskId": "account-signup-large-font",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות כדי להגיע להרשמה, שלב 2. הגופן לא שונה."
+  },
+  {
+   "taskId": "account-signup-english",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והתחברות מחדש. השפה לא שונתה."
+  },
+  {
+   "taskId": "account-recovery-forgot-look",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. המסך 'שכחתי סיסמה' זמין רק למשתמש מנותק."
+  },
+  {
+   "taskId": "account-recovery-forgot-validation",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך 'שכחתי סיסמה' פתוח רק למשתמש מנותק, ומשתמש מחובר מועבר לבית"
+  },
+  {
+   "taskId": "account-recovery-forgot-sent",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות (מסך 'שכחתי סיסמה' פתוח רק למשתמש מנותק)"
+  },
+  {
+   "taskId": "account-recovery-forgot-unknown",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות (מסך 'שכחתי סיסמה' פתוח רק למשתמש מנותק)"
+  },
+  {
+   "taskId": "account-recovery-verify-look",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל לא מאומת. נפתח דרך sudokufight://verify-email בחשבון מאומת, וכל המסך תקין: מעטפה, שני הטקסטים (המייל משמאל לימין), 'אימתתי' ו'שלח שוב', וחץ החזרה מחזיר לבית. לא נבדק: הבאנר בבית"
+  },
+  {
+   "taskId": "account-recovery-verify-not-yet",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל חדש שלא אומת"
+  },
+  {
+   "taskId": "account-recovery-verify-resend",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל חדש שלא אומת"
+  },
+  {
+   "taskId": "account-recovery-verify-practice",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל חדש שלא אומת"
+  },
+  {
+   "taskId": "account-recovery-verify-ranked",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל שלא אומת, וגם כולל 'מצא יריב'"
+  },
+  {
+   "taskId": "account-recovery-english",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה עם מייל שלא אומת, התנתקות והתחברות מחדש"
+  },
+  {
+   "taskId": "account-settings-language-cancel",
+   "result": "pass",
+   "summary": "ביטול בחלון 'להחליף את השפה ל־English?' סגר את החלון, בלי הפעלה מחדש, הממשק בעברית ושדה השפה 'עברית'"
+  },
+  {
+   "taskId": "account-profile-english",
+   "result": "pass",
+   "summary": "Edit profile, Save, 'You can change your name once every 30 days.', חלונות האווטרים והמדינות באנגלית ומשמאל לימין; רק השם אחוותא בעברית; חזרה לעברית"
+  },
+  {
+   "taskId": "account-settings-language-he",
+   "result": "pass",
+   "summary": "החלון 'Switch the language to עברית?' עם Switch and restart ו־Cancel; עלתה מחדש בעברית מימין לשמאל, מחובר עדיין כאחוותא"
+  },
+  {
+   "taskId": "account-settings-delete-warning",
+   "result": "pass",
+   "summary": "'למחוק את החשבון?' עם הנוסח המלא, 'המשך למחיקה' ו'ביטול'; ביטול סגר, עדיין מחובר"
+  },
+  {
+   "taskId": "account-settings-delete-password",
+   "result": "pass",
+   "summary": "'אישור בסיסמה' עם המייל; ריק: 'כתוב את הסיסמה'; שגויה: 'המייל או הסיסמה שגויים.' באדום והחלון נשאר; ביטול: עדיין מחובר (נפתח חלון סיסמה כי Google כבוי בבנייה)"
+  },
+  {
+   "taskId": "account-settings-sign-out",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות; החלון 'להתנתק?' עם הנוסח והכפתורים נכון, ביטול סוגר"
+  },
+  {
+   "taskId": "account-settings-sign-out-practice",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והתחברות; נרשמו האימונים שתחת 'משחקים אחרונים'"
+  },
+  {
+   "taskId": "account-settings-version",
+   "result": "untested",
+   "summary": "נשאר למשה: מסך ההתחברות דורש התנתקות; בהגדרות 'גרסה 1.1.0' ו'build 87760ce-dirty · staging · מנוע 0.4.0' קריאים משמאל לימין"
+  },
+  {
+   "taskId": "account-profile-rename",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש שינוי שם (נעילת 30 יום); נראה 'אפשר לשנות שם פעם ב־30 יום.', 'פנוי', אווטאר ומדינה פתוחים; לא נשמר דבר"
+  },
+  {
+   "taskId": "account-profile-name-taken",
+   "result": "untested",
+   "summary": "נשאר למשה: אין שם תפוס באותיות לטיניות (כ־40 נבדקו ב־API, כולם פנויים) ואי אפשר להקליד עברית; לא נשמר דבר"
+  },
+  {
+   "taskId": "friends-link-opens-room",
+   "result": "pass",
+   "summary": "קישור /r/629192 בטלפון 3 (האפליקציה בבית) פתח תוך 1.5 ש' את חדר ההמתנה של אורי, בלי דפדפן ובלי כרטיס; המארח ראה 2 מתוך 4"
+  },
+  {
+   "taskId": "friends-link-cold-start",
+   "result": "pass",
+   "summary": "אחרי יציאה מהחדר ו-force-stop, הקישור פתח את האפליקציה בהפעלה קרה (2.1 ש'): ספלאש, 'מצטרף לחדר…', חדר ההמתנה. לא הופיע 'צריך להתחבר שוב'"
+  },
+  {
+   "taskId": "friends-link-web-page",
+   "result": "pass",
+   "summary": "דף /r/123456: lang=he dir=rtl, 'הוזמנת למשחק סודוקו פייט', 'קוד החדר' 123 456, 'פתח באפליקציה', 'צריך גרסה 1.0.4 ומעלה'"
+  },
+  {
+   "taskId": "friends-link-web-page-en",
+   "result": "pass",
+   "summary": "?lang=en: lang=en dir=ltr, כל התוכן באנגלית. העברית היחידה היא 'עברית' בבורר השפות (שם השפה בשפתה)"
+  },
+  {
+   "taskId": "friends-link-web-page-private",
+   "result": "pass",
+   "summary": "דף החדר הקיים 629192 ודף החדר שאינו קיים 837415 זהים לגמרי חוץ מהקוד (כולל HTTP 200), בלי שמות שחקנים"
+  },
+  {
+   "taskId": "friends-link-assetlinks",
+   "result": "pass",
+   "summary": "assetlinks.json מחזיר 200 application/json עם sha256_cert_fingerprints אחד, FA:C6:...:3B:9C, תואם לחתימה בטלפונים"
+  },
+  {
+   "taskId": "friends-link-verified",
+   "result": "pass",
+   "summary": "pm get-app-links: sudoku-fight-staging.fly.dev: verified בשני הטלפונים"
+  },
+  {
+   "taskId": "friends-link-signed-out",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והתחברות. החלקים בלי התנתקות (קישור פותח את החדר) עברו"
+  },
+  {
+   "taskId": "levels-race-rules",
+   "result": "pass",
+   "summary": "שלב 10 מול Pip: יש 5 מקומות, ומי שמקיש ראשון על המקום הנכון לוקח אותו (Pip לקח מקומות, אני לקחתי 5/5). אחרי הקשה שגויה הופיע X אדום, הלוח הועמם ורצה ספירה של 3 שניות. Pip נשאר 'מחפש…'."
+  },
+  {
+   "taskId": "account-signup-name-race",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה של שני חשבונות חדשים ממסך ההתחברות (התחברות והתנתקות)."
+  },
+  {
+   "taskId": "account-home-after-ranked",
+   "result": "pass",
+   "summary": "מדורג 2 מהיר בין שני הטלפונים, ניצחון בכניעה: +13 (מ־1298 ל־1311). אחרי Back אחד הבית הראה מהיר 1311, ‏XP ‏1,369 (במקום 1,318), 57 משחקים ורצף 1, בלי הפעלה מחדש."
+  }
+ ],
+ "missing": []
+}

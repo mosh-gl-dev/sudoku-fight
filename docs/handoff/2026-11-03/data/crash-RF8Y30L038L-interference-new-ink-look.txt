@@ -1,0 +1,301 @@
+11-09 02:05:26.578  1172  1673 D aurisys_utility: dl in[type:2], ch: 2, ch_mask: 0x3, buf fs: 48000, buf content fs: 48000, fmt: 0x3; dl out[type:3], ch: 2, ch_mask: 0x3, buf fs: 48000, buf content fs: 48000, fmt: 0x3
+11-09 02:05:26.578  1172  1673 I [Awinic]: aw_skt_arsi_query_param_buf_size_by_custom_info:reserve2 [0] cust_scene[0] ---> aw_scene[0], reserve2_addr[0xb4000072f32607ce]
+11-09 02:05:26.578  1172  1673 I [Awinic]: find [] scene_block with id 0
+11-09 02:05:26.578  1172  1673 I [Awinic]: aw_skt_arsi_query_param_buf_size_by_custom_info:aw_scene[] params len is 12252
+11-09 02:05:26.578  1172  1673 I [Awinic]: aw_skt_arsi_parsing_param_file_by_custom_info:reserve2 [0] cust_scene[0] ---> aw_scene[0], reserve2_addr[0xb4000072f32607ce]
+11-09 02:05:26.578  1172  1673 I [Awinic]: find [] scene_block with id 0
+11-09 02:05:26.578  1172  1673 E [Awinic]: open awinic params file [vendor/etc/demo//AW_SPIN_MODE.bin] failed
+11-09 02:05:26.578  1172  1673 D [Awinic]: aw_skt_arsi_get_spin_mode_table: read awinic spin mode file failed
+11-09 02:05:26.578  1172  1673 I [Awinic]: aw_skt_arsi_parsing_param_file_by_custom_info:load aw_scene[] params done
+11-09 02:05:26.578  1172  1673 D aurisys_lib_handler: aurisys_arsi_parsing_param_file(), gProductInfo "platform=MT6789,device=a16,model=SM-A165F", file_path "/vendor/etc/audio_param", enhancement_mode 0, param_buf_size 12252, data_size 12228, custom_info SetAudioCustomScene=;
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010001 start!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010001 success!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010002 start!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010002 success!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010005 start!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010005 success!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_set_algo_propert>set prop_id: 0x00020003 start!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <elog_start>Awinic Logger Init Done!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_set_algo_propert>set prop_id: 0x00020003 success!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_set_algo_propert>set prop_id: 0x00020005 start!
+11-09 02:05:26.578  1172  1673 D [Awinic]: [I]Awinic <aw_set_algo_propert>set prop_id: 0x00020005 success!
+11-09 02:05:26.578  1172  1673 D aurisys_lib_handler: aurisys_arsi_create_handler(), lib_name smartpa_aw88xxx, [queried_size] dram:664272 [avail_size] dram:4294967295
+11-09 02:05:26.579  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010006 start!
+11-09 02:05:26.579  2425  2425 D SimplePlayLastSongHelper: OnMediaKeyEventSessionChanged true true
+11-09 02:05:26.579  1172  1673 D [Awinic]: [I]Awinic <aw_get_algo_propert>get prop_id: 0x00010006 success!
+11-09 02:05:26.579  1172  1673 I [Awinic]: SKTune version is SKTune_V6.5_v1.1.7[1].1
+11-09 02:05:26.579  1172  1673 I [Awinic]: API version is SKTune_api_v0.0.4.13
+11-09 02:05:26.579  1172  1673 D [Awinic]: mix_init init done!
+11-09 02:05:26.579  1172  1673 D [Awinic]: mix_init init done!
+11-09 02:05:26.579  1172  1673 D [Awinic]: spin init done!
+11-09 02:05:26.579  1172  1673 D [Awinic]: mix_init init done!
+11-09 02:05:26.579  2425  2425 D SimplePlayLastSongHelper: OnMediaKeyEventSessionChanged currentKeyEventMediaController updated
+11-09 02:05:26.579  1172  1673 D [Awinic]: init Done !
+11-09 02:05:26.580  1172  1673 D [Awinic]: [I]Awinic <aw_gse_lib_set_preset>GSE Preset convert END!
+11-09 02:05:26.580  1172  1673 D [Awinic]: [D]Awinic <aw_gse_ch_set_params>classification or deq is not enabled
+11-09 02:05:26.580  1172  1673 D [Awinic]: [D]Awinic <aw_gse_ch_set_params>classification or deq is not enabled
+11-09 02:05:26.580  1172  1673 D [Awinic]: [I]Awinic <aw_sToneEvalSetParams>Origin cfg->cali_Re: -98000ohm, set param->cali_Re: 6129mohm!
+11-09 02:05:26.580  1172  1673 D [Awinic]: [I]Awinic <aw_sToneEvalSetParams>Origin cfg->cali_Re: -98000ohm, set param->cali_Re: 8000mohm!
+11-09 02:05:26.580  1172  1673 D [Awinic]: [D]Awinic <aw_mecLibSetParams_v2>set parameter done!
+11-09 02:05:26.580  1172  1673 I [Awinic]: AW_UI_PRESET set done!
+11-09 02:05:26.580  1172  1673 I [Awinic]: params data random code is 6678!
+11-09 02:05:26.580  1172  1673 D [Awinic]: fadein mix start, pre_gain:[1048576], post_gain:[1048576], mix state: 5
+11-09 02:05:26.580  1172  1673 D [Awinic]: set params for cfg[0] done
+11-09 02:05:26.581  1172  1673 I [Awinic]: aw_vmax_kctl_dev_init: Awinic dev[0]'s monitor switch kcontrol is not accessible!
+11-09 02:05:26.581  1172  1673 I [Awinic]: aw_vamx_node_init: Awinic node monitor init success with dev num 0
+11-09 02:05:26.582  1172  1673 I [Awinic]: Create node monitor update pThread success!
+11-09 02:05:26.582  1172  1673 D [Awinic]: set dtc_status: interval_time: 83 s, tma_pre: 0, tcm_pre: 0
+11-09 02:05:26.588  1172  1673 D [Awinic]: Open env_te attr[/sys/class/power_supply/battery/temp] done!
+11-09 02:05:26.588  1172  1673 D [Awinic]: [D]Awinic <tpc_ppc_set_ambient>ambient_te: 28.500000, smooth_flag: 0, smooth_te: 28.500000
+11-09 02:05:26.588  1172  1673 D aurisys_lib_handler: aurisys_arsi_create_handler(), lib_name smartpa_aw88xxx, 0xb4000072f3252c00, process_type 1, arsi_handler 0xb4000072e68ec040, retval 0x0 
+11-09 02:05:26.588  1172  1673 D aurisys_lib_handler: aurisys_arsi_create_handler(), arsi_query_process_unit_bytes, ul 0, dl 0, retval 0
+11-09 02:05:26.588  1172  1673 D aurisys_lib_manager: DL Lib, lib_name smartpa_aw88xxx, 0xb4000072f3252c00, sample_rate: 48000 => 48000, num_channels: 2 => 2, audio_format: 0x3 => 0x3, interleave: 1 => 1, frame: 0 => 0
+11-09 02:05:26.588  1172  1673 D aurisys_lib_manager: DL out, sample_rate: 48000 => 48000, num_channels: 2 => 2, audio_format: 0x3 => 0x4, interleave: 1 => 1, frame: 0 => 0
+11-09 02:05:26.588  2425  3282 D SoundCraft.PlayingAudioConditionHandler: onPlaybackConfigChanged : lastStartedPackageName=null, lastStartedUid=-1, newStartedUid=10044, newStartPackageName=com.mosheg.sudokufight, thread=Thread[RoutineHandlerThread,5,main]
+11-09 02:05:26.588  2425  3282 D SoundCraft.PlayingAudioConditionHandler: onPlaybackConfigChanged : notifyChanged
+11-09 02:05:26.588  1172  1673 D AudioALSAHardwareResourceManager: +startOutputDevice(), new_devices = 0x2, mOutputDevices = 0x0, mStartOutputDevicesCount = 0 SampleRate = 48000
+11-09 02:05:26.588  1172  1673 D AudioSmartPaController: +dspOnBoardSpeakerOn(), SampleRate: 48000, MD_type: 0, isI2sInEchoRefEn: 0
+11-09 02:05:26.588  1172  1673 D AudioALSAHardwareResourceManager: notifyOutputDeviceStatusChange(), device = 2, status = 0, sampleRate = 48000, mOpenSpeakerPathCount = 1
+11-09 02:05:26.588  1172  1673 D AudioALSAStreamManager: speakerStatusChangeCb(), status = 0, sampleRate = 48000
+11-09 02:05:26.588  1172  1673 D AudioALSAPlaybackHandlerNormal: -open()
+11-09 02:05:26.588  1172  1673 D audio_sw_mixer: sw_mixer_target_attach(), MIXER_PLAYBACK  , name T_PRIMARY    order 4 sz 16384 fmt 3 ch 2 rate 48000 latency_us 42666
+11-09 02:05:26.589  1172  1673 D audio_sw_mixer: sw_mixer_manager_create_path(), MIXER_PLAYBACK  , path T_DEEP=>T_PRIMARY   , uuid 1595644930, source: order 2 sz 8192 fmt 3 ch 2 rate 48000 latency_us 21333, target: order 4 sz 16384 fmt 3 ch 2 rate 48000 latency_us 42666
+11-09 02:05:26.589  1172  1673 D audio_sw_mixer: dump_path_list(), MIXER_PLAYBACK  , T_DEEP=>T_PRIMARY   [8192, 2, n] 
+11-09 02:05:26.589  1172  1673 D AudioALSAPlaybackHandlerMixer: open(-), target flag 8, mDevice 0x2, buffer_size 16384, frame_count 2048, sample_rate 48000
+11-09 02:05:26.589  1172  1353 D audio_sw_mixer: sw_mixer_mix_thread(), thread mix1:0 running: target T_PRIMARY
+11-09 02:05:26.589  1172  1673 D AudioALSAStreamManager: setPlaybackStreamActive(), is_active = 1, stream_type = 3, mIsMusicStreamActive = 1
+11-09 02:05:26.589  1172  1673 D AudioALSAStreamOut: -open(), flags 8
+11-09 02:05:26.589  1172  1673 D AudioALSAPlaybackHandlerMixer: setScreenState(), buffer_size 8192 => 16384
+11-09 02:05:26.589  1172  1673 D AudioALSAPlaybackHandlerNormal: setScreenState(), flag = 8, rate = 2048, mInterrupt = 0.042667, mode = 1, sample_rate(target) = 48000, buffer_size = 16384, channel = 2, format = 4, reduceInterruptSize = 1024
+11-09 02:05:26.589  1172  1673 W audio_sw_mixer: sw_mixer_source_update_write_bytes(), MIXER_PLAYBACK  , name T_DEEP       order 2 sz 8192=>16384 fmt 3 ch 2 rate 48000 latency_us 42666
+11-09 02:05:26.589  1172  1673 W AudioALSAPlaybackHandlerBase: getQueuedFramesInfo(), mTimeStampValid false!!
+11-09 02:05:26.590  1215  1692 E StreamHalAidl: Function: getPresentationPosition Line: 1197 Failed 
+11-09 02:05:26.590  1215  1692 I AF::PthrPatchRecord: processMuteEvent(4403): processed mute state for port ID 4368 from 0 to 0x2
+11-09 02:05:26.590  1215  1692 I AudioMixer: create resampler src 22050, 1, dst 48000, 1, f 0x5, q 8
+11-09 02:05:26.591  1172  1282 D MTKAdapterStreamLayer: updateMetadataCommon(), 
+11-09 02:05:26.591  1215  1692 I SoundAlive_SRC384 arch64: SoundAlive_SRC384() ID = 3857 GID = 3858
+11-09 02:05:26.591  1215  1692 I SoundAlive_SRC384 arch64: SoundAlive_SRC384: Instance 3857 Init(outFs 7, InFs 7, chnum 0, outBW 0, inBW 0)
+11-09 02:05:26.591  1215  1692 I Samsung_SoundAlive_SRC_v330 arch64: SRC384 version AE_VER_Resampler_ver330_a64_2025-05-21
+11-09 02:05:26.591  1215  1692 D SoundAliveResampler: [SoundAliveResampler] Init+++
+11-09 02:05:26.591  1215  1692 I SoundAlive_SRC384 arch64: SoundAlive_SRC384: Instance 3857 Init(outFs 8, InFs 4, chnum 2, outBW 3, inBW 3)
+11-09 02:05:26.591  1215  1692 I Samsung_SoundAlive_SRC_v330 arch64: SRC384 version AE_VER_Resampler_ver330_a64_2025-05-21
+11-09 02:05:26.593  1172  1673 W AudioALSAPlaybackHandlerBase: getQueuedFramesInfo(), mTimeStampValid false!!
+11-09 02:05:26.594  2425  3282 D SoundCraft.PlayingAudioConditionHandler: onPlaybackConfigChanged : lastStartedPackageName=com.mosheg.sudokufight, lastStartedUid=10044, newStartedUid=-1, newStartPackageName=null, thread=Thread[RoutineHandlerThread,5,main]
+11-09 02:05:26.595  1172  1353 D [Awinic]: [D]Awinic <tpc_ppc_set_ambient>ambient_te: 28.500000, smooth_flag: 1, smooth_te: 28.500000
+11-09 02:05:26.596  1172  1353 D [Awinic]: mix fade in done, switch to MIX_DONE
+11-09 02:05:26.596  1172  1353 D [Awinic]: mix_reset reset done!
+11-09 02:05:26.602  2425  3282 D SoundCraft.PlayingAudioConditionHandler: onPlaybackConfigChanged : lastStartedPackageName=com.mosheg.sudokufight, lastStartedUid=10044, newStartedUid=-1, newStartPackageName=null, thread=Thread[RoutineHandlerThread,5,main]
+11-09 02:05:26.612  1215  1692 E StreamHalAidl: Function: getPresentationPosition Line: 1197 Failed 
+11-09 02:05:26.613  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.614  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.615  1172  1353 D audio_sw_mixer: sw_mixer_wait_to_mix(), MIXER_PLAYBACK  , target T_PRIMARY    thread enter direct mode
+11-09 02:05:26.617  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.617  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.619  1792  3941 D MediaSessionService: onSessionPlaybackStateChanged: record=com.mosheg.sudokufight/androidx.media3.session.id.ExpoAudioBasicMediaSession_225227772/557 (userId=0) playbackState=PlaybackState {state=PLAYING(3), position=50, buffered position=340, speed=1.0, updated=117705382, actions=7339995, custom actions=[], active item id=0, error=null}
+11-09 02:05:26.620  1792  3941 D MediaSessionService: onSessionPlaybackStateChanged: record=com.mosheg.sudokufight/androidx.media3.session.id.ExpoAudioBasicMediaSession_225227772/557 (userId=0) playbackState=PlaybackState {state=PLAYING(3), position=50, buffered position=340, speed=1.0, updated=117705383, actions=7339995, custom actions=[], active item id=0, error=null}
+11-09 02:05:26.622 16269 16333 D PipelineWatcher: onInputBufferReleased: frameIndex not found (112); ignored
+11-09 02:05:26.628  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.628  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.631  1792  4690 D VibratorManagerService: converted usage = TOUCH(18)
+11-09 02:05:26.631  1792  4690 D VibratorManagerService: vibrate - uid: 10044, opPkg: com.mosheg.sudokufight, effect: Mono{mEffect=Composed{segments=[Step{amplitude=0.0, frequencyHz=0.0, duration=0}, Step{amplitude=0.11764706, frequencyHz=0.0, duration=50}], repeat=-1, mMagnitudeType=TYPE_EXTRA}}, attrs: VibrationAttributes{mUsage=TOUCH, mAudioUsage= USAGE_UNKNOWN, mFlags=0, tags=}, reason: null, token: android.os.BinderProxy@cb3bfa
+11-09 02:05:26.631  1792  4690 D VibratorManagerService: Starting vibrate for vibration 3676
+11-09 02:05:26.632  1792  4690 D VibratorManagerService: Check AppOp mode VIBRATE for uid 10044 and package com.mosheg.sudokufight returned audio=allow, op=allow
+11-09 02:05:26.632  1792  4690 D VibrationThread: Vibration cancel requested with signal=EndInfo{status=CANCELLED_SUPERSEDED, endedBy=CallerInfo{ uid=10044, opPkg=com.mosheg.sudokufight, deviceId=0, attrs=VibrationAttributes{mUsage=TOUCH, mAudioUsage= USAGE_UNKNOWN, mFlags=0, tags=}, reason=null}}, immediate=false
+11-09 02:05:26.633  1792  1962 D VibrationThread: Playing vibration id 3675 on vibrator 0 CompleteEffectVibratorStep (cleanup)
+11-09 02:05:26.633  1792  1962 D VibrationThread: Running cancel vibration step on vibrator 0
+11-09 02:05:26.633  1792  1962 D VibrationThread: Turning off vibrator 0
+11-09 02:05:26.633  1211  1211 E SecVibrator-HAL-AIDL-CORE: V_2_0: Vibrator off
+11-09 02:05:26.633  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: do_off
+11-09 02:05:26.633  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: >> writeNode node:/timed_output/vibrator/enable val:0
+11-09 02:05:26.633  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: << writeNode node OK : 2
+11-09 02:05:26.634  1792  1962 D VibrationThread: Vibration 3675 finished with EndInfo{status=CANCELLED_SUPERSEDED, endedBy=CallerInfo{ uid=10044, opPkg=com.mosheg.sudokufight, deviceId=0, attrs=VibrationAttributes{mUsage=TOUCH, mAudioUsage= USAGE_UNKNOWN, mFlags=0, tags=}, reason=null}}
+11-09 02:05:26.634  1792  1962 D VibratorManagerService: VibrationThread released vibration 3675
+11-09 02:05:26.634  1792  1962 D VibratorManagerService: Finish AppOp mode VIBRATE for uid 10044 and package com.mosheg.sudokufight
+11-09 02:05:26.635  1792  1962 D VibratorManagerService: Vibration for uid=10044 and with attrs=VibrationAttributes{mUsage=MEDIA, mAudioUsage= USAGE_UNKNOWN, mFlags=0, tags=} ended with status CANCELLED_SUPERSEDED
+11-09 02:05:26.635  1792  1962 D VibratorManagerService: Starting vibration 3676 on thread
+11-09 02:05:26.635  1792  1962 D VibratorManagerService: Start AppOp mode VIBRATE for uid 10044 and package com.mosheg.sudokufight returned allow
+11-09 02:05:26.636  1792  1962 D VibrationThread: Playing vibration id 3676 StartSequentialEffectStep
+11-09 02:05:26.636  1792  1962 D VibrationThread: StartSequentialEffectStep for effect #0
+11-09 02:05:26.636  1792  1962 D VibrationThread: Running amplitude step with 0ms latency.
+11-09 02:05:26.636  1792  1962 D VibrationThread: Playing vibration id 3676 on vibrator 0 SetAmplitudeVibratorStep
+11-09 02:05:26.636  1792  1962 D VibrationThread: Running amplitude step with 0ms latency.
+11-09 02:05:26.637  1792  1962 D VibrationThread: Turning on vibrator 0 for 50ms
+11-09 02:05:26.637  1211  1211 E SecVibrator-HAL-AIDL-CORE: V_2_0: Vibrator on for timeoutMs: 50
+11-09 02:05:26.637  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: do_on for timeoutMs: 50
+11-09 02:05:26.637  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: >> writeNode node:/timed_output/vibrator/enable val:50
+11-09 02:05:26.637  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: << writeNode node OK : 3
+11-09 02:05:26.638  1792  1962 D VibrationThread: Turned on vibrator 0, result = 50
+11-09 02:05:26.638  1792  1962 D VibrationThread: Amplitude changed on vibrator 0 to 0.11764706
+11-09 02:05:26.638  1172  1673 W audio_sw_mixer: sw_mixer_mix_fp_direct_write(-),   MIXER_PLAYBACK  , path T_DEEP=>T_PRIMARY   , size_out 16384, rb     0, latency/total: 42.666/45.117 (21.396+0.003+23.718) ms
+11-09 02:05:26.639  1215  1692 D AudioFlinger: mixer(0xb4000078d9bf8a80) throttle end: throttle time(18)
+11-09 02:05:26.649  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.649  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.675 16269 16333 D PipelineWatcher: onInputBufferReleased: frameIndex not found (113); ignored
+11-09 02:05:26.686  1792  1962 D VibrationThread: Playing vibration id 3676 on vibrator 0 CompleteEffectVibratorStep
+11-09 02:05:26.686  1792  1962 D VibrationThread: Running complete vibration step on vibrator 0
+11-09 02:05:26.688  1792  6437 D VibratorManagerService: Vibration 3676 step 1 on vibrator 0 complete, notifying thread
+11-09 02:05:26.688  1792  6437 D VibrationThread: Vibration complete reported by vibrator 0
+11-09 02:05:26.688  1792  1962 D VibrationThread: Received completion callback from 0, accepted = true
+11-09 02:05:26.688  1792  1962 D VibrationThread: Playing vibration id 3676 on vibrator 0 TurnOffVibratorStep
+11-09 02:05:26.688  1792  1962 D VibrationThread: Turning off vibrator 0
+11-09 02:05:26.689  1211  1211 E SecVibrator-HAL-AIDL-CORE: V_2_0: Vibrator off
+11-09 02:05:26.689  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: do_off
+11-09 02:05:26.689  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: >> writeNode node:/timed_output/vibrator/enable val:0
+11-09 02:05:26.689  1211  1211 E SecVibrator-HAL-AIDL-CORE: HW_API: << writeNode node OK : 2
+11-09 02:05:26.689  1792  1962 D VibrationThread: Vibration 3676 finished with EndInfo{status=FINISHED, endedBy=null}
+11-09 02:05:26.690  1792  1962 D VibrationThread: Playing vibration id 3676 FinishSequentialEffectStep (cleanup)
+11-09 02:05:26.690  1792  1962 D VibrationThread: FinishSequentialEffectStep for effect #0
+11-09 02:05:26.690  1792  1962 D VibratorManagerService: VibrationThread released vibration 3676
+11-09 02:05:26.690  1792  1962 D VibratorManagerService: Finish AppOp mode VIBRATE for uid 10044 and package com.mosheg.sudokufight
+11-09 02:05:26.691  1792  1962 D VibratorManagerService: Vibration for uid=10044 and with attrs=VibrationAttributes{mUsage=TOUCH, mAudioUsage= USAGE_UNKNOWN, mFlags=0, tags=} ended with status FINISHED
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "Property 'INK' doesn't exist
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact: 
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact: ReferenceError: Property 'INK' doesn't exist
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at inkPose_inkModelTs1 (:1:54)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at InkTsx2 (:1:86)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at reactNativeReanimated_useDerivedValueTs1 (:1:121)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at mapperRun (:1:1267)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at scheduledMapperRun (:1:1581)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at executeQueue (:1:749)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at flushQueue (:1:1339)
+11-09 02:05:26.703  1797  1797 W unknown:BridgelessReact:     at nativeFlushQueue (:1:1186)")
+11-09 02:05:26.704  1797  1924 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask()
+11-09 02:05:26.704  1797  1924 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting createReactInstance task ref
+11-09 02:05:26.710  1792  4690 W PresentationStatsEventLogger: Bad view state for: -1, state: ViewState: [id=1073741963@411861709, state:c008, currentValue:android.view.autofill.AutofillValue@2db3373]
+11-09 02:05:26.712  1176  1395 I hwcomposer: [HWC] (0)fire a callback of refresh to SF[4]  
+11-09 02:05:26.717  1244  1244 I BufferQueueProducer: [FramebufferSurface](this:0xb40000745467fd78,id:-1,api:1,p:1244,c:1244) queueBuffer: fps=0.02 dur=84396.30 max=84220.84 min=175.47
+11-09 02:05:26.720  3893  3893 D WM-DelayedWorkTracker: Scheduling work 5adf8b06-37c3-4257-8596-b7a21395f72b
+11-09 02:05:26.727  3893  3893 D WM-GreedyScheduler: Starting tracking for 5adf8b06-37c3-4257-8596-b7a21395f72b
+11-09 02:05:26.736  1244  1244 I BufferQueueProducer: [com.mosheg.sudokufight/com.mosheg.sudokufight.MainActivity$_1797#6655](this:0xb40000742da8aeb0,id:-1,api:0,p:-1,c:1244) queueBuffer: fps=65.53 dur=1022.36 max=77.78 min=10.70
+11-09 02:05:26.738  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.738  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.740  1797  1797 E heg.sudokufight: [SurfaceTexture-0-1797-1] updateAndRelease: EGLConsumer is not attached to an OpenGL ES context
+11-09 02:05:26.741  1797  1797 I RNSkia  : updateAndRelease() failed. The exception above can safely be ignored
+11-09 02:05:26.743  1797  1797 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Starting React Native destruction
+11-09 02:05:26.743  1797  1797 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Move ReactHost to onHostDestroy()
+11-09 02:05:26.743  1797  1797 W unknown:BridgelessReact: ReactHost{0}.ReactContext.onHostPause()
+11-09 02:05:26.744  1792  4690 D MediaSessionService: Media button session is changed to com.mosheg.sudokufight/androidx.media3.session.id.ExpoAudioBasicMediaSession_225227772/557 (userId=0)
+11-09 02:05:26.744  1792  4690 D MediaSessionService: onSessionPlaybackStateChanged: record=com.mosheg.sudokufight/androidx.media3.session.id.ExpoAudioBasicMediaSession_225227772/557 (userId=0) playbackState=PlaybackState {state=PAUSED(2), position=171, buffered position=340, speed=0.0, updated=117705507, actions=7339997, custom actions=[], active item id=0, error=null}
+11-09 02:05:26.744  2425  2425 D SimplePlayLastSongHelper: OnMediaKeyEventSessionChanged true true
+11-09 02:05:26.744  1792  2824 D MediaSessionService: onSessionPlaybackStateChanged: record=com.mosheg.sudokufight/androidx.media3.session.id.ExpoAudioBasicMediaSession_225227772/557 (userId=0) playbackState=PlaybackState {state=PAUSED(2), position=171, buffered position=340, speed=0.0, updated=117705508, actions=7339997, custom actions=[], active item id=0, error=null}
+11-09 02:05:26.744  2425  2425 D SimplePlayLastSongHelper: OnMediaKeyEventSessionChanged currentKeyEventMediaController updated
+11-09 02:05:26.745  3893  4435 D WM-ConstraintTracker: BatteryNotLowTracker: initial state = true
+11-09 02:05:26.745  3893  4435 D WM-BrdcstRcvrCnstrntTrc: BatteryNotLowTracker: registering receiver
+11-09 02:05:26.745  1797  1797 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+11-09 02:05:26.746  1792  2162 D BackgroundInstallControlService: Package event received: 0
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: Unhandled SoftException
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.kt:919)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException$default(ReactHostImpl.kt:910)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.callWithExistingReactInstance$lambda$32(ReactHostImpl.kt:935)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$OnkS1FVBHx0tAZXPMEZwFodv3co(ReactHostImpl.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda29.then(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeImmediately$lambda$3(Task.kt:360)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$b7MTC0ufkn_2TjF4BGcNqGR9qK0(Task.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda3.run(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Executors$ImmediateExecutor.execute(Executors.kt:41)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeImmediately(Task.kt:358)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.access$completeImmediately(Task.kt:254)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.continueWith(Task.kt:133)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.continueWith$default(Task.kt:117)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.onSuccess$lambda$12(Task.kt:176)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.$r8$lambda$l0wwo5AvbHxlwfI1R7CH_codxoo(Task.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$$ExternalSyntheticLambda2.then(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:394)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Task.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Executors$ImmediateExecutor.execute(Executors.kt:41)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask(Task.kt:392)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.access$completeAfterTask(Task.kt:254)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.continueWithTask(Task.kt:158)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task.onSuccess(Task.kt:171)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.callWithExistingReactInstance(ReactHostImpl.kt:931)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.callWithExistingReactInstance$default(ReactHostImpl.kt:924)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.callFunctionOnModule$ReactAndroid_release(ReactHostImpl.kt:812)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.BridgelessReactContext.emitDeviceEvent(BridgelessReactContext.kt:157)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.modules.appstate.AppStateModule.sendEvent(AppStateModule.kt:71)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.modules.appstate.AppStateModule.sendAppStateChangeEvent(AppStateModule.kt:75)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.modules.appstate.AppStateModule.onHostPause(AppStateModule.kt:48)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.bridge.ReactContext.onHostPause(ReactContext.java:318)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactLifecycleStateManager.moveToOnHostDestroy(ReactLifecycleStateManager.kt:77)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.getOrCreateDestroyTask$lambda$61(ReactHostImpl.kt:1511)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.$r8$lambda$jQI_IEEWhftqaDstkhz9epJ-hCQ(ReactHostImpl.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl$$ExternalSyntheticLambda23.then(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.completeAfterTask$lambda$5(Task.kt:394)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion.$r8$lambda$IPpysnehFwANEiW061YzapkMdoE(Task.kt:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.facebook.react.runtime.internal.bolts.Task$Companion$$ExternalSyntheticLambda4.run(D8$$SyntheticClass:0)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.os.Handler.handleCallback(Handler.java:1070)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.os.Looper.dispatchMessage(Looper.java:358)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:288)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:392)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:10346)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:638)
+11-09 02:05:26.746  1797  1797 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:972)
+11-09 02:05:26.749  1797  1797 W unknown:BridgelessReact: ReactHost{0}.ReactContext.onHostDestroy()
+11-09 02:05:26.750  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.750  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.750  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.750  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.751  1792  1792 I SemApeController: updateStreamingState: com.mosheg.sudokufight uid=10044
+11-09 02:05:26.755  3893  3893 D WM-SystemJobService: onStartJob for WorkGenerationalId(workSpecId=5adf8b06-37c3-4257-8596-b7a21395f72b, generation=0)
+11-09 02:05:26.755  1797  1797 E unknown:ReactNative: Tried to remove non-existent frame callback
+11-09 02:05:26.755  1797  1924 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Stopping all React Native surfaces
+11-09 02:05:26.756  3893  4435 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=5adf8b06-37c3-4257-8596-b7a21395f72b, generation=0)
+11-09 02:05:26.756  1797  1924 E unknown:SurfaceMountingManager: Stopping surface [1]
+11-09 02:05:26.757 16269 16332 D PipelineWatcher: onInputBufferReleased: frameIndex not found (114); ignored
+11-09 02:05:26.760  3893  4435 D WM-Processor: Processor: processing WorkGenerationalId(workSpecId=5adf8b06-37c3-4257-8596-b7a21395f72b, generation=0)
+11-09 02:05:26.761  3893  4435 D WM-Processor: Work WorkGenerationalId(workSpecId=5adf8b06-37c3-4257-8596-b7a21395f72b, generation=0) is already enqueued for processing
+11-09 02:05:26.765  1797  1797 I ReactNative: [GESTURE HANDLER] Tearing down gesture handler registered for root view com.facebook.react.runtime.ReactSurfaceView{7c77c02 V.E...... ........ 0,0-1080,2340 #1}
+11-09 02:05:26.767  1797  1797 E unknown:SurfaceMountingManager: Surface [1] was stopped on SurfaceMountingManager.
+11-09 02:05:26.778  3893  3893 D WM-WorkerWrapper: Starting work for com.android.providers.media.photopicker.sync.ProactiveSyncWorker
+11-09 02:05:26.781  1797  1928 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+11-09 02:05:26.782  1797  1928 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+11-09 02:05:26.782  3893 16355 I PSyncWorker: Starting proactive picker sync from sync source: 1
+11-09 02:05:26.782  3893 16355 I PickerSyncTracker: Created new sync future java.util.concurrent.CompletableFuture@56fa082[Not completed, 1 dependents]. Future map: {5adf8b06-37c3-4257-8596-b7a21395f72b=java.util.concurrent.CompletableFuture@56fa082[Not completed, 1 dependents]}
+11-09 02:05:26.785  3893 16355 D PickerSyncController: syncAllMediaFromProvider() LOCAL, auth=com.android.providers.media.photopicker, retry=true
+11-09 02:05:26.785  3893 16355 D PickerSyncController: getSyncRequestParams() LOCAL, auth=com.android.providers.media.photopicker
+11-09 02:05:26.785 16269 16332 D PipelineWatcher: onInputBufferReleased: frameIndex not found (115); ignored
+11-09 02:05:26.793  1797  1797 I SV[67187139 MainActivity]: onWindowVisibilityChanged(8) false com.shopify.reactnative.skia.SkiaSurfaceView{40131c3 V.E...... ........ 0,0-1080,2340} of VRI[MainActivity]@b5d473d
+11-09 02:05:26.793  1797  1797 I SurfaceView: 67187139 Changes: creating=false format=false size=false visible=true alpha=false hint=false left=false top=false z=false attached=true lifecycleStrategy=false
+11-09 02:05:26.793  1797  1797 I SurfaceView: 67187139 Cur surface: Surface(name=null mNativeObject=-5476376621008129792)/@0x3aecd79
+11-09 02:05:26.793  1797  1797 I SurfaceView: 67187139 surfaceDestroyed
+11-09 02:05:26.793  1797  1797 I SV[67187139 MainActivity]: surfaceDestroyed callback.size 1 #2 com.shopify.reactnative.skia.SkiaSurfaceView{40131c3 V.E...... ........ 0,0-1080,2340}
+11-09 02:05:26.796  3893 16355 D PickerSyncController:    Latest ID/Gen=5e3ffff5604190a8:external_primary/18774
+11-09 02:05:26.796  1797  1797 I SV[67187139 MainActivity]: updateSurface: mVisible = false mSurface.isValid() = true
+11-09 02:05:26.796  3893 16355 D PickerSyncController:    Last Synced ID/Gen=5e3ffff5604190a8:external_primary/16790
+11-09 02:05:26.796  1797  1797 I BLASTBufferQueue: [40131c3 SurfaceView[com.mosheg.sudokufight/com.mosheg.sudokufight.MainActivity]@0#1](f:0,a:1,s:0) destructor()
+11-09 02:05:26.796  1797  1797 D BufferQueueConsumer: [40131c3 SurfaceView[com.mosheg.sudokufight/com.mosheg.sudokufight.MainActivity]@0#1(BLAST Consumer)1](id:70500000001,api:0,p:-1,c:1797) disconnect
+11-09 02:05:26.796  3893 16355 D PickerSyncController:    RESULT=SyncRequestParams{type=MEDIA_INCREMENTAL, gen=16790, latest=Bundle[{last_media_sync_generation=18774, media_collection_id=5e3ffff5604190a8:external_primary}], pageSize=1000}
+11-09 02:05:26.796  3893 16355 I PickerSyncController: Executing SyncRemove. isLocal: true. authority: com.android.providers.media.photopicker
+11-09 02:05:26.796  1797  1797 I SV[67187139 MainActivity]: releaseSurfaces: viewRoot = VRI[MainActivity]@b5d473d
+11-09 02:05:26.796  3893 16355 D PickerSyncLockManager: Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6db7373[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+11-09 02:05:26.797  3893 16355 D CloseableReentrantLock: Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6db7373[Locked by thread pool-7-thread-238]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+11-09 02:05:26.797  1797  1797 V SurfaceView: Layout: x=0 y=0 w=1080 h=2340, frame=Rect(0, 0 - 1080, 2340)
+11-09 02:05:26.797  3893 16355 D CloseableReentrantLock: Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6db7373[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+11-09 02:05:26.797  1797  1797 I SurfaceView: 67187139 Detaching SV
+11-09 02:05:26.797  1797  1797 I SurfaceView: 67187139 Changes: creating=false format=false size=false visible=false alpha=false hint=false left=false top=false z=false attached=false lifecycleStrategy=false
+11-09 02:05:26.797  1797  1797 I SV[67187139 MainActivity]: onDetachedFromWindow: tryReleaseSurfaces()
+11-09 02:05:26.797  1797  1797 I SV[67187139 MainActivity]: releaseSurfaces: viewRoot = VRI[MainActivity]@b5d473d
+11-09 02:05:26.801  1797  1797 D BufferQueueConsumer: [SurfaceTexture-0-1797-1](id:7050000000a,api:0,p:-1,c:1797) disconnect
+11-09 02:05:26.804  1797  1797 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying MemoryPressureRouter
+11-09 02:05:26.805  1797  1797 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactContext ref
+11-09 02:05:26.805  1797  1797 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying ReactContext
+11-09 02:05:26.805  1797  1924 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactInstance ptr

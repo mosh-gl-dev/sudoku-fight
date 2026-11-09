@@ -267,7 +267,7 @@ function Where({ where, reduce }: { where: ReadyWhere; reduce: boolean }) {
 const ICON = 56;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: tokens.layout.gutterGame, backgroundColor: color.bg },
+  screen: { flex: 1, paddingHorizontal: tokens.layout.gutterGame },
   content: { alignItems: 'center', gap: space[8] },
   title: { ...text('screenTitle'), color: color.accent, textAlign: 'center' },
   kind: { alignItems: 'center', gap: space[4] },

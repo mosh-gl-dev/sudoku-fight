@@ -17,7 +17,7 @@
 | Does your app collect or share any of the required user data types? | **Yes** | |
 | Is all of the user data collected by your app encrypted in transit? | **Yes** | ‏HTTPS ו־WSS. בבניית Production צריך `EXPO_PUBLIC_SERVER_SECURE=true` (‏`fly.toml`: ‏`force_https`). ה־SDKs של Firebase תמיד ב־TLS |
 | Which account creation methods does your app support? | **Username and password**, ו־**OAuth** | מייל וסיסמה (Firebase Auth), או "המשך עם Google" (רשות; מ־14.10.2026). אין התחברות בלי חשבון |
-| Delete account URL | `https://<שרת ה־Production>/legal/delete-account?lang=en` | הדף מסביר את המחיקה באפליקציה, ומאפשר לבקש מחיקה במייל בלי האפליקציה |
+| Delete account URL | `https://sudokufight.app/legal/delete-account?lang=en` | הדף מסביר את המחיקה באפליקציה, ומאפשר לבקש מחיקה במייל בלי האפליקציה |
 | Can users request that some data is deleted without deleting the account? | **No** | (שאלה אופציונלית.) מחיקה חלקית אין. אפשר לשנות שם, אווטאר ומדינה |
 
 > ⚠️ **מחיקה במייל (בלי האפליקציה)** היא תהליך ידני: היום אין בשרת כלי ניהול שמוחק חשבון. עד שיהיה (למשל פקודת `npm run` שקוראת ל־`deleteUser` לפי מייל), משה מוחק כך: את המשתמש ב־Firebase Console → Authentication, ואת השורה בשרת לפי אותם כללים של `accounts/store.ts` ‏`deleteUser`. הדף מבטיח מענה תוך 30 יום.

@@ -5,7 +5,7 @@ import { useAuth } from '../../../auth';
 import type { OnlineSession } from '../../../game/onlineSession';
 import { useNow } from '../../../game/useNow';
 import { useProfile } from '../../../state/profile';
-import { color } from '../../../theme';
+import { useGoCoverGate } from '../../match/goCoverGate';
 import { ConnectionLayer, connectionModel, matchLoadingOf } from '../connection';
 import { GameScreen } from '../GameScreen';
 import { connectionStatusOf } from './connectionStatus';
@@ -76,14 +76,16 @@ export function OnlineGame({
   useLayoutEffect(() => {
     back.current = model.kind === 'error' ? onHome : onLeave;
   });
+  // Not while a ranked match's GO! is still on screen (goCoverGate.ts): from "found" on back does nothing [D32].
+  const goCover = useGoCoverGate();
   useEffect(() => {
     if (hasGame) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      back.current();
+      if (!goCover?.covering()) back.current();
       return true;
     });
     return () => sub.remove();
-  }, [hasGame]);
+  }, [hasGame, goCover]);
 
   if (hasGame) {
     return (
@@ -117,5 +119,5 @@ export function OnlineGame({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
 });

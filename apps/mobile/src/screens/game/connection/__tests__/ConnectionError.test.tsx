@@ -10,6 +10,9 @@ jest.mock(
   () => jest.requireActual<{ default: object }>('react-native-safe-area-context/jest/mock').default,
 );
 
+const LRI = '⁦';
+const PDI = '⁩';
+
 const model = (over: Partial<ConnectionErrorModel> = {}): ConnectionErrorModel => ({
   kind: 'error',
   failure: 'unreachable',
@@ -37,9 +40,10 @@ describe('ConnectionError (Hebrew)', () => {
       'לא הצלחנו להתחבר לשרת המשחק. בדוק את החיבור ונסה שוב.',
     );
     expect(screen.getByTestId('connection-error-code')).toHaveAccessibleName(
-      'קוד שגיאה: ERR_SOCKET_TIMEOUT · 504',
+      `קוד שגיאה: ${LRI}ERR_SOCKET_TIMEOUT · 504${PDI}`,
     );
-    expect(screen.getByText('ERR_SOCKET_TIMEOUT · 504')).toHaveStyle({ writingDirection: 'ltr' });
+    // An LRI…PDI isolate (Android ignores writingDirection): "504 · ERR_…" never.
+    expect(screen.getByText(`${LRI}ERR_SOCKET_TIMEOUT · 504${PDI}`)).toHaveStyle({ writingDirection: 'ltr' });
     expect(screen.queryByTestId('connection-error-attempts')).not.toBeOnTheScreen();
     expect(env.announced()).toEqual(['שגיאת חיבור. לא הצלחנו להתחבר לשרת המשחק. בדוק את החיבור ונסה שוב.']);
   });
@@ -52,6 +56,17 @@ describe('ConnectionError (Hebrew)', () => {
     expect(screen.getByTestId('connection-error-body')).toHaveTextContent(
       'למכשיר אין רשת כרגע. התחבר לאינטרנט ונסה שוב.',
     );
+  });
+
+  it('back too late: says so in Hebrew, with the code as a code (connection-lost-no-recovery, connection-error-english-chip)', async () => {
+    await render(
+      <ConnectionError model={model({ failure: 'expired', code: 'ERR_NETWORK' })} {...handlers()} />,
+    );
+    expect(screen.getByRole('header')).toHaveTextContent('לא חזרת למשחק בזמן');
+    expect(screen.getByTestId('connection-error-body')).toHaveTextContent(
+      'החיבור לא חזר בזמן, ולכן המשחק נחשב נטישה.',
+    );
+    expect(screen.getByTestId('connection-error-code')).toHaveTextContent(`${LRI}ERR_NETWORK${PDI}`);
   });
 
   it.each<[ConnectionFailure, string]>([
@@ -155,7 +170,7 @@ describe('ConnectionError (English)', () => {
     );
     expect(screen.getByTestId('connection-error-attempts')).toHaveTextContent('Try 3 failed');
     expect(screen.getByTestId('connection-error-code')).toHaveAccessibleName(
-      'Error code: ERR_SOCKET_TIMEOUT · 504',
+      `Error code: ${LRI}ERR_SOCKET_TIMEOUT · 504${PDI}`,
     );
     for (const name of ['Try again', 'Go to practice', 'Home']) {
       expect(screen.getByRole('button', { name })).toBeOnTheScreen();

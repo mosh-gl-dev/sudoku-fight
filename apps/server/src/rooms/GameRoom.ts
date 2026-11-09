@@ -4,6 +4,7 @@ import {
   type AuthContext,
   type Client,
   CloseCode,
+  type Deferred,
   ErrorCode,
   matchMaker,
   Room,
@@ -353,6 +354,11 @@ export abstract class GameRoom extends Room {
   private readonly botTimers = new Set<unknown>();
   /** The stealth bots playing this game. */
   private readonly bots: SeatedBot[] = [];
+  /**
+   * Seats held for a dropped connection (allowReconnection), by its session: let go when the same player comes
+   * back on a new connection instead (the app was killed and opened again: no reconnection token any more).
+   */
+  private readonly heldSeats = new Map<string, (reason: Error) => void>();
 
   /** The game, once every seat is taken (diagnostics and tests; stage 9 stores its events). */
   get currentGame(): ServerGame | null {
@@ -391,9 +397,10 @@ export abstract class GameRoom extends Room {
     this.rated = setup.rated;
     if (this.rated && this.deps.ranked === undefined)
       throw refuse(ErrorCode.MATCHMAKE_INVALID_CRITERIA, 'badOptions', 'rated rooms need the database');
-    // A persona's seat (the stealth bot) takes no connection.
+    // A persona's seat (the stealth bot) takes no connection. A match room has room for a player's new
+    // connection while the old one's seat is still held (onJoin takes it over); a dev room is locked when full.
     const bots = this.match?.setup.bots ?? [];
-    this.maxClients = setup.playerCount - bots.length;
+    this.maxClients = (setup.playerCount - bots.length) * (this.match ? 2 : 1);
     if (this.match)
       this.seatReservationTimeout = (this.match.setup.readyTimeoutMs + MATCH_SEAT_SLACK_MS) / 1000;
     for (const bot of bots) {
@@ -427,9 +434,20 @@ export abstract class GameRoom extends Room {
     const seat = this.seatOfPlayer(identity.userId);
     if (!seat) throw refuse(ErrorCode.APPLICATION_ERROR, 'gameStarted', 'the game in this room has started');
     // A persona's seat is the bot's for good (nobody can sign in as one; this is the room's own guard).
-    if (seat.sessionId !== null || seat.bot)
+    if (seat.bot)
       throw refuse(ErrorCode.APPLICATION_ERROR, 'alreadyInRoom', `${seat.playerId} is connected already`);
+    if (seat.sessionId !== null) {
+      // Dropped, and the seat held for the old connection's token: the app was killed and opened again (no
+      // token any more), so this connection takes the seat over, and the hold is let go (its onLeave then finds
+      // no seat). A connection still open is refused: the server has not seen it drop yet (the app tries again).
+      const letGo = this.heldSeats.get(seat.sessionId);
+      if (!letGo)
+        throw refuse(ErrorCode.APPLICATION_ERROR, 'alreadyInRoom', `${seat.playerId} is connected already`);
+      this.heldSeats.delete(seat.sessionId);
+      letGo(new Error('the player is back on a new connection'));
+    }
     seat.sessionId = client.sessionId;
+    seat.away = false;
     this.gate!.newSession(seat.playerId);
     this.deps.log.info(`[game ${this.code}] ${seat.playerId} rejoined`);
     this.welcomeBack(client, seat);
@@ -457,11 +475,31 @@ export abstract class GameRoom extends Room {
     const seconds = (Math.max(0, until - now) + RECONNECT_SLACK_MS) / 1000;
     this.deps.log.info(`[game ${this.code}] ${seat.playerId} dropped; ${seconds.toFixed(1)} s to come back`);
     // A client that never finished joining can't reconnect; it may still rejoin by code.
-    this.allowReconnection(client, seconds).catch(() => undefined);
+    this.holdSeat(client, seconds);
+  }
+
+  /**
+   * Colyseus holds the dropped connection's seat for its reconnection token for `seconds`; the hold is kept
+   * here too, so a rejoin of the same player on a new connection can let it go (onJoin).
+   */
+  private holdSeat(client: Client, seconds: number): void {
+    const hold = this.allowReconnection(client, seconds);
+    hold.catch(() => undefined);
+    const reject = (hold as Partial<Deferred<Client>>).reject;
+    if (typeof reject !== 'function') return;
+    const { sessionId } = client;
+    this.heldSeats.set(sessionId, (reason) => {
+      reject.call(hold, reason);
+    });
+    const done = () => {
+      this.heldSeats.delete(sessionId);
+    };
+    hold.then(done, done);
   }
 
   /** Back within the grace period with the reconnection token (same session). */
   override onReconnect(client: Client): void {
+    this.heldSeats.delete(client.sessionId);
     this.kicked.delete(client.sessionId);
     const seat = this.seatOfSession(client.sessionId);
     if (!seat) return;
@@ -475,6 +513,7 @@ export abstract class GameRoom extends Room {
    * (Colyseus calls onLeave, not onDrop, for a socket that dies while it reconnects).
    */
   override onLeave(client: Client, code?: number): void {
+    this.heldSeats.delete(client.sessionId);
     this.kicked.delete(client.sessionId);
     const seat = this.seatOfSession(client.sessionId);
     if (!seat) return;
@@ -540,7 +579,7 @@ export abstract class GameRoom extends Room {
     this.deps.log.info(
       `[game ${this.code}] ${seat.playerId} dropped before the game; ${seconds.toFixed(1)} s to come back`,
     );
-    this.allowReconnection(client, seconds).catch(() => undefined);
+    this.holdSeat(client, seconds);
   }
 
   /**
@@ -554,7 +593,7 @@ export abstract class GameRoom extends Room {
     this.deps.log.info(
       `[game ${this.code}] ${seat.playerId} dropped after the end; ${seconds.toFixed(1)} s to come back`,
     );
-    this.allowReconnection(client, seconds).catch(() => undefined);
+    this.holdSeat(client, seconds);
   }
 
   /** Everyone has had the end: nothing keeps an empty room open any more (a bot's seat waits for nothing). */
@@ -613,9 +652,23 @@ export abstract class GameRoom extends Room {
     return true;
   }
 
-  /** Hook 4: the seats (and extra fields) of `lobby`. Here: each seat's id and name. */
+  /**
+   * Hook 4: the seats (and extra fields) of `lobby`. Here: each seat's id and name; a match room adds the card
+   * "found" showed (avatar, flag), for an app that comes back into the game with nothing kept (welcomeBack).
+   */
   protected lobbyContent(): GameRoomLobbyContent {
-    return { players: this.seats.map((s) => ({ id: s.playerId, name: s.name })) };
+    const cards = new Map((this.match?.setup.players ?? []).map((p) => [p.userId, p]));
+    return {
+      players: this.seats.map((s) => {
+        const card = cards.get(s.playerId);
+        return {
+          id: s.playerId,
+          name: s.name,
+          ...(card?.avatarId !== undefined && { avatarId: card.avatarId }),
+          ...(card?.country !== undefined && { country: card.country }),
+        };
+      }),
+    };
   }
 
   /**
@@ -776,20 +829,24 @@ export abstract class GameRoom extends Room {
 
   /** `lobby` to everyone with a seat (hook 4: lobbyContent()). */
   protected sendLobby(): void {
-    const { players, ...extra } = this.lobbyContent();
+    const content = this.lobbyContent();
     for (const client of this.clients) {
       const seat = this.seatOfSession(client.sessionId);
-      if (!seat) continue;
-      this.sendTo(client, {
-        type: 'lobby',
-        code: this.code,
-        gameType: this.gameType,
-        playerCount: this.playerCount,
-        players,
-        playerId: seat.playerId,
-        ...extra,
-      });
+      if (seat) this.sendLobbyTo(client, seat, content);
     }
+  }
+
+  private sendLobbyTo(client: Client, seat: Seat, content = this.lobbyContent()): void {
+    const { players, ...extra } = content;
+    this.sendTo(client, {
+      type: 'lobby',
+      code: this.code,
+      gameType: this.gameType,
+      playerCount: this.playerCount,
+      players,
+      playerId: seat.playerId,
+      ...extra,
+    });
   }
 
   /** The room's game type until the start (a friends room's host changes it [D82]). */
@@ -986,13 +1043,23 @@ export abstract class GameRoom extends Room {
    * A fresh snapshot to a player coming back, then the engine's reconnect for everyone. Before the game (a
    * match's countdown, or a rated game being set up) there is nothing to send but the countdown: the
    * snapshot goes to everyone in the room when the game starts.
+   *
+   * The room's `lobby` follows (the countdown, or the snapshot): the seats' cards (a friends room's avatars and
+   * flags, a match's from "found"). An app that came back on a new connection after it was killed has nothing
+   * kept of the lobby it saw, and drew the others with the grey avatar and no flag to the end (QA
+   * rejoin-opponent-avatar-lost). After the countdown or the snapshot, never before: a `lobby` with no game and
+   * no count yet is what the app shows as the waiting room.
    */
   private welcomeBack(client: Client, seat: Seat): void {
     if (!this.game) {
-      if (this.phase === 'countdown') this.sendCountdown(client);
+      if (this.phase === 'countdown') {
+        this.sendCountdown(client);
+        this.sendLobbyTo(client, seat);
+      }
       return;
     }
     this.sendSnapshot(client, seat.playerId);
+    this.sendLobbyTo(client, seat);
     if (this.phase === 'over') {
       this.sendTo(client, { type: 'solution', solution: this.game.solution });
       // Back after the end: now they have it. The last one to get it lets the room close once it is empty.

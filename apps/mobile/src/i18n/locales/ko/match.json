@@ -82,6 +82,7 @@
     },
     "code": "오류 코드: {{code}}",
     "retry": "다시 찾기",
+    "backToGame": "게임으로 돌아가기",
     "verify": "이메일 인증",
     "practice": "연습하러 가기",
     "practiceNote": "혼자 또는 봇과 하는 연습은 오프라인에서도 할 수 있어요.",

@@ -468,7 +468,7 @@ describe("the app's RemoteGameHost on the real server", () => {
 
   it('a drop past the grace: the other host wins by abandonment, the dropped one gives up', async () => {
     const a = phone('Moshe');
-    const b = phone('Nina', { options: { serverNoticeMs: 0 } });
+    const b = phone('Nina', { options: { serverNoticeMs: 0, afterGraceRetryMs: 1000 } });
     const { room } = await table(a, b, { graceMs: 1500, softGraceMs: 0 });
 
     b.net.down();

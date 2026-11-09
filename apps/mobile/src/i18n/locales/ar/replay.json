@@ -65,6 +65,7 @@
     "noLogic": "الإجابة: {{cell}} → {{digit}}",
     "scoreLine": "حساب النقاط",
     "penaltyLine": "الغرامة: قيمة الرقم الصحيح",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "أُلغي الاختيار",
       "timeout": "انتهى الوقت",

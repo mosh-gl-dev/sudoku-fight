@@ -1,13 +1,24 @@
 import { ENGINE_VERSION } from '@sudoku-fight/engine';
-import type { ReactNode } from 'react';
+import { router } from 'expo-router';
+import { type ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { VersionInfo } from '../../components/VersionInfo';
+import { RowButton } from '../../components/ui/RowButton';
 import { Text } from '../../components/ui/Text';
+import { useToast } from '../../components/ui/toastStore';
 import { type AppVersionInfo, appVersionInfo } from '../../config/appVersion';
-import { type TestingBuildSources, testingSwitchesAllowed, thisBuild } from '../../config/testing';
+import {
+  nextTapRun,
+  type TapRun,
+  type TestingBuildSources,
+  testingSectionShown,
+  testingSwitchesAllowed,
+  thisBuild,
+  UNLOCK_TAPS,
+} from '../../config/testing';
 import { cue } from '../../services/feedback';
 import { type ReduceMotionSetting, useSettings } from '../../state/settings';
 import { useTestingSwitches } from '../../state/testingSwitches';
@@ -34,7 +45,13 @@ const REDUCE_MOTION: readonly ReduceMotionSetting[] = ['system', 'on', 'off'];
  * 1.0.2: a staging build (and a development build not on production) adds "בדיקה" before the version, so
  * Moshe can try staged practice before he decides (config/testing.ts): "שרשרת: ניחוש עולה 5 ש׳" [D64] and
  * "פתח את כל השלבים (בדיקה)". A production build never shows it. 1.1.0 adds the pseudo languages and the plural
- * check screen there (PseudoLanguageSettings; localization plan 0יג).
+ * check screen there (PseudoLanguageSettings; localization plan 0יג). 30.10.2026 adds the Pirates slice of the
+ * digit-series avatars (/dev/pirates), for Moshe to judge on the phone (choosable avatars too since 31.10.2026).
+ *
+ * 31.10.2026 (Moshe: "ראיתי דברים מוזרים במסך הגדרות שלא הבנתי"): "בדיקה" is hidden even on staging. 7 quick taps
+ * on the version lines open it, with a toast, like Android's developer options (config/testing.ts UNLOCK_TAPS);
+ * it stays open on the phone, and "הסתרת אזור הבדיקה" at its end hides it again. Its switches keep working
+ * while it is hidden. A production build never shows it, and its version lines take no taps.
  */
 export interface SettingsScreenProps {
   /**
@@ -46,15 +63,40 @@ export interface SettingsScreenProps {
   build?: TestingBuildSources;
 }
 
+const openPirates = () => router.push('/dev/pirates');
+/** Hides "בדיקה" again; its switches stay as they are. */
+const hideTesting = () => useTestingSwitches.getState().setSectionOpen(false);
+
+/**
+ * The version lines' taps: UNLOCK_TAPS quick ones in a row open the "בדיקה" section, and say so in a toast.
+ * Undefined (the lines stay plain text) where they open nothing: a build without the section, or once it is open.
+ */
+function useUnlockTaps(enabled: boolean, opened: string): (() => void) | undefined {
+  const run = useRef<TapRun | null>(null);
+  if (!enabled) return undefined;
+  return () => {
+    const next = nextTapRun(run.current, Date.now());
+    run.current = next.count < UNLOCK_TAPS ? next : null;
+    if (next.count < UNLOCK_TAPS) return;
+    useTestingSwitches.getState().setSectionOpen(true);
+    useToast.getState().show({ variant: 'success', message: opened });
+  };
+}
+
 export function SettingsScreen({ version = appVersionInfo(), build = thisBuild() }: SettingsScreenProps) {
   const { t } = useTranslation('home');
+  // The developer screens' words (D109: Hebrew and English only).
+  const { t: td } = useTranslation('dev');
   const { top, bottom } = useSafeAreaInsets();
   const sound = useSettings((s) => s.sound);
   const haptics = useSettings((s) => s.haptics);
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const testing = testingSwitchesAllowed(build);
+  const sectionOpen = useTestingSwitches((s) => s.sectionOpen);
   const chainPenalty = useTestingSwitches((s) => s.chainPenalty);
   const unlockAllLevels = useTestingSwitches((s) => s.unlockAllLevels);
+  const tapVersion = useUnlockTaps(testing && !sectionOpen, td('testingSection.opened'));
+  const testingShown = testingSectionShown(sectionOpen, build);
 
   // The cue comes after the change, so it follows the new setting: turning sound on is heard, turning it off is not.
   const changed =
@@ -106,7 +148,7 @@ export function SettingsScreen({ version = appVersionInfo(), build = thisBuild()
 
         <LegalSettings />
 
-        {testing ? (
+        {testingShown ? (
           <Section title={t('settings.testing')} hint={t('settings.testingHint')}>
             <View style={styles.card} testID="settings-testing">
               <SwitchRow
@@ -126,10 +168,24 @@ export function SettingsScreen({ version = appVersionInfo(), build = thisBuild()
               />
             </View>
             <PseudoLanguageSettings />
+            <RowButton
+              icon="reactions"
+              title={td('piratesLab.open')}
+              accessibilityHint={td('piratesLab.openHint')}
+              onPress={openPirates}
+              testID="setting-pirates"
+            />
+            <RowButton
+              icon="eyeOff"
+              title={td('testingSection.hide')}
+              accessibilityHint={td('testingSection.hideHint', { n: UNLOCK_TAPS })}
+              onPress={hideTesting}
+              testID="setting-testing-hide"
+            />
           </Section>
         ) : null}
 
-        <VersionInfo info={version} engine={ENGINE_VERSION} />
+        <VersionInfo info={version} engine={ENGINE_VERSION} onPress={tapVersion} />
       </ScrollView>
     </View>
   );
@@ -146,7 +202,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: GUTTER.screen },
   content: { paddingHorizontal: GUTTER.screen, paddingTop: space[6], gap: space[11] },
   section: { gap: space[5] },

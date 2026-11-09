@@ -133,10 +133,12 @@
     "error": {
       "title": "Verbindingsfout",
       "offlineTitle": "Geen internetverbinding",
+      "expiredTitle": "Je kwam niet op tijd terug",
       "body": {
         "offline": "Je telefoon heeft nu geen netwerk. Maak verbinding met internet en probeer het opnieuw.",
         "unreachable": "We konden de spelserver niet bereiken. Controleer je verbinding en probeer het opnieuw.",
         "lost": "De verbinding met de spelserver viel weg en we konden hem niet herstellen.",
+        "expired": "De verbinding kwam niet op tijd terug, dus het spel telt als vertrek.",
         "refused": "De server liet ons niet toe in de kamer."
       },
       "refusal": {
@@ -172,7 +174,9 @@
       "confirm": "Ja, opgeven",
       "cancel": "Annuleren",
       "footnote": "Het spel loopt op de achtergrond door",
-      "dialog": "Bevestig dat je opgeeft"
+      "dialog": "Bevestig dat je opgeeft",
+      "notSent": "Je hebt niet opgegeven, en het spel gaat door. Je kunt het opnieuw proberen",
+      "notSentOffline": "Geen verbinding met de server, dus je hebt niet opgegeven. Probeer het opnieuw zodra die terug is"
     },
     "lobby": {
       "title": "Privékamer",
@@ -411,9 +415,31 @@
       "move": "{{cell}} → {{digit}}",
       "label_one": "Zet van het spel: {{points}} punt, {{digit}} in {{cell}}",
       "label_other": "Zet van het spel: {{points}} punten, {{digit}} in {{cell}}",
-      "formula": "Zo scoorde hij",
-      "formulaLabel": "Zo scoorde hij: {{line}}",
-      "none": "Geen goede zet in dit oefenspel"
+      "before": "Gevuld vóór de zet",
+      "count": {
+        "row": "in de rij",
+        "col": "in de kolom",
+        "box": "in het blok",
+        "num": "keer een {{digit}} op het bord"
+      },
+      "filled": {
+        "row_one": "{{count}} in de rij",
+        "row_other": "{{count}} in de rij",
+        "col_one": "{{count}} in de kolom",
+        "col_other": "{{count}} in de kolom",
+        "box_one": "{{count}} in het blok",
+        "box_other": "{{count}} in het blok",
+        "num_one": "de {{digit}} staat één keer op het bord",
+        "num_other": "de {{digit}} staat {{count}} keer op het bord"
+      },
+      "countName": {
+        "row": "de rij",
+        "col": "de kolom",
+        "box": "het blok",
+        "num": "de {{digit}} op het bord"
+      },
+      "why": "Hoe leger het rond het vakje is, hoe meer een zet waard is. De twee hoogste tellingen bepalen de punten: {{highest}} met vol gewicht, {{next}} met half gewicht.",
+      "none": "Je had geen goede zet in dit spel"
     },
     "stats": {
       "time": "Speeltijd",
@@ -445,6 +471,13 @@
     "actions": {
       "home": "Naar start",
       "newGame": "Nieuw spel"
+    },
+    "again": {
+      "solo": "Start meteen nog een solo-oefenspel, {{type}}",
+      "bot": "Start meteen nog een spel tegen {{bot}}, {{type}}",
+      "botAny": "Start meteen nog een spel tegen de bot, {{type}}",
+      "ranked": "Nog een ranked spel, {{type}}",
+      "friends": "Terug naar spelen met vrienden"
     },
     "loading": "De uitslag laden…",
     "missing": "We konden dit oefenspel niet vinden",

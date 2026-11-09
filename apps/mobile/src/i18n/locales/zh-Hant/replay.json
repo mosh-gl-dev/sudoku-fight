@@ -65,6 +65,7 @@
     "noLogic": "答案：{{cell}} → {{digit}}",
     "scoreLine": "得分",
     "penaltyLine": "扣分：正確數字原本的分數",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "已取消選擇",
       "timeout": "時間到",

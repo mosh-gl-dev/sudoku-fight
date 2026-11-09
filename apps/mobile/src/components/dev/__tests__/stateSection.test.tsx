@@ -4,6 +4,7 @@ import { StyleSheet, type TextStyle } from 'react-native';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { paletteAt } from '../../player';
+import { ltr } from '../../player/format';
 import { FieldSection, RowSection, StateSection } from '../StateSection';
 
 /**
@@ -31,10 +32,10 @@ describe.each([
 
     const offline = screen.getByTestId('ds-state-offline');
     expect(within(offline).getByRole('header', { name: offlineTitle })).toBeOnTheScreen();
-    expect(within(offline).getByTestId('ds-state-offline-code')).toHaveTextContent('offline');
+    expect(within(offline).getByTestId('ds-state-offline-code')).toHaveTextContent(ltr('ERR_OFFLINE'));
     expect(within(offline).getByRole('button', { name: retry })).toBeOnTheScreen();
 
-    expect(screen.getByTestId('ds-state-error-code')).toHaveTextContent('unavailable-503');
+    expect(screen.getByTestId('ds-state-error-code')).toHaveTextContent(ltr('ERR_UNAVAILABLE · 503'));
 
     const skeleton = screen.getByTestId('ds-skeleton');
     expect(skeleton).toHaveProp('accessibilityLabel', loading);

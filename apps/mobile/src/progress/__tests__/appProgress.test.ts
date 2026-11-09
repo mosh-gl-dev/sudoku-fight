@@ -7,6 +7,7 @@ import { bodyOf, card, type FakeCall, fakeFetch, myProgress } from '../../api/te
 import { initAuth, setAuthDeps, signOut, useAuth } from '../../auth/authStore';
 import { installSignedInPlayer } from '../../auth/testing/testAuth';
 import { accountConfig } from '../../config/account';
+import { setHealthCheck, useConnectivity } from '../../net/connectivity';
 import { FakeGame, OPP, rankedConfig } from '../../net/testing/fakeServer';
 import {
   currentOwner,
@@ -18,6 +19,7 @@ import {
   setProgressFetch,
   signedInProgressApi,
   startProgress,
+  syncProgressNow,
 } from '../appProgress';
 import { adoptProgress, progressOf, useProgress } from '../progressStore';
 
@@ -320,5 +322,92 @@ describe('after a ranked game (Moshe’s device test of 1.0.0: the rating follow
     foreground!('active');
     await settle();
     expect(gets()).toBe(2);
+  });
+});
+
+/**
+ * QA levels-xp-offline (loop 3): stages won in flight mode showed "+30 XP", but Home kept the XP from before
+ * them after the connection came back, until a restart. Their PUT waited out the backoff of the stretch
+ * offline (up to 5 minutes), and Home's read of my progress, before it, had the server's XP without them. Now the
+ * connection back (and Home's focus) sends what waits at once, and a read sent before a sync's answer never puts
+ * the older XP back. The practices go the same way; the stages' own sync is levelsSync.test.
+ */
+describe('XP played offline, after the connection comes back (QA levels-xp-offline)', () => {
+  const offlineGame = (id: string) => ({
+    id,
+    mode: 'solo' as const,
+    gameType: 'normal' as const,
+    playerId: 'me',
+    result: { reason: 'boardComplete' as const, ranking: [] },
+    endedAt: 9,
+  });
+  afterEach(() => setHealthCheck(null));
+
+  it('the connection back: what waits goes at once, past the backoff, and my numbers are read again', async () => {
+    await installSignedInPlayer();
+    await initAuth();
+    stop = startProgress();
+    await settle();
+    useConnectivity.setState({ status: 'offline' });
+    offline = true;
+    practiceFinished(offlineGame('played-offline'));
+    await settle();
+    expect(posted).toEqual([]);
+    expect(practiceSync().waiting).toBe(true);
+    // Home's focus while the app knows it is offline: nothing goes.
+    server.calls.length = 0;
+    syncProgressNow();
+    await settle();
+    expect(server.calls).toHaveLength(0);
+
+    offline = false;
+    useConnectivity.setState({ status: 'online' });
+    await settle();
+    // The backoff's timer has not run out: the connection's return sent it.
+    expect(posted.flat().map((r) => r.id)).toEqual(['played-offline']);
+    expect(practiceSync().waiting).toBe(false);
+    expect(useProgress.getState().pending).toBe(0);
+    expect(paths()).toEqual(expect.arrayContaining(['POST /v1/me/practice-results', 'GET /v1/me/progress']));
+  });
+
+  it('Home’s focus (syncProgressNow, connection unknown or online): what waits goes now, not after the backoff', async () => {
+    await installSignedInPlayer();
+    await initAuth();
+    stop = startProgress();
+    await settle();
+    offline = true;
+    practiceFinished(offlineGame('home-focus'));
+    await settle();
+    expect(practiceSync().waiting).toBe(true);
+    offline = false;
+    syncProgressNow();
+    await settle();
+    expect(posted.flat().map((r) => r.id)).toEqual(['home-focus']);
+  });
+
+  it('a read of my progress sent before a sync’s answer never puts back the XP from before it', async () => {
+    await installSignedInPlayer();
+    await initAuth();
+    stop = startProgress();
+    await settle();
+    const owner = currentOwner()!;
+    let answer: () => void = () => undefined;
+    const before = new Promise<ReturnType<typeof myProgress>>(
+      (resolve) => (answer = () => resolve(myProgress({ level: 3 }))),
+    );
+    const slow = {
+      myProgress: () => before,
+      player: (id: string) => Promise.resolve(card({ id, level: 3 })),
+    } as unknown as ProgressApi;
+    // Home's read goes out while the game still waits to be sent...
+    const reading = refreshMyProgress(slow);
+    // ...the sync's answer (the XP it paid) comes first...
+    practiceFinished(offlineGame('paid'));
+    await settle();
+    expect(progressOf(useProgress.getState(), owner)?.level).toBe(4);
+    // ...and the older read's answer, after it, is dropped.
+    answer();
+    await reading;
+    expect(progressOf(useProgress.getState(), owner)?.level).toBe(4);
   });
 });

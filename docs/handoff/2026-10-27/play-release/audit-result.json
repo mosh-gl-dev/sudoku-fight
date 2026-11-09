@@ -1,0 +1,515 @@
+[
+ {
+  "lens": "build-signing",
+  "audit": {
+   "findings": [
+    {
+     "id": "play-signing-key-not-registered",
+     "title": "Copies installed from Play are signed with a key Firebase and the production server don't list yet: Google sign-in shows DEVELOPER_ERROR and room links stay unverified",
+     "severity": "should",
+     "who": "moshe",
+     "evidence": "Sanitized scratch copy of apps/mobile/config/firebase/google-services.json (counts only): {\"packages\":[\"com.mosheg.sudokufight\"],\"debugClientsRemoved\":1,\"otherAndroidClients\":1}. The one other Android client is the EAS key (MOSHE-TODO B7). apps/mobile/app.config.ts:434 turns the Google button on for any EAS build whenever androidClients > 0. fly.production.toml:38 still has `# ANDROID_APP_LINK_SHA256 = \"<EAS key SHA-256>,<Play app signing key SHA-256>\"` commented out.",
+     "detail": "With Play App Signing, users get the AAB re-signed with Google's app-signing key, not the EAS upload key. The production build will show 'Continue with Google' because the file has an Android client, but every sign-in from a Play install ends in DEVELOPER_ERROR until that key's SHA-1 is in Firebase. The App Links filter (autoVerify on sudoku-fight-prod.fly.dev/r/) also verifies only if the production server's assetlinks.json lists the Play key's SHA-256. This is already planned (FIREBASE-SETUP.md §4א row 77, MOSHE-TODO F7/B8), but it must happen between the first upload and inviting testers. The key exists only after that first upload.",
+     "fix": "Right after the first manual AAB upload: Play Console → Test and release → App integrity → App signing → App signing key certificate. (1) Add its SHA-1 to the Firebase Android app. Sign-in works within minutes, no rebuild. Then download google-services.json again and re-upload it with `eas env:create ... --force` (or `eas env:set`). (2) Send Claude the SHA-256 of that key and of the EAS key. Claude sets ANDROID_APP_LINK_SHA256 in fly.production.toml [env] and redeploys production."
+    },
+    {
+     "id": "adservices-permissions-remain",
+     "title": "The AAB will still request ACCESS_ADSERVICES_AD_ID and ACCESS_ADSERVICES_ATTRIBUTION; only AD_ID is blocked",
+     "severity": "should",
+     "who": "claude",
+     "evidence": "aapt2 dump badging apps/mobile/apk/sudoku-fight-1.1.0-cf0dcf7-dirty-staging.apk → \"uses-permission: name='android.permission.ACCESS_ADSERVICES_ATTRIBUTION'\", \"uses-permission: name='android.permission.ACCESS_ADSERVICES_AD_ID'\" (com.google.android.gms.permission.AD_ID is absent). app.config.ts:462 blocks only AD_ID_PERMISSION. Simulated EAS production config: blockedPermissions [\"com.google.android.gms.permission.AD_ID\"]. docs/store/LISTING-GOOGLE.md:73-76 answers Advertising ID = No and checks only AD_ID.",
+     "detail": "Firebase Analytics (play-services-measurement) merges in the Privacy Sandbox ad-ID and attribution permissions. The EAS AAB uses the same plugin set, so it will contain them too. Play's Advertising ID check is on AD_ID, which is blocked, so the upload should not be rejected. Still, the App bundle explorer will list an 'AD_ID' permission next to an answer of 'No ads / no advertising ID'. Firebase's own guidance for apps that don't use ad IDs is to remove these two as well.",
+     "fix": "In apps/mobile/app.config.ts, block them next to AD_ID_PERMISSION, e.g. `export const AD_SERVICES_PERMISSIONS = ['android.permission.ACCESS_ADSERVICES_AD_ID', 'android.permission.ACCESS_ADSERVICES_ATTRIBUTION']`, and in resolveAppConfig use `blockedPermissions: [...(base.android?.blockedPermissions ?? []), AD_ID_PERMISSION, ...AD_SERVICES_PERMISSIONS]`. Update the expectation in apps/mobile/src/__tests__/appConfig.test.ts:88 and the check line in docs/store/LISTING-GOOGLE.md:76. Commit this before the production build."
+    },
+    {
+     "id": "first-eas-build-of-current-native-set",
+     "title": "The only EAS build ever ran on 2026-10-13 (commit a4b6c88), not 10-19. Every native piece added since has been built only on this PC",
+     "severity": "info",
+     "who": "both",
+     "evidence": "`eas build:list --json`: one build, id 2fb1c602-5fbd-41df-a903-e4986357a242, ANDROID, FINISHED, profile preview, appVersion 0.1.0, appBuildVersion 1, sdk 57.0.0, gitCommit a4b6c88 (2026-10-14 00:04 +0300). Native changes after it, from `git diff a4b6c88 HEAD -- apps/mobile/package.json`: @react-native-google-signin/google-signin 16.1.5, expo-application, expo-clipboard, expo-keep-awake, plus apps/mobile/modules/app-locale (Kotlin Expo module) and plugins/withAppLocales.js (dangerous mod).",
+     "detail": "The local 1.1.0 APK shows that prebuild and Gradle work with all of these: AppLocaleModule is in classes5.dex, localeConfig is in the manifest, and all 30 arm64 .so files are 16 KB aligned. That build differs from EAS in three ways: it had with-local-native-build.js (NDK pin, Windows limits), it built arm64-v8a only, and it ran on Windows. On EAS the plugin is excluded (verified), all 4 ABIs are built (gradle.properties reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64), and expo-updates/expo-sqlite use AGP 8.12's default NDK. Both still pass -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON (expo-sqlite build.gradle:64, expo-updates build.gradle:111). I found nothing that should fail, but this production build will be the first cloud build of this native set.",
+     "fix": "No code change. The plan should allow for one failed first EAS build: read the 'Prebuild' and 'Run gradlew' phases on expo.dev before uploading anything."
+    },
+    {
+     "id": "version-code-remote",
+     "title": "The first production AAB gets versionCode 2. No screen shows it, so keeping the remote counter is fine",
+     "severity": "info",
+     "who": "both",
+     "evidence": "eas.json: cli.appVersionSource \"remote\", production autoIncrement true; remote counter = 1 (build 2fb1c602 appBuildVersion 1). app.config.ts:251-258 sets android.versionCode = 10100. The embedded config in the local APK (assets/app.config) has android.versionCode 10100. src/config/appVersion.ts:64,81-84 shows expo-application nativeApplicationVersion (versionName \"1.1.0\") and falls back to Constants.expoConfig.version. services/telemetry/index.ts:45 sends Constants.expoConfig.version. A grep of apps/mobile/src (outside tests) for nativeBuildVersion|versionCode|buildNumber finds nothing.",
+     "detail": "EAS warns that android.versionCode is ignored under remote versioning, and 10100 still lands in Constants.expoConfig.android.versionCode, but no code reads it. Settings and the login screen show 'גרסה 1.1.0' and 'production'. On EAS EXPO_PUBLIC_APP_BUILD is unset, so there is no commit line. Play Console and Crashlytics will show '1.1.0 (2)'. Testers' local APKs (versionCode 10100, debug-signed) must be uninstalled before installing from Play anyway, because the signatures differ.",
+     "fix": "Keep the remote counter (no action). Play versionCodes only go up, so decide before the first upload. If Moshe wants Play codes to follow the 10100 scheme, run `cd apps/mobile && eas build:version:set -p android` and set 10099 before the build, so autoIncrement yields 10100. Optional cleanup to silence the EAS warning: skip withBuildNumbers' android.versionCode/ios.buildNumber when EAS_BUILD === 'true' and appVersionSource is remote."
+    },
+    {
+     "id": "template-permissions",
+     "title": "Expo template permissions ship unused: SYSTEM_ALERT_WINDOW and READ/WRITE_EXTERNAL_STORAGE",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "aapt2 badging of the local 1.1.0 APK: SYSTEM_ALERT_WINDOW, READ_EXTERNAL_STORAGE maxSdkVersion='32', WRITE_EXTERNAL_STORAGE maxSdkVersion='32'. apps/mobile/android/app/src/main/AndroidManifest.xml lines 3-6. Simulated EAS production config android.permissions: [MODIFY_AUDIO_SETTINGS, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, INTERNET].",
+     "detail": "None of these is on Play's restricted list, so they don't block an upload or a review. They do appear in the app's permission list ('display over other apps', storage) for a game that uses neither: sound comes from bundled assets and SQLite lives in app storage.",
+     "fix": "In apps/mobile/app.json add `\"blockedPermissions\": [\"android.permission.SYSTEM_ALERT_WINDOW\", \"android.permission.READ_EXTERNAL_STORAGE\", \"android.permission.WRITE_EXTERNAL_STORAGE\"]` under expo.android. resolveAppConfig already merges base.android.blockedPermissions. Run `npm run apk` and check that sound effects still play."
+    },
+    {
+     "id": "aab-language-splits",
+     "title": "In an AAB, Play splits the values-* resources by device language, unlike the universal local APK checked in plan 0יא",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "The local APK is one universal APK: aapt2 badging lists 89 locales. A production AAB (eas.json buildType app-bundle) gets language config splits by default (bundle.language.enableSplit defaults to true). plugins/withAppLocales.js:11-17 cares about the libraries' values-iw/values-in strings (TalkBack role names).",
+     "detail": "The app's own text is in JS (i18next JSON inside index.android.bundle), so it is unaffected. Only native and library resources are affected: a user who picks an app language in the app, other than the device's languages, may get those strings in the device language unless Play fetches the split. I have not verified how Play behaves on Android 13+ with localeConfig. This is a difference between what was checked on the APK and what Play delivers.",
+     "fix": "Either accept it, or in withAppLocales.js add withAppBuildGradle to append `android { bundle { language { enableSplit = false } } }` to android/app/build.gradle, with an appConfig test."
+    },
+    {
+     "id": "node-not-pinned",
+     "title": "EAS uses the image's default Node; eas.json doesn't pin the Node 24 that .nvmrc and local builds use",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "eas.json profiles have no `node` field. .nvmrc = \"24\". Root package.json engines {\"node\": \">=22.13\"}. Local node v24.21.0. The Oct-13 EAS build succeeded on the image default.",
+     "detail": "Not a failure risk today: Expo 57 needs ≥20.19 and the config and plugins use only basic Node APIs. Pinning makes the AAB reproducible and matches local and CI.",
+     "fix": "In apps/mobile/eas.json add `\"node\": \"24.21.0\"` to the production profile (and preview)."
+    },
+    {
+     "id": "require-commit",
+     "title": "eas.json lets `eas build` upload an uncommitted tree",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "apps/mobile/eas.json `cli` has only version and appVersionSource. The repo often has hundreds of uncommitted files (390 before 87760ce). On EAS the app shows no commit (EXPO_PUBLIC_APP_BUILD unset; appVersion.ts:15-17).",
+     "detail": "A store AAB built from a dirty tree can't be traced to a commit later.",
+     "fix": "Add `\"requireCommit\": true` to `cli` in apps/mobile/eas.json."
+    },
+    {
+     "id": "jest-gamescreenend-failure",
+     "title": "One mobile test failed in a full mobile Jest run I started by mistake (outside this lens)",
+     "severity": "info",
+     "who": "claude",
+     "evidence": "I meant to run only apps/mobile/src/__tests__/appConfig.test.ts, but `npx jest --selectProjects mobile apps/mobile/src/__tests__/appConfig.test.ts` ran every mobile suite (606 s, alongside the main session's verify). Result: 'Test Suites: 1 failed, 344 passed, 345 total; Tests: 1 failed, 5344 passed'. The failure is in src/screens/game/__tests__/GameScreenEnd.test.tsx:201 'a full board while the dialog is open: the dialog closes, and the results wait for the hold and for it'. appConfig.test.ts passed.",
+     "detail": "The failure reason was cut off in my output. It may be a timeout from two parallel full runs; I didn't investigate.",
+     "fix": "Compare with the main session's `npm run verify` output. If it fails there too, investigate before building."
+    }
+   ],
+   "checked": [
+    "Tree state: HEAD is now 87760ce 'Localization: 17 new languages, version 1.1.0' (2026-10-27 02:49), working tree clean (git status --porcelain = 0 lines). apps/mobile/modules/app-locale/** (4 files) and plugins/withAppLocales.js are tracked. modules/app-locale/android/build/ is ignored by root .gitignore:29 'build/'.",
+    "No secrets tracked: git ls-files shows no google-services.json, GoogleService-Info.plist, .env, keystore, jks, p12, pem, credentials or apk files (only apps/mobile/.env.example and apps/server/.env.example).",
+    "There is no .easignore at the root or in apps/mobile, so EAS uses .gitignore. Upload estimate (git ls-files -co --exclude-standard): 2190 files, 32.5 MB (apps/mobile 10.9, docs 6.9, server 5.3, engine 4.6; assets-src 0.3 MB, archive 0.1 MB). apps/mobile/apk/, android/, node_modules and .expo are ignored.",
+    "Workflow on EAS is managed: eas-cli workflow.js treats android/ as GENERIC only if it isn't VCS-ignored, and `git check-ignore` shows /apps/mobile/android is ignored (.gitignore:12). EAS prebuilds from app.json/app.config.ts and the stale local staging android/ isn't used.",
+    "Simulated EAS production config (`npx expo config --type prebuild --json` with EAS_BUILD=true, profile production, platform android, the eas.json production env and GOOGLE_SERVICES_JSON pointing to a sanitized scratch copy without the debug-key client) exits 0. Result: version 1.1.0, package com.mosheg.sudokufight, plugins = app.json's + expo-build-properties(ios static frameworks) + RNFirebase app/auth/crashlytics/analytics + google-signin. with-local-native-build.js is not included (LOCAL_BUILD_PLUGINS is local only), there is no usesCleartextTraffic, extra.firebase.android=true, extra.googleSignIn.android=true with webClientId set. No files were written in apps/mobile.",
+    "Room links in production: intentFilters = [{action VIEW, autoVerify true, data https://sudoku-fight-prod.fly.dev /r/, BROWSABLE+DEFAULT}]. The host is baked in at build time.",
+    "The local APK (aapt2 36.0.0) has targetSdkVersion 36, compileSdk 36, minSdk 24, AD_ID removed, localeConfig set (@xml/locales_config, 19 languages from enabled-languages.json), configChanges include locale|layoutDirection, not debuggable, no FOREGROUND_SERVICE, location, SMS or MANAGE_EXTERNAL_STORAGE permissions. RN's libs.versions.toml has targetSdk 36 / compileSdk 36 / AGP 8.12.0, and nothing overrides them on EAS.",
+    "16 KB page size: all 30 arm64-v8a .so in the local APK have PT_LOAD p_align ≥ 16384 (ELF scan). `zipalign -c -P 16 -v 4` reports 'Verification successful'. expo-sqlite and expo-updates (the two without an NDK pin on EAS) pass -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON.",
+    "The app-locale native module is autolinked from apps/mobile/modules (the default nativeModulesDir): AppLocaleModule is in classes5.dex of the local APK. expo-module.config.json, build.gradle and the Kotlin source look fine; all LocaleManager calls are behind SDK_INT >= 33.",
+    "expo-updates: app.json has no updates.url/runtimeVersion, so the manifest has expo.modules.updates.ENABLED=false. eas-cli 24.13.0 prompts about expo-updates only when the profile has a `channel` (runBuildAndSubmit.js:270), resolveChannelAsync returns null without one (metadata.js:103-115), and an empty runtime version returns {} (build.js:620-640). So `eas build` won't prompt or fail; the Oct-13 EAS build already had expo-updates 57 (in package.json since the initial commit). Updates.reloadAsync works while disabled: DisabledUpdatesController.relaunchReactApplicationForModule (expo-updates android DisabledUpdatesController.kt:141) recreates the React context, so the restart after a language switch works in the store build.",
+    "Monorepo install: root package-lock.json lockfileVersion 3 matches every workspace's package.json (0 differences across root, apps/mobile, apps/server, apps/admin, packages/engine/protocol/avatars). Workspace packages export ./src/index.ts (no build step, no dist/). No postinstall/prepare scripts in any workspace package.json. Install-script deps are only esbuild (dev), @firebase/util, @shopify/react-native-skia, protobufjs, plus the optional fsevents/msgpackr-extract.",
+    "expo-font paths ../../node_modules/@expo-google-fonts/{rubik,teko} resolve on EAS: the lockfile places node_modules/@expo-google-fonts/rubik 0.4.2 and teko 0.4.1 at the root.",
+    "Ranked puzzles are not in the app: apps/mobile imports only src/game/data/offline-puzzles.json and src/levels/data/levels.json. In the local APK's index.android.bundle, 0 of 6000 ranked solutions and 0 ranked givens appear, while 200/200 sampled offline solutions do. engine's testing/bot.ts reads puzzles.json with fs at run time, so it isn't bundled.",
+    "EAS production env (`eas env:list --environment production --format long`, values filtered out): one variable, GOOGLE_SERVICES_JSON, scope PROJECT, visibility SECRET, type file, environments development/preview/production. EXPO_PUBLIC_SERVER_* come from eas.json's production env (sudoku-fight-prod.fly.dev, 443, secure true, label production), which passes assertStoreBuildHasServer.",
+    "The store guards run only on EAS (isStoreBuild requires EAS_BUILD=true), so the debug-key guard fails early on the EAS worker, not locally. With the debug client removed, the simulated production config resolves.",
+    "eas.json submit.production.android = track internal, releaseStatus draft (correct for an app that isn't published yet). The first upload is manual (documented in RELEASE-CHECKLIST.md:274). eas-cli installed: 24.13.0 (eas.json requires >=16.0.0; 26.0.0 is available, not needed).",
+    "The R8/minify property android.enableMinifyInReleaseBuilds defaults to false (android/app/build.gradle:69), so Play will warn about a missing deobfuscation file and missing native debug symbols. These are warnings only and don't block the upload.",
+    "appConfig.test.ts passed (its suite was not the failing one)."
+   ],
+   "planFacts": [
+    "Build command, from a clean committed tree (now HEAD 87760ce): `cd apps/mobile && eas build --profile production --platform android`. EAS runs a managed prebuild, and the result is an AAB signed with the existing EAS keystore (the upload key).",
+    "Order before the build: (1) Moshe removes the template debug SHA-1 5e8f16062ea3cd2c4a0d547876baa6f38cabf625 from the Firebase Android app. (2) He downloads google-services.json again into apps/mobile/config/firebase/. (3) From apps/mobile: `eas env:create --scope project --name GOOGLE_SERVICES_JSON --type file --value ./config/firebase/google-services.json --visibility secret --environment development --environment preview --environment production --force` (env:create is deprecated in eas-cli 24, `eas env:set` also works). Without this, the production build fails on EAS at config evaluation (assertStoreBuildWithoutDebugKey).",
+    "No other EAS env vars or secrets are needed for the Android production build: production has only GOOGLE_SERVICES_JSON, and the server settings come from eas.json.",
+    "The first production AAB gets versionCode 2 (remote counter 1, autoIncrement) and versionName 1.1.0. EAS will warn that app.config's android.versionCode 10100 is ignored; that is harmless. To use 10100 instead, run `eas build:version:set -p android` (10099) BEFORE the first upload.",
+    "`eas build` won't prompt about EAS Update (no channel in the profile). If it ever asks, answer No (RELEASE-CHECKLIST.md:224).",
+    "The production host sudoku-fight-prod.fly.dev is baked into the JS (EXPO_PUBLIC_SERVER_HOST) and into the App Links filter at build time. The AAB can be built and uploaded before the server exists, but testers must not install it until production (D9–D12) is healthy. Changing the host means a new build.",
+    "First upload is manual: download the .aab from the build page on expo.dev → Play Console → Test and release → Testing → Internal testing → Create new release → accept Play App Signing (Google-generated key).",
+    "Right after the first upload, before inviting testers: copy the Play App Signing SHA-1 into Firebase (Google sign-in) and the SHA-256s (EAS key + Play key) into fly.production.toml ANDROID_APP_LINK_SHA256, then redeploy production.",
+    "From the second build on: `cd apps/mobile && eas submit --profile production --platform android --latest`. This needs a Google service account key uploaded through `eas credentials` (RELEASE-CHECKLIST.md:276).",
+    "Testers with local `npm run apk` builds (debug-signed, versionCode 10100) must uninstall before installing from Play, because the signatures differ.",
+    "After the debug key is removed from Firebase, local `npm run apk` builds hide the Google button (FIREBASE-SETUP.md:95). Email sign-in still works.",
+    "Expect Play Console warnings, not errors, on upload: no deobfuscation file (R8 off) and no native debug symbols.",
+    "The Oct-13 preview APK (build 2fb1c602) expires 2026-10-27T21:14Z. It is the only EAS build so far; the known state said 10-19, which is wrong."
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "play-signing-key-not-registered",
+    "verdict": "partly",
+    "correctedSeverity": "info",
+    "reason": "The facts hold, but this is a manual step the plan already contains, not a defect. Evidence: (1) A node count on apps/mobile/config/firebase/google-services.json gives com.mosheg.sudokufight: 2 Android OAuth clients, one of them the RN debug key (true), plus a web client. Once the debug key is removed, only the EAS key's client remains (MOSHE-TODO.md:300, B7 done). (2) app.config.ts:434 sets signingKeyListed = androidClients > 0 for non-local builds, so the Play build shows the Google button. (3) fly.production.toml:38 has ANDROID_APP_LINK_SHA256 commented out. The plan already covers every part of the fix. MOSHE-TODO.md:1066 (F7 step 9) gives the exact Play Console → App integrity → App signing → SHA-1 → Firebase 'Add fingerprint' path and says that without it Google sign-in fails with DEVELOPER_ERROR. F7's 'done when' (line 1068) requires 'המשך עם Google' to sign in from the Play install. MOSHE-TODO.md:310/314 (B8) and RELEASE-CHECKLIST.md:69 cover the EAS and Play SHA-256 for ANDROID_APP_LINK_SHA256. The effect is also mild. apps/mobile/src/auth/errors.ts:45/77 maps DEVELOPER_ERROR ('10') to a 'googleConfig' message rather than a crash. Email/password sign-in still works. Unverified links open the browser page, whose 'open in app' button works. Internal testing is not reviewed. The proposed fix is correct: eas-cli 24.13.0 lists `env:set` ('set (create or update)'), and `env:create --force` still works but is marked deprecated in favour of env:set.",
+    "betterFix": "Not a new task: follow MOSHE-TODO F7 step 9 and B8 as written, and keep it on the plan's checklist. Add one item to the plan: the EAS key's SHA-256 (B8, still open) and the Play key's SHA-256 must both go into fly.production.toml [env] before sudoku-fight-prod is first deployed or redeployed for the closed test. Re-uploading google-services.json to EAS is hygiene only, since sign-in works without a rebuild. Prefer `eas env:set` (create/update) over the deprecated `eas env:create --force`."
+   },
+   {
+    "id": "adservices-permissions-remain",
+    "verdict": "partly",
+    "correctedSeverity": "nice",
+    "reason": "The permissions are real. `aapt2 dump badging` (build-tools 36.0.0) on apps/mobile/apk/sudoku-fight-1.1.0-cf0dcf7-dirty-staging.apk lists `uses-permission: name='android.permission.ACCESS_ADSERVICES_ATTRIBUTION'` and `...ACCESS_ADSERVICES_AD_ID`, and com.google.android.gms.permission.AD_ID is absent. app.config.ts:462 blocks only AD_ID_PERMISSION, and the EAS build uses the same Firebase plugin set (only LOCAL_BUILD_PLUGINS differ). The severity is overstated, though. Play's Advertising ID help page (support.google.com/googleplay/android-developer/answer/6048248) names only com.google.android.gms.permission.AD_ID and does not mention the ACCESS_ADSERVICES_* permissions, so neither the first upload nor the closed-test review is at risk, as the auditor concedes. apps/mobile/firebase.json turns off adid collection, ssaid and registration_with_ad_network, and sets every ad_storage/ad_user_data/ad_personalization default to false. The SDK therefore does not use these Privacy Sandbox APIs, and Data safety ('No ad ID collected') stays true. MOSHE-TODO.md:1060 (F7 step 7) already tells Moshe to check the exact `com.google.android.gms.permission.AD_ID` string. I could not find the claimed 'Firebase's own guidance' to remove these two (web search found only AdMob Privacy Sandbox docs and forum posts), so that claim is unverified. The proposed code fix is technically right: blockedPermissions emits tools:node=\"remove\", and the SDK copes with a missing permission. The test to update is appConfig.test.ts:88-91.",
+    "betterFix": "Optional cleanup, cheap if done before the first EAS production build: add the two ACCESS_ADSERVICES_* permissions to blockedPermissions next to AD_ID_PERMISSION and update appConfig.test.ts:88-91. In any case, reword docs/store/LISTING-GOOGLE.md:76 to name the full `com.google.android.gms.permission.AD_ID`, as MOSHE-TODO F7 step 7 does. The bare 'AD_ID' there also matches 'ACCESS_ADSERVICES_AD_ID' in App bundle explorer and could prompt a false 'Yes' on the Advertising ID form."
+   }
+  ]
+ },
+ {
+  "lens": "production-server",
+  "audit": {
+   "findings": [
+    {
+     "id": "prod-firebase-authorized-domain",
+     "title": "Unconfirmed: sudoku-fight-prod.fly.dev may be missing from Firebase Auth Authorized domains (admin Google sign-in)",
+     "severity": "should",
+     "who": "moshe",
+     "evidence": "docs/MOSHE-TODO.md:279 `- [ ] **B6** ... both fly.dev domains authorized` is still unchecked. docs/DEPLOY-PRODUCTION.md:38 says that without the domain, Google sign-in fails with `auth/unauthorized-domain`, and with no ADMIN_PASSWORD there is no other way in. Staging's Google sign-in works (fly logs v10: `admin site on (Google sign-in for 3 addresses)`), but nothing shows that the prod host was added.",
+     "detail": "Production has no ADMIN_PASSWORD (none is planned), so Google is the only admin sign-in. Admin actions such as closing reports and suspending accounts require Google sign-in (DEPLOY-PRODUCTION §8). Without the domain, Moshe cannot handle player reports during the closed test (C4/UGC). The server still starts healthy.",
+     "fix": "Before D12, Moshe opens Firebase console → Authentication → Settings → Authorized domains and checks that `sudoku-fight-prod.fly.dev` is listed (adds it if not), then ticks B6. Verify after deploy by signing in at https://sudoku-fight-prod.fly.dev/admin."
+    },
+    {
+     "id": "prod-assetlinks-play-signing",
+     "title": "Production assetlinks.json returns 404 until the Play app-signing SHA-256 is added (after the first AAB upload)",
+     "severity": "should",
+     "who": "both",
+     "evidence": "fly.production.toml:36 has `# ANDROID_APP_LINK_SHA256 = ...` commented out. Local prod-bundle run with that env: `/.well-known/assetlinks.json -> 404 Not found`. apps/mobile/app.config.ts:183 adds `autoVerify: true` to the /r/ intent filter of the production host.",
+     "detail": "This does not block boot or the first upload. Room links open the browser page, whose 'open in the app' button still works. But apps installed from Play are signed with Play's app-signing key, and the server must list that key or Android will not verify the links. That key's SHA-256 only exists after the app is created and the first AAB is uploaded (F7). Testers who install while the file returns 404 stay unverified until Android re-verifies.",
+     "fix": "After F7: Moshe copies both SHA-256 values: Play Console → Test and release → App integrity → App signing key, plus the upload key (EAS keystore, shown by `eas credentials`). Claude sets `ANDROID_APP_LINK_SHA256 = \"<Play app signing SHA-256>,<EAS upload key SHA-256>\"` in fly.production.toml [env] and redeploys before F10. Never include the debug key FA:C6:17:…:3B:9C: the server refuses to start with it (verified: ConfigError, exit 1)."
+    },
+    {
+     "id": "deploy-guide-stale-1-1-0",
+     "title": "docs/DEPLOY-PRODUCTION.md sections 4-7 have stale or missing items for 1.1.0",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "(a) DEPLOY-PRODUCTION.md:159 says `STEALTH_BOT_ENABLED לא מוגדר (או false) בייצור וב־staging`, but fly.toml:34 has `STEALTH_BOT_ENABLED = \"true\"` (since 2026-10-20). (b) :194 says `/health מחזיר \"engine\":\"0.3.0\"`, but this tree and staging v10 return `{\"ok\":true,\"engine\":\"0.4.0\",\"protocol\":1}`. (c) :190-195 give no expected lines `[server] stealth bot off (STEALTH_BOT_ENABLED=false)` / `[server] QA module off (QA_ENABLED=false)` (src/index.ts:34-43), and the list of lines that must not appear lacks `QA module on`, `stealth bot available`, `assetlinks.json lists React Native's public debug key`, `production on PGlite`. (d) Nothing in §4 says QA_ENABLED / QA_OPEN / QA_AGENT_TOKEN / ANDROID_APP_LINK_ALLOW_DEBUG_KEY must never be set on production (only fly.toml comments say so). (e) §7 :215 `DATABASE_URL='postgresql://…' npm run db:seed-puzzles` in Git Bash leaves the prod DB URL in ~/.bash_history; MOSHE-TODO D12 (PowerShell, Read-Host) is the safe form. (f) §7 :234 expects 2,000 retired puzzles in fast/normal, which applies only to a DB that existed before 2026-10-15; a fresh DB prints 0 retired. (g) §7 :235 says to run `fly apps restart` after seeding. When the seed runs before the first deploy no restart is needed, and none is needed for play in any case: the pool is queried per game (src/puzzles/rankedSource.ts:97-101).",
+     "detail": "MOSHE-TODO D9-D12 (the steps Moshe follows) are correct. The errors are only in the long guide that Claude and Moshe read, but (a)-(d) could lead someone to copy staging-only settings or to misread the boot log.",
+     "fix": "Edit DEPLOY-PRODUCTION.md as follows. §4ב: staging has the bot available since 2026-10-20 and production must not. Add a §4ג: the QA module and ANDROID_APP_LINK_ALLOW_DEBUG_KEY are staging-only and never set on production. §6: engine 0.4.0, plus the full expected log block and the extended must-not-appear list. §7: replace the Git Bash command with the PowerShell Read-Host form, note that a fresh DB shows 0 retired, and say a restart is only needed to clear the boot warning when seeding after deploy."
+    },
+    {
+     "id": "deploy-test-no-qa-guard",
+     "title": "deploy.test.ts does not check that fly.production.toml is free of the QA settings and the debug-key allowance",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "apps/server/test/deploy.test.ts checks only `STEALTH_BOT_ENABLED` and `STEALTH_BOT_SECRET` per environment (the `describe.each` block). config.ts:654-655 (`QA_ENABLED: booleanSetting(false)`, `QA_OPEN: booleanSetting(false)`) has no production refusal, by design, because staging also runs NODE_ENV=production. Today fly.production.toml has none of these keys (verified).",
+     "detail": "If QA_ENABLED=true and QA_OPEN=true were copied to production, /admin/api/qa would need no sign-in (src/admin/qa.ts:215,225). Nothing automated prevents that copy.",
+     "fix": "In deploy.test.ts, add assertions alongside the stealth check: `expect(value('QA_ENABLED')).toBe(environment==='staging' ? '\"true\"' : undefined)`, the same for QA_OPEN, `expect(value('QA_AGENT_TOKEN')).toBeUndefined()`, and `expect(value('ANDROID_APP_LINK_ALLOW_DEBUG_KEY')).toBe(environment==='staging' ? '\"true\"' : undefined)`."
+    },
+    {
+     "id": "local-pglite-stale-0010",
+     "title": "Local dev DB failure at 0010 ('personas already exists') comes from a stale local DB, not from the migrations",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "Copy of apps/server/.data/pglite in scratch: drizzle.__drizzle_migrations has 11 rows, the last with created_at=1792486294284 (2026-10-20T08:51:34Z). The committed 0010 in _journal.json has when=1792486442755 (08:54:02Z, regenerated 148 s later). The local DB has personas, server_settings and users_kind_check but no `users_persona_idx`. Drizzle compares only the last created_at, so it reruns 0010 → `relation \"personas\" already exists`. The same 13 migrations on a fresh in-memory PGlite give `migrate: OK, applied: 13`. Staging Neon is past 0012 (/admin/api/qa/runs → 200; v10 booted normally).",
+     "detail": "Not a production risk: a new empty Neon DB applies 0000..0012 in order (verified twice, through createDb and through the production bundle boot). Only local dev and `npm run dev:lan` are affected.",
+     "fix": "Local only, and with Moshe's OK since it touches his local data. Either recreate the local DB (delete apps/server/.data/pglite, then `npm run db:seed-puzzles` and optionally `npm run seed`), or patch it with `CREATE INDEX \"users_persona_idx\" ON \"users\" USING btree (\"id\") WHERE \"users\".\"kind\" = 'persona'; UPDATE drizzle.__drizzle_migrations SET created_at = 1792486442755 WHERE id = 171;`."
+    },
+    {
+     "id": "firebase-project-id-effectively-required",
+     "title": "FIREBASE_PROJECT_ID is effectively required: without it the server is healthy but no online game works",
+     "severity": "info",
+     "who": "claude",
+     "evidence": "Prod-bundle run without it logs `[config] accounts disabled: FIREBASE_PROJECT_ID is not set (the account routes answer 503)`, and /health still returns 200. src/accounts/identity.ts:106-110: in production with `tokens.projectId === null` it returns `refusingIdentityVerifier(ACCOUNTS_OFF)`. src/matchmaking/identity.ts:32 routes matchmaking through it.",
+     "detail": "Fly's /health check passes either way, so a missing FIREBASE_PROJECT_ID would not show up as an unhealthy machine. Every game, friends and ranked rooms included, refuses players. The value is `sudoku-fight-dd416` (MOSHE-TODO D11); apps/mobile/config/firebase/google-services.json project_id matches (checked as a boolean).",
+     "fix": "Set it in D11. After deploy, check that the boot log has no `accounts disabled` line."
+    },
+    {
+     "id": "ranked-pool-required-for-all-online-games",
+     "title": "The ranked pool must be seeded before any online play (ranked and friends rooms)",
+     "severity": "info",
+     "who": "moshe",
+     "evidence": "src/persistence/rankedGames.ts:137-141: `createFriendsConfig` → `options.puzzles.pickFor(...)` (DB ranked pool) throws EmptyPoolError on an empty pool. Boot log on an empty DB: `[server] no ranked puzzles for fast, normal, hard: ranked games of that type can't start. Load the pool with npm run db:seed-puzzles.` At game time the error is `No ranked <type> puzzles in the database: run npm run db:seed-puzzles` (rankedSource.ts:33).",
+     "detail": "Verified: `npm run db:seed-puzzles` on an EMPTY scratch PGlite applied all migrations itself through createDb, then wrote `6000 ranked puzzles ... (1290 of other pools left out)` with fast/normal/hard 2000 each. The production bundle then booted on that DB with no warning. So seeding works either before or after the first deploy. Seeding first (as MOSHE-TODO D12 orders) gives a clean first boot and needs no restart.",
+     "fix": "D12 step 1, run by Moshe in PowerShell from the same commit that will be deployed."
+    },
+    {
+     "id": "legal-settings-needed-for-store",
+     "title": "LEGAL_CONTACT_EMAIL and LEGAL_OPERATOR_NAME are not needed to boot, but the store needs them",
+     "severity": "info",
+     "who": "claude",
+     "evidence": "Prod bundle without them: `/legal/privacy` he/en/de, `/legal/terms?lang=ja` and `/legal/delete-account?lang=ar` all show red placeholders and the draft note (placeholders=5/5/5/3/1, draftNote=true). With them set: placeholders=0, draftNote=false in every language tested. Boot warning: `[config] LEGAL_CONTACT_EMAIL or LEGAL_OPERATOR_NAME is not set: the legal pages show placeholders`.",
+     "detail": "Play's privacy-policy URL and the account-deletion URL (F5) point at these pages. Values decided in C2: mosh.gl.dev@gmail.com and Moshe Glazman.",
+     "fix": "Set both in D11 (Claude). After deploy, run `curl -s https://sudoku-fight-prod.fly.dev/legal/privacy?lang=en | grep -c 'class=\"draft\"'` and expect 0."
+    },
+    {
+     "id": "tree-committed-and-staging-runs-it",
+     "title": "The audited tree is now commit 87760ce (pushed), and staging v10 runs it on Neon",
+     "severity": "info",
+     "who": "claude",
+     "evidence": "`git log -1`: 87760ce 2026-10-27 02:49 'Localization: 17 new languages, version 1.1.0'. `git status --short` is empty, and origin/main is at 87760ce. `fly releases -a sudoku-fight-staging`: v10 complete 2026-10-27T00:50Z. Its log has `[server] production, database Postgres, admin site on (Google sign-in for 3 addresses), Sentry off (no SENTRY_DSN)` and `[server] QA module on (open: no sign-in needed)`. `curl /legal/privacy?lang=ja` on staging → `<html lang=\"ja\" dir=\"ltr\">`.",
+     "detail": "This shows the Dockerfile and .dockerignore build a 1.1.0 image that boots against real Postgres and serves the new translated pages. The production app uses the same Dockerfile. No migration was added since cf0dcf7 (git diff --stat cf0dcf7 87760ce shows nothing under apps/server/drizzle).",
+     "fix": "Deploy production from 87760ce, and seed from the same checkout."
+    }
+   ],
+   "checked": [
+    "Migrations 0000..0012 apply in journal order to an EMPTY in-memory PGlite through drizzle's pglite migrator, the same path as src/db createDb: `migrate: OK, applied: 13`. All 26 tables are present, plus the columns subtitle, kind, stealth, pace_ms and retired_at.",
+    "A production bundle built with the server's own esbuild command into scratch boots with NODE_ENV=production, PORT=3667 and PGLITE_DIR=memory. Migrations run before listen; /health returns {\"ok\":true,\"engine\":\"0.4.0\",\"protocol\":1}; the process stopped cleanly afterwards.",
+    "Without DATABASE_URL (and with no PGLITE_DIR) in production, the server refuses to start: `DATABASE_URL: required in production (or set PGLITE_DIR to run on PGlite on purpose)`, exit 1.",
+    "With React Native's debug key in ANDROID_APP_LINK_SHA256 and no ALLOW flag, the server refuses to start (ConfigError, exit 1).",
+    "QA module is off by default in production: the log says `[server] QA module off (QA_ENABLED=false)` and /admin/api/qa/runs returns 503 qaDisabled. QA_OPEN does nothing unless QA_ENABLED is set (src/admin/qa.ts:237-239).",
+    "Stealth bot is off by default: the log says `[server] stealth bot off (STEALTH_BOT_ENABLED=false)`. fly.production.toml has no STEALTH_* key.",
+    "fly.production.toml has none of QA_ENABLED, QA_OPEN, QA_AGENT_TOKEN, ANDROID_APP_LINK_ALLOW_DEBUG_KEY or STEALTH_BOT_ENABLED, and holds no secrets. It does have NODE_ENV, PORT, TRUST_PROXY=1, ADMIN_TZ, RATING_OPTION=B and SENTRY_ENVIRONMENT=production.",
+    "/dev/metrics returns 404 in production. Development tokens are refused in production (src/auth/firebaseToken.ts:182; identity.ts:106-108).",
+    "Admin site with FIREBASE_PROJECT_ID, FIREBASE_WEB_API_KEY and ADMIN_EMAILS set logs `admin site on (Google sign-in for 1 address)`, and /admin/api/auth/methods returns google config with password:false. With none of them, the admin site is off and its API returns 503 disabled.",
+    "Dockerfile and .dockerignore: legal translations (17 files), invite/room page translations (17 files), qa-catalog.json, blocked-words.json and package.json are bundled into dist/index.cjs (TS or static require). The only runtime disk reads are apps/server/drizzle, apps/admin/dist and packages/engine/data/puzzles.json (via require.resolve of @sudoku-fight/engine), and all three are copied into the runtime stage. Dockerfile, .dockerignore, fly*.toml and DEPLOY-PRODUCTION.md are unchanged since cf0dcf7.",
+    "apps/server/test/deploy.test.ts passes. Because the path filter was not applied, the whole server Jest project ran: 106 suites and 1661 tests, all passing, db.test.ts included.",
+    "`npm run db:seed-puzzles` against an empty DB needs no prior migration because createDb migrates first. It wrote 6000 ranked puzzles (2000 per type, 0 retired). The production bundle then booted on that DB without the `no ranked puzzles` warning.",
+    "Room-link page /r/123456?lang=ko and legal pages in he, en, de, ja and ar return 200 in the requested language from the production bundle.",
+    "DATABASE_URL pasted from Neon with `&channel_binding=require` works as is, because src/db/url.ts driverUrl strips it, for both the server and the seed script.",
+    "The name sudoku-fight-prod.fly.dev does not resolve (NXDOMAIN), so the Fly app name is probably free. `fly apps list` shows only sudoku-fight-staging.",
+    "Staging's Fly secret names are ADMIN_EMAILS, ADMIN_SESSION_SECRET, FIREBASE_PROJECT_ID, FIREBASE_WEB_API_KEY, FIREBASE_WEB_APP_ID, LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR_NAME, DATABASE_URL and STEALTH_BOT_SECRET (no SENTRY_DSN, no INVITE_URL, no QA_AGENT_TOKEN).",
+    "eas.json production profile: EXPO_PUBLIC_SERVER_HOST=sudoku-fight-prod.fly.dev, port 443, SECURE=true. This matches fly.production.toml app=sudoku-fight-prod.",
+    "The audit made no repo changes: git status is empty, and apps/server/.data was only copied into scratch, never opened in place."
+   ],
+   "planFacts": [
+    "Production secret names. REQUIRED to boot: DATABASE_URL. REQUIRED for a working store build: FIREBASE_PROJECT_ID=sudoku-fight-dd416 (without it every online game room refuses players and the account routes return 503, though /health still passes), LEGAL_CONTACT_EMAIL=mosh.gl.dev@gmail.com and LEGAL_OPERATOR_NAME=Moshe Glazman (without them the legal pages show a draft banner). REQUIRED for the admin site: ADMIN_EMAILS, FIREBASE_WEB_API_KEY, FIREBASE_WEB_APP_ID (the same web app as staging) plus FIREBASE_PROJECT_ID. OPTIONAL: SENTRY_DSN, ADMIN_SESSION_SECRET (32+ chars, different from staging; without it the log warns `[config] ADMIN_SESSION_SECRET is not set: admins sign in again after each restart`), ADMIN_PASSWORD (8+ chars, different from staging), INVITE_URL. NEVER on production: QA_ENABLED, QA_OPEN, QA_AGENT_TOKEN, STEALTH_BOT_ENABLED, STEALTH_BOT_SECRET, ANDROID_APP_LINK_ALLOW_DEBUG_KEY, PGLITE_DIR, and the debug-key SHA-256 FA:C6:17:…:3B:9C in ANDROID_APP_LINK_SHA256.",
+    "Non-secret [env] values are already in fly.production.toml: NODE_ENV=production, PORT=2567, TRUST_PROXY=1, ADMIN_TZ=Asia/Jerusalem, RATING_OPTION=B, SENTRY_ENVIRONMENT=production. Later, as [env] or a secret: ANDROID_APP_LINK_SHA256=\"<Play app signing SHA-256>,<EAS upload key SHA-256>\" (after F7), and STORE_URL_ANDROID=https://play.google.com/store/apps/details?id=com.mosheg.sudokufight once the app is public.",
+    "D9 (Moshe, Neon console): create project `sudoku-fight-prod` in AWS Europe Central 1 (Frankfurt). Under Connect, turn Connection pooling OFF and copy the direct string (postgresql://…?sslmode=require; `&channel_binding=require` may stay, the server strips it). Save it in the password manager as 'Neon URL production'. Never paste it in chat.",
+    "Before D12 (Moshe): in Firebase → Authentication → Settings → Authorized domains, confirm `sudoku-fight-prod.fly.dev` is listed (B6), or admin Google sign-in fails.",
+    "D10 (Claude, after Moshe's OK), Git Bash at the repo root: `fly apps create sudoku-fight-prod --org personal`, then `fly apps list` must show sudoku-fight-prod. Never `fly launch`.",
+    "D11 step 1 (Moshe, his own PowerShell): `cd C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight` ; `$db = Read-Host \"Paste the PRODUCTION Neon connection string\"` ; `fly secrets set --stage -a sudoku-fight-prod \"DATABASE_URL=$db\"` ; `Remove-Variable db`. Optional, same window: `$session = node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"` ; `fly secrets set --stage -a sudoku-fight-prod \"ADMIN_SESSION_SECRET=$session\"` ; `Remove-Variable session`. Optional SENTRY_DSN the same way.",
+    "D11 step 2 (Claude): `fly secrets set --stage -a sudoku-fight-prod FIREBASE_PROJECT_ID=sudoku-fight-dd416 ADMIN_EMAILS='<Moshe's admin addresses, same as staging>' FIREBASE_WEB_API_KEY='<apiKey of web app 'Sudoku Fight Admin'>' FIREBASE_WEB_APP_ID='<appId>' LEGAL_CONTACT_EMAIL=mosh.gl.dev@gmail.com LEGAL_OPERATOR_NAME='Moshe Glazman'`, then `fly secrets list -a sudoku-fight-prod`. Staging's values cannot be read back (Fly shows digests only), so get them from Moshe or from the B6 notes. Check every ADMIN_EMAILS entry is an email address first. Optional: INVITE_URL.",
+    "D12 step 1 (Moshe, PowerShell, same checkout as the deploy, i.e. `git rev-parse --short HEAD` = 87760ce or the release commit): `cd C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight` ; `$env:DATABASE_URL = Read-Host \"Paste the PRODUCTION Neon connection string\"` ; `npm run db:seed-puzzles` ; `Remove-Item Env:DATABASE_URL`. On an empty DB this first applies migrations 0000..0012 itself, then prints `[db:seed-puzzles] 6000 ranked puzzles from ...\\packages\\engine\\data\\puzzles.json written to Postgres (DATABASE_URL) in N ms (1290 of other pools left out).` and `fast 2000 / normal 2000 / hard 2000 in the pool`, with 0 retired. Seeding before deploy avoids the boot warning and any restart. Deploy-then-seed also works, without a restart.",
+    "D12 step 2 (Claude, only after Moshe's explicit 'deploy production'), Git Bash at the repo root: `fly deploy --config fly.production.toml --ha=false --env GIT_SHA=$(git rev-parse --short HEAD)`. Never without --config, which would deploy to staging, and never without --ha=false.",
+    "D12 step 3 (Claude): `fly status -a sudoku-fight-prod` should show 1 machine, started, 1 passing. `curl -s https://sudoku-fight-prod.fly.dev/health` should return exactly {\"ok\":true,\"engine\":\"0.4.0\",\"protocol\":1}. `fly logs -a sudoku-fight-prod --no-tail` must contain: `[server] engine 0.4.0: cell 31 is D5` / `[server] production, database Postgres, admin site on (Google sign-in for N addresses), Sentry off (no SENTRY_DSN)` (or `Sentry on (production, sudoku-fight-server@0.1.0+<sha>, traces 0.05)`) / `[server] stealth bot off (STEALTH_BOT_ENABLED=false)` / `[server] QA module off (QA_ENABLED=false)` / `[server] listening on http://localhost:2567 (WebSocket on the same port)`.",
+    "Log lines that must NOT appear on production: `[config] accounts disabled`, `[config] admin site disabled`, `[config] admin Google sign-in off`, `[config] LEGAL_CONTACT_EMAIL or LEGAL_OPERATOR_NAME is not set`, `[server] no ranked puzzles for`, `[config] production on PGlite`, `stealth bot available`, `QA module on`, `assetlinks.json lists React Native's public debug key`, `[server] failed to start`.",
+    "D12 step 4 (Claude curl, Moshe browser): /legal/privacy, /legal/privacy?lang=en, /legal/terms?lang=en and /legal/delete-account?lang=en with no `class=\"draft\"` and no `class=\"ph\"`. /admin/api/qa/runs → 503 qaDisabled. /dev/metrics → 404. /.well-known/assetlinks.json → 404 is expected until ANDROID_APP_LINK_SHA256 is set. /r/123456 → 200. Moshe signs in at https://sudoku-fight-prod.fly.dev/admin with Google.",
+    "URLs for Play Console forms: privacy https://sudoku-fight-prod.fly.dev/legal/privacy (?lang=<any of the 19>), terms https://sudoku-fight-prod.fly.dev/legal/terms, account deletion https://sudoku-fight-prod.fly.dev/legal/delete-account.",
+    "After F7, before F10 (Claude): add `ANDROID_APP_LINK_SHA256 = \"<Play app signing key SHA-256>,<EAS upload key SHA-256>\"` to fly.production.toml [env], then redeploy with the same `fly deploy --config fly.production.toml --ha=false ...` command.",
+    "Order rule: production server first (D9 to D12), then the production AAB and Play upload (F6/F7). F8 demo accounts need the deployed server with FIREBASE_PROJECT_ID and the seeded pool.",
+    "Never run `npm run seed` (sample data) against production; only `npm run db:seed-puzzles`."
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "prod-firebase-authorized-domain",
+    "verdict": "confirmed",
+    "correctedSeverity": "should",
+    "reason": "The domain is confirmed missing, not just unconfirmed. I ran a read-only query against Firebase's public project-config endpoint (node fetch to GET https://identitytoolkit.googleapis.com/v1/projects?key=<FIREBASE_WEB_API_KEY from apps/server/.env>, printing only booleans and domain names). It returned http 200 with authorizedDomains = localhost | sudoku-fight-dd416.firebaseapp.com | sudoku-fight-dd416.web.app | sudoku-fight-staging.fly.dev. Results: 'prod listed false', 'staging listed true'. The project id in .env equals the one in google-services.json, so this is the same Firebase project production will use. The rest of B6 is done: Google provider on, web app registered, and FIREBASE_WEB_API_KEY, FIREBASE_WEB_APP_ID and ADMIN_EMAILS are set in apps/server/.env. Only the second half of B6 step 4 (docs/MOSHE-TODO.md:292) is missing. The impact claim holds in code. apps/server/src/admin/router.ts:457-464 mounts moderationAdminRoutes with googleRequired: google !== null, so a password session can read reports but cannot act on them (403 googleRequired; also docs/DEPLOY-PRODUCTION.md:241). ADMIN_PASSWORD is therefore no workaround for handling reports or suspensions. It does not break players, the first upload or the Play review, so 'should' (before the closed test) is the right severity.",
+    "betterFix": "Moshe adds sudoku-fight-prod.fly.dev under Firebase → Authentication → Settings → Authorized domains now. Firebase accepts it before the Fly app exists, so it does not need to wait for D12. Claude then re-runs the same read-only check (node fetch of /v1/projects?key=…, printing only `authorizedDomains.includes('sudoku-fight-prod.fly.dev')`) and ticks B6. This replaces relying on Moshe's tick, and the after-deploy sign-in at /admin remains the end-to-end check. If the Fly name changes (MOSHE-TODO:598) or a custom domain is added, the new host must be added too."
+   },
+   {
+    "id": "prod-assetlinks-play-signing",
+    "verdict": "confirmed",
+    "correctedSeverity": "should",
+    "reason": "The finding is real. fly.production.toml has ANDROID_APP_LINK_SHA256 only as a comment. The exact line is 38 (`# ANDROID_APP_LINK_SHA256 = \"<EAS key SHA-256>,<Play app signing key SHA-256>\"`), not 36. Line 36 is the debug-key warning. The production EAS profile points at sudoku-fight-prod.fly.dev over https on port 443 (apps/mobile/eas.json production env). For that host, roomLinkHostOf gives verified=true and roomLinkIntentFilter adds autoVerify: true (apps/mobile/app.config.ts:166-183). The 404 without fingerprints is confirmed by a targeted jest run: `npx jest --selectProjects server --runTestsByPath apps/server/src/friends/links.test.ts -t assetlinks` → 2 passed. That includes the test at line 384, which expects 404 when no fingerprints are set. The debug-key refusal is confirmed in apps/server/src/config.ts:953-960 (throws ConfigError unless ANDROID_APP_LINK_ALLOW_DEBUG_KEY), and links.test.ts:446-451 guards fly.production.toml against it. The behaviour degrades gracefully: the browser page's 'open in app' fallback still works (MOSHE-TODO:312). So it is not a blocker. It is 'should', because D88 (Moshe-approved) promises that the link opens straight into the waiting room, and closed testers would install from Play. The proposed fix is right in substance. One correction: the EAS upload key's SHA-256 is harmless in production but not actually needed there. The production profile only builds AABs, which Play re-signs with the app-signing key, and EAS-signed APKs come from the preview profile, which points at staging.",
+    "betterFix": "After the first AAB upload to internal testing (F7), Moshe copies the App signing key SHA-256 from Play Console → App integrity → App signing. Claude uncomments line 38 of fly.production.toml with at least that value (adding the EAS upload key is optional), deploys or redeploys prod, and checks https://sudoku-fight-prod.fly.dev/.well-known/assetlinks.json returns JSON. All of this happens before testers are invited (F10), so their installs verify the links on the first try. Do it together with the B7 rule: add the same Play signing key's SHA-1 to the Firebase Android app at the same moment, or 'Continue with Google' fails with DEVELOPER_ERROR on Play installs. Never include FA:C6:17:…:3B:9C."
+   }
+  ]
+ },
+ {
+  "lens": "play-policy-listing",
+  "audit": {
+   "findings": [
+    {
+     "id": "no-phone-screenshots",
+     "title": "No phone screenshots exist, so the store listing can't be completed for Closed testing",
+     "severity": "blocker",
+     "who": "both",
+     "evidence": "`find . -iname '*screenshot*'` (node_modules excluded) returns nothing. apps/mobile/assets/brand/ holds only the icons and feature-graphic.png. docs/store/ASSETS.md §4 table: phone screenshots \"חובה? כן, לפחות 2\". docs/MOSHE-TODO.md F4 is unchecked.",
+     "detail": "Internal testing doesn't need a listing, so the first upload is not affected. Closed testing does: the main store listing must be complete, and Play needs at least 2 phone screenshots (each side 320–3840 px, long side at most 2x the short side, 24-bit PNG or JPEG with no alpha). Raw captures fail both rules: a 20:9 phone (1080x2400) is more than 2:1, and adb screencap PNGs have an alpha channel. Play's recommendation slots want at least 4 shots at 1080 px or wider, with at least 3 showing gameplay. The 17 new locales and iw-IL fall back to the en-US graphics, so only en-US is strictly needed.",
+     "fix": "After the first build that points at production, Moshe captures 4–8 screens in English in the order of ASSETS.md §5, starting with the board (not the avatars or the cats). Use only the demo accounts and bot names. Claude then writes a no-install Node script that places each capture on a 1080x1920 canvas in the token colors, adds a caption under 20% of the image, and saves a 24-bit PNG with no alpha. Do the same for Hebrew (iw-IL) if possible. The 17 locales can come later (D116)."
+    },
+    {
+     "id": "adservices-and-template-permissions",
+     "title": "Release manifest has ad-services, overlay and storage permissions that contradict the 'No Advertising ID' answer and the privacy wording",
+     "severity": "should",
+     "who": "claude",
+     "evidence": "apps/mobile/android/app/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml (local `npm run apk` release 1.1.0, 2026-10-25, Firebase included) has: line 13-15 READ_EXTERNAL_STORAGE (maxSdk 32), line 16 SYSTEM_ALERT_WINDOW, line 18-20 WRITE_EXTERNAL_STORAGE (maxSdk 32), line 39 android.permission.ACCESS_ADSERVICES_ATTRIBUTION, line 40 android.permission.ACCESS_ADSERVICES_AD_ID. com.google.android.gms.permission.AD_ID is correctly absent. apps/mobile/app.config.ts blocks only AD_ID_PERMISSION (`blockedPermissions: [...(base.android?.blockedPermissions ?? []), AD_ID_PERMISSION]`). app.json has no android.permissions. apps/mobile/android is gitignored (.gitignore:12), so EAS prebuild produces the same template permissions.",
+     "detail": "LISTING-GOOGLE 'Advertising ID' answers No, and DATA-SAFETY 'Device or other IDs' says the advertising ID is not collected. ACCESS_ADSERVICES_AD_ID is the Privacy Sandbox ad-ID permission that Firebase Analytics (measurement) pulls in. firebase.json turns ad-ID collection off, so it is probably never used, but the manifest still declares it. MOSHE-TODO.md:1064 (F7 step 7) tells Moshe to check only for gms AD_ID, and he will see ACCESS_ADSERVICES_AD_ID in App bundle explorer. SYSTEM_ALERT_WINDOW ('display over other apps') and the storage permissions on Android 12 and lower are never used. Play lists them to users, and they sit badly with the privacy policy's 'What we don't collect: ... photos'. None of them needs a Play declaration form, so this won't block the upload, but every later change needs a new build, so it should go in before the first AAB.",
+     "fix": "In app.config.ts, add these to android.blockedPermissions in every build, not only when Firebase is present: android.permission.SYSTEM_ALERT_WINDOW, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, ACCESS_ADSERVICES_AD_ID and ACCESS_ADSERVICES_ATTRIBUTION. Add a case to appConfig.test.ts. Then update LISTING-GOOGLE.md 'Advertising ID' and MOSHE-TODO F7 step 7 with the full expected list: INTERNET, ACCESS_NETWORK_STATE, MODIFY_AUDIO_SETTINGS, VIBRATE, WAKE_LOCK, com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE, com.google.android.providers.gsf.permission.READ_GSERVICES, and com.mosheg.sudokufight.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION. Do this before F6, the first production AAB."
+    },
+    {
+     "id": "friends-room-no-report-block",
+     "title": "Players met in a friends room or friends game can't be reported or blocked (UGC policy gap)",
+     "severity": "should",
+     "who": "claude",
+     "evidence": "GameScreen.tsx:1027 `const ranked = view.mode === 'ranked'` and :1553 `ranked && !over && menuFor !== null && menuFor !== me.id ? {...moderation}` : null. ResultsScreen.tsx:309 `onOpenPlayer={ranked ? openPlayer : undefined}`. HistoryCard.tsx:107 `e.source === 'ranked' && onOpenPlayer ? ...`. A grep for moderation, ModerationButtons or openPlayerCard in apps/mobile/src/screens/friends/*.tsx, app/friends/*.tsx and app/room/*.tsx finds nothing (exit 1). The only control there is the host's kick (FriendsRoomScreen.tsx:435). Server side, moderation/store.ts:105 sharedGame accepts any game both players sat in (game_players), so friends games already work there.",
+     "detail": "Play's UGC policy asks for in-app reporting and blocking wherever users see each other's content, which here is display names and avatars. Ranked play has both: the player card is reachable from the leaderboard, ranked results and ranked history, and the in-game card menu has them too. In friends rooms, every member can share the link (D87), so strangers can join and see names, yet there is no path to report or block anyone. Terms §reports says 'from their card or from the game'. Closed-test testers will mostly meet in friends rooms, so a reviewer or a tester will hit this.",
+     "fix": "Client-only change. Allow the card-menu moderation in GameScreen for mode 'friends' as well. Let friends results and history open the player card, where ModerationButtons already sends gameId. Add 'Report' and 'Block' on RoomSeatRow for other players; a block already removes the blocked player from the room on the server (D85c). Add tests. Then re-check the UGC paragraph in the LISTING-APPLE notes."
+    },
+    {
+     "id": "web-deletion-manual",
+     "title": "The 'delete without the app' path promised on the Data safety deletion URL has no tool",
+     "severity": "should",
+     "who": "claude",
+     "evidence": "docs/store/DATA-SAFETY.md:23 says 'היום אין בשרת כלי ניהול שמוחק חשבון'. accounts/store.ts:268 `deleteUser(db, token: VerifiedToken, now)` is called only from accounts/router.ts:380, the signed-in app. apps/server/scripts holds only adb.ts, fake-client.ts, qa.ts, seed-puzzles.ts and seed.ts, and apps/server/src/admin has no deletion. The /legal/delete-account [by-email] section promises deletion within 30 days and a confirmation email.",
+     "detail": "Play's account-deletion rule needs the web path to actually work. Today Moshe would have to write SQL by hand that repeats everything deleteUser does: anonymize the users row, null installs.user_id, anonymizeLoggedNames, forgetModeration (including the suspension fingerprints) and forgetLevels. He would also have to delete the user in the Firebase console. That is easy to get wrong, and a mistake leaves personal data the policy says is deleted. Volume will be low in the closed test, but the URL goes into the Data safety form now.",
+     "fix": "Add an admin-only tool, for example `npm run account:delete -w @sudoku-fight/server -- <email>`. It looks up the user with Firebase Admin getUserByEmail, runs the same transaction as deleteUser keyed by that uid, then calls Firebase Admin deleteUser, and reports what it deleted without printing the email. Add a test, and reference it in DATA-SAFETY.md §1 in place of the manual note."
+    },
+    {
+     "id": "children-appeal-risk",
+     "title": "Target-audience answers still hold for 1.1.0; 'appeals to children' risk depends only on the listing art",
+     "severity": "info",
+     "who": "moshe",
+     "evidence": "LISTING-GOOGLE.md:103-104 answer 13–15, 16–17, 18+ and 'appeal to children: No', and already warn about this. docs/avatars/STYLE.md:8-12 describes 101 animated characters, 'people, animals and objects with faces', toys and creatures that wink and spin. engine rules.ts:31 includes 'cats'. feature-graphic.png has shapes only, no characters. Terms 'Who can play' and privacy 'Children' both say 13+.",
+     "detail": "Nothing in 1.1.0 aims at children, and nothing changes the IARC answers: there is still no chat, no free text, a fixed set of 6 emoji, no purchases and no location sharing. Google can still decide from the store graphics that the listing appeals to children. That would pull the app into the Families policy, with an extra review and extra SDK requirements.",
+     "fix": "Screenshots 1–2 should show the board and the score. Don't use avatar close-ups or the cats effect as the main image, and don't write captions aimed at children. Keep the feature graphic free of characters. If Google questions it, point to the 13+ Terms and the competitive ranked play. Don't add age groups under 13."
+    },
+    {
+     "id": "moshe-todo-stale-version",
+     "title": "MOSHE-TODO still says the visible version is 0.1.0 and doesn't explain the Play versionCode",
+     "severity": "nice",
+     "who": "claude",
+     "evidence": "docs/MOSHE-TODO.md:1043 and :1271 say 'The visible version is `0.1.0`', but apps/mobile/app.json has \"version\": \"1.1.0\". The local APK's output-metadata.json has versionCode 10100. EAS remote versionCode is 1 with autoIncrement, so the first production AAB will be 2.",
+     "detail": "This will confuse F6 and F7: Play will show 1.1.0 (2). The phone's ADB-installed APK has a higher versionCode (10100) and a different signature, so Play can't update over it. F7 does say to uninstall it first, but not why.",
+     "fix": "Change both lines to 1.1.0. Add one sentence: Play builds count 2, 3, … on EAS, and local `npm run apk` builds use 10100, so always uninstall the APK before installing from Play."
+    }
+   ],
+   "checked": [
+    "npm run store:check: 17 files for 17 languages, 0 errors. The 8 warnings are all App Store keyword byte counts (ar, ja, ko, ru, th, vi, zh-Hans, zh-Hant), not Play.",
+    "Play fields within limits. en-US name 'Sudoku Fight: Live PvP Sudoku' 29/30 (matches C5), short description 78/80, full description 1,474/4,000. iw-IL name 26, short 64, full 1,210. The 17 locales: titles 20–30, short descriptions 33–80, full descriptions 584–1,874, and each has 15 bullets, the same as the English.",
+    "D115b applied consistently: 'Available in 19 languages' / 'זמין ב־19 שפות' is in both LISTING-APPLE descriptions (which LISTING-GOOGLE reuses), and the number 19 is in the full description of all 17 locale files.",
+    "Listing claims match the code. Interference kinds fireworks/cats/warp exist among the 6 (rules.ts:31), each lasting 5000 ms (rules.ts:252). The 6 reactions match (rules.ts:60). Game types are fast, normal and hard (gameType.ts:5). Deletion is in Settings. No text claims real-only players. Friends room and staged practice aren't promised, which is under-promising and fine.",
+    "Stealth bot is off in production: fly.production.toml doesn't set STEALTH_BOT_ENABLED (default false, and then there's no admin switch, config.ts:241). The QA module is staging-only: QA_ENABLED and QA_OPEN appear only in fly.toml and default to false (config.ts:654-655).",
+    "Data safety and privacy match the code. Protocol telemetry has 26 events, the same as the privacy event table in all 19 languages and APP-PRIVACY. BatchMeta carries only installId, platform and appVersion. app_events.userId comes only from a verified sign-in. Firebase Analytics gets no user id, collects only in release builds, and has ad features off (firebase.json). Crashlytics gets the account id, not email or name. Sentry is set to collect no PII (dataCollection off, scrubbing). Friends room codes are kept only in server memory (friends/store.ts reads only users and ratings).",
+    "No new kinds of data in 1.1.0: no diff since cf0dcf7 in server telemetry, accounts, db/schema or protocol telemetry. The only new flow is the UI language sent to Firebase Auth setLanguageCode for email templates.",
+    "Account deletion: in-app path is Settings → Delete account, with password or Google re-authentication (AccountSettings.tsx). deleteUser anonymizes the row, clears email/country/avatar/uid, nulls installs.userId, and clears moderation and levels, which matches the privacy and delete-account pages.",
+    "Legal pages: all 19 languages x 3 documents render. With LEGAL_* set there's no draft class, and mailto and operator are filled. Without them the draft banner shows, by design. ?lang= takes the exact codes; anything else falls back to Accept-Language, then Hebrew. The app opens the page in its own language (legalLanguageFor 'own'). Every translation names Firebase, Crashlytics, Google Analytics, Fly.io, Neon and Sentry, and all 26 events. 'todo' hits in es/pt-BR are the Spanish/Portuguese word, a false positive.",
+    "Privacy and terms are linked in the app: registration (RegisterAccountScreen.tsx:334,341), the Google sign-up TermsModal, and Settings → About and legal. The app uses no third-party hosts besides Firebase and its own server (no expo-updates URL set).",
+    "UGC for ranked play: Report and Block are on the player card (from the leaderboard, ranked results and ranked history) and in the in-game ranked card menu. There's a Blocked players screen. Terms has a 'Reporting and blocking' section, and names are filtered against a blocked-words list.",
+    "Graphics: play-icon-512.png is 512x512, 8-bit RGBA (32-bit), 0 non-opaque pixels, 19 KB. feature-graphic.png is 1024x500 RGB with no alpha, 23.7 KB. Both meet Play's specs.",
+    "targetSdk is 36 (react-native libs.versions.toml and the merged release manifest), which meets Play's rule from 31 Aug 2026 for new apps and updates (https://developer.android.com/google/play/requirements/target-sdk).",
+    "16 KB page size: all 30 lib/arm64-v8a .so files in the local release APK have LOAD p_align of at least 16384.",
+    "The merged release manifest has no gms AD_ID permission, no FOREGROUND_SERVICE, exact-alarm or full-screen-intent permissions (so no extra Play declarations), and no dev-launcher entries.",
+    "Content rating (LISTING-GOOGLE §4) still holds for 1.1.0: no chat, no free text, fixed emoji, no purchases or loot boxes, a self-chosen country flag (not location), so 'Users Interact' = Yes.",
+    "The room link page /r/:code is the same for every code and shows no personal data (friends/links.ts:50)."
+   ],
+   "planFacts": [
+    "PREREQS outside Play, before giving any URL to Play: create sudoku-fight-prod on Fly (fra) and the Neon production DB in Frankfurt; the privacy policy says the server and DB are in Frankfurt, EU. Set fly secrets including LEGAL_CONTACT_EMAIL=mosh.gl.dev@gmail.com and LEGAL_OPERATOR_NAME=Moshe Glazman (C2), so /legal/privacy, /legal/terms and /legal/delete-account show no draft banner. Seed the ranked puzzle pools. Remove the RN debug-key SHA-1 from Firebase and re-upload google-services.json to the EAS production environment. Land the permissions fix before the first AAB.",
+    "(a1) Build: `eas build --profile production --platform android` gives an AAB with versionName 1.1.0. The versionCode comes from EAS remote (1 now), so the first is 2.",
+    "(a2) Play Console → Create app (MOSHE-TODO F1): name 'Sudoku Fight: Live PvP Sudoku', default language English (United States) en-US, Game, Free, tick the declarations.",
+    "(a3) Test and release → Testing → Internal testing → Testers: create an email list. Then Create new release, keep 'Google generates the app signing key', and upload the AAB by hand (the Play API can't create the first release; eas submit works only from the second build, after the F9 service account). Notes: 'First internal build.' → Start rollout. The listing and forms are not needed for internal testing (temporary name for up to 48 h; internal-only apps are exempt from the Data safety display): https://support.google.com/googleplay/android-developer/answer/9845334",
+    "(a4) App bundle explorer → the version → Details: targetSdk 36, com.google.android.gms.permission.AD_ID not listed, and after the fix no ACCESS_ADSERVICES_*, SYSTEM_ALERT_WINDOW or *_EXTERNAL_STORAGE. Answer the Advertising ID form only after this check.",
+    "(a5) App integrity → App signing → App signing key certificate. Add its SHA-1 to Firebase → Sudoku Fight Android, download google-services.json again, re-upload it to EAS production and rebuild; otherwise Google sign-in in the Play build fails with DEVELOPER_ERROR. Add its SHA-256, together with the EAS upload key's, to fly secret ANDROID_APP_LINK_SHA256 on sudoku-fight-prod so room links verify.",
+    "(a6) Uninstall the ADB APK on the phone (versionCode 10100, signed with the debug key), open the internal opt-in link and install from Play.",
+    "(b1) Store settings: App category Game → Puzzle; up to 5 tags (Sudoku, Multiplayer, Puzzle, Logic, Competitive); contact email = the public mailbox. Source: LISTING-GOOGLE.md §2, MOSHE-TODO F2.",
+    "(b2) Main store listing en-US: name and short description from LISTING-GOOGLE.md §1 (English column); full description = the English block in LISTING-APPLE.md §1 (1,474 chars); icon apps/mobile/assets/brand/play-icon-512.png; feature graphic apps/mobile/assets/brand/feature-graphic.png; at least 2 phone screenshots (aim for 4–8 at 1080x1920, at least 3 of gameplay), per ASSETS.md §4–5. Screenshots don't exist yet.",
+    "(b3) Translations: iw-IL from the Hebrew column of LISTING-GOOGLE.md §1 plus the Hebrew block of LISTING-APPLE.md §1. The other 17 come from docs/store/locales/<code>.json → googlePlay.title, shortDescription and fullDescription, with Play codes from docs/store/locales/README.md (ar, es-419 and es-ES (variants['es-ES']), pt-BR, de-DE, fr-FR, ja-JP, ru-RU, ko-KR, it-IT, tr-TR, zh-CN, id, pl-PL, zh-TW, vi, th, nl-NL). Per-locale release notes come from googlePlay.whatsNew. store:check passes.",
+    "(b4) App content: Privacy policy https://sudoku-fight-prod.fly.dev/legal/privacy?lang=en. Ads: No. Content rating: IARC per LISTING-GOOGLE.md §4 (email = the contact mailbox, category Game, everything No except 'Users can interact' = Yes; expected PEGI 3 / ESRB Everyone with 'Users Interact'). Target audience: 13–15, 16–17 and 18+; 'appeal to children' No (§5). News: No. Data safety: exactly per DATA-SAFETY.md §1–2, delete URL https://sudoku-fight-prod.fly.dev/legal/delete-account?lang=en. Advertising ID: No (LISTING-GOOGLE.md 'Advertising ID'). Government: No. Financial features: none. Health: none.",
+    "(b5) Firebase console, before testers join: Analytics data retention = 2 months, no Google Ads or AdMob link, Google Signals off (APP-PRIVACY.md §0 items 2 and 4). The privacy policy and Data safety assume this.",
+    "(b6) Create demo1 and demo2 on the production server (new emails, both verified, one ranked game between them, one practice game). Then App access → 'All or some functionality is restricted', with the demo1 credentials plus the English text from LISTING-GOOGLE.md §3 'App access' (1,106 chars; fill in demo2 there only). If the field caps the length, shorten the other parts and keep the computer-opponent paragraph.",
+    "(b7) Closed testing → 'Closed testing - Alpha' → Manage track: countries (Israel plus where testers live), an email list or Google Group of 15–20 Gmail addresses, the feedback email. Promote the release from Internal testing, use the release notes in LISTING-GOOGLE.md §6, then Publishing overview → Send changes for review.",
+    "(b8) After approval: share the opt-in link. Day 0 = the day the 12th tester opts in. At least 12 must stay opted in for 14 days in a row. Ship at least one update during the test, then Dashboard → Apply for production (MOSHE-TODO F11–F12).",
+    "(b9) Optional once the listing exists: fly secret STORE_URL_ANDROID=https://play.google.com/store/apps/details?id=com.mosheg.sudokufight on prod, so the room-link page offers the store. During closed testing only opted-in testers can open that page.",
+    "Severity summary for this lens: nothing blocks the first Internal testing upload. Closed testing is blocked only by the missing screenshots, plus the known production-server prerequisite for the privacy and deletion URLs. Fix before the closed test: the permissions cleanup (needs a rebuild, so before F6), report/block in friends rooms, and a tool for account deletion requested by email."
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "no-phone-screenshots",
+    "verdict": "confirmed",
+    "correctedSeverity": "blocker",
+    "reason": "The finding holds up. `find` (node_modules and .git excluded) finds no screenshot files. apps/mobile/assets/brand/ holds only the icon set and feature-graphic.png/.svg. ASSETS.md:81 says at least 2 phone screenshots are required, and MOSHE-TODO.md:979 (F4) is unchecked. The size and alpha rules are right: 2400/1080 = 2.22, which is over 2:1, and MOSHE-TODO F4 itself warns about the alpha channel. LISTING-GOOGLE.md:7 makes en-US the default language, so iw-IL and the 17 locales fall back to en-US graphics. It is a blocker for closed testing (F10) only; internal testing (F7) is not affected, which MOSHE-TODO.md:943 also says. This is a planned step, not a new defect: MOSHE-TODO F4 (lines 977-1000) already describes the same procedure (adb capture, then a no-install Node script that builds a 1080x1920 captioned 24-bit PNG). D116 (01-SPEC.md:1949, approved 2026-10-23) also approved `scripts/store-frames.mjs`, but that script does not exist (only scripts/store-check.mjs is there).",
+    "betterFix": "Keep F4 as written, with two corrections. (1) The shots do not need to wait for a production build. F4 allows the preview APK, as long as the Settings 'בדיקה' section and the 'build … · staging' version line (SettingsScreen.tsx:34-45) stay out of frame. (2) Build the approved D116 `scripts/store-frames.mjs` once, for both stores and all 19 languages, instead of a one-off script. A no-install version with captions is possible: canvaskit-wasm 0.41.0 (pulled in by @shopify/react-native-skia) and pngjs are already in node_modules. pngjs alone cannot draw text, so the critique log's assumption that sharp is needed (handoff/2026-10-23/localization/critique-log.md:20) is wrong. Minimum for F10: 2 en-US shots (4 or more to qualify for Play's recommendations)."
+   },
+   {
+    "id": "adservices-and-template-permissions",
+    "verdict": "partly",
+    "correctedSeverity": "nice",
+    "reason": "The facts are right. The merged release manifest (built Oct 25) has READ_EXTERNAL_STORAGE (maxSdk 32, lines 13-15), SYSTEM_ALERT_WINDOW (line 16), WRITE_EXTERNAL_STORAGE (lines 18-20), ACCESS_ADSERVICES_ATTRIBUTION (line 39) and ACCESS_ADSERVICES_AD_ID (line 40), and gms AD_ID is absent. The storage and overlay lines come from Expo's own base template: node_modules/@expo/config-plugins/build/plugins/withAndroidBaseMods.js:62-66 marks them 'OPTIONAL PERMISSIONS, REMOVE WHATEVER YOU DO NOT NEED'. There is no .easignore and android/ is gitignored, so EAS prebuild will produce the same lines. app.config.ts:462 blocks only AD_ID_PERMISSION. No dependency uses storage or overlays: no file-system, media-library or sharing package is in apps/mobile/package.json. The severity is overstated, though. None of these permissions needs a Play declaration. Play's Advertising-ID release check looks for com.google.android.gms.permission.AD_ID, which is exactly what F7 step 7 (MOSHE-TODO.md:1064) and LISTING-GOOGLE.md:76 tell Moshe to check. Declaring ACCESS_ADSERVICES_AD_ID is not collecting the ID, and firebase.json sets google_analytics_adid_collection_enabled=false and every ad-storage, ad-user-data and ad-personalization default to false, so DATA-SAFETY.md:50 ('not Advertising ID') stays true. Nothing fails at upload or in review, and no player is affected. The argument that every later change needs a new build is no reason to rush: versionCode auto-increments and more builds will come before production. One problem with the fix: blocking SYSTEM_ALERT_WINDOW in every build also strips it from dev builds (src/debug/AndroidManifest.xml:4 adds it for React Native's dev overlay).",
+    "betterFix": "A cheap hygiene change to fold into the next code change before F6. In the Firebase branch of app.config.ts (the one every store build takes, line 462; the production guard enforces Firebase), add READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, SYSTEM_ALERT_WINDOW, android.permission.ACCESS_ADSERVICES_AD_ID and android.permission.ACCESS_ADSERVICES_ATTRIBUTION to blockedPermissions next to AD_ID_PERMISSION. Add a case to appConfig.test.ts. Optionally add one line to F7 step 7: 'ACCESS_ADSERVICES_* are not AD_ID'."
+   },
+   {
+    "id": "friends-room-no-report-block",
+    "verdict": "partly",
+    "correctedSeverity": "nice",
+    "reason": "The finding's main claim, that players met in a friends game have no path to report or block, is wrong. The grep missed two routes that already work. (1) History: rankedEntry sets source 'ranked' for every server game, friends games included (historyModel.ts:76; line 144 tells friends apart only by e.friends). So HistoryCard.tsx:107 does list friends-game opponents, and lines 123 and 149 call onOpenPlayer(o.id, e.id). That reaches app/history.tsx:20 openPlayerCard and then app/player/[id].tsx, whose ModerationFooter shows ModerationButtons with that gameId. (2) Leaderboard, Friends tab: friends games write opponent_history (friends/options.ts:18 D81b; persistence/records.ts:59-60). progress/leaderboard.ts:226 lists those players as recent opponents, and each row opens openPlayerCard (app/leaderboard.tsx:22, LeaderboardScreen.tsx:285), which has Report and Block. The server takes a report with or without gameId (moderation/router.ts:119 optional), and sharedGame (moderation/store.ts:105) accepts any shared game. So the app-wide reporting and blocking that Play's UGC policy asks for is in place, and terms.ts:208 ('from their card or from the game') holds. The real gaps are smaller: the in-game card menu in a friends game (GameScreen.tsx:1027/1553 is ranked-only), the friends results ranking (ResultsScreen.tsx:309), and the waiting room before the first game, where only 'leave' and the host's kick are available. Display names are word-filtered (spec §3.1), and avatars come from a fixed set, so they are not UGC. A closed-test reviewer is unlikely to flag this.",
+    "betterFix": "Optional polish, small and client-only. Allow the in-game moderation for view.mode === 'friends' too (GameScreen.tsx:1027): the server already treats a mid-game block as a mute (D85c). Pass onOpenPlayer for friends results as well (ResultsScreen.tsx:309). A Report/Block button on RoomSeatRow can wait. Add tests for both. No policy change is needed for the closed test."
+   },
+   {
+    "id": "web-deletion-manual",
+    "verdict": "partly",
+    "correctedSeverity": "nice",
+    "reason": "The gap is real. deleteUser has exactly one caller (accounts/router.ts:380, the signed-in DELETE /me), apps/server/scripts has no deletion script, and the admin site (src/admin/*, moderation/admin.ts) has no deletion action. It is not a Play-compliance defect, though. Play's rule asks for a web resource where users can request deletion, and fulfilling the request by hand is allowed. legal/deleteAccount.ts:72-75 does exactly that (email request, done within 30 days, confirmed by email). DATA-SAFETY.md:23 already documents the manual process and names the gap. With a handful of closed testers, a request without the app is very unlikely before production. The proposed fix is also heavier than needed. The server has no firebase-admin dependency (apps/server/package.json lists jose only), so getUserByEmail and Firebase deleteUser would add a new dependency and a service-account secret on Fly. That is not needed: users.email and users.firebase_uid are already stored (db/schema.ts:84,90).",
+    "betterFix": "Before production or open testing, not before the closed test, add a script such as `npm run account:delete -w @sudoku-fight/server -- <email|userId>`. It finds the live users row by email or id and runs deleteUser's transaction. Refactor deleteUser to take {uid, email, emailVerified}: keepSuspension and signInFingerprints read only those fields, and the script builds them from users.firebase_uid and users.email (treat the email as verified, since the request came from it). It prints only the users.id and true/false. Moshe deletes the Firebase user in the console with one click, as DATA-SAFETY.md:23 already says. Add a test, and update DATA-SAFETY.md §1 to point to the script."
+   }
+  ]
+ },
+ {
+  "lens": "release-app-behavior",
+  "audit": {
+   "findings": [
+    {
+     "id": "google-signin-play-key",
+     "title": "The Google button shows on the Play-signed build but fails with DEVELOPER_ERROR until Play's app-signing SHA-1 is added to Firebase",
+     "severity": "should",
+     "evidence": "apps/mobile/app.config.ts:434-436: `const signingKeyListed = isLocalApk(env) ? google.debugKey : google.androidClients > 0;` sets `googleSignIn.android`. A node check of config/firebase/google-services.json printed counts only: 'android clients 2 debugKey [ false, true ]'. One client is the EAS upload key (docs/FIREBASE-SETUP.md:76 '✓ נוסף 14.10.2026') and the other is the debug key. After the debug key is removed, androidClients is 1, so the button still shows. Installs from Play are re-signed with Play's app-signing key (docs/FIREBASE-SETUP.md:77 'להוסיף בשלב F7'). The library then answers '10', which src/auth/errors.ts:45,77 maps to 'googleConfig', and the user sees he/account.json:46 'הכניסה עם Google לא זמינה כרגע… (DEVELOPER_ERROR)'.",
+     "detail": "This affects every install from a Play track, internal testing included. It fails gracefully: email and password still work and the error goes to Crashlytics. But each tester who taps 'המשך עם Google' gets an error until the console step is done. The build cannot tell the EAS key from Play's key (app.config.ts comment at 431-433), so code cannot hide the button. The fix is a console step and needs no rebuild.",
+     "fix": "Right after the first AAB upload, Moshe goes to Play Console → Test and release → App integrity → App signing → App signing key certificate → copies the SHA-1, then Firebase → Project settings → Your apps → Sudoku Fight Android → Add fingerprint. Keep the EAS key's fingerprint. He downloads the new google-services.json into apps/mobile/config/firebase/. Claude re-uploads it with `eas env:create --type file --name GOOGLE_SERVICES_JSON --environment production --force` (also preview if used). Do this before inviting any tester (MOSHE-TODO F7/B7, line 1066).",
+     "who": "both"
+    },
+    {
+     "id": "expo-router-sitemap-in-release",
+     "title": "expo-router's debug Sitemap screen ships in the release build and opens from a deep link",
+     "severity": "should",
+     "evidence": "node_modules/expo-router/build/getRoutesCore.js:424-426 appends `_sitemap` unless `options.sitemap === false`. global-state/useStore.js:52 reads `sitemap: config?.sitemap ?? true` from `Constants.expoConfig.extra.router`. The resolved production config (`npx expo config --type public --json` with prod env) has `extra.router = {}`, and app.json:28 lists bare \"expo-router\". The exported release .hbc contains '_sitemap' (1) and 'expo-router/build/views/Sitemap.js' (1). views/Sitemap.js has no __DEV__ gate: it lists every route plus 'System Information'. app/+native-intent.tsx:29 returns any non-room URL as is, and auth/redirect.ts gives a signed-in user null (no redirect) for unknown paths.",
+     "detail": "Any web page or message with `sudokufight:///_sitemap` opens a developer screen in the store app. It lists every route, including /dev/*, and lets the user jump into screens out of their flow (/game, /levels/play, /results/[id], /replay/...). The /dev routes do redirect home in production, but this is still a debug surface in a store build. Google's reviewers and pre-launch crawlers can follow scheme links.",
+     "fix": "In apps/mobile/app.json plugins, replace \"expo-router\" with [\"expo-router\", { \"sitemap\": false }]. withRouter.js:39-44 copies the props into extra.router. Add a test in src/__tests__/appConfig.test.ts asserting `resolveAppConfig(...).extra.router.sitemap === false`. The telemetry exclusion in services/telemetry/screens.ts:8 can stay.",
+     "who": "claude"
+    },
+    {
+     "id": "prod-server-required-before-testers",
+     "title": "The production AAB only talks to sudoku-fight-prod.fly.dev, which does not exist yet, so a new tester is stuck on the Splash",
+     "severity": "info",
+     "evidence": "The release export has 'sudoku-fight-prod.fly.dev' once and 'sudoku-fight-staging' 0 times. When the profile can't be read and none is saved, src/auth/authStore.ts:196 does `set({ status: 'loading', user, me: null, meOffline: false, loadError: code })`, and useAuthGate.ts:66 keeps the splash with 'try again'. Registration, online play, telemetry (`${httpBaseUrl()}/v1/events`) and the legal links (config/legal.ts:24 `${server}/legal`) all use the same host.",
+     "detail": "There is no code defect: the build is wired to production as intended. Uploading the AAB to the internal track works without the server, but nobody can get past sign-in until the production Fly app and Neon DB exist (MOSHE-TODO D9-D12). The Play listing's privacy policy and account-deletion URLs also point at this host.",
+     "fix": "Deploy sudoku-fight-prod (fly.production.toml) with its DB and secrets before the first tester installs, and before filling in the Play listing's privacy and account-deletion URLs.",
+     "who": "both"
+    },
+    {
+     "id": "template-permissions",
+     "title": "Permissions from Expo's prebuild template (SYSTEM_ALERT_WINDOW, legacy storage) go into the store manifest",
+     "severity": "nice",
+     "evidence": "apps/mobile/android/app/src/main/AndroidManifest.xml (local prebuild output, the same template EAS prebuild uses) lines 4-7: READ_EXTERNAL_STORAGE maxSdk 32, SYSTEM_ALERT_WINDOW, WRITE_EXTERNAL_STORAGE maxSdk 32. Only AD_ID is blocked (line 8). The resolved config's android.permissions is only [MODIFY_AUDIO_SETTINGS]. No dependency needs storage or overlay (package.json deps: no media-library/file-system/sharing).",
+     "detail": "SYSTEM_ALERT_WINDOW exists for the RN dev overlay (RN keeps it in the debug manifest; Expo's template keeps it in main). Play needs no declaration for these, but the listing shows 'display over other apps' and storage access that the game never uses.",
+     "fix": "In app.json, set expo.android.blockedPermissions to [\"android.permission.SYSTEM_ALERT_WINDOW\", \"android.permission.READ_EXTERNAL_STORAGE\", \"android.permission.WRITE_EXTERNAL_STORAGE\"]. app.config.ts already merges base.android.blockedPermissions with AD_ID. Add an appConfig.test assertion.",
+     "who": "claude"
+    },
+    {
+     "id": "firebase-reports-mix-staging",
+     "title": "Staging APKs send Analytics and Crashlytics into the same Firebase app as production, with no tag to separate them",
+     "severity": "nice",
+     "evidence": "src/services/crashlytics.ts:70 and src/services/firebaseAnalytics.ts:60 turn collection on for every release build (`release = !__DEV__`), and staging APKs are release builds. Same package com.mosheg.sudokufight and the same google-services.json; MOSHE-TODO.md:1079 says 'staging and production share the Firebase project'. Neither file sets a Crashlytics attribute or an Analytics user property naming the server (grep for setAttribute/setUserProperty finds none).",
+     "detail": "Moshe's staging test sessions and crashes will be counted in the production dashboards during the closed test, and they cannot be filtered out.",
+     "fix": "At start in createCrashReporter, call `mod.setAttribute(instance, 'server', thisBuild().server)`. In createFirebaseAnalytics, call `mod.setUserProperty(instance, 'server', thisBuild().server)` (or setDefaultEventParameters). Then filter on server=production in the Firebase console.",
+     "who": "claude"
+    },
+    {
+     "id": "version-line-shows-production",
+     "title": "Settings and Login show players 'production · מנוע N' under the version",
+     "severity": "nice",
+     "evidence": "src/components/VersionInfo.tsx:31-37 always includes `info.server`. src/screens/home/__tests__/SettingsAndPlaceholders.test.tsx:104-110 expects `production · מנוע ${ENGINE_VERSION}` for an EAS build, so this is by design.",
+     "detail": "This is the one staging-style label visible in the store build. It does no harm, but it is developer wording on a player-facing screen.",
+     "fix": "Optional, only if Moshe wants it hidden: in VersionInfo.tsx, use `info.server === 'production' ? null : info.server` in the details array, and update the test at SettingsAndPlaceholders.test.tsx:104.",
+     "who": "claude"
+    }
+   ],
+   "checked": [
+    "Release JS export with prod env (EXPO_PUBLIC_SERVER_HOST=sudoku-fight-prod.fly.dev, PORT 443, SECURE true, LABEL production; `npx expo export --platform android`) succeeded: EXIT 0, 'Android Bundled 73486ms (3181 modules)', one entry-a600c3259763a5eb2b1e60f9319ac1ab.hbc of 11,200,209 bytes (~10.7 MiB), 58 assets, output in C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/56de78cd-794b-4a7b-bfce-add8c4fdc94f/scratchpad/audit/export-android",
+    "Bundle grep: sudoku-fight-prod 1, sudoku-fight-staging 0, sudoku-admin-dev 0, AIza 0, BEGIN PRIVATE 0, mosheg@/supercom 0. 'staging' (5) is only the translated hint 'Test (staging) builds only'. 'localhost'/'10.0.2.2'/'192.168' come from library strings (Firebase auth emulator text, RN Linking) and from the LAN-detection regexes; plus the unused fallback 'ws://localhost:2567' in net/onlineClient.ts:137, never used because net/device.ts:26 always passes serverEndpoint. 'dev:' (2) is a redaction regex `(?:Bearer\\s|dev:)`, not a token",
+    "Dev routes: AvatarLab/DesignSystem/SoundAudition/Hello are stripped from the release bundle (0 hits; require behind __DEV__). DevOnline/DevMetrics ship but app/dev/online.tsx:34 and metrics.tsx:11 redirect home when !__DEV__. app/dev/plurals.tsx:14 redirects unless pseudoLanguagesAllowed(), which is false for label 'production'. Home's dev links: app/index.tsx:7 devLinks={__DEV__}. Deep links like sudokufight://dev/online reach the route and get redirected home",
+    "Testing switches (unlock all stages, chain 'penalty'): config/testing.ts:36-39 returns false for server 'production'. activeSwitches/levelRulesNow/useUnlockAllLevels all go through it (LevelMapScreen.tsx:108, app/levels/play.tsx:261,393). The Settings 'בדיקה' section is gated at SettingsScreen.tsx:55,107. Pseudo languages are not registered, and a saved one is reset (pseudoLanguages.ts:37-44). Jest testing/links/legal/appConfig: 62 passed; SettingsAndPlaceholders/PseudoLanguageSettings/nativeIntent: 26 passed",
+    "Stealth bot / QA / ADB: the mobile client has no stealth, QA or admin code (grep). The server defaults are STEALTH_BOT_ENABLED, QA_ENABLED and QA_OPEN false (apps/server/src/config.ts:596,654-655). Those flags appear only in fly.toml (staging) lines 36-45, not in fly.production.toml",
+    "Auth: chooseProvider.ts:31-38 picks Firebase when extra.firebase.android is true (resolved prod config: firebase {android:true}). The 'מצב פיתוח' badge renders only when provider === 'dev' (screens/account/parts.tsx:92). Signed-in joins send the Firebase ID token (auth/netIdentity.ts); the dev identity is used only when signed out, and the server accepts it only outside production (apps/server/src/auth/identity.ts:9)",
+    "Resolved prod config (local `expo config`): versionCode 10100 (EAS remote numbering overrides it), one intent filter https://sudoku-fight-prod.fly.dev/r/ with autoVerify true, AD_ID blocked, no usesCleartextTraffic, Firebase + google-signin plugins present, extra.googleSignIn.android true with a web client id",
+    "Simulated the EAS store build (EAS_BUILD=true EAS_BUILD_PROFILE=production EAS_BUILD_PLATFORM=android + prod env, `npx expo config`): exit 1 with \"Production build while Firebase lets React Native's public debug key sign in with Google\". The guard works as known",
+    "EAS 'production' environment (`npx eas-cli env:list production`) holds only GOOGLE_SERVICES_JSON. The four server vars come from eas.json's production env. apps/mobile/android, .env.local and config/firebase/google-services.json are gitignored, so EAS runs a clean prebuild with no local env or file",
+    "Legal links: legal.ts:24-39 builds `https://sudoku-fight-prod.fly.dev:443/legal/<page>?lang=<app language>` (all four callers pass i18n.language). The server falls back to English or Accept-Language (apps/server/src/legal/router.ts:48-50). Room links: protocol roomLink drops :443, so share links are https://sudoku-fight-prod.fly.dev/r/NNNNNN, and the share message is localized with t()",
+    "Telemetry: Firebase Analytics and Crashlytics collect only in release (!__DEV__); firebase.json turns off ad id, SSAID and ad personalization. Own telemetry goes to POST /v1/events on the prod host, and its log is __DEV__-only (telemetry/index.ts:60). Remaining console.warn calls are error paths without tokens. STARTUP_LOG is off in release (startup.ts:150). The ErrorScreen shows no stack or message. Keep-awake is displayConfig.keepScreenOn=true (by design)",
+    "expo-updates is installed but disabled in the manifest (expo.modules.updates.ENABLED false), used only for Updates.reloadAsync on a language change. expo-dev-client is in dependencies, but its launcher is debug-only"
+   ],
+   "planFacts": [
+    "Production AAB settings (apps/mobile/eas.json production): EXPO_PUBLIC_SERVER_HOST=sudoku-fight-prod.fly.dev, EXPO_PUBLIC_SERVER_PORT=443, EXPO_PUBLIC_SERVER_SECURE=true, EXPO_PUBLIC_SERVER_LABEL=production; buildType app-bundle; appVersionSource remote + autoIncrement, so the first production build gets versionCode 2 (remote is 1) and versionName 1.1.0. submit.production.android = track internal, releaseStatus draft",
+    "EAS 'production' environment holds only the file variable GOOGLE_SERVICES_JSON. It must be re-uploaded after the debug SHA-1 (5e8f16062ea3cd2c4a0d547876baa6f38cabf625) is removed in Firebase, or app.config.ts refuses the store build. Local google-services.json has 2 Android OAuth clients: debug key + EAS key",
+    "Order: (1) Moshe removes the debug SHA-1 in Firebase and downloads google-services.json → (2) Claude runs `eas env:create --type file --name GOOGLE_SERVICES_JSON --environment production --force` → (3) `eas build -p android --profile production` → (4) Moshe creates the app in Play Console (Play App Signing, Google-generated key) and the AAB goes to internal testing → (5) from App integrity, Play's SHA-1 goes into Firebase (Google sign-in) and Play's + EAS's SHA-256 into fly.production.toml ANDROID_APP_LINK_SHA256 (line 38, commented today) → (6) sudoku-fight-prod is live with its DB → (7) only then invite testers",
+    "Without the production server, a new install can't get past the Splash (authStore.ts:196 keeps status 'loading' with loadError). Registration, online play, telemetry and legal pages all need https://sudoku-fight-prod.fly.dev",
+    "Play listing URLs, once prod is deployed: privacy https://sudoku-fight-prod.fly.dev/legal/privacy, account deletion https://sudoku-fight-prod.fly.dev/legal/delete-account, terms /legal/terms (the app opens them with :443 and ?lang=<language>)",
+    "Room links in the production AAB: intent filter https://sudoku-fight-prod.fly.dev/r/ with autoVerify. Android verifies at install/update, so set ANDROID_APP_LINK_SHA256 (EAS + Play SHA-256) on prod before testers install; otherwise links open the browser page, whose 'פתח באפליקציה' still works",
+    "Never copy STEALTH_BOT_ENABLED, QA_ENABLED, QA_OPEN or ANDROID_APP_LINK_ALLOW_DEBUG_KEY from fly.toml (staging, lines 36-45) to fly.production.toml. Server defaults are off",
+    "Data safety inputs: Firebase Analytics (release only, AD_ID permission removed, ad/SSAID collection off in firebase.json), Crashlytics (release only), own usage telemetry to POST /v1/events with an install id and, when signed in, the account. No advertising id",
+    "Before the closed test: app.json `[\"expo-router\", { \"sitemap\": false }]` (and optionally blockedPermissions for SYSTEM_ALERT_WINDOW/READ_EXTERNAL_STORAGE/WRITE_EXTERNAL_STORAGE) need a new build, so bundle them into the first production build if possible",
+    "To re-check the release bundle: from apps/mobile run `EXPO_PUBLIC_SERVER_HOST=sudoku-fight-prod.fly.dev EXPO_PUBLIC_SERVER_PORT=443 EXPO_PUBLIC_SERVER_SECURE=true EXPO_PUBLIC_SERVER_LABEL=production npx expo export --platform android --output-dir <scratch>`. Today: exit 0, 3181 modules, 11,200,209-byte .hbc"
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "google-signin-play-key",
+    "verdict": "confirmed",
+    "correctedSeverity": "should",
+    "reason": "Real, and the fix is right. apps/mobile/app.config.ts:434-436 shows the button whenever the file lists any Android client and the build is not a local APK. With the debug key removed, the EAS client is still listed, so a Play-signed install shows the button. Without Play's SHA-1, Google answers code '10', which src/auth/errors.ts:45 and :77 map to 'googleConfig'. The user then sees he/account.json:46 (DEVELOPER_ERROR). docs/FIREBASE-SETUP.md:76-77 confirms that only the debug and EAS keys are registered and that Play's key comes 'at F7'. This is not a code defect but a console step the plan already has: MOSHE-TODO.md:1066 (F7 step 9) gives exactly this procedure, and MOSHE-TODO.md:304 says it needs no rebuild. That holds because at run time the app uses only webClientId; the Android clients in the file only set the button flag at build time. It fails gracefully, since email and password still work. 'should' is right: fix it before any tester is invited.",
+    "betterFix": "Same console steps, but the eas command as written would stop and ask for input. Use the full form from docs/FIREBASE-SETUP.md:131: `eas env:create --scope project --name GOOGLE_SERVICES_JSON --type file --value ./config/firebase/google-services.json --visibility secret --environment production [--environment preview] --force`. eas-cli 24.13.0 `env:create --help` confirms --force/--type/--visibility/--value. In the same Play Console visit, also copy the App signing key's SHA-256 for ANDROID_APP_LINK_SHA256 (MOSHE-TODO.md:314, B8/F7). Without it, https room links in the Play build won't open the app directly."
+   },
+   {
+    "id": "expo-router-sitemap-in-release",
+    "verdict": "partly",
+    "correctedSeverity": "nice",
+    "reason": "The mechanism is real. node_modules/expo-router (57.0.25) build/ExpoRoot.js:142-143 mounts the Sitemap screen whenever global-state/utils.js:14-16 shouldAppendSitemap() is true (extra.router.sitemap !== false), with no __DEV__/NODE_ENV gate. The linking config gets `sitemap: config?.sitemap ?? true` (useStore.js:52), so the _sitemap path resolves. Running getConfig from expo/config in apps/mobile prints `router {}`, so the store build has it. app/+native-intent.tsx returns non-room paths as they are. The severity is overstated, though. Every route the sitemap lists is already reachable by a direct deep link with the same path (e.g. sudokufight:///game) through the same pass-through, so the sitemap adds no capability. The 'System Information' block shows only Mode, Expo SDK, Hermes version and location origin. Real players can't reach it in normal use: the app's own app/+not-found.tsx has no sitemap link, and grep finds no sitemap reference in app/. It is not a Play policy issue, and the claim about reviewers and Robo crawlers is speculative: they don't fire unknown custom-scheme URLs. One detail the auditor missed: the sitemap renders as a sibling of the app's root layout (ExpoRoot Content's internal StackRouter), so useAuthGate in app/_layout.tsx doesn't run while it is shown. Tapping any entry mounts the root layout, and the gate applies again, so this is cosmetic. The app.json change is correct (plugin/options.json:44 accepts 'sitemap'; withRouter.js copies props into extra.router; buildApk.test.ts:377 uses 'expo-router' only in a fixture, so nothing breaks). The proposed test is wrong, however. resolveAppConfig receives app.json's config before plugins run, so `resolveAppConfig(...).extra.router` is undefined: getConfig with skipPlugins:true printed `router skipPlugins undefined`.",
+    "betterFix": "Keep the app.json change: [\"expo-router\", { \"sitemap\": false }]. It goes into the same first AAB, so it costs no extra build. For the test, don't assert on resolveAppConfig. Either assert that app.json's plugins contain ['expo-router', { sitemap: false }], or call getConfig(MOBILE_DIR, { skipSDKVersionRequirement: true }) from 'expo/config' and expect exp.extra.router.sitemap toBe(false). Do it before closed testing if convenient. It does not block the first upload."
+   }
+  ]
+ }
+]

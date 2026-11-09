@@ -1,18 +1,21 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
 import { type FindLevelOver, levelIdOf, THINK_TIME_MS } from '@sudoku-fight/engine';
+import { createAudioPlayer } from 'expo-audio';
 import { router } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
-import { StyleSheet, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { Dimensions, StyleSheet, Text, type TextStyle, type ViewStyle } from 'react-native';
 
 import { useAuth } from '../../../auth/authStore';
 import { paletteAt } from '../../../components/player';
+import { SLANT } from '../../../components/ui/slant';
 import {
   directionProblems,
   expectRoom,
   layoutLanguages,
   lineHeightAs,
   PHONE,
+  setWindow,
   textWidth,
   typefaceOf,
   widthIn,
@@ -26,12 +29,15 @@ import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
 import { type LevelsRepo, openLevelsRepo } from '../../../levels/levelsRepo';
 import { forgetLevels } from '../../../levels/levelsStore';
-import { cue } from '../../../services/feedback';
+import { CUES, cue, type FeedbackCue, GAME_CUES, preloadCues } from '../../../services/feedback';
+import { sfx, type SoundId, voicesOf } from '../../../services/sfx';
+import { useSettings } from '../../../state/settings';
 import { useProfile } from '../../../state/profile';
 import { color, contrast, size, tokens } from '../../../theme';
 import { hidden, styleOf } from '../../game/connection/testing/setup';
 import type { ModeKey } from '../homeModel';
-import { cardPaddingVertical } from '../ModesScreen';
+import { GAME_WARM_CHOICE_DELAY_MS, MATCH_CUES } from '../../match/warmGame';
+import { cardPaddingVertical, TAGLINE_LINES } from '../ModesScreen';
 import { renderApp } from '../testing/homeTesting';
 
 type Mocks = typeof import('../testing/nativeMocks');
@@ -57,6 +63,9 @@ jest.mock('../../../game/storage', () => jest.requireActual<Mocks>('../testing/n
 jest.mock('../../../services/analytics', () => ({ track: jest.fn() }));
 jest.mock('expo-audio', () => jest.requireActual<Mocks>('../testing/nativeMocks').expoAudio);
 jest.mock('expo-haptics', () => jest.requireActual<Mocks>('../testing/nativeMocks').expoHaptics);
+// The game screen's code, which the game type screen loads ahead (screens/match/warmGame.ts): a stand-in here, as
+// the route /game is.
+jest.mock('../../game', () => ({}));
 // levels.db: sql.js, the test's own (the "אימון בשלבים" row reads its summary from it).
 let mockLevelsRepo: Promise<LevelsRepo> | null = null;
 jest.mock('../../../levels/levelsStorage', () => ({
@@ -100,6 +109,16 @@ const taglineOf = (key: ModeKey, fresh = true): string =>
   key === 'levels' && fresh
     ? i18n.t('home:modes.levels.taglineNew', { count: 300, total: 300 })
     : i18n.t(`home:modes.${key}.tagline`);
+
+/**
+ * The header's end as the phone lays it out: what the title leaves Me (`room`), and my name's own width where it
+ * is measured out of the row (`name`). Both in dp.
+ */
+async function layOutMe(room: number, name: number): Promise<void> {
+  const layout = (width: number) => ({ nativeEvent: { layout: { width, height: 18, x: 0, y: 0 } } });
+  await fireEvent(screen.getByTestId('modes-me'), 'layout', layout(room));
+  await fireEvent(screen.getByTestId('modes-me-name-measure', hidden), 'layout', layout(name));
+}
 
 describe('"משחק חדש" (spec §5.1)', () => {
   it('offers six modes, all open: ranked 2 · 3 · 4, the bot above solo practice, then staged practice (D48)', async () => {
@@ -213,7 +232,9 @@ describe('"משחק חדש" (spec §5.1)', () => {
     useProfile.setState({ name: 'MosheG', avatarId: 'lava-lamp' });
     await renderApp('/modes');
     const me = screen.getByTestId('modes-me');
-    expect(me).toHaveTextContent('⁨MosheG⁩');
+    // The rest of the row after the title (B3): my name once the layout says all of it fits beside the avatar.
+    await layOutMe(121, 50);
+    expect(within(me).getByTestId('modes-me-name')).toHaveTextContent('⁨MosheG⁩', { exact: true });
     expect(within(me).getByTestId('modes-me-avatar', { includeHiddenElements: true })).toBeTruthy();
     expect(directionProblems(screen.getByTestId('modes-me'))).toEqual([]);
 
@@ -224,6 +245,72 @@ describe('"משחק חדש" (spec §5.1)', () => {
       within(screen.getByTestId('modes-me')).getByTestId('modes-me-avatar', { includeHiddenElements: true }),
     ).toBeTruthy();
   });
+
+  it('the title comes first, whole: my name gives way, and a title too wide shrinks instead of "…" (B3, B8)', async () => {
+    useProfile.setState({ name: 'אורי', avatarId: 'lava-lamp' });
+    await i18n.changeLanguage('ru');
+    await renderApp('/modes');
+    const title = screen.getByRole('header', { name: 'Новая партия' });
+    expect(title).toHaveProp('numberOfLines', 1);
+    expect(title).toHaveProp('adjustsFontSizeToFit', true);
+    expect(title).toHaveProp('minimumFontScale', 0.7);
+    // Its own width (it shrinks only when the row is too narrow); Me grows into what is left, at least my avatar.
+    const titles = (title as unknown as Node).parent!;
+    expect(styleOf(titles)).toMatchObject({ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' });
+    // And no positive `flex` left on it: Yoga (Node::processFlexBasis) reads an auto basis as 0 beside one, and
+    // the title got no width at all, Me the whole row (review of B3).
+    expect(styleOf(titles).flex ?? 0).toBeLessThanOrEqual(0);
+    const me = screen.getByTestId('modes-me');
+    expect(styleOf(me)).toMatchObject({
+      flexGrow: 1,
+      flexBasis: 0,
+      minWidth: size.avatar.compact.frame,
+      justifyContent: 'flex-end',
+    });
+    // Before the layout: in its place, unseen until the widths say whether it fits (never one frame cut).
+    expect(within(me).getByText('⁨אורי⁩')).toHaveStyle({ opacity: 0 });
+    // Where "Новая партия" leaves about 20 dp beside the avatar: the avatar alone, still read as my name.
+    await layOutMe(63, 26);
+    expect(within(me).queryByText('⁨אורי⁩')).toBeNull();
+    expect(within(me).getByTestId('modes-me-avatar', { includeHiddenElements: true })).toBeTruthy();
+    expect(me).toHaveProp('accessible', true);
+    expect(me).toHaveProp('accessibilityLabel', 'אורי');
+    // Room for all of it: the name, seen.
+    await layOutMe(74, 26);
+    expect(within(me).getByText('⁨אורי⁩')).toHaveProp('numberOfLines', 1);
+    expect(within(me).getByText('⁨אורי⁩')).not.toHaveStyle({ opacity: 0 });
+  });
+
+  it.each(['ru', 'es'])(
+    'my name shows whole or not at all, from the widths the phone laid out (QA 2026-11-03: "אחוו…", %s)',
+    async (lang) => {
+      // A 360 × 780 phone: "Новая партия" / "Nueva partida" left about 80 dp, enough for "a few letters" (the old
+      // rule's 66) but not for "אחוותא" (48) with the gap and the avatar (42).
+      useProfile.setState({ name: 'אחוותא', avatarId: 'lava-lamp' });
+      await i18n.changeLanguage(lang);
+      await renderApp('/modes');
+      const me = screen.getByTestId('modes-me');
+      // The name is measured out of the row, at its own width: unseen and never read (Me reads my name once).
+      const measure = screen.getByTestId('modes-me-name-measure', hidden);
+      expect(measure).toHaveTextContent('⁨אחוותא⁩', { exact: true });
+      expect(measure).not.toHaveProp('numberOfLines');
+      const box = (measure as unknown as { parent: Parameters<typeof styleOf>[0] }).parent;
+      expect(box).toHaveProp('importantForAccessibility', 'no-hide-descendants');
+      expect(box).toHaveProp('accessibilityElementsHidden', true);
+      expect(styleOf(box)).toMatchObject({ position: 'absolute', opacity: 0, flexDirection: 'row' });
+      expect(directionProblems(me)).toEqual([]);
+
+      await layOutMe(80, 48);
+      expect(within(me).queryByTestId('modes-me-name')).toBeNull();
+      expect(me).toHaveProp('accessibilityLabel', 'אחוותא');
+      // Exactly its room: the whole name.
+      await layOutMe(90, 48);
+      expect(within(me).getByTestId('modes-me-name')).toHaveTextContent('⁨אחוותא⁩', { exact: true });
+      // At a larger text size the name is wider, and gives way again.
+      await layOutMe(90, 65);
+      expect(within(me).queryByTestId('modes-me-name')).toBeNull();
+    },
+  );
 
   it('ranked 3 and 4 players open the game type of their table (stage 10)', async () => {
     const app = await renderApp('/modes');
@@ -313,12 +400,13 @@ describe('playing with friends: "צור חדר" | "הצטרף עם קוד" (1.0.
     const scroll = screen.getByTestId('modes-scroll');
     expect(within(scroll).queryByTestId('modes-group-friends')).toBeNull();
     expect(within(scroll).queryByTestId('modes-friends-create')).toBeNull();
-    // The bottom of every screen with an action (GameType's, OfflineActions'): the rule, the ground, the gutters.
+    // The bottom of every screen with an action (GameType's, OfflineActions'): the rule and the gutters, and no
+    // ground of its own: the wandering digits behind every screen pass under it too (D126, 31.10.2026).
     const footer = screen.getByTestId('modes-group-friends');
+    expect(styleOf(footer).backgroundColor).toBeUndefined();
     expect(styleOf(footer)).toMatchObject({
       borderTopWidth: tokens.border.hairline,
       borderTopColor: color.border,
-      backgroundColor: color.bg,
       paddingHorizontal: tokens.layout.gutterGame,
       paddingTop: tokens.space[6],
       // The footer takes the navigation bar's inset.
@@ -352,16 +440,21 @@ describe('playing with friends: "צור חדר" | "הצטרף עם קוד" (1.0.
     expect(within(create).getByTestId('modes-friends-create-label')).toHaveStyle({ color: color.onAccent });
     expect(within(join).queryByTestId('modes-friends-join-shadow')).toBeNull();
     expect(styleOf(create)).toMatchObject({ height: size.buttonModal, flex: 1 });
-    expect(styleOf(join)).toMatchObject({
-      height: size.buttonModal,
-      flex: 1,
+    expect(styleOf(join)).toMatchObject({ height: size.buttonModal, flex: 1 });
+    // The secondary's slate face on its edge (D125), skewed with the primary beside it (the pair rule): a slanted
+    // plate and edge that Android draws too (slant.tsx).
+    expect(styleOf(within(join).getByTestId('modes-friends-join-face-shape'))).toMatchObject({
       borderWidth: tokens.border.hairline,
       borderColor: color.border,
+      backgroundColor: color.surface2,
+      transform: SLANT.inner,
     });
+    expect(styleOf(within(join).getByTestId('modes-friends-join-edge')).transform).toEqual(SLANT.outer);
     expect(within(join).getByText('הצטרף עם קוד')).toHaveStyle({ color: color.text });
     expect(directionProblems(footer)).toEqual([]);
-    // The list no longer takes the inset (the footer does): its own 16 under the last row.
-    expect(listBottom()).toBe(tokens.space[8]);
+    // The list no longer takes the inset (the footer does, with its rule and 12 over the buttons): its own 8
+    // under the last row (B3: room to spare under a tall status bar).
+    expect(listBottom()).toBe(tokens.space[4]);
     // The ranked rows are two lines: no "דירוג" chip [D80a], and no footnote either.
     for (const k of ['ranked2', 'ranked3', 'ranked4'])
       expect(within(screen.getByTestId(`mode-${k}`)).queryByText('דירוג')).toBeNull();
@@ -476,6 +569,11 @@ describe('playing with friends: "צור חדר" | "הצטרף עם קוד" (1.0.
  * navigation leaves about 30 dp more.
  */
 const STATUS_BAR = 32;
+/**
+ * QA's 360 × 780 (wm size 720x1560, wm density 320) on the Galaxy A16 keeps its 100 px status bar: 50 dp. The six
+ * rows over the friends footer, the default since D100, fit under it too (QA run #2, B3: they scrolled 2 dp).
+ */
+const STATUS_BAR_TALL = 50;
 const NAV_BAR_BUTTONS = 48;
 /**
  * The six options (the sixth is "אימון בשלבים": Moshe's device test, 15.10.2026; D48) in their two groups, and
@@ -501,6 +599,11 @@ interface Node {
  * A row's height as laid out: its line heights, chips, padding and border, or its minimum. In `lang`'s line
  * heights (a taller script's: layout.ts lineHeightAs; Hebrew and English are the tokens').
  */
+/** A chip's least height as the screen gives it, back at font scale 1 (Jest's window is at 2; parts.tsx chipSizeAt). */
+function chipHeightAt1(chip: Node): number {
+  return num(styleOf(chip).minHeight) / Math.max(1, Dimensions.get('window').fontScale);
+}
+
 function rowHeight(key: ModeKey, lang = 'he'): number {
   const card = screen.getByTestId(`mode-${key}`) as unknown as Node;
   const box = styleOf(card);
@@ -514,7 +617,8 @@ function rowHeight(key: ModeKey, lang = 'he'): number {
   const stack =
     lineHeightAs(lang, textStyleOf(title)) +
     lineHeightAs(lang, textStyleOf(tagline!)) +
-    (chips && chip ? num(styleOf(chips).marginTop) + num(styleOf(chip).height) : 0) +
+    // A chip's least height at the normal text size (it grows with large text: largeTextChips.test).
+    (chips && chip ? num(styleOf(chips).marginTop) + chipHeightAt1(chip) : 0) +
     (chips ? 2 : 1) * num(styleOf(texts).gap);
   // The padding as the app gives it in that language (the app runs in Hebrew here: its own, the design's 6).
   expect(num(box.paddingVertical)).toBe(cardPaddingVertical(typefaceOf('he')));
@@ -534,24 +638,73 @@ function footerHeight(): number {
 }
 
 describe('the rows (Moshe’s device test, 15.10.2026)', () => {
-  it('every option is a row of its own, ranked 3 and 4 too: the chevron, an 18 title, a one-line tagline', async () => {
+  it('every option is a row of its own, ranked 3 and 4 too: the chevron, an 18 title, a tagline (one line, or two)', async () => {
+    // At the normal text size (Jest's window is at fontScale 2): the caps; the large text's wrap is below.
+    const restore = setWindow(PHONE);
     await renderApp('/modes');
     for (const key of KEYS) {
       const card = screen.getByTestId(`mode-${key}`);
       expect(card).toHaveStyle({ flexDirection: 'row' });
-      expect((card as unknown as Node).parent?.props.testID).toBe(
-        key.startsWith('ranked') ? 'modes-group-ranked' : 'modes-group-practice',
-      );
+      // In its group (each card in its entrance's wrapper, MOT-3).
+      const group = key.startsWith('ranked') ? 'modes-group-ranked' : 'modes-group-practice';
+      expect(within(screen.getByTestId(group)).getByTestId(`mode-${key}`)).toBe(card);
       expect(within(card).getByTestId('icon-chevronForward', hidden)).toBeTruthy();
       expect(within(card).getByText(i18n.t(`home:modes.${key}.title`))).toHaveStyle({
         fontSize: tokens.type.sheetTitle.size,
         lineHeight: tokens.type.sheetTitle.lineHeight,
       });
-      expect(within(card).getByText(taglineOf(key))).toHaveProp('numberOfLines', 1);
+      // One line in every real language (the fit test below); a second, never "…", for a longer one (en-XA).
+      expect(within(card).getByText(taglineOf(key))).toHaveProp('numberOfLines', TAGLINE_LINES);
     }
+    // The chips' line runs into the gap before the chevron (B9; modesChipWidth.test: 226 on a 360 phone).
+    const chips = (
+      within(screen.getByTestId('mode-solo')).getByText(i18n.t('home:modes.chips.unrated')) as unknown as Node
+    ).parent!.parent!;
+    expect(styleOf(chips)).toMatchObject({ flexWrap: 'wrap', marginEnd: -tokens.space[6] });
     expect(directionProblems(screen.getByTestId('mode-ranked3'))).toEqual([]);
     expect(directionProblems(screen.getByTestId('mode-bot'))).toEqual([]);
+    for (const key of KEYS)
+      expect(
+        within(screen.getByTestId(`mode-${key}`)).getByText(i18n.t(`home:modes.${key}.title`)),
+      ).toHaveProp('numberOfLines', 1);
+    await restore();
   });
+
+  /**
+   * QA levels-new-game-small-phone (loop 3): at font scale 2.0 on a 360 × 780 phone the rows said "Practice vs
+   * b…", "אימון לבד • לוח …" and the ranked note "Real opponents, in …". From LARGE_TEXT_SCALE up, nothing is
+   * capped: the words wrap and the list scrolls.
+   */
+  it.each([
+    ['en', 2],
+    ['he', 2],
+    ['en', 1.3],
+  ] as const)(
+    'large text (%s, font scale %s): the titles, taglines and notes wrap, never "…"',
+    async (lang, fontScale) => {
+      await i18n.changeLanguage(lang);
+      const restore = setWindow({ ...PHONE, fontScale });
+      await renderApp('/modes');
+      for (const key of KEYS) {
+        const card = within(screen.getByTestId(`mode-${key}`));
+        expect(card.getByText(i18n.t(`home:modes.${key}.title`))).not.toHaveProp('numberOfLines');
+        expect(card.getByText(taglineOf(key))).not.toHaveProp('numberOfLines');
+      }
+      // Loop 5: the chips grow with the words ("Unrated", "Works offline" were cut at the bottom by a fixed 22).
+      for (const words of ['home:modes.chips.unrated', 'home:modes.chips.offline']) {
+        const label = within(screen.getByTestId('mode-solo')).getByText(i18n.t(words));
+        expect(label).not.toHaveProp('numberOfLines');
+        const chip = styleOf((label as unknown as Node).parent!);
+        expect(chip.height).toBeUndefined();
+        expect(chip.minHeight).toBe(22 * fontScale);
+      }
+      for (const group of ['ranked', 'practice'])
+        expect(screen.getByText(i18n.t(`home:modes.groups.${group}.note`))).not.toHaveProp('numberOfLines');
+      // In the list that scrolls.
+      expect(screen.getByTestId('modes-scroll')).toBeTruthy();
+      await restore();
+    },
+  );
 
   // In every layout language the app has strings for (localization plan 0טו, D124: a language that doesn't fit
   // shortens its words, then drops the bottom line), with that language's line heights and font.
@@ -579,7 +732,16 @@ describe('the rows (Moshe’s device test, 15.10.2026)', () => {
       // Each group: its label, then its rows (or the friends' one row of buttons), the group's gap between.
       const groupHeight = (testID: string): number => {
         const group = screen.getByTestId(testID) as unknown as Node;
-        const [label, ...items] = group.children as Node[];
+        const [label, ...wrapped] = group.children as Node[];
+        // A card comes in its entrance's wrapper (MOT-3), which adds nothing to its height.
+        const items = wrapped.map((item) => {
+          const [only] = item.children as Node[];
+          return item.props.testID === undefined &&
+            item.children.length === 1 &&
+            only?.props?.testID?.startsWith('mode-')
+            ? only
+            : item;
+        });
         const heights = items.map((item) =>
           item.props.testID?.startsWith('mode-')
             ? rows[item.props.testID.slice('mode-'.length)]!
@@ -593,8 +755,8 @@ describe('the rows (Moshe’s device test, 15.10.2026)', () => {
       // The friends buttons take the footnote's place [D80a].
       expect(screen.queryByText(i18n.t('home:modes.footnote'))).toBeNull();
       // No inset here; on the phone, the navigation bar's (NAV_BAR_BUTTONS) comes on top of it, under the
-      // list or under the footer.
-      expect(content.paddingBottom).toBe(tokens.space[8]);
+      // list or under the footer (which has its own rule and room: the list's 8 over it).
+      expect(content.paddingBottom).toBe(placement === 'footer' ? tokens.space[4] : tokens.space[8]);
 
       const fit = GROUPS_TO_FIT[placement];
       const groups = fit.map(groupHeight);
@@ -606,14 +768,15 @@ describe('the rows (Moshe’s device test, 15.10.2026)', () => {
         (fit.length - 1) * num(content.gap) +
         num(content.paddingBottom) +
         footer;
-      const available = PHONE.height - STATUS_BAR - header - NAV_BAR_BUTTONS;
+      const statusBar = placement === 'footer' ? STATUS_BAR_TALL : STATUS_BAR;
+      const available = PHONE.height - statusBar - header - NAV_BAR_BUTTONS;
       // Ranked rows of two lines (64, the list row's minimum), the practices' 77; the friends' 72 in the list,
       // or the footer's 77 (its rule, 12, the 48 buttons and 16) under it. A taller script's rows may grow.
       if (source)
-        expect({ ranked: rows.ranked2, practice: rows.solo, groups, footer, needed }).toEqual(
+        expect({ ranked: rows.ranked2, practice: rows.solo, groups, footer, needed, available }).toEqual(
           placement === 'footer'
-            ? { ranked: 64, practice: 77, groups: [236, 275], footer: 77, needed: 628 }
-            : { ranked: 64, practice: 77, groups: [236, 72, 275], footer: 0, needed: 639 },
+            ? { ranked: 64, practice: 77, groups: [236, 275], footer: 77, needed: 620, available: 626 }
+            : { ranked: 64, practice: 77, groups: [236, 72, 275], footer: 0, needed: 639, available: 644 },
         );
       expectRoom(lang, `the ${placement}: the rows' height`, needed, available);
 
@@ -630,7 +793,7 @@ describe('the rows (Moshe’s device test, 15.10.2026)', () => {
           2;
         const face = (within(create).getByTestId('modes-friends-create-label') as unknown as Node).parent!
           .parent!;
-        const outline = styleOf(join);
+        const outline = styleOf(within(join).getByTestId('modes-friends-join-face'));
         const rooms = {
           create: half - 2 * num(styleOf(face).paddingHorizontal),
           join: half - 2 * num(outline.paddingHorizontal) - 2 * num(outline.borderWidth),
@@ -833,5 +996,47 @@ describe('"סוג משחק" (spec §5.2)', () => {
       'accessibilityLabel',
       'Fast. Solved with naked singles only. 8 seconds per cell, Easy board, about 4 to 6 minutes',
     );
+  });
+
+  describe('the first game made ready while the player chooses (screens/match/warmGame.ts, QA K2)', () => {
+    const made = jest.mocked(createAudioPlayer);
+    const playersOf = (cues: readonly FeedbackCue[]) =>
+      [...new Set(cues.map((c) => CUES[c].sound))]
+        .filter((id): id is SoundId => id !== null)
+        .reduce((n, id) => n + voicesOf(id), 0);
+    const tick = async (ms: number) => {
+      for (let done = 0; done < ms; done += 100)
+        await act(async () => {
+          jest.advanceTimersByTime(100);
+        });
+    };
+    beforeEach(() => {
+      useSettings.setState({ sound: true });
+      sfx.release();
+      made.mockClear();
+    });
+    afterEach(() => {
+      sfx.release();
+      made.mockClear();
+    });
+
+    it('after the screen’s entrance: the game screen’s players, its code and the flow’s, ahead of GO!', async () => {
+      await renderApp('/game-type?mode=ranked&gameType=fast&players=2');
+      await tick(GAME_WARM_CHOICE_DELAY_MS - 100);
+      expect(made).not.toHaveBeenCalled();
+      await tick(4000);
+      expect(made).toHaveBeenCalledTimes(playersOf([...GAME_CUES, ...MATCH_CUES]));
+      // The game screen's own preload, as it mounts under GO!, finds them all.
+      preloadCues(GAME_CUES);
+      expect(made).toHaveBeenCalledTimes(playersOf([...GAME_CUES, ...MATCH_CUES]));
+    });
+
+    it('covered before it began (on to the bot selection): nothing is made', async () => {
+      const app = await renderApp('/game-type?mode=bot&gameType=fast');
+      await fireEvent.press(screen.getByTestId('start'));
+      expect(app.pathname()).toBe('/bot-select');
+      await tick(GAME_WARM_CHOICE_DELAY_MS + 2000);
+      expect(made).not.toHaveBeenCalled();
+    });
   });
 });

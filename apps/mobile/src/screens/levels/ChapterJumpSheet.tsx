@@ -8,11 +8,13 @@ import { Sheet } from '../../components/ui';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { chapterName } from './levelWording';
+import { toneOf } from './mapModel';
 
 /**
  * The chapter list (components.md §19.3, no board: built from C's tokens): the "★ 84/900" chip of the map's
  * header opens it. One row per chapter, its name, "★ 18/30", and a lock while it is closed; a row takes the map
- * to its chapter (`level.map.jump`) as the sheet goes.
+ * to its chapter (`level.map.jump`) as the sheet goes. Each row leads with the chapter's medallion in its tone, as
+ * on the map's banner (decorative: the row's label says the chapter).
  */
 
 export interface ChapterRow {
@@ -60,6 +62,17 @@ export function ChapterJumpSheet({ visible, chapters, onClose, onJump, onExited 
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
               testID={`chapter-jump-${c.chapter}`}
             >
+              <View
+                style={[
+                  styles.medallion,
+                  { backgroundColor: toneOf(c.chapter).deep, borderColor: toneOf(c.chapter).lit },
+                ]}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                testID={`chapter-jump-${c.chapter}-medallion`}
+              >
+                <Text style={styles.medallionText}>{String(c.chapter)}</Text>
+              </View>
               {c.open ? null : <Icon name="lock" size={size.icon.inline} color={color.textMuted} />}
               <Text style={[styles.name, !c.open && styles.muted]} numberOfLines={1}>
                 {t('jump.row', { n: c.chapter, name })}
@@ -78,6 +91,9 @@ export function ChapterJumpSheet({ visible, chapters, onClose, onJump, onExited 
   );
 }
 
+/** The row's medallion (the map banner's, smaller). */
+const MEDALLION = 28;
+
 const styles = StyleSheet.create({
   list: { flex: 1 },
   content: { gap: space[3], paddingTop: space[4] },
@@ -93,6 +109,21 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface2,
   },
   pressed: { backgroundColor: color.border },
+  medallion: {
+    width: MEDALLION,
+    height: MEDALLION,
+    borderRadius: MEDALLION / 2,
+    borderWidth: tokens.border.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medallionText: {
+    ...text('scoreSm'),
+    fontSize: 18,
+    lineHeight: 16,
+    color: color.text,
+    writingDirection: 'ltr',
+  },
   name: { ...text('rowTitle'), color: color.text, flex: 1, minWidth: 0 },
   muted: { color: color.textMuted },
   count: { flexDirection: 'row', alignItems: 'center', gap: space[2] },

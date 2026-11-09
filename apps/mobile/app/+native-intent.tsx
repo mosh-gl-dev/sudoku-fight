@@ -2,6 +2,9 @@ import { useAuth } from '../src/auth/authStore';
 import { announceLink, rememberInvite } from '../src/auth/pendingInvite';
 import { useToast } from '../src/components/ui/toastStore';
 import { roomLinkOf, roomPath } from '../src/config/links';
+import { useGameStore } from '../src/game/gameStore';
+import { noteFlowStart } from '../src/game/flowStack';
+import { liveFlowPathOf } from '../src/game/liveFlow';
 import i18n from '../src/i18n';
 import { track } from '../src/services/analytics';
 
@@ -18,12 +21,24 @@ import { track } from '../src/services/analytics';
  * - A room link that leads nowhere (another server's, a code that is not 6 digits): "הקישור לא תקין", and
  *   Home when the app starts from it (a running app stays where it is: a bad link never ends a game).
  * - Anything else: as it is (expo-router's own routes; app/+not-found.tsx for the unknown).
+ * - A new React root while the game store holds something under way (Android recreated the activity: display
+ *   size, font size, bold text…; QA "density-change-orphans-ranked-game"): its screen (game/liveFlow.ts), not
+ *   Home and not the link the activity was first opened with, so a ranked game is never left behind on Home.
+ *   A first start never has one (the store is empty). The screens under it (Home, "משחק חדש", "סוג משחק")
+ *   come back once the root is ready (game/flowStack.ts; QA "cancel-after-recreate-skips-type-screen").
  *
  * friends_link_open {signedIn} once the sign-in is known (never the code). Never throws: a link that breaks
  * here only leaves the app where it was (or at Home, starting).
  */
 export function redirectSystemPath({ path, initial }: { path: string; initial: boolean }): string | null {
   try {
+    if (initial) {
+      const live = liveFlowPathOf(useGameStore.getState());
+      // The screens under it come back once the root is ready; with nothing under way, the old root's screens
+      // over Home (game/flowStack.ts; QA "levels-map-recreate-lands-home").
+      noteFlowStart(live);
+      if (live) return live;
+    }
     const link = roomLinkOf(path);
     if (link.kind === 'other') return path;
     if (link.kind === 'badRoom') {

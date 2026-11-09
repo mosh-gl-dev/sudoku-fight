@@ -243,7 +243,7 @@ function SeatRow({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: tokens.layout.gutterHome },
   column: { gap: space[9] },
   header: { gap: space[3] },

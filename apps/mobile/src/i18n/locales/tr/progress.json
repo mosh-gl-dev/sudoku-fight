@@ -164,7 +164,7 @@
     "facts": {
       "seconds": "saniye, her sabotaj için",
       "cost": "bedel her kullanımda iki katına çıkar",
-      "launch": "dokunuş: rakibin kartında “Sabote et”, sonra sabotaj",
+      "launch": "dokunuş: rakibin kartında “Baltala”, sonra sabotaj",
       "launchValue": "2"
     },
     "arsenal": "Cephaneliğin",
@@ -178,7 +178,7 @@
     "soon": "Yakında",
     "atLevel": "Seviye {{level}} olunca açılır",
     "lockedLabel": "{{name}}, kilitli, {{when}}",
-    "howTo": "Maçta: rakibin kartında “Sabote et” düğmesine dokun, sonra bir sabotaj seç.",
+    "howTo": "Maçta: rakibin kartında “Baltala” düğmesine dokun, sonra bir sabotaj seç.",
     "future": {
       "earthquake": "Deprem",
       "fog": "Sis",

@@ -273,7 +273,10 @@ export class FakeFriendsTable implements OnlineClient {
 
   // -- helpers -------------------------------------------------------------------------------------------
 
-  /** A new connection to my seat; the lobby follows (or the game's snapshot, once there is one). */
+  /**
+   * A new connection to my seat; the lobby follows. Once there is a game: its snapshot, then the lobby again
+   * (the seats' cards, as GameRoom.welcomeBack sends them: QA rejoin-opponent-avatar-lost).
+   */
   private connect(token = `${FROOM}:secret${++this.tokens}`): FakeRoom {
     const room = new FakeRoom(
       FROOM,
@@ -294,7 +297,7 @@ export class FakeFriendsTable implements OnlineClient {
           playerId: ME,
           lastClientSeq: 0,
         });
-      else room.deliver(this.lobbyMessage());
+      room.deliver(this.lobbyMessage());
     }, this.oneWayMs);
     return room;
   }

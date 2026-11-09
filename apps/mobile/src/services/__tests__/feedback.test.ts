@@ -6,6 +6,7 @@ import { sfx, SOUND_IDS, voicesOf } from '../sfx';
 
 interface MockPlayer {
   play: jest.Mock;
+  volume: number;
 }
 
 jest.mock('expo-audio', () => {
@@ -175,14 +176,16 @@ describe('cue()', () => {
 });
 
 describe('preloadCues()', () => {
-  it('loads the sounds of the game cues once, without playing them', () => {
+  it('loads the sounds of the game cues once, with nothing heard (each plays once, muted: sfx warm-up)', () => {
     preloadCues();
     const sounds = new Set(GAME_CUES.flatMap((n) => CUES[n].sound ?? []));
     const players = [...sounds].reduce((n, id) => n + voicesOf(id), 0);
     expect(audio.createAudioPlayer).toHaveBeenCalledTimes(players);
-    expect(plays()).toBe(0);
+    expect(plays()).toBe(players);
+    expect(audio.__players.every((p) => p.volume === 0)).toBe(true);
     preloadCues();
     expect(audio.createAudioPlayer).toHaveBeenCalledTimes(players);
+    expect(plays()).toBe(players);
   });
 });
 

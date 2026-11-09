@@ -11,6 +11,7 @@ import {
   resolveMotion,
   sampleTrack,
   TARGET_CLASS,
+  TARGET_CLASSES,
 } from './motion';
 import { eyeLineOf } from './render';
 import { type AvatarDef, EXPRESSIONS, MOTION_IDS, type Pose } from './types';
@@ -150,11 +151,17 @@ describe('motionCss', () => {
     for (const id of MOTION_IDS)
       for (const tr of MOTIONS[id].tracks) {
         expect(css).toContain(`@keyframes sfa-${id}-${tr.target}{`);
-        expect(css).toContain(
-          `.sfa.sfa-m-${id} .${TARGET_CLASS[tr.target]}{animation:sfa-${id}-${tr.target} `,
-        );
+        const selector = TARGET_CLASSES[tr.target].map((c) => `.sfa.sfa-m-${id} .${c}`).join(',');
+        expect(TARGET_CLASSES[tr.target][0]).toBe(TARGET_CLASS[tr.target]);
+        expect(css).toContain(`${selector}{animation:sfa-${id}-${tr.target} `);
         expect(css).toContain(`transform-origin:var(--sfa-${tr.origin})`);
       }
+  });
+
+  it('moves the face’s extras with the face (they are drawn apart, over the front layers)', () => {
+    expect(TARGET_CLASSES.face).toEqual(['sfa-face', 'sfa-extras']);
+    expect(css).toContain('.sfa.sfa-m-nod .sfa-face,.sfa.sfa-m-nod .sfa-extras{animation:sfa-nod-face ');
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{[^}]*\.sfa \.sfa-extras[,{]/);
   });
 
   it('blinks every eye on its own, around its own centre', () => {

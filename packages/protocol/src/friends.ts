@@ -1,6 +1,14 @@
 import { type GameType, isGameType, type PlayerId } from '@sudoku-fight/engine';
 
-import { type AvatarId, type CountryCode, isAvatarId, isCountryCode, NO_AVATAR_ID } from './account';
+import {
+  avatarIdForCatalog,
+  type AvatarId,
+  type CountryCode,
+  isAvatarId,
+  isCountryCode,
+  NO_AVATAR_ID,
+  normalizeAvatarId,
+} from './account';
 import type { AdminDayCount } from './admin';
 import type { MatchSeatReservation } from './matchmaking';
 import { PLAYER_ID_PATTERN } from './moderation';
@@ -426,6 +434,28 @@ export function isFriendRoomSummary(v: unknown): v is FriendRoomSummary {
 
 export function isFriendRoomTicket(v: unknown): v is FriendRoomTicket {
   return isRecord(v) && isReservation(v.reservation) && isFriendRoomSummary(v.room);
+}
+
+/**
+ * A ticket from the server, or null. A host whose avatar this app does not know (a newer app's) shows none
+ * (account.ts AVATAR_CATALOG_HEADER): an app before this one refused the ticket, and with it the room.
+ */
+export function readFriendRoomTicket(v: unknown): FriendRoomTicket | null {
+  const known =
+    isRecord(v) && isRecord(v.room) && isRecord(v.room.host) && typeof v.room.host.avatarId === 'string'
+      ? {
+          ...v,
+          room: { ...v.room, host: { ...v.room.host, avatarId: normalizeAvatarId(v.room.host.avatarId) } },
+        }
+      : v;
+  return isFriendRoomTicket(known) ? known : null;
+}
+
+/** A ticket as an app of that catalog can show it (the server's side): a host's newer avatar as none. */
+export function friendRoomTicketForCatalog(ticket: FriendRoomTicket, catalog: number): FriendRoomTicket {
+  const avatarId = avatarIdForCatalog(ticket.room.host.avatarId, catalog);
+  if (avatarId === ticket.room.host.avatarId) return ticket;
+  return { ...ticket, room: { ...ticket.room, host: { ...ticket.room.host, avatarId } } };
 }
 
 // ---------------------------------------------------------------------------------------------------------

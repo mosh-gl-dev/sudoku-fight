@@ -44,7 +44,7 @@ export function ButtonSection() {
             </Specimen>
           )),
         )}
-        {(['md', 'modal'] as const satisfies readonly ButtonSize[]).map((size) => (
+        {(['md', 'modal', 'sm'] as const satisfies readonly ButtonSize[]).map((size) => (
           <SpecimenRow key={size} gap={space[4]}>
             {states.map((s) => (
               <Specimen
@@ -86,6 +86,26 @@ export function ButtonSection() {
           </Specimen>
           <Specimen label={t('states.loading')} width={half} align="stretch">
             <Button label={t('buttons.retry')} variant="secondary" loading onPress={noop} />
+          </Specimen>
+        </SpecimenRow>
+      </DsGroup>
+
+      {/* The pair rule (D130, components.md §1.0): beside the primary, the other button skews with it. */}
+      <DsGroup title={t('buttons.pair')}>
+        <SpecimenRow gap={space[6]}>
+          <Specimen label={t('buttons.primary')} width={half} align="stretch">
+            <Button label={t('buttons.play')} size="modal" onPress={noop} />
+          </Specimen>
+          <Specimen label={t('buttons.secondary')} width={half} align="stretch">
+            <Button label={t('buttons.retry')} variant="secondary" size="modal" skew onPress={noop} />
+          </Specimen>
+        </SpecimenRow>
+        <SpecimenRow gap={space[6]}>
+          <Specimen label={t('buttons.primary')} width={half} align="stretch">
+            <Button label={t('buttons.play')} size="modal" onPress={noop} />
+          </Specimen>
+          <Specimen label={t('buttons.danger')} width={half} align="stretch">
+            <Button label={t('buttons.surrenderYes')} variant="danger" size="modal" skew onPress={noop} />
           </Specimen>
         </SpecimenRow>
       </DsGroup>

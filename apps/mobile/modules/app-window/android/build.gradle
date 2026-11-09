@@ -1,0 +1,18 @@
+// The app's own Expo module (QA levels-freeze-background): whether Android may keep a picture of the app for
+// Recents (Activity.setRecentsScreenshotEnabled, Android 13+). Autolinked from apps/mobile/modules/ (Expo's
+// default nativeModulesDir); the JS side is apps/mobile/src/services/recentsPicture.ts.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.mosheg.sudokufight'
+version = '1.0.0'
+
+android {
+  namespace "com.mosheg.sudokufight.appwindow"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}

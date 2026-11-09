@@ -66,6 +66,9 @@
     "title": "משחק חדש",
     "footnote": "מדורג דורש חיבור לאינטרנט · אימון זמין תמיד",
     "soon": "בקרוב",
+    "needsConnection": {
+      "rankedAndFriends": "מדורג ועם חברים"
+    },
     "groups": {
       "ranked": {
         "title": "מדורג",

@@ -6,12 +6,15 @@ import {
   MATCHMAKING_ERRORS,
   MATCHMAKING_SERVER_MESSAGE_TYPES,
   matchmakingErrorOf,
+  matchmakingQueueOf,
+  matchmakingRoomOf,
   matchRange,
   OPEN_QUEUE_PLAYER_COUNTS,
   parseQueueKey,
   QUEUE_KEYS,
   QUEUE_PLAYER_COUNTS,
   queueKey,
+  rankedGameRefusalText,
   rangeCovering,
   READY_TIMEOUT_MS,
 } from './index';
@@ -135,5 +138,27 @@ describe('timings and messages', () => {
       'emailNotVerified',
     );
     expect(MATCHMAKING_ERRORS).toContain('unauthenticated');
+  });
+
+  it('an alreadyQueued over a running ranked game names its room (the way back); nothing else does', () => {
+    const message = `alreadyQueued: ${rankedGameRefusalText('aB3_x-9')}`;
+    expect(matchmakingErrorOf(message)).toBe('alreadyQueued');
+    expect(matchmakingRoomOf(message)).toBe('aB3_x-9');
+    // A search on another device, an older server's text, another refusal: no room.
+    expect(matchmakingRoomOf('alreadyQueued: this account is searching already')).toBeNull();
+    expect(
+      matchmakingRoomOf('alreadyQueued: this account is in a ranked game that has not ended'),
+    ).toBeNull();
+    expect(matchmakingRoomOf('queueClosed: (room abc123)')).toBeNull();
+    expect(matchmakingRoomOf('alreadyQueued: (room bad id!)')).toBeNull();
+  });
+
+  it('it names the game queue too (type and players); a text without one, or a bad one, names none', () => {
+    const message = `alreadyQueued: ${rankedGameRefusalText('Xy12ab', 'hard-3p')}`;
+    expect(matchmakingRoomOf(message)).toBe('Xy12ab');
+    expect(matchmakingQueueOf(message)).toBe('hard-3p');
+    expect(matchmakingQueueOf(`alreadyQueued: ${rankedGameRefusalText('Xy12ab')}`)).toBeNull();
+    expect(matchmakingQueueOf('alreadyQueued: (room Xy12ab, queue nope-2p)')).toBeNull();
+    expect(matchmakingQueueOf('queueClosed: (room Xy12ab, queue fast-2p)')).toBeNull();
   });
 });

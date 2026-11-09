@@ -138,6 +138,47 @@ export function parseUiDump(xml: string): UiNode[] {
   return nodes;
 }
 
+/** What a screen dump needs from the phone: scripts/adb.ts gives the real ones, a test fakes them. */
+export interface UiDumpDevice {
+  /** `adb shell <args>`: what it printed, stderr too (uiautomator reports its errors there, and exits 0). */
+  shell(...args: string[]): string;
+  /** A file on the phone, or whatever `cat` printed instead. */
+  read(path: string): string;
+  sleep(ms: number): void;
+}
+
+export const UI_DUMP_TRIES = 3;
+export const UI_DUMP_RETRY_MS = 500;
+
+/** A whole dump, from <hierarchy> to its end: not a cut-off file, not `cat`'s "No such file". */
+export const isUiDump = (xml: string): boolean => /<hierarchy\b[\s\S]*<\/hierarchy>\s*$/.test(xml);
+
+/**
+ * The screen as uiautomator sees it now. The old dump goes first: while something animates, uiautomator gives up
+ * with "ERROR: could not get idle state." (after about 10 s), writes no file and still exits 0, and the old file
+ * would pass for the screen (QA run #2). A few tries, then an error that says why, never stale views.
+ */
+export function dumpUi(device: UiDumpDevice, path: string): string {
+  let said = '';
+  for (let tryNo = 1; tryNo <= UI_DUMP_TRIES; tryNo++) {
+    if (tryNo > 1) device.sleep(UI_DUMP_RETRY_MS);
+    device.shell('rm', '-f', path);
+    said = device.shell('uiautomator', 'dump', path);
+    const xml = device.read(path);
+    if (isUiDump(xml)) return xml;
+  }
+  const hint = said.includes('idle state')
+    ? '\nSomething on the screen keeps moving: wait and run ui again, or take a shot.'
+    : '';
+  throw new Error(
+    `uiautomator could not read the screen (${UI_DUMP_TRIES} tries): ${said || 'no output'}${hint}`,
+  );
+}
+
+/** A PNG's first 8 bytes: what `screencap -p` gives, unlike the error text `adb exec-out` passes on instead. */
+export const isPng = (data: Uint8Array): boolean =>
+  [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((byte, i) => data[i] === byte);
+
 export function centerOf(node: UiNode): { x: number; y: number } {
   const [x1, y1, x2, y2] = node.bounds;
   return { x: Math.round((x1 + x2) / 2), y: Math.round((y1 + y2) / 2) };

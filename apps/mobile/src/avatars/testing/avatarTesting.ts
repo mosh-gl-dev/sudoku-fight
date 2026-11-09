@@ -1,4 +1,5 @@
 /* Test-only: what the avatars under an element draw (jest.setup.ts keeps each SvgXml as one host element). */
+import { RETIRED_LAYERS_ID } from '../AvatarArt';
 import { NO_AVATAR_ID } from '../catalog';
 
 /** A rendered element (test-renderer's TestInstance, or anything shaped like one). */
@@ -9,10 +10,15 @@ export interface RenderedNode {
 }
 type Node = RenderedNode;
 
-/** Every SvgXml under an element (itself included), in drawing order. */
+/**
+ * Every SvgXml under an element (itself included), in drawing order. Not the layers an avatar keeps hidden a
+ * while (AvatarArt LAYERS_RETIRE_MS: nothing draws them), unless the element is such a stack itself.
+ */
 export function svgXmlsIn(el: Node): Node[] {
   const own = el.type === 'SvgXml' ? [el] : [];
-  return [...own, ...el.children.flatMap((c) => (typeof c === 'string' ? [] : svgXmlsIn(c)))];
+  const drawn = (c: Node | string): c is Node =>
+    typeof c !== 'string' && c.props.testID !== RETIRED_LAYERS_ID;
+  return [...own, ...el.children.filter(drawn).flatMap(svgXmlsIn)];
 }
 
 /**

@@ -13,7 +13,7 @@ come from `docs/design/tokens.json`. That file is the source of truth for values
 | Tag | Meaning |
 |---|---|
 | **[C]** | Taken exactly from `Dir-C-Home.dc.html` or `Dir-C-Game.dc.html`. These two boards decide **colour, font and look**. |
-| **[R1→C]** | Structure, size, state or behaviour from round 1 ("Arena Ink": `DS-Components`, `DS-Foundations`, `DS-Motion`, `Game-*`, `Arsenal`, `Surrender`, …), translated into C's calm palette. Translation means **no gradients, no textures or halftone, no glows, no skew** (except the primary button and the VS badge, which C keeps), 1px borders instead of 2px, and flat fills. |
+| **[R1→C]** | Structure, size, state or behaviour from round 1 ("Arena Ink": `DS-Components`, `DS-Foundations`, `DS-Motion`, `Game-*`, `Arsenal`, `Surrender`, …), translated into C's calm palette. Translation means C's palette only, **no textures or halftone, no glows**, 1px borders instead of 2px, and the skew only on the primary button, the VS badge and a button paired with the primary (§1.0). **Revised by Moshe's decision D125 (2026-10-30, "כפתורים וכרטיסים עם עומק"):** the old rule also said "no gradients" and "flat fills". Since D125, raised controls and tappable cards have depth: tonal gradients through C's own tokens, inset highlights, hard edges and card bases (§0.7). The palette does not change. |
 | **[new]** | Not drawn on any board. Added because the spec requires it (the section is cited). These need Moshe's eye. |
 
 Every Hebrew string in this file is a UI string. A string marked **†** is *proposed* copy that follows a pattern from the design or
@@ -113,56 +113,157 @@ medium knock ("taken") when you tap an opponent's lock. The full list is `motion
 - **Example data** must follow the known-fixes list in `docs/03-DESIGN.md`: the best move is ≤6.5 points on fast, ≤9.5 on normal and ≤12 on hard (the bank after D43), a provisional rating
   says "10 משחקים", the league thresholds follow §11.3, and there is no "עונה 3".
 
+### 0.7 Tactile surfaces (D125, Moshe 2026-10-30) [new]
+Moshe's words: "כפתורים וכרטיסים עם עומק". Every raised control and every tappable card is built the same way, in
+`components/ui/tactile.tsx`. Values are in `tokens.json` (`color.tactile`, `elevation.tactile`).
+
+**Layers, bottom to top**
+1. **Edge:** a hard band under the face, offset down by its depth, with no blur. Its tone comes from the palette:
+   - gold under gold: `accentShadow`, 4 dp;
+   - slate under slate: the border's tone, 3 dp, or 2 dp under an icon button;
+   - red under danger: `dangerShadow` at 50%, 2 dp.
+
+   An edge darker than the ground would not show on C's `bg` (1.04:1), so the slate edge uses the border's tone (1.44:1).
+   Buttons draw the edge as a View under the face, the CTA's Android-safe recipe. The edge sits outside the button's box,
+   so no layout changes.
+2. **Face:** opaque, so the edge never shows through it.
+   - Gold: a vertical gradient `accentHover` → `accent` → `accentPressed`.
+   - Slate: `surface2` → `surface`, with the top border one step lighter (`tactile.borderLit`).
+   - Danger: the 8% red tint over an opaque `surface`. The danger label measures 4.88:1 on it, and 4.65:1 when pressed.
+   - In RN the gradient is `experimental_backgroundImage`. The plain fill under it shows on a phone that draws no
+     gradient.
+3. **Highlight:** an inset top line (RN `boxShadow` with `inset`). White at 55% on gold, at 6% on slate, at 5% on a card.
+   The gold face also has a 10% black shade along its foot.
+4. **Label**, always upright. When the face is skewed, the face's look is a slanted plate under the label, and the
+   label is not inside it, so nothing is counter-skewed (§1.1).
+
+**Tappable cards (L1):**
+- The card is the pressable itself: its role, test id and layout stay where they were.
+- Fill `surface`, a hairline `border` whose top edge is `tactile.borderLit`, and an inset top highlight.
+- A **2 dp base** in the border's tone. This is an RN `boxShadow` (`0 2 0`, no blur), drawn from Android 9 on and simply
+  absent before.
+- Radius 14 (`radius.card`) for every card and tappable row.
+- Selected or checked: the `accent` border on every side, and `accentSubtle` over the fill.
+- A border of its own replaces the lit top (my leaderboard row in P1).
+- Disabled cards keep their own meaning (dashed, faded) and have no base.
+
+**One press, everywhere:**
+- On press-in, the face sinks onto its edge in 80 ms (`standard` curve), leaving 1 dp of the edge (4 → 1 under gold,
+  3 → 1 under slate). A card covers its whole base.
+- The whole surface shrinks to 0.98.
+- The face changes colour: gold one step darker; slate flat and lighter (`#2a3140`, as a pressed key); a card goes to
+  `surface2`.
+- On release, everything comes back on the `press` spring (`motion.spring.press`).
+- **Reduced Motion:** no scale and no tween. The face lands at once and its colour changes, so the press still shows.
+  A press of 1–3 dp is not vestibular motion (motion.md `key.press`, `cta.press`).
+
+**Sound and haptics:**
+- The primary button plays `primaryPress` itself (a soft tap and a light haptic, §1.1). Its screen no longer calls it.
+  - Except where the screen decides: a form that can be refused (edit profile, both registration steps, a new name,
+    the report sheet) and "הצטרף" (the sixth digit also joins) pass `cue={null}` and play `primaryPress` only when the
+    action goes ahead. A refused form only nudges. The friends room's "התחל" plays it only when it starts at once
+    (asking "להתחיל בלי…?" leaves it to the dialog's confirm).
+  - A dialog's "ביטול" is always silent, even as the gold primary of a danger dialog (§14): backing out commits nothing.
+    A danger confirm plays its own cue from its screen ("surrender").
+- A tappable card plays the `toggle` selection tick. A screen that plays its own cue passes `cue={null}` (Modes,
+  game type, bot selection).
+
+**Disabled buttons:**
+- Never a faded gold.
+- The face is `surface2` with the border and no edge, and the label is `textFaint` (4.55:1).
+- The skew stays on a disabled primary.
+
+**Keypad keys (BRD-9):**
+- Each key stands on a 3 dp lip: P1 at 35% while armed, grey (`keyLip`) while idle.
+- The face is 57 dp, so the row stays 60 dp.
+- The press goes exactly 3 dp down and lands flush on the lip.
+- A complete or tried key has no lip.
+- The idle row (.55) fades as one layer (`needsOffscreenAlphaCompositing` on the row). Android otherwise draws each child
+  at the row's alpha on its own, and the lip under each opaque face would show through it as a darker band.
+
+**Bottom navigation (VIS-10):**
+- The active tab has a 56 × 32 `accentSubtle` pill behind its icon, and its label in Rubik 700.
+- The pill pops in as the tab's screen opens: the `pop` spring from 0.8, fading in over 140 ms. With Reduced Motion it
+  is simply there.
+- A pressed tab shows the `pressedOverlay` pill.
+
+**Not in this revision:**
+- Glows: the optional warm glow under the hero CTA, and the hero sheen sweep.
+- Sheet and modal drop shadows. The scrim still separates them.
+
 ---
 
 ## 1. Buttons
 
 All buttons: `accessibilityRole="button"`, and `accessibilityState` with `disabled` and `busy` (and `expanded` where it applies). The
-label is the visible text. Icon-only buttons need an explicit label.
+label is the visible text. Icon-only buttons need an explicit label. Since D125 every raised button is a tactile surface (§0.7).
+
+### 1.0 The pair rule (D130, ☐ a default for Moshe to judge on the phone) [new]
+The audit left the choice to Moshe: skew the button beside the gold one, or inset the gold one. Built: the skew.
+When the primary and another button share one row (the friends footer "צור חדר" | "הצטרף עם קוד", the dialogs'
+"ביטול" | "כן, להיכנע"), the other button is skewed −8° with the primary (`skew`).
+- The two inner edges then run parallel, with an even gap.
+- The outer corners stand out by tan 8° × h/2 (3.4 dp at 48 dp), as every primary's do.
+- The other way, insetting the primary, leaves a gap that widens from top to bottom.
+- Its colour still says what it is: slate or red, never gold.
 
 ### 1.1 Primary: skewed gold ("שחק") [C]
-**Anatomy:** skewed container › counter-skewed label. A hard shadow sits under it.
+**Anatomy:** skewed face › upright label. A hard gold edge sits under it (§0.7).
 
 | Property | Value |
 |---|---|
-| Container | `transform: skewX(-8deg)`. Label inside: `skewX(8deg)` |
-| Fill | `color.accent`. No gradient (round 1's gradient and shine are dropped). |
+| Container | Face and edge slanted −8° (`effects.skewXDeg`), as `skewX(-8deg)` draws them: the top leans right and the foot left. The label stands upright on the face. **RN:** never a `skewX` on a view. Android drops it (QA run 2, B13/B16: `BaseViewManager` gives a View only the translation, rotation and scale of its transform), so every button there was a plain rectangle. The slant is the shared `Slant` (`components/ui/slant.tsx`): the same shear as a rotation, a stretch and a second rotation on two nested views, which both platforms draw. The face's look sits on a slanted plate behind the label; the edge is the same shape, 4 dp lower. |
+| Fill | **D125:** a vertical gradient `accentHover` → `accent` → `accentPressed` (`tactile.goldFace`), an inset top highlight of white at 55% (1.5 dp), and an inset 10% black shade along its foot (2 dp). Before D125: flat `color.accent`. |
 | Radius | 12 |
-| Shadow | Hard offset `0 4 0 color.accentShadow`. In RN, draw it as a sibling View in `accentShadow` placed 4 dp lower. RN shadows blur, and Android elevation has no colour or offset. |
+| Shadow | Hard offset `0 4 0 color.accentShadow`. In RN, draw it as a View in `accentShadow` under the face, placed 4 dp lower. RN shadows blur, and Android elevation has no colour or offset. |
 | Label | Rubik 700, `color.onAccent`, centred |
-| Sizes | `hero`: height **96**, label **44** [C, Home "שחק", full width 342] · `lg`: height 60, label 28 [R1 height, C font] · `md`: height 52, label 20 [R1→C] · `modal`: height 48, label 18 [R1→C]. Heights are `size.ctaHero`, `size.buttonLg`, `size.buttonMd`, `size.buttonModal`. A long label uses `md` (Register-Account's "צור משתמש והיכנס לזירה": at `lg` it could not fit a 360 dp phone; at `md` it does, measured in Rubik 700, up to text scale 1.1, and `wrapLabel` gives it a second line from 1.15). |
+| Sizes | `hero`: height **96**, label **44** [C, Home "שחק", full width 342] · `lg`: height 60, label 28 [R1 height, C font] · `md`: height 52, label 20 [R1→C] · `modal`: height 48, label 18 [R1→C] · `sm` (D125): height 40, label Rubik 700 16, with a 2 dp hit slop to reach 44 (the leaderboard's "שחק" beside my row). Heights are `size.ctaHero`, `size.buttonLg`, `size.buttonMd`, `size.buttonModal`, `size.buttonSm`. A long label uses `md` (Register-Account's "צור משתמש והיכנס לזירה": at `lg` it could not fit a 360 dp phone; at `md` it does, measured in Rubik 700, up to text scale 1.1, and `wrapLabel` gives it a second line from 1.15). |
 | Large text | With `wrapLabel`, from the system's "Large" text size (fontScale ≥ 1.15) the label may take a second line when it no longer fits on one, and the button grows (min height instead of height; the shadow follows). Below that, and without `wrapLabel`, one line at the fixed height. |
 | Width | Fill the parent, or content plus 26 padding on each side |
 
 | State | Visual |
 |---|---|
 | default | As above |
-| pressed | Container `translateY(3)`, shadow shrinks to `0 1 0` (tap duration). Light haptic. |
-| disabled | Opacity .4, no shadow, `accessibilityState.disabled` |
-| loading | Label is replaced by a spinner: 22 dp, 3 dp ring in `onAccent` at 22% with the top arc in `onAccent`, rotating every .8 s, linear. `busy: true`. Label "שחק, טוען" [R1]. |
+| pressed | The face sinks 3 dp onto its edge (80 ms), so the edge shows 1 dp. The whole button shrinks to 0.98, and both spring back (`press`). The gradient goes one step darker (`accent` → `accentPressed`). The button plays `primaryPress` itself (a light haptic and a soft tap, MOT-4). Reduced Motion: no scale and no tween (§0.7). |
+| disabled | **D125:** never a faded gold. Face `surface2` with a 1 dp `border`, no edge, label `textFaint`, still skewed. `accessibilityState.disabled`. |
+| loading | Label is replaced by a spinner: 22 dp, 3 dp ring in `onAccent` at 22% with the top arc in `onAccent`, rotating every .8 s, linear. `busy: true`. Label "שחק, טוען" [R1]. A press does not sink. |
 
 **RTL:** the skew angle stays −8° in both languages (it is a brand slant, not a direction cue), as round 1 did in RTL.
-**Tokens:** `color.accent`, `color.onAccent`, `color.accentShadow`.
+**Tokens:** `color.accent`, `color.onAccent`, `color.accentShadow`, `color.tactile.goldFace` / `goldFacePressed` / `goldLip` / `goldShade`.
 
-### 1.2 Secondary: outline
+### 1.2 Secondary: slate (D125; until then an outline)
 Two shapes.
 
-**a) Plain outline** [R1→C]: height 52 (`md`), 48 (`modal`) or 60 (`lg`), transparent background, 1 dp `color.border`, radius 12, label Rubik 500 16 (`md`) or 18 (`lg`) in `color.text`. **Not skewed.**
+**a) Slate button** [R1→C, D125]:
+- Height 52 (`md`), 48 (`modal`), 60 (`lg`) or 40 (`sm`). Radius 12. Label Rubik 500 16 in `color.text`.
+- Face: a filled slate, a vertical gradient `surface2` → `surface`. A 1 dp `border` whose top edge is
+  `tactile.borderLit`, and an inset 6% white line at the top.
+- Edge: a 3 dp hard edge in the border's tone (`tactile.slateEdge`).
+- **Not skewed on its own.** Beside the primary it is skewed with it (§1.0).
 
-**b) Row button ("עוד סיבוב")** [C]: full width, height **64**, padding 0 16, gap 14, transparent, 1 dp `color.border`, radius 12,
-text aligned to start.
+| State | Visual |
+|---|---|
+| pressed | Face flat `tactile.slatePressed` (`#2a3140`), sinks 2 dp onto its edge, and the whole shrinks to 0.98 (§0.7) |
+| selected (chip-like use) | Border `color.accent`, `accentSubtle` over `surface2`, label `color.accent` |
+| disabled | Face `surface2` with the border, no edge, label `textFaint` |
+| loading | Spinner in the label's colour, `busy`. A press does not sink. |
+
+**b) Row button ("עוד סיבוב")** [C, D125]:
+- Full width, height **64**, padding 0 16, gap 14, text aligned to start.
+- Since D125 it is a tappable card (§0.7): `surface`, the lit border, the 2 dp base, radius 14. Until then it was
+  transparent with a 1 dp `color.border` and radius 12.
 - Leading icon: 22, `color.textMuted`.
-- Text stack (gap 5): title Rubik 500 16 `color.text` ("עוד סיבוב"), subtitle Rubik 400 13 `color.textMuted` ("מדורג · 2 שחקנים · רגיל").
+- Text stack (gap 5): title Rubik 500 16 `color.text` ("עוד סיבוב"), subtitle Rubik 400 13 `color.textMuted` ("מדורג · 2 שחקנים · רגיל"). A title too long for one line takes a second, broken between words, never "…" (QA 2026-11-03, en-XA); two lines and the subtitle still fit the 64.
 - Trailing chevron: 20, stroke 2.2, `color.iconFaint`, decorative. It points to the reading direction's "forward": left in Hebrew, mirrored in English.
 
 | State | Visual |
 |---|---|
-| pressed | Background `color.surface` |
-| disabled | Opacity .4 |
+| pressed | The one card press (§0.7): `surface2`, over its base, 0.98 |
+| disabled | No base, no press, title and subtitle `textFaint`, icon `iconFaint` |
 | loading | 20 dp spinner in `color.text`, `busy` |
-| selected (chip-like use) | Border `color.accent`, label `color.accent` [R1→C] |
+| selected (chip-like use) | Border `color.accent`, `accentSubtle` over the fill, label `color.accent` [R1→C] |
 
-**Tokens:** `color.border`, `color.text`, `color.textMuted`, `color.iconFaint`, `color.surface`.
+**Tokens:** `color.border`, `color.text`, `color.textMuted`, `color.iconFaint`, `color.surface`, `color.tactile.*`.
 
 ### 1.3 Ghost / text ("הכל", "ביטול בחירה") [C]
 - Height **44**, padding 0 4 (text only) or 0 16 (with icon), transparent, no border, radius 12.
@@ -171,34 +272,43 @@ text aligned to start.
 
 | State | Visual |
 |---|---|
-| pressed | Background `color.surface`, label `color.text` |
+| pressed | A `pressedOverlay` pill (white at 5%, D125), label `color.text` |
 | disabled | Opacity .4 |
 | loading | 14 dp spinner (2 dp ring) before the label [R1] |
 
-**Tokens:** `color.textMuted`, `color.text`, `color.surface`.
+**Tokens:** `color.textMuted`, `color.text`, `color.pressedOverlay`.
 
-### 1.4 Icon button 44×44 (settings, surrender, reactions, close) [C]
-- 44×44, transparent, 1 dp `color.border`, radius 12, centred icon 20 (in a card) or 22 (in a header), `color.textMuted`.
+### 1.4 Icon button 44×44 (settings, surrender, reactions, close) [C, D125]
+- 44×44, radius 12, centred icon 20 (in a card) or 22 (in a header), `color.textMuted`.
+- D125: the slate surface of §1.2a on a **2 dp** edge (until then transparent with a 1 dp `color.border`).
+- The player card's "כניעה" and "תגובות" (`CardIconButton`) are this button too, so they look the same in a game and in
+  a staged practice's HUD. The cooldown [D19] rests it at .5. The compact card's 32 dp strip buttons stay flat (no room
+  for an edge in their row).
+- `plain`: no face and no edge, for an icon inside a panel of its own (a tip's close). Only the pressed overlay.
 - **The label is required:** "הגדרות", "כניעה", "תגובות", "סגירה" [design].
 
 | State | Visual |
 |---|---|
-| pressed | Background `color.surface2`, icon `color.text` |
-| expanded (reactions picker open) | Background `color.surface2`, border `color.textMuted`, icon `color.text`, `expanded: true` [R1→C; round 1 used gold here, and C keeps gold for the primary action] |
-| disabled | Opacity .4 |
+| pressed | Face flat `tactile.slatePressed`, sinks 1 dp onto its edge, icon `color.text` |
+| expanded (reactions picker open) | Face flat `color.surface2`, border `color.textMuted`, icon `color.text`, `expanded: true` [R1→C; round 1 used gold here, and C keeps gold for the primary action] |
+| disabled | Face `surface2` with the border, no edge, icon `textFaint` |
 | loading | 18 dp spinner. Label e.g. "הגדרות, טוען" [R1] |
 
-**Tokens:** `color.border`, `color.textMuted`, `color.text`, `color.surface2`.
+**Tokens:** `color.border`, `color.textMuted`, `color.text`, `color.surface2`, `color.tactile.*`.
 
 ### 1.5 Danger ("כן, להיכנע") [R1→C]
 C has no danger button, so this is a translation. **It is an outline, not a fill**, for two reasons. `#fff` on `color.danger` is only
 3.24:1, and §6.6 requires that "ביטול" be the *more prominent* button.
-- Same height as the paired primary (60 in the surrender modal). Background `color.dangerSubtle` (8%), 1 dp `color.dangerBorder` (55%), radius 12, the same pattern as C's interference button. Label Rubik 700 18 `color.danger` (4.88:1 on the fill over surface). **Not skewed**, so it never looks like the primary.
+- Same height as the paired primary (60 in the surrender modal). Radius 12. Label Rubik 700 18 `color.danger`.
+- The fill is `color.dangerSubtle` (8%) with a 1 dp `color.dangerBorder` (55%), the same pattern as C's interference
+  button.
+- D125: the tint lies over an opaque `surface` face (4.88:1), on a 2 dp edge in `dangerShadow` at 50%.
+- Beside the primary in one row it is skewed with it (§1.0). Its red still tells it apart from the gold.
 
 | State | Visual |
 |---|---|
-| pressed | Background `color.dangerPressed` (12%; label 4.65:1. Do not go to 16%, which drops it to 4.40:1) |
-| disabled | Opacity .4 |
+| pressed | Tint `color.dangerPressed` (12%; label 4.65:1. Do not go to 16%, which drops it to 4.40:1). The face sinks 1 dp, the whole shrinks to 0.98. |
+| disabled | Face `surface2` with the border, no edge, label `textFaint` |
 | loading | Spinner in `color.danger`. Label "כן, להיכנע, טוען" [R1] |
 
 **Tokens:** `color.danger`, `color.dangerSubtle`, `color.dangerBorder`, `color.dangerPressed`.
@@ -229,14 +339,14 @@ The frame is a **border, not a filled plate** [C]. Image size = outer − 2 × (
 - **No avatar:** id `av00` (`NO_AVATAR_ID`; a deleted or missing account): the placeholder from `packages/avatars`, drawn in code. The avatars themselves are our own animated characters (`packages/avatars`, spec §3.4), not image files.
 - **Badges** [R1→C]:
   - **Presence dot** [new in C, from R1]: 10 dp (12 on 44+). Sits at the bottom-end corner with a −3 offset and a 2 dp border in the background colour behind it. Connected → `color.status.online`. **Unstable** (the connection is lost, still inside its soft phase, D42, Moshe 2026-10-15) → `color.status.unstable` (amber, the warning colour), and the image is **not** greyed: the game goes on as usual. Reconnecting (the grace, after the soft phase) → `color.textMuted`. Left → no dot. Static, so reduced motion changes nothing.
-  - **Bot chip:** height 18, padding 0 5, radius 9, background `color.bg`, 1 dp `color.textMuted`, bot icon 11 plus "בוט" Rubik 700 10 `color.text`. Sits at the top-start corner (−7, −9).
+  - **Bot chip:** height 18, padding 0 5, radius 9, background `color.bg`, 1 dp `color.textMuted`, bot icon 11 plus "בוט" Rubik 700 10 `color.text`. Sits at the top-start corner (−7, −9). Its word is never cut: the chip is as wide as the word even past the avatar's width ("ボット" on a 34 dp avatar), on one line, and the word grows with the phone's text size up to ×1.35, the cards' HUD cap (QA run #2, B17/B22). On the compact card (§7.2) it stays at ×1.0 (`Avatar botScale="board"`): there it shares the avatar's top with the place badge, and a bigger chip only hid the picture (QA 2026-11-03).
   - **Result badge (Home recent games)** [C]: a 20 dp circle at top-end (−6, −6), background `color.border`, 2 dp `color.bg` ring, letter Rubik 700 12 `color.text` ("נ").
 - **States:**
   - Disconnected: image grayscale with opacity .7, frame `color.status.offline` [R1→C].
   - Left or surrendered: same, plus the card dims (§3.4).
 - **A11y:** decorative (`accessible={false}`) whenever the name is next to it, which is almost always. When it stands alone, the label is the player name.
 - **RTL:** badge corners use start/end, so they mirror.
-- **Avatar picker** (Register-Fighter, Edit profile; Moshe's device test, 14.10.2026, replaces the stage and strip): a field as high as the name's (44): the chosen avatar at 34 in my P1 frame, its name, "שינוי ⌄". A tap opens the sheet in its `fill` form (§13), "בחר אווטאר" with "הבחירה שלך: …" under it: all 101 in a grid of 72 dp frames (as many to a row as fit, at least 8 apart: 4 on a 360 dp phone), under a sticky header per kind (Rubik 500 16 `color.textMuted`). Each one is a radio, still (no idle, no reaction); the chosen one in my P1 frame with a tick badge, a locked one [D17] grey with a lock badge. A tap chooses and closes; the field's avatar smiles and bounces (reduced motion: the smile only). The grid is virtualized and opens on the chosen avatar's row.
+- **Avatar picker** (Register-Fighter, Edit profile; Moshe's device test, 14.10.2026, replaces the stage and strip): a field as high as the name's (44): the chosen avatar at 34 in my P1 frame, its name, "שינוי ⌄". A tap opens the sheet in its `fill` form (§13), "בחר אווטאר" with "הבחירה שלך: …" under it: all 119 in a grid of 72 dp frames (the 18 pirates open the symbols, 31.10.2026: 1 to 9 in the house style, then 1 to 9 invested) (as many to a row as fit, at least 8 apart: 4 on a 360 dp phone), under a sticky header per kind (Rubik 500 16 `color.textMuted`). Each one is a radio and a still picture, except the chosen one, which idles (`AVATAR_STAGES.picker`, decision 3.19; never with reduced motion); the chosen one in my P1 frame with a tick badge, a locked one [D17] grey with a lock badge. A tap chooses and closes; the field's avatar smiles and bounces (reduced motion: the smile only). The grid is virtualized and opens on the chosen avatar's row.
 - **Fighter card** (Register-Fighter's preview "ככה יראו אותך בזירה", Register-Account's "הלוחם מוכן"): one full-width card, `color.surface`, 1 dp P1 border, radius 14, padding 12: the avatar at 52 in my P1 frame, ● and the name (Rubik 700 16, one line, room for 16 characters on a 360 dp phone), and under it the flag 13 with the country's name and a note ("חדש" / "✓ הלוחם מוכן"). No VS and no opponent.
 
 **Tokens:** `color.players[n].ring`, `color.border`, `color.bg`, `color.status.online`, `color.status.unstable`, `color.status.offline`, `color.textMuted`.
@@ -252,6 +362,14 @@ The frame is a **border, not a filled plate** [C]. Image size = outer − 2 × (
 | Opponent card | Top 48, end edge (left 16 in Hebrew), 159 × 160 |
 | VS badge | Top 58, centred (x 177–213), 36 × 24 |
 
+**Narrower than 360 dp** (display zoom at its largest: 320 dp on the A16; QA loop 4): the two cards share the row
+equally with 8 dp between them (`duelCardWidth`: 140 each at 320), so neither runs off the screen. The score (64) and
+the name (16) keep their size; the name ends in "…" sooner and the status row's words wrap and shrink as in §3.2 (B47).
+
+**VS clear of the names (QA loop 6):** where the cards are closer than the badge is wide (8–10 dp at 320–360 dp), each card's
+identity row keeps `vsInset` on its inner side (half of what VS overlaps, plus `metrics.vs.clear` 4 dp), so VS never covers
+a flag or a rating: 17 dp at 360, 18 at 320, 2 at 390, none from about 400.
+
 **Cards have no background, border or shadow in C.** They sit straight on `color.bg`. The opponent card is a mirror image:
 `flexDirection: 'row-reverse'` on each row, so the avatar is on the outer edge. In English the whole pair flips: me on the left
 (see Game-2P-EN).
@@ -261,7 +379,7 @@ The frame is a **border, not a filled plate** [C]. Image size = outer − 2 × (
 |---|---|---|
 | 1 · identity | 44 / 0 | Avatar 44 (§2), gap 10, then the name block: **[new]** seat glyph 7 dp in `players[n].ring` (● me, ▲ opponent), gap 4, then name Rubik 700 16/1.2 `color.text`, single line with ellipsis, gap 6, flag 15 (§4). The glyph is the legend for the shapes on the board (spec §22: ownership must not depend on colour alone), as on the compact card (§7.2). **[new] Under the name:** rating, Teko 600 16 `color.accent` (§5). Name plus rating come to 37 dp, which fits in 44. For the opponent, the name block is LTR (`dir=ltr` in C). |
 | 2 · score | 56 / 10 | Score Teko 600 **64**, line-height .8, padding-top 6, tabular, `color.players[n].ring`. Gap 8, baseline-aligned. **Last delta** "+3.5" in Teko 500 22, same colour. |
-| 3 · status + actions | 44 / 6 | Space-between. **Me:** mistake text "1 טעות", Rubik 400 14 `color.textMuted`, then [כניעה][תגובות] icon buttons 44 with gap 4. **Opponent:** activity text "בוחרת · A8" in Rubik 400 14 `color.textMuted`, with the cell name in `color.text`. **[new]** A 14 dp timer ring sits before the text (§3.3). Then the interference button (§8.1). |
+| 3 · status + actions | 44 / 6 | Space-between. **Me:** mistake text "1 טעות", Rubik 400 14 `color.textMuted`, then [כניעה][תגובות] icon buttons 44 with gap 4. **Opponent:** activity text "בוחרת · A8" in Rubik 400 14 `color.textMuted`, with the cell name in `color.text`. **[new]** A 14 dp timer ring sits before the text (§3.3). Then the interference button (§8.1). **Long languages (B47):** the mistake text wraps to a second line (two body lines fit 44 dp in every script), the activity's lone word shrinks on its line and its cell may take a second line, and the interference button may shrink beside it, its word shrinking to fit; each down to .75 (`metrics.card.statusMinFontScale`) before anything is cut. Where the opponent's "thinking" word and the button's word still didn't both fit at .75, the language says them shorter (D124): es "Piensa" / "Elige", pt-BR "Pensa" / "Escolhe", fr "Pense", vi "Nghĩ", ar "يفكر", and the button nl "Storen", tr "Baltala" (`statusFit.test.tsx`, every language). **Full size or another form (QA loop 6):** Android breaks a word wider than its line in the middle ("No mi / stakes") rather than shrink it, and shrunk words read as tiny. So the card measures its status words on the phone (hidden copies, `statusFit.tsx`) and keeps them only at full size: my mistakes keep their words where each word fits its line and they take at most two lines, else they become the `cancel` mark (16) and the count in Teko 500 22 (`mistakes-mark`); "הפרעה" keeps its word only where it fits at full size beside the activity at full size (the ring and the lock's word, or "חושב…"), else the button is its icon alone, 44 × 44, with the same label (§8.1). Until measured, as drawn. Hebrew keeps both at 159; English, German and Russian show the icon; at 320 dp (140) every language shows the icon, and English and Russian the mark. nl "Pauze" and tr "Durdu" (paused) were shortened so the lock's word fits beside the icon at 320 dp. |
 
 **The original spec requires each card to show** name, country, avatar, score, **rating**, **online status** and **activity
 indicator** (original spec §10 and spec §6.8). Dir-C-Game leaves out the rating, the presence dot and the activity timer. They are
@@ -289,13 +407,14 @@ The gendered forms in the design ("בוחרת", "שלחה") need a grammatical-g
 | wrong move | No shake on the card (the cell already shook). The score turns `color.danger` and returns to the seat colour while it counts down (650ms). A "−6.5" chip (`color.bg`, `color.danger` text) flies from the cell to the delta slot. **Me:** the mistake text pops (scale .8 → 1), briefly turns `color.danger` (600ms) and then becomes e.g. "2 טעויות" (`motion.md` §4.3). |
 | sent an interference | The score drops by the cost. "−8" floats in `color.textMuted` (a cost, not a penalty) [new] |
 | under interference (others see it) | Hit chip at the avatar top-end: height 18, radius 9, `color.surface2`, 1 dp `color.border`, interference icon 12 plus seconds left Teko 600 14 `color.textMuted` [new, spec §7.4 "תג קטן על הכרטיס של מי שנפגע"] |
-| target (the picker is open from this card, D45) | The card gets a container (radius 12, padding 6, background `color.surface`) with a 2 dp **solid** `color.accent` outline, and stays **above the scrim**. A "יעד" / "Target" chip sits on its bottom edge: height 20, radius 6, `color.accent` background, Rubik 700 12 `color.onAccent`. No march, no breathing, no hover state (there is no drag). Accessibility hint while targeted: the picker is open for this player. **Old (drag, replaced by two taps, D45):** the dashed marching outline, the hover fill and the "גרור לכאן" chip. |
+| target (the picker is open from this card, D45) | The card gets a container (radius 12, padding 6, **14 at the bottom**, background `color.surface`) with a 2 dp **solid** `color.accent` outline, and stays **above the scrim**: the container is the scrim's hole (`targetFrameOf`). A "יעד" / "Target" chip sits on its bottom edge, its top 4 dp over the card and its bottom on the outline's outer side, so all of it is inside the hole (QA loop 6: with padding 6 all round it hung 8 dp past the hole and the scrim dimmed its lower half): height 20, radius 6, `color.accent` background, Rubik 700 12 `color.onAccent`. The word is drawn 2 dp wider on each side than its measured width (a hidden copy sizes the chip), so pixel rounding at a fractional density never cuts it to "י…". No march, no breathing, no hover state (there is no drag). Accessibility hint while targeted: the picker is open for this player. **Old (drag, replaced by two taps, D45):** the dashed marching outline, the hover fill and the "גרור לכאן" chip. |
 | dimmed (not the target) | Opacity .4 (`opacity.dimmedCard`), under the scrim, not tappable [spec §7.3; round 1 used .38] |
 | reconnecting / left / surrendered | See §3.3 |
 
 ### 3.5 VS badge [C]
-36 × 24, `color.surface2`, 1 dp `color.border`, radius 6, `skewX(-8deg)`. "VS" in Teko 600 18, letter-spacing .04em,
-`color.textMuted`, counter-skewed. `aria-hidden`.
+36 × 24, `color.surface2`, 1 dp `color.border`, radius 6, slanted −8° (a `Slant` plate, §1.1; never a view's
+`skewX`, which Android drops). "VS" in Teko 600 18, letter-spacing .04em, `color.textMuted`, upright over the plate.
+`aria-hidden`.
 
 ### 3.6 Accessibility
 - The card container is an accessible group whose label summarises it:
@@ -304,6 +423,11 @@ The gendered forms in the design ("בוחרת", "שלחה") need a grammatical-g
   - Extended with the rating and connection state, e.g. "…, דירוג 1305, מחוברת"†.
 - Mistakes, long form: "טעויות: אחת, הבאה עולה 2" [R1].
 - Buttons inside the card stay separately focusable.
+- **Solo practice's time** (my card's end, "זמן 3:12"): nothing on the game screen may change every second for the
+  accessibility layer (QA run #2, Q1: uiautomator never found the screen idle, and a screen reader gains nothing from it). The
+  clock is drawn as paths (`ClockDigits`, Teko 600 outlines in the `cellRef` line box, tabular digits so its box never
+  resizes): on Android a text whose words change is an event. Its stat's label, "זמן 3:10", says the time in 5 s steps,
+  rounded down (`clockLabelSeconds`).
 
 **Tokens:** `color.text`, `color.textMuted`, `color.accent`, `color.accentSubtle`, `color.onAccent`, `color.danger`,
 `color.surface`, `color.surface2`, `color.border`, `color.players[n].ring`, `color.status.*`.
@@ -333,7 +457,7 @@ The gendered forms in the design ("בוחרת", "שלחה") need a grammatical-g
 | 16 | 2P card | [new] |
 | 15 | Compact card | [R1→C] |
 
-- **Provisional** (the first 10 games in a rating key, §11.2): a chip, min height 18, radius 9, 1 dp `color.border`, Rubik 500 11 `color.textMuted`, "זמני". In lists and cards it follows the number. **On Home (44) it sits under the number, centred**, and the number stays on one line, shrinking rather than being cut at the largest text sizes: beside it, the chip squeezed the numbers out of their third of the card (Moshe's device test, 14.10.2026).
+- **Provisional** (the first 10 games in a rating key, §11.2): a chip, min height 18, radius 9, 1 dp `color.border`, Rubik 500 11 `color.textMuted`, "זמני". In lists and cards it follows the number. **On Home (44) it sits under the number, centred** (a word too long for its column takes a second line, centred, never "…": QA 2026-11-03, en-XA), and the number stays on one line, shrinking rather than being cut at the largest text sizes: beside it, the chip squeezed the numbers out of their third of the card (Moshe's device test, 14.10.2026). **So it does in my pinned leaderboard row** (beside "שחק"), whose line under the name ("בדירוג זמני · רמה 4") then has its room, and may take a second line before an ellipsis: beside the number, the chip cut that line to "בדירוג זמני · ר…" (QA run #2, B23). **Narrow or large text (QA loop 7):** below 340 dp of room at the normal text size (the window's width over its font scale), a leaderboard row's chip leaves the number for the line under the name, which wraps between its parts (the league's name, "· רמה N", the chip), and my pinned row gives "שחק" a line of its own under it; the leaderboard's tabs wrap when a label does not fit an equal share.
 - **A11y:** e.g. "דירוג רגיל 1287"†.
 - Works unchanged with rating option A (9 ratings) or B (3 ratings). The key comes from `ratingKey()`.
 
@@ -383,6 +507,7 @@ tabular, LTR "#1".
 | Score (mt 2, h 24) | Teko 600 28 `players[n].ring` plus mistake pips: each pip has height 14, padding 0 3, radius 4, 1 dp `color.danger` at 70%, Teko 600 13 `color.danger`. Each pip is the real penalty of that mistake, as the engine charged it (`PlayerView.mistakePenalties`, spec §6.5: what the right digit was worth there, e.g. "−8", "−6.5"). Show the last 2 where they fit: a 3-player card (114 dp) without "×n". A 4-player card (78 dp, mine 106) shows the last one only, and so does any card with "×n" (half points make two pips about 100–111 dp next to the score; penalty design, decision 3). Five or more mistakes show "×n" first. Should they still not fit (a large system font), the pips shrink and the oldest is cut, never the score. The design boards (`screens/*.dc.html`) still show "−1" and "−2", sample values from the old 1, 2, 4, 8 ladder, which Moshe removed on 2026-10-15. Take the layout from them, not the numbers. |
 | Activity (mt 3, h 16) | Timer ring 16 (stroke 2, track `color.border`, arc `players[n].ring`, seconds Teko 600 11 `color.text` inside), then "בוחר" Rubik 500 11 `color.textMuted`, then the cell name Teko 600 17 `color.text` |
 | Action strip | Absolute: start 5, end 5, bottom 4, height 32. **Opponent:** the compact "הפרעה" button (§8.1) at full width (not in a game without interferences, D44). **Me:** [כניעה][תגובות], each flex 1, gap 4, transparent, 1 dp `color.border`, radius 8, icon 17 `color.textMuted`. `hitSlop` top and bottom 6, giving a 44 dp target. |
+| Text size (BRD-3; QA 2026-11-03, the replay at ×2.0) | Every word on the card grows with the phone's text size up to ×1.35 (`scale="hud"`: name, rating, score, pips, activity, place badge, hit chip, reconnect pill); the flag and the bot chip on the avatar and the ring's seconds stay at ×1.0. The score row (24) and the activity row (16, a least height) grow as much as their text (`compactRows`). The score is a TextInput (count-up, motion.md §6): its box (4 + its 25 line) is taller than its row, and given less it scrolls to its last line and loses the digits' tops, so it takes negative vertical margins and gets its whole box, centred on the row. The card is 160 high at least (`minHeight`) and grows only when its column and a shown strip need more (a ranked 3–4 player game at the largest sizes); with no strip (the replay) it keeps 160. |
 
 ### 7.3 States
 Same as §3.4, plus:
@@ -410,6 +535,14 @@ Game-4P) is replaced. Original §10: "אצל היריב: לחצן הפרעה". T
 - Height **44** (as the reactions button), radius 12, padding 0 10, gap 6. Background `color.interfere.bg`, 1 dp
   `color.interfere.border` (P1 at 8% / 55%: **in my colour, because it is my action** [C]). Icon 20 `color.interfere.icon`, label
   Rubik 600 14 `color.interfere.label`, one line.
+- **2P, where the word doesn't fit at full size** beside the activity (§3.2 row 3, measured on the phone; QA loop 6): the icon
+  alone, 44 × 44, padding 0, never shrunk by the row. Same label ("הפרעה ל־NinaVolt · עלות 2 נק׳"), so screen readers hear the
+  same. Hebrew at 360 dp and wider keeps the word (Moshe, 17.10: "כתוב עליו רק הפרעה"); English, German, Russian and every
+  language at 320 dp show the icon.
+- **2P: opaque.** The 2P card has no surface, so the button sits right over the wandering digits (D126): its fill is P1 at 8%
+  laid flat over `color.bg` (`opaqueOver`, `theme/blend.ts`), and so is the pressed fill; blocked, a `color.bg` veil lets .5 of
+  the opaque button through. No digit shows through it (QA run #2, as B12/B50). The compact one sits on its card's
+  `color.surface` and keeps the tokens as they are.
 - **Compact (3–4P, §7.2 action strip):** height 32 plus `hitSlop` 6 (a 44 dp target), icon 16, label Rubik 600 12, one line,
   shrinking to fit (min scale .75) so "Interfere" fits the 68 dp strip of a 78 dp card.
 - Every opponent card has its own button: 2P (the end of the status row) and 3–4P (each compact card). Never on my card.
@@ -419,7 +552,7 @@ Game-4P) is replaced. Original §10: "אצל היריב: לחצן הפרעה". T
 | available | As above | "הפרעה ל־NinaVolt · עלות 2 נק׳" |
 | pressed | Background at 16% | — |
 | expanded (picker open from this card) | Fill `players[0].ring`, icon and text `color.bg`, `expanded: true`. A tap closes the picker. | "סגירת חלון ההפרעות" |
-| blocked: not enough points (D10), target under interference or in its 1 s immunity (D11), game not running | Opacity .5 (`opacity.inactivePlayer`), `accessibilityState.disabled`. **The tap still answers:** a short toast with the reason and a light haptic, and the picker does not open. Points: error toast "אין מספיק נקודות להפרעה הבאה (8 נק׳)". Busy: warning toast "NinaVolt כבר תחת הפרעה. אפשר שוב בעוד 2 שניות". Not running: info toast. | "הפרעה ל־NinaVolt · חסרות 3 נק׳"† / "…כבר תחת הפרעה"† |
+| blocked: not enough points (D10), target under interference or in its 1 s immunity (D11), game not running | Opacity .5 (`opacity.inactivePlayer`; on the 2P card the same look from a `color.bg` veil at .5 over the opaque button, never a see-through button), `accessibilityState.disabled`. **The tap still answers:** a short toast with the reason and a light haptic, and the picker does not open. Points: error toast "אין מספיק נקודות להפרעה הבאה (8 נק׳)". Busy: warning toast "NinaVolt כבר תחת הפרעה. אפשר שוב בעוד 2 שניות". Not running: info toast. | "הפרעה ל־NinaVolt · חסרות 3 נק׳"† / "…כבר תחת הפרעה"† |
 | opponent reconnecting or soft-offline (D42), out | Hidden. The reconnect pill (or the unstable mark) takes the slot (§3.3). | — |
 | solo practice, practice vs a bot (D44) | **Not rendered**: no interferences in a game against a known bot (spec §7.2). The bot card's status row holds only its activity line. | — |
 
@@ -486,9 +619,13 @@ drag) is obsolete: both taps are the screen reader's normal "activate", so they 
 
 - **3–4P:** the same component. Where the screen places it (above the board, or next to the release button as in Game-4P) is a stage-10 layout decision.
 - **A11y:**
-  - The bar: `accessibilityRole="progressbar"`, label "זמן שנותר למשבצת F8" [design], `accessibilityValue {min:0, max:12, now:7}`.
-  - The whole strip is one group, e.g. "המשבצת שלך F8, נותרו 7 שניות"†.
+  - The bar: `accessibilityRole="progressbar"`, label "זמן שנותר למשבצת F8" [design], `accessibilityValue {min:0, max:12, now:10}`.
+  - The whole strip is one group, e.g. "המשבצת שלך F8, נותרו 10 שניות"†.
   - **Do not announce every second.** Announce on lock, at 3 s, and on release.
+  - **No label changes every second either** (QA run #2, Q1): a changed label is an accessibility event, so the strip's label,
+    the bar's `accessibilityValue` and the cell's label (§11.5) say the seconds in 5 s steps, rounded down, and every second
+    only in the last 5 ("נותרו 10 שניות" from 12 to 10, then 5 from 9 to 5, then 4, 3, 2, 1; `labelSecondsLeft`). The
+    strip's text and the cell's pill still show every second, and the announcements say the exact seconds.
 
 **Tokens:** `color.textMuted`, `color.iconFaint`, `color.text`, `color.progress.timerTrack` (= `color.surface2`), `color.players[0].ring`, `color.accent`, `color.onAccent`.
 
@@ -503,7 +640,8 @@ drag) is obsolete: both taps are the screen reader's normal "activate", so they 
 | Container | 3 × 3 boxes, **gap 3**, background `color.board.boxGap` (= `color.bg`), radius 12, `overflow: hidden` (this rounds the outer corners of the corner boxes) |
 | Box | 3 × 3 cells, **gap 1**, background `color.board.grid` |
 | Cell size | ((W − 6) ÷ 3 − 2) ÷ 3 = **38.4** at W = 358 |
-| Digit | Rubik **22**, roughly 0.57 × the cell size when scaled |
+| Digit | Rubik **22**, roughly 0.57 × the cell size when scaled. From the phone's text size ×1.15 (BRD-3): **25**, and the wrong digits 11 → 12 (`geometry.ts` `LARGE_TEXT`, `cellTextPx`) |
+| Text size | Every text on the board ignores the phone's text size above ×1.0 (`Text scale="board"`, `FONT_SCALE_CAPS`): the cell is fixed, so a bigger digit would be cut. Smaller text still shrinks. Spec §22 |
 | Checkerboard | Boxes 1, 3, 5, 7 use `cellAlt`. Boxes 0, 2, 4, 6, 8 use `cell`. |
 | No shadow or frame | Round 1's 16-radius frame and drop shadow are dropped |
 
@@ -559,11 +697,12 @@ Each cell is a button inside a container with `accessibilityRole="grid"`. Label 
 | Given | "D5, 4, רמז"† |
 | Solved by me | "D5, 6, נפתרה על ידיך"† |
 | Solved by opponent | "D5, 7, נפתרה על ידי NinaVolt"† |
-| My lock | "F8, ריקה, נעולה אצלך, 7 שניות"†, hint "בחר ספרה במקלדת"† |
+| My lock | "F8, ריקה, נעולה אצלך, 10 שניות"†, hint "בחר ספרה במקלדת"† |
 | Lock paused | "F8, ריקה, נעולה אצלך, הטיימר עצור"† |
 | Wrong digits suffix | "…, טעויות במשבצת: 5, 3"† |
 
 - **Board container label:** "לוח המשחק · המשבצת שלך F8 · NinaVolt תופסת A8" [design].
+- **`{seconds}`** go in 5 s steps, every second only in the last 5 (§10, Q1): 7 seconds left read "5 שניות".
 
 ### 11.6 Live region [new]
 C removed round 1's visible event log ("I1 +3.5"). Keep an **invisible** live region (Android `accessibilityLiveRegion="polite"`,
@@ -583,13 +722,14 @@ iOS `announceForAccessibility`) that announces opponent moves and leader changes
 | Key | 9 keys at flex 1 (about 36.2 wide), height 60, background `color.surface2`, border 1 dp `players[0].ring` at 50%, radius 10, column with gap 5 |
 | Digit | Teko 600 **32**, line-height .8, padding-top 4, `color.text` |
 | Remaining count | Rubik 500 12 `color.textMuted`. It is 9 minus the occurrences on the board (givens plus solved, **not** wrong marks). |
+| Text size | The key's digit and count ignore the phone's text size above ×1.0 (`scale="board"`): the 60 dp key can't grow. The HUD around the board (lock strip, "ביטול בחירה", card names) grows up to ×1.35 (`scale="hud"`). Spec §22 |
 | Order | Always 1–9 from left to right, in both languages. The one exception: during a `keypad` hit on me (D47, 5 s) the keys change places; each key keeps its own digit, count and state (§15.4) |
 
 | State | Visual | Label |
 |---|---|---|
-| armed (I hold a lock) | As above | "ספרה 5 · נותרו 3" [design] |
+| armed (I hold a lock, **or the cell I just tapped is waiting for the server**, BRD-1) | As above. While a tap is pending, the keys belong to that cell: its tried digits and the board's counts. A digit goes to the cell the player sees selected (`boardModel` `keypadCell`); if the server refuses that select, the digit comes back refused, with no penalty. | "ספרה 5 · נותרו 3" [design] |
 | pressed | Background `color.keypad.keyPressedBg` (`#2a3140`), border `color.keypad.keyPressedBorder` (P1 at 100%), `translateY(3)` (`elevation.keyPressed`) for 80ms. No press haptic: the result haptic follows within about 150ms (`motion.md` §7). | — |
-| idle (no lock) | The whole row at opacity .55, borders `color.border`, `disabled`. A tap nudges the lock strip (§10). | "ספרה 5, נשארו 3, קודם בוחרים משבצת" [R1] |
+| idle (no lock) | The whole row looks as at opacity .55 over `color.bg`, borders `color.border`, `disabled`. A tap nudges the lock strip (§10). **The keys stay opaque** (D126: no wandering digit shows through a key): each key draws a veil of `color.bg` over its face and lip at 1 − .55, never an opacity on the row or the key (B15, B50). The same for the two states below. | "ספרה 5, נשארו 3, קודם בוחרים משבצת" [R1] |
 | complete digit (0 left) | Opacity .3, count "0", `disabled` | "ספרה 6, נשארו 0" [R1] |
 | **tried wrongly in this cell** (D12, disabled for **every** player for this cell) | Opacity .55. The digit is drawn in `color.danger` with a 1.5 dp strike line in `color.danger`. The count is unchanged. `disabled`. Complete-digit styling wins if both apply. | "ספרה 5 · כבר נוסתה במשבצת הזו"† [new; no board draws this state] |
 
@@ -621,7 +761,7 @@ iOS `announceForAccessibility`) that announces opponent moves and leader changes
 | Sheet | Full width, bottom 0, radius **24** on the top corners (the Foundations token said 28, but every sheet drawn uses 24), background `color.surface`, top border 1 dp `color.border`, padding 10 16 (16 + bottom safe area), max height 85%. No glow or gradient. `fill`: always 85% high, the content filling it (a long scrolling list: the country and avatar pickers). |
 | Handle | 40 × 4, radius 2, `color.border`, centred, `aria-hidden`. Dragging down past 25% of the height (or a fast fling) closes the sheet. This pull-to-close is the only gesture left in the picker. |
 | Header (mt 8, h 48) | Title Rubik 700 22 `color.text`: "בחר הפרעה"†. A close icon button 44 at the end ("סגירה"). **Target line**, Rubik 500 13 `color.textMuted`. **2P:** "יעד:", a mini avatar 18 (radius 5, 1.5 dp ring in the target's `players[n].ring`), the seat glyph (▲ ■ ◆), the name in Rubik 500 `color.text`, and a flag at 12. **3–4P:** the route "[my avatar, ●] אני ← [their avatar, ▲] Biscuit", both rings in seat colours with their glyphs; one accessibility element, "הפרעה ממני אל Biscuit"†. The target never changes inside the sheet (spec §17). |
-| Price row (mt 10, h 48) | `color.surface2`, 1 dp `color.border`, radius 12; one accessibility element. Start: "מחיר" (muted) and the price "‎−2 נק׳" (the number in Teko 600 30 `color.accent`, through `signedText()`, so the minus never jumps in Hebrew), then muted "· הבאה: 4". End: "הניקוד שלך" and the score before and after the launch ("53 ← 51" in Hebrew, "53 → 51" in English) in Teko 600 22 `players[0].ring`, through `scoreText()`. Short of points: the end says "חסרות 3 נק׳". Target busy: "NinaVolt כבר תחת הפרעה · 2 שנ׳". |
+| Price row (mt 10, h 48) | `color.surface2`, 1 dp `color.border`, radius 12; one accessibility element. Start: "מחיר" (muted) and the price "‎−2 נק׳" (the number in Teko 600 30 `color.accent`, through `signedText()`, so the minus never jumps in Hebrew), then muted "· הבאה: 4". End: "הניקוד שלך" and the score before and after the launch ("53 ← 51" in Hebrew, "53 → 51" in English) in Teko 600 22 `players[0].ring`, through `scoreText()`. Short of points: the end says "חסרות 3 נק׳". Target busy: "NinaVolt כבר תחת הפרעה · 2 שנ׳". Where the two halves don't fit one line (Thai, German), they share the row and their words ("· הבאה: 4", "הניקוד שלך") wrap to a second line inside the 48 dp, then shrink to .75; the numbers keep their size, and one half never draws over the other (B45). |
 | Grid (mt 12) | **3 columns × 2 rows**, gap 8, flex-wrap; the reading order follows the app direction. Column width = (window − 32 − 2 × 8) / 3: 104 at 360, 114 at 390. Order: `INTERFERENCE_KINDS` (זיקוקים, חתולים, עיוות, מספרים מתערבלים, דיו, מקלדת מתערבלת). Only the kinds in `view.rules.interferenceKinds` are shown (spec §7.2, D47); the rest are hidden, not locked. **No "בקרוב" row** in the game: future kinds stay on the Interferences collection screen. |
 | Kind button | A plain Pressable (no gesture). Height 100, radius 16, `color.surface2`, 1 dp `color.border`, padding-top 8. Preview art 40 (the §16 "Preview": a live loop; still under reduced motion, or when locked or blocked). Name Rubik 600 13/16, centred, up to 2 lines ("מספרים / מתערבלים"). Price chip: mt 6, h 22, radius 11, `color.bg`, one text "‎−2 נק׳" with the number in Teko 600 17 `color.accent` and the unit in Rubik 500 11. Pressed: border `color.accent`, background `color.accentSubtle`, scale .96 (`press` spring; no scale under reduced motion). |
 | Locked kind (D17) | Stays in its place, opacity .5, still art, the chip shows a lock and "רמה 3" in `color.textMuted`. A tap explains ("נפתחת ברמה 3"†) and never launches. |
@@ -690,6 +830,15 @@ There are two shells with the same content model: icon, title, body, actions, an
 - Body: Rubik 400 14/1.45 `color.textMuted`.
 - Actions row, gap 12: primary `modal` (48) at flex 1.5 ("עבור לאימון") and secondary `modal` at flex 1 ("נסה שוב") [R1 `modal.confirm`].
 - Enter: fade plus scale .96 → 1 over 240ms. Reduced motion: fade.
+- **A label too long for its share (both shells, QA loop 3):** "מחק את החשבון לצמיתות" beside "ביטול" shrank to about a
+  third of its size (Android's `adjustsFontSizeToFit` has no floor). Each label is measured once, unseen, in its
+  button's style: a transparent copy drawn far above the screen, removed as soon as it is measured (never a second
+  text over the buttons for a finger or for uiautomator), and its width is kept per label, style and text scale, so the
+  next dialog with that label opens in its final layout; when one doesn't fit its flex share of the row, the two actions stack (column, gap 12), in the same
+  order, each the whole width, upright (the pair rule is for a row), and a label still too long takes a second line
+  at its own size (`wrapLabel="always"`). Never smaller text.
+- **Notice** (`notice`): one action only ("הבנתי"), which takes the first focus; e.g. Settings' "מחיקת חשבון" for a
+  Google-only account in a build without Google sign-in.
 
 **A11y (both):** `accessibilityViewIsModal`, `role=dialog` label "אישור כניעה" [R1]. **Initial focus goes to the safe action
 ("ביטול").** Android back = the safe action. The title is a header.
@@ -705,9 +854,9 @@ There are two shells with the same content model: icon, title, body, actions, an
 | Property | Value |
 |---|---|
 | Position | Top, under the safe area plus 8, inset 16 on both sides. It **never covers the board**, only the card area. One toast at a time, queued. |
-| Box | Height 40 (`size.toast`; not tappable), padding 0 12, gap 10, `color.toast.bg`, 1 dp `color.toast.border.<variant>`, radius 12. **No skew and no shadow** (round 1 was skewed). |
+| Box | Height 40 (`size.toast`; not tappable) for one line, taller when the text wraps (padding 6 12), gap 10, `color.toast.bg`, 1 dp `color.toast.border.<variant>`, radius 12. **No skew and no shadow** (round 1 was skewed). |
 | Icon | 24 dp circle filled with `color.iconBg.<semantic>` (16%), glyph 14 in the semantic colour (≥3.9:1 on the circle) |
-| Text | Rubik 500 14 `color.text`, one line with ellipsis. Inline cell names in Teko 600 17. |
+| Text | Rubik 500 14/18 `color.text`, one line where it fits; otherwise it wraps between words and the box grows, never an ellipsis (QA loop 9: the cost in "אין מספיק נקודות להפרעה הבאה (2 נק׳)" was cut at 360 dp). The one exception is the sender's chip under the cards (`motion.md` `sender.toast`): two lines at most, so it ends above the board, and only its tail, the target's name, may shorten. Inline cell names in Teko 600 17. |
 | Motion | Enter: slide down 12 dp plus fade, 240ms. Exit: fade 240ms. Reduced motion: fade only (`motion.md` `toast`). |
 
 | Variant | Border / icon colour | Role | Default duration (assumed, not on any board) | Example [R1] |
@@ -766,11 +915,11 @@ enters.
 | Property | Value |
 |---|---|
 | Frame | Bottom 0, full width, height **84** = 64 content + bottom safe area (C draws 20, so use the real inset), padding 0 8, background `color.bg`, top border 1 dp `color.border` |
-| Items | 4 at flex 1, column, gap 6, centred: icon 24 (stroke 2) and label Rubik 500 13 single line |
+| Items | 4 at flex 1, column, gap 6, centred: icon 24 (stroke 2) and label Rubik 500 13 single line; a label wider than its quarter shrinks, down to 70%, instead of ending in "…" ("Achievements" on a 360 phone; QA run #2) |
 | Order (start → end) | "בית" · "טבלת מובילים" · "היסטוריה" · "הישגים". In Hebrew "בית" is rightmost, and the row mirrors automatically. |
-| Active | Icon and label `color.accent`. Round 1's 18 × 3 underline is dropped. |
+| Active | Icon and label `color.accent`. Round 1's 18 × 3 underline is dropped. VIS-10 (D125): a 56 × 32 pill in `nav.activePill` (accent 10%) behind the icon, and the label in Rubik 700. The pill pops in with the tab's screen (`pop` spring from 0.8, fading in over 140 ms; with Reduced Motion it is simply there), since each tab screen draws its own navigation. |
 | Inactive | `color.textMuted` |
-| Pressed | Label and icon `color.text` for the tap duration |
+| Pressed | Label and icon `color.text` for the tap duration, over a `pressedOverlay` pill |
 | Where | Home-level screens only [R1]. Never during a game. |
 
 - **A11y:** container `accessibilityRole="tablist"`, label "ניווט ראשי" [design]. Each item is a `tab` with `selected` (C uses `aria-current="page"`). Each target is about 93 × 64.
@@ -846,38 +995,87 @@ stage (D49) · no reactions button for me (D62; `LEVEL_UI.reactions` brings it b
 - **A11y:** one button, label "אימון בשלבים · שלבים קצרים · עד 3 כוכבים · שלב 14 · 29 כוכבים · עובד גם בלי אינטרנט".
 - Six rows and the bottom line fit at 360 × 780 with navigation buttons, in Hebrew and English, without scrolling. Fallback: drop
   the bottom line (DECISIONS-PENDING 3.23, option ד).
+- **Every language (QA run #2, B3/B8/B9; D124):** the six rows fit under a 50 dp status bar too (the list keeps 8, not 16,
+  over the friends footer); a row's chips stay on one line, which may run into the gap before the chevron (226 on a 360
+  phone, never under it); a section's title, a rule and its whole note fit one line. A language that does not fit says it
+  shorter; until it does, a section's note and a row's tagline take a second line, broken between words, never "…" (the
+  rule keeps 16; QA 2026-11-03, en-XA). The header's title comes first and whole: my name beside the avatar gets what it leaves, and shows only where
+  all of it fits, by the widths the phone laid out (the name measured out of the row, at its own width), never cut with
+  "…" (QA 2026-11-03: "אחוו…" beside "Новая партия"); else the avatar alone, still read as my name. A title wider than
+  the row shrinks, down to 70%, instead of ending in "…".
 
-### 19.2 Map node (`LevelNode`) [Levels-Map]
-- **One button, 56 × 72:** a tile 56 × 56 (radius 10) drawn as a mini 3 × 3 sudoku box (1 dp lines at 18 / 37), the stage
-  number in Teko 600 30 (LTR, three digits fit), and 3 stars of 12 (gap 2) 4 below. Boss: tile **68** with a crown (34 × 24 since
-  1.0.3, was 28 × 20), and the bot's avatar (from chapter 1 since 1.0.3; D60, D77, `size.levelNode`). **No kind icon** on a node
-  (`LEVEL_UI.nodeKindIcon = false`).
+### 19.2 Map node (`LevelNode`, `LevelCoin`, `StarCrown`) [Levels-Map; the board-game road of 31.10.2026: no board]
+**31.10.2026 (Moshe: "מסך אימון בשלבים נראה ממש דלוח ועלוב. יש כל מיני משחקים שהמסך הזה מעוצב ממש יפה").** The map
+was redrawn as a board-game road (§19.14), from two written proposals (the "board-game road" as the base, with the
+"chapter worlds" proposal's next-stage ring, glow, coloured banners and reached scale cards grafted in). No board was
+drawn: it is judged on the phone (`docs/DECISIONS-PENDING.md` 3.29). The 1.0.2 tile (`LevelTile`, 56 / 68) stays for
+the Modes row, the gate sheet, "איך משחקים" and a stage's header; the map uses the coin.
+- **One button, 64 × 84** (the boss 92 × 138): a **coin** (`LevelCoin`, `size.levelCoin` 64, radius 18) with depth in
+  the tactile language of D125: a 2 dp dark outline (`color.levelMap.coin.outline`) around a 6 dp **edge** under the
+  **face**; on the face a small 3 × 3 sudoku box (1 dp lines at 24 / 40, from 8 to 56) and the stage number in Teko 600
+  32 (LTR, three digits fit). Over the coin's top edge its **crown of three stars** (`StarCrown`, 64 × 28: the middle
+  star 18 on the edge line, the side ones 15, 3 dp lower and turned ∓12°; each with a dark outline, so it reads on the
+  light coin and on the gold road). Earned stars are `levelMap.crown.filled`, counted from the start side; the others
+  `emptyFill` with an `emptyStroke` outline. **No kind icon** on a node (`LEVEL_UI.nodeKindIcon = false`).
 
-| State | Tile / lines / number | Extras | A11y label |
-|---|---|---|---|
-| played | `color.board.cell` / `color.board.grid` / `color.board.given` | 0–3 stars filled gold, the rest outlined `color.iconFaint` | "שלב 5, מיקום מדויק, שני כוכבים מתוך שלושה" |
-| current | as played | gold ring `0 0 0 2px bg, 0 0 0 4px accent`, pulsing (`level.node.current`; static under reduced motion); 3 empty stars; **my pin** at the top-start corner (22, radius 7, `color.surface2`, 2 dp P1, ● in P1) | "שלב 37, השלב הבא" |
-| locked | `color.surface2` / `color.border` / `color.textFaint` | no stars (the row keeps its height); a lock badge at the top-end corner (20 circle, `color.bg`, 1 dp `color.border`, lock 12 `color.textMuted`) | "שלב 12, נעול" |
+| State (`coinLook`) | Face / lines / number | Edge | Extras | A11y label |
+|---|---|---|---|---|
+| plain: open, current, or played with no star | `levelMap.coin.face` gradient (the board's cell) / `coin.grid` / `coin.number`, a soft foot shade | `coin.plainEdge` | the crown | "שלב 5, מיקום מדויק, שני כוכבים מתוך שלושה" |
+| gilded: played, ★ or ★★ | as plain | `coin.gildedEdge` (a gold side) | the crown, its earned stars gold | as above |
+| gold: ★★★ (`LEVEL_UI.goldPerfectCoins`) | `tactile.goldFace` / `coin.goldGrid` / `coin.goldNumber` | `coin.gildedEdge` | three gold stars | as above |
+| current | its look (plain until played) | its look | the gold ring around face and edge (2 dp `levelMap.beacon.ring`, 4 out) and its **beacon** band (6 dp `beacon.band`, 10 out) beating in bursts with rests (`level.node.current`; none under reduced motion); a soft gold **glow** under the coin (`node-N-halo`, `beacon.halo` radial, drawn by the chapter before its coins); **my token** beside it (below) | "שלב 37, …, השלב הבא" |
+| next: locked, right after the current one, in its chapter | as locked | as locked | a **dashed** 2 dp ring (`levelMap.next.ring`) | "שלב 38, נעול" |
+| locked | the chapter's tone: `deep` with a `lit` top and rim / `lit` / `levelMap.coin.onDeep` (light, ≥ 7:1) | the tone's `edge` | no crown (the box keeps its height); the lock badge at the top-end corner (22 circle, `color.bg`, 1 dp `color.border`, lock 12 `textMuted`) | "שלב 12, נעול" |
 
-- **No opacity on a locked number** (contrast ≥ 4.5:1). Pressed: tile scale .96. **Tap on a locked node:** `level.node.locked`
-  (one shake) and the toast "קודם משחקים את שלב 37".
-- **Boss node (1.0.3, D77):** short gold **arena corners** (`color.accent`, as around the boss's board in §19.6) at the tile's four
-  corners, in every state but locked. **Not the gold ring:** the ring means "current" (and pulses; under reduced motion it is
-  still), so a boss that is not the current node never gets it.
+- **Never by opacity:** a locked number stays readable (`onDeep` on every tone ≥ 7.00:1). A closed coin is told apart
+  by its tone face, its lock and its missing crown, never by colour alone.
+- **Press** (`level.node.press`): the tactile press of D125 (`useTactilePress`): the face travels 4 dp onto its edge
+  and the node goes to 0.98, back on the `press` spring; under reduced motion it lands at once, without the scale.
+- **Tap on a locked node:** `level.node.locked` (one shake of that node; reduced motion: the lock badge's border
+  turns `color.text` for 300 ms) and the toast "קודם משחקים את שלב 37".
+- **Boss node, the fortress (92):** two merlons over the face, the crown badge (40 × 28, gold; faint while locked),
+  its bot's avatar (`compact`, P2 with ▲, `node-N-bot`) on the face from chapter 1, the number at the bottom, the
+  arena's gold corners (`COIN_ARENA`: 18 long, 3 thick, 8 out) in every state but locked, and its stars on a
+  pedestal (76 × 24, `color.surface`, lit top) under the face. **Not the gold ring** unless it is the current stage.
+- **My token** (`MapToken`, `LEVEL_UI.mapToken`): my avatar (`card` 44, P1's frame, never idle) stands beside the
+  current coin like a piece on a board, my ● on a small P1 badge at its bottom-end corner, a soft shadow under it, a 6°
+  lean toward the coin. It stands on the coin's side toward the middle of the road (on the middle line: away from the
+  next stage), 6 dp from the coin (`tokenSpot`). It lands when the map first shows (`level.map.token.land`) and hops on
+  after a stage (`level.map.token.hop`). Hidden from screen readers (the current coin's label says "השלב הבא"). With
+  `mapToken` off: 1.0.2's 22 dp pin on the coin (the same testID, `node-N-tile-pin`).
 
-### 19.3 Path, chapter header and gate plate (`LevelPath`, `GateNode`) [Levels-Map, Levels-Gate]
-- **Path:** a zigzag **top to bottom** (`LEVEL_UI.mapDirection = 'down'`; `'up'` reverses it), stage 1 first. Centres from the start
-  edge `[64, 146, 228, 310, 228, 146]`, step 56. Connectors 2 dp: played `color.iconFaint`, ahead `color.border`. A virtualised
-  list by chapter (300 nodes). It opens with the current node at about 40 % of the height.
-- **Chapter header** (every 10 stages): "פרק 4" (700 16) and its name ("בלש", caption muted), a rule, and the chapter's stars
-  "★ 18/30" (star 14 gold, Teko 20, LTR; `role="img"` "18 כוכבים מתוך 30").
-- **Gate plate** under the header of a locked chapter (220 × 52, radius 12, `color.surface`, **dashed** 1 dp `color.border`): a lock,
-  "נפתח ב־20 כוכבים", a 4 dp bar in gold, and "17/20" (star 16, Teko 22, LTR).
-  - **Enough stars, the boss unplayed:** "22/20" and "שחק את שלב הבוס כדי לפתוח".
-  - **Open:** a solid border, an open lock and "פרק 5 פתוח" (`level.gate.unlock`, once).
-  - Every node after a locked gate is locked. A11y: `role="img"`, "פרק 5 נעול, 17 מתוך 20 כוכבים".
-- **Header chip** "★ 84/900" (h 32, pill, `color.surface2`, 1 dp `color.border`): opens the chapter list (**no board**), a sheet
-  with one row per chapter (name, "★ 18/30", locked or open); a row scrolls the map to its chapter (`level.map.jump`).
+### 19.3 Road, chapter banner and gateway (`LevelPath`, `ChapterGateway`, `GatePlate`) [Levels-Map, Levels-Gate]
+- **Road:** see §19.14. One virtualised list item per chapter, every item the same height (1126; chapter 30 1174), so a
+  gate that opens never moves the list; it opens with the current coin at 40 % of the height.
+- **Chapter banner** (the gateway's lintel, `chapter-N-header`, at the top of each chapter's block): a ribbon in the
+  chapter's tone (`levelMap.chapter[(c − 1) % 6].deep`, a lit hairline rim, a 3 dp `edge` under it, notched tails in
+  `edge` behind both ends), width `min(W − 32, 332)`, min height 56 (a taller script grows it, never cuts it). In a row:
+  a 36 medallion with the chapter's number (Teko 22, `color.text` on the tone's `edge`; its ring `accent` at 30/30),
+  "פרק 4" (h2, `color.text`, `role="header"`) over its name ("בלש", caption, `levelMap.coin.onDeep`), and the stars chip
+  "★ 18/30" (pill 28, `levelMap.chip` over the ribbon, Teko, LTR; `role="img"` "18 כוכבים מתוך 30"; an accent ring at
+  30/30). No strip of the ground across the screen: the wandering digits show around it.
+- **The gateway (chapters 2–30):** two slate pillars (22 wide, at W/2 ± 126, the tactile slate face, a plinth; a 4 dp cap,
+  `levelMap.gate.capOpen` gold once the gate is open), the banner over them, and **the gate's sign** (`GatePlate`, the
+  only button) hung from the banner on two chains:
+  - **closed** (220 wide, 44–70 high, hung from the top of its 220 × 70 box at y 76; radius 12, `color.surface`,
+    **dashed** 1 dp `color.iconFaint`; padding 12 × 4): "נפתח ב־20 כוכבים" (buttonSm, centred) across the plate's
+    whole inner width (194), up to two lines, and under it a lock, a gold bar and "17/20" (star 16, Teko, LTR). The
+    plate grows to two lines and never cuts the words: beside the count, on one line, it showed "נפתח ב־20 כו…" on
+    the phone (31.10.2026); every language's lines are measured against it (`gatePlate.test.tsx`). **Enough stars,
+    the boss unplayed:** "22/20" and "שחק את שלב הבוס כדי לפתוח";
+  - while shut, a **striped barrier** lies across the road under the sign (145 × 8, 45° stripes
+    `gate.stripeLight` / `stripeDark`, `gate-N-barrier`);
+  - **open** (a 168 × 44 touch box, the pill 36 high in its middle): a raised pill (the L1 card), an open lock and
+    "פרק 5 פתוח"; the first time it shows open, the barrier swings up and away (`level.gate.unlock`).
+  - Every node after a closed gate is locked. A11y: the sign is a button, "פרק 5 נעול, 17 מתוך 20 כוכבים בפרק 4".
+- **Chapter 1** has the banner, a slate **start pad** where the road begins, and a small gold flag. **Chapter 30** ends
+  at a checkered finish line.
+- **Focus order in a chapter:** the banner's title, its stars chip, the gate's sign, stages 1…10. Everything else
+  (scenery, road, pillars, chains, barrier, ribbon tails, medallion, glow, token) is hidden from screen readers.
+- **Header chip** "★ 84/900": a raised slate button (`TactileSurface kind="slate"`, 36 high): opens the chapter list
+  (**no board**), a sheet with one row per chapter (its medallion in the chapter's tone, name, "★ 18/30", locked or
+  open); a row scrolls the map to its chapter (`level.map.jump`). Beside it the title "אימון בשלבים" may take two lines and
+  a smaller size, down to 18, never a word cut or "…" (`ScreenHeader wrapTitle`; QA run 2, B7: 12 languages were cut).
 
 ### 19.4 Docked bottom panel (`LevelPanel`) [Levels-Map]
 - A fixed panel at the bottom of the map, instead of a sheet over it (D60; sheets over the map were part of the black screen,
@@ -888,6 +1086,15 @@ stage (D49) · no reactions button for me (D62; `LEVEL_UI.reactions` brings it b
 - **1.0.3 (D76, D79):** the kind's name is fixed ("מיקום מדויק", never "איפה ה־7?"), and the goal names no box, row or column
   ("מלא את 4 המשבצות החסרות בריבוע אחד, עד 20 ש׳"): "שוב" plays an equivalent board where the region moves. The fill kinds and the
   puzzle show their own end of the stage (up to 60 s, D68).
+- **31.10.2026 (the board-game road):** a raised tray (`surface2` → `surface` gradient, a lit top edge, an inset top
+  highlight; it stays opaque). Its head leads with the chosen stage's **own coin** (`LevelCoin`, 48, in its look) with
+  its kind on a 20 badge (neutral, the bot's P2, or the boss's gold crown); a gate leads with a raised slate tile and its
+  lock. The scale is **three raised cards** (`ScaleCells variant="cards"`, 48 high), the ones up to my best stars in gold
+  (accent border, `accentSubtle`); "מוכן?" and a boss's opening keep the one divided strip. When the choice changes, the
+  content fades in rising 6 dp (`level.map.panel`). Labels, the live region and every testID are unchanged.
+- **The chosen coin stays in sight above the panel** (QA 3.11.2026): the panel takes its height from the map, and a boss's is
+  taller. A stage (or gate) chosen near the bottom is scrolled up until its whole coin, crown to edge, is `MAP.revealGap` (16)
+  inside the map (`revealOffset`), at the tap and again when the panel's height changes; a drag or a chapter jump ends it.
 
 ### 19.5 Stars (`StarRow`) and the star meter (`StarsBar`) [Lv-*, Level-Result]
 - **Star:** the 24 viewBox star of the brief; filled `color.accent`, empty outlined `color.iconFaint` (decorative). Sizes 12 node ·
@@ -902,6 +1109,11 @@ stage (D49) · no reactions button for me (D62; `LEVEL_UI.reactions` brings it b
     the bot's P2 with ▲ in `color.bg`. Under it "4 ומעלה = 3 כוכבים".
   - **Gap** (duel): see §19.9.
   - **Points** (point hunter): the bar fills to the board's maximum, with ticks at 70 %, 85 % and 95 % (98 % from chapter 27).
+  - **The numbers under the ticks** (every bar): HUD text, they grow with the phone's text size up to ×1.35 (BRD-3), and
+    their row with them. Each starts 6 before its tick, unless that runs it into the next (4 apart at least) or past the
+    bar's end further than at the design's size; then it moves just enough (`placeNumbers`, from the widths the phone
+    laid out). Where one line cannot hold them, every other one goes on a second line. QA 2026-11-03: "15.517.5" and a
+    cut "17.5" at ×2.0.
 - **Penalty chip** "‎+5 ש׳" beside the clock (chip 22, `color.surface2`, text `color.danger`, `signedText`): `level.miss.flash`.
 
 ### 19.6 Stage chrome and HUD [Lv-*]
@@ -917,10 +1129,18 @@ stage (D49) · no reactions button for me (D62; `LEVEL_UI.reactions` brings it b
 - **Spot the mistake:** "בלוח מסתתרות 2 ספרות שגויות. הקש עליהן." and, muted, "הספרות הכהות הן של הלוח, והן תמיד נכונות.";
   magnifier icons ("נמצאו 1/2"); a dismissible tip card in the kind's first three stages.
 - **Point hunter:** a big points counter, 3 move dots ("מהלך 3 מתוך 3"), the clock ("0:14" of 0:30), the points bar; the keypad.
+  "נקודות" and a burned move's "‎−4" stack in a narrow column beside the counter, and a wide counter ("‎−11.5") shrinks to fit
+  its half of the row (the row keeps its height, down to 0.3 of its size): nothing ever runs over the move dots. Text size
+  (BRD-3): the counter ignores the phone's text size above ×1.0 (`scale="board"`); the row's words grow up to ×1.35
+  (`scale="hud"`), and "מהלך 1 מתוך 3" takes two lines rather than more than 96 dp ("Zug 2 verschenkt").
 - **Chain:** links (filled P1, current P1 outline, empty), "צעד 3 מתוך 4" and the time; the keypad. The view never marks the next
   step.
 - **Duel (kind 4):** the Game-Bot screen without the interference button, plus RaceTo30 (§19.9).
 - **Exit:** X, or Android "חזרה", opens the in-game confirm (§14.1) "לצאת מהשלב? תקבל 0 כוכבים, והשלב הבא ייפתח." (**no board**).
+  The body says what the quit really leaves (`afterQuit`): on a boss whose gate stays shut, "…, והשלב הבא יישאר נעול.";
+  on stage 300, "תקבל 0 כוכבים.". The clock runs on under the dialog (the spec has no rule; stopping it is Moshe's call). A
+  stage that ends by itself while it is open closes it, and its result takes no press for `LEVEL_UI.resultGuardMs` (1 s), so
+  a tap meant for "יציאה" cannot press "למפה" (QA N1, 3.11.2026).
 - **Fill row and fill column (1.0.3, D69):** as the box: clock, time bar, "1/4 משבצות", mistakes, the keypad. The task line "מלא
   את שורה D" / "מלא את עמודה 5" with a 27 dp `MiniRegion` (the box's HUD map grows from 20 to 27 too). The letter or number comes from
   the played board (`fillRegionOf` on the attempt). Board label: "הלוח · ממלאים רק את 4 המשבצות החסרות בשורה D".
@@ -928,6 +1148,10 @@ stage (D49) · no reactions button for me (D62; `LEVEL_UI.reactions` brings it b
 - **Boss (1.0.3, D77; no board):** a boss band at the top, in place of the small chip (`accentSubtle` background, a 1 dp gold rule,
   a crown and "בוס · פרק 3" in gold); gold **arena corners** around the board (3 dp thick, 20 long; deliberately not a full frame,
   so it never reads as the region frame); and a 16 dp crown on the bot's avatar in the race and duel cards. All static.
+- **Clocks for screen readers (every kind; QA run #2, Q1):** a clock's label says its seconds in 5 s steps, never every second
+  (a changed label is an accessibility event), rounded down so it never says more time than the clock does; time left is
+  exact in its last 5 s, never "0" while some is left (`clockLabelSeconds`). The mistakes chips (box, puzzle, the find
+  penalty) are `dangerSubtle` laid flat over the ground (`opaqueOver`): the wandering digits pass behind the HUD (B12).
 
 ### 19.7 Board additions [Lv-*]
 New states of §11.3, all from the engine's view (no game logic in the board):
@@ -998,6 +1222,8 @@ New states of §11.3, all from the engine's view (no game logic in the board):
 - **"למה?":** a short explanation of the target from the engine's `explain()`, including the wrong tap, with cell names LTR.
 - **Buttons:** primary lg "לשלב הבא" (quick entry), secondary "שוב", ghost "למפה". 3 stars: one confetti burst (`level.confetti`).
 - **0 stars** (time up, a second wrong tap, a quit): the same layout with three empty stars, the answer shown, and no XP line.
+  Never "שיא חדש!" (a first try of "0 מתוך 5 מקומות" is no record): "השיא שלך: ★★" when an earlier try has stars, else no
+  record line. "שיא חדש!" needs a star: new stars, or a better measure in a try with a star.
 - **Boss** (1.0.3, D77; no board): a 56 dp crown medallion over the title: "ניצחת את הבוס!" when the engine's
   `levelOutcome().bossBeaten` is true (the crown pops, `level.boss.won`; reduced motion: no pop), else "הבוס ניצח הפעם", still. The
   screen never decides it from the stars: a race boss can give a star and still be lost to the bot. The chapter line stands out
@@ -1071,6 +1297,42 @@ levels mark of the new-game row. New in 1.0.3: `gridRow`, `gridCol` and `puzzle`
 
 ---
 
+### 19.14 The road (`mapModel`, `MapRoad`, `MapScenery`) [Levels-Map; 31.10.2026, no board]
+- **Geometry (mapModel `MAP`, measured from the start edge, so the whole map mirrors in Hebrew; digits never do):**
+  stage k of chapter c at `x = W/2 + σ·A·sway[k]`, `sway = sin(0.3πk)`, σ = +1 in odd chapters and −1 in even ones (the
+  bends alternate, every gate is on the middle line), `A = clamp((W − 32 − 92)/2, 80, 104)` (centred on a wider screen).
+  Coin centres from the item's top: 230, then pitches 76 / 92 / 88 / 76 / 92 / 92 / 76 / 88 and 116 into the boss; the
+  pitches keep every coin's box (64 × 84, the boss 92 × 138) clear of the next one at every width. The gateway block is
+  the item's first 184 (the banner 16–72, the road crossing at 140, the barrier at 148). `mapDirection: 'up'` turns each
+  item over (stage 1 at the bottom) but keeps the gateway block upright, at the item's bottom.
+- **The road:** one uniform Catmull-Rom curve through the start pad, every stage, every gate crossing and the finish
+  (a continuous tangent: it bends smoothly through each coin). Drawn 44 wide in four strokes, bottom to top: an edge 6 dp
+  lower (its depth), the kerb, the body (38: 3 dp of kerb each side) and a 3 dp dashed middle (10 on, 12 off, running on
+  from piece to piece). **Gold** (`levelMap.roadDone`: kerb `#ffcf3f`, body `#e0ac1f`, edge `#b88f00`, cream dashes) up to
+  and into the current stage; **slate** after it (`levelMap.road`). A gate's two segments follow the gate and its first
+  stage. Done vs ahead is told by lightness (12.72:1 vs 2.46:1 for the kerb on the ground) and by the coins' own looks.
+- **Memory:** each segment is drawn by every item it crosses, in a small Svg of its own (`RoadPiece`, its frame cut to the
+  item); never one Svg as tall as a chapter (react-native-svg draws each Svg into a bitmap of its size). The pieces of an
+  item are drawn top to bottom, their ends butt under the coins.
+- **The chapter's tone** (`levelMap.chapter`, six, cycling: dusk, plum, teal, ember, ocean, rose): the banner, the
+  medallion, the closed coins, the signpost and the pennant. Each `deep` is dark (≥ 3.08:1 below every seat ring, so it
+  never reads as a player) and carries `color.text` at ≥ 8.59:1.
+- **Scenery** (`sceneryModel`, `MapScenery`, `LEVEL_UI.mapScenery`; seeded per chapter, still, hidden from screen
+  readers): two big rounded **zones** in the tone (translucent, 1.25–1.34:1 over the ground) in the bays the road leaves
+  empty; a faint, empty **3 × 3 sudoku box** (96–132); a **signpost** with the chapter's number beside the first stage;
+  a **pennant** beside the boss; three tiny gold **sparkles**. Every item but the zones keeps 34 dp from the road's
+  middle line and 8 dp from every coin, every place my token can stand and the gateway; with no room it tries the other
+  side, then is left out. **No digits in the scenery** (31.10.2026): the box
+  holds none, and there is no big digit, because the only digits behind the app are the small wandering ones (D126;
+  Moshe: "מספרים קטנים (בין 6 ל12 DP) משוטטים על המסך").
+- **No ground:** the map's screen, its list and its items paint no background; the wandering digits behind the app
+  (D126) show between the pieces and through the zones. Only the panel, the header chip, the banner, the sign and the
+  coins are opaque.
+- **Performance (Galaxy A16):** one item per chapter; exact `getItemLayout`; `initialNumToRender 2`, `windowSize 5`,
+  `maxToRenderPerBatch 1`; the chapter blocks are memoised on per-chapter props (choosing a stage redraws only its
+  chapters). No Skia on the map. Every animation is a transform, an opacity or an SVG dash offset on the UI thread; the
+  only repeating one (the beacon) runs in bursts with rests.
+
 ## 20. Playing with friends components [new] (version 1.0.4)
 The friends room, "join with a code" and the new-game group (`docs/01-SPEC.md` §5.4, D80–D89; plan
 `docs/handoff/2026-10-19/friends-room.md`). **Provenance:** two boards, `Friends-Room` (the host's lobby) and `Friends-Join`
@@ -1131,7 +1393,7 @@ host is, who is away, whether "התחל" is on, and the code itself all come fro
 ### 20.4 Seat row (`RoomSeatRow`) [Friends-Room]
 - **56 min height** (`size.recentRow`), radius 12, `color.surface`, 1 dp `color.border`, padding 12 × 4; my row's border is P1's.
 - **Taken:** the seat shape (12) · the compact avatar (34 frame) in the seat's colour, smiling ("ready") · the name (`playerName`)
-  with the P1 pill "אני" on mine · under it the flag, the general rating (small, LTR, `color.textMuted`), and **"מארח"** with a
+  with the P1 pill "אני" on mine · under it the flag, the rating in the room's game type (small, LTR, `color.textMuted`; it follows the host's type; none without a rated game of that type), and **"מארח"** with a
   12 dp crown in `color.accent`. One element for the screen reader: "Dana, ישראל, דירוג 1190, לא בחדר כרגע".
 - **Away** [D84a]: the row's content at 55 % opacity, the avatar inactive, and "לא בחדר כרגע" (micro, `color.textMuted`).
 - **Empty:** a dashed border on `color.bg`, a dashed 34 frame with a dot that blinks (`friends.seat.wait`; static with
@@ -1147,6 +1409,9 @@ host is, who is away, whether "התחל" is on, and the code itself all come fro
 - **Guest**, in its place: a small accent spinner and "מחכים ש־MosheG יתחיל" (`rowTitle`); "המארח לא בחדר כרגע" while the host
   is away.
 - **Last:** the ghost button "יציאה מהחדר" (X icon), no confirm: nothing is lost in a lobby.
+- **A footer, pinned** (QA run 2, B40/B53): the start box (or the guest's wait) and "יציאה מהחדר" sit under the scroll, over a
+  hairline `color.border`, with the screen's bottom inset added to their padding. On a phone with a 3-button bar the room's
+  content was taller than the screen, and "יציאה מהחדר" was drawn under the bar: a tap there pressed Home.
 - **Lost connection in the lobby:** a line over the card, "החיבור אבד. מתחבר מחדש…", with a spinner; the app comes back to the
   same seat by itself.
 
@@ -1157,11 +1422,18 @@ host is, who is away, whether "התחל" is on, and the code itself all come fro
   (gold) border. A refusal: every box `color.input.borderError`.
 - A digit moves on; backspace in an empty box goes back and clears the one before. **Pasting or typing several digits** into any
   box reads the whole text with `extractFriendCode` (a whole WhatsApp message, or a link) and fills all six.
+- **Fast typing loses nothing** (QA 3.11.2026): a digit typed after a box's own digit (the next key reaching the box before the
+  focus moved on) goes on into the next box, and each key builds on the boxes the keys before it left. **A whole code takes no
+  more digits:** a seventh never replaces the sixth (a box tapped and its digit typed over is still an edit). The keyboard goes
+  at the sixth digit, from whichever box had it. A hardware key (or `adb shell input keyevent 67`) in an empty box: Android's
+  TextInput does not report it (`onKeyPress` is the soft keyboard's), so only the on-screen ⌫ goes back a box.
 - **"הדבק"** (a secondary button, the clipboard's text) with the caption "אפשר להדביק את כל ההודעה מוואטסאפ". No code in the
   text: "לא מצאנו קוד של 6 ספרות בטקסט שהועתק".
-- **At the sixth digit the join starts by itself** (`FRIENDS_UI.autoJoin`): "מצטרף לחדר…" with a spinner; "הצטרף" does it too,
+- **At the sixth digit the join starts by itself** (`FRIENDS_UI.autoJoin`): "מצטרף לחדר…" with a small gold spinner, in the place
+  of "הצטרף" (as tall, a polite live region); "הצטרף" does it too,
   and again after a refusal. A refusal is one line under the boxes, e.g. "לא מצאנו חדר עם הקוד ⁦123 456⁩. בדוק את הספרות." (a
-  block reads exactly the same, D85c).
+  block reads exactly the same, D85c). **A new try holds the last refusal in its place** (transparent, hidden from screen
+  readers, the boxes not red) until its answer replaces it, so "הדבק" and "מצטרף לחדר…" never jump (QA 3.11.2026).
 - **Screen reader:** the row is "קוד החדר, 6 ספרות"; each box is its own field, "ספרה 3 מתוך 6", so the digits are heard one by
   one. Nothing here moves.
 

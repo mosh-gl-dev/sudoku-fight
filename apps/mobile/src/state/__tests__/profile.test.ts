@@ -20,6 +20,7 @@ describe('the local profile (until accounts, stage 8)', () => {
       country: 'IL',
       lastPlay: null,
       botLevel: null,
+      friendsGameType: null,
     });
   });
 
@@ -70,7 +71,25 @@ describe('the local profile (until accounts, stage 8)', () => {
       country: 'IL',
       lastPlay: { mode: 'solo', gameType: 'hard' },
       botLevel: null,
+      friendsGameType: null,
     });
+  });
+
+  it('remembers the type of the friends room I host, apart from "עוד סיבוב", and saves it (QA friends-room-type-not-remembered)', async () => {
+    useProfile.getState().rememberPlay({ mode: 'ranked', gameType: 'hard', players: 2 });
+    useProfile.getState().rememberFriendsType('fast');
+    expect(useProfile.getState()).toMatchObject({
+      friendsGameType: 'fast',
+      lastPlay: { mode: 'ranked', gameType: 'hard' },
+    });
+    expect((await saved()).state).toMatchObject({ friendsGameType: 'fast' });
+    // Loaded back; a damaged one is dropped.
+    await Storage.setItem('profile', JSON.stringify({ version: 1, state: { friendsGameType: 'normal' } }));
+    await useProfile.persist.rehydrate();
+    expect(useProfile.getState().friendsGameType).toBe('normal');
+    await Storage.setItem('profile', JSON.stringify({ version: 1, state: { friendsGameType: 'blitz' } }));
+    await useProfile.persist.rehydrate();
+    expect(useProfile.getState().friendsGameType).toBe('normal');
   });
 
   it('a practice against a bot also remembers its level, which a later solo practice keeps', async () => {

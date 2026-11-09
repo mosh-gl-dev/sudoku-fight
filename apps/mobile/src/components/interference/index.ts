@@ -21,7 +21,7 @@ export {
 export type { EffectProps, RegionRect } from './effectProps';
 export { Fireworks } from './Fireworks';
 export { HitEffect, type HitEffectProps } from './HitEffect';
-export { elapsedOf, hitAlpha, type HitTime, remainingOf, useHitClock } from './hitClock';
+export { elapsedOf, hitAlpha, type HitTime, remainingOf, useHitClock, useLayerHitClock } from './hitClock';
 export { Ink } from './Ink';
 export {
   type CatPalette,

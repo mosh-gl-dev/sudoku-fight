@@ -60,8 +60,9 @@ Arabic runs right to left; Latin letters and digits run left to right. Without i
 Hebrew (`CLAUDE.md`).
 
 1. **Copy the Hebrew.** In a key where the Hebrew string has LRI…PDI or an RLM, the Arabic string has it in the same
-   place. `i18n:check` fails otherwise. Today: `account:name.rules` (`3–16`), `home:modes.levels.taglineNew` (`0–3`) and
-   `account:settings.deleteGoogleBody` (RLM before `{{email}}`).
+   place. `i18n:check` fails otherwise. Today: `account:name.rules` (`3–16`), `home:modes.levels.taglineNew` (`0–3`),
+   `account:settings.deleteGoogleBody` (RLM before `{{email}}`), and every `levels` string that starts with a Latin name
+   (`{{bot}}`, `{{name}}`, `{{cell}}`): an RLM first, or Android lays the whole line out left to right (QA run 2, B27).
 2. **Literal text you write:** a range (`0–3`), a signed number (`+3.5`, `−8`), a cell name (`D5`) or a Latin word
    (`Sudoku Fight`, `XP`, `VS`, `Google`) inside an Arabic sentence goes between LRI and PDI: `"\u20660–3\u2069"`.
    `i18n:check` warns when it is missing.

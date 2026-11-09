@@ -39,7 +39,7 @@ export function CancelSelection({ cell, onPress, testID = 'cancel-selection' }: 
         return (
           <>
             <Icon name="cancel" size={size.icon.card} color={tint} />
-            <Text style={[text('status'), { color: tint }]} numberOfLines={1}>
+            <Text scale="hud" style={[text('status'), { color: tint }]} numberOfLines={1}>
               {t('cancel.label')}
             </Text>
           </>

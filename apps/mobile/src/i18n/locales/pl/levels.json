@@ -353,6 +353,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "brama wymaga {{need}}",
     "chapterOpen": "brama jest otwarta",
+    "chapterNeedSentence": "Brama wymaga {{need}}",
+    "chapterOpenSentence": "Brama jest otwarta",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Ten rozdział: 1 gwiazdka z {{max}}. {{gate}}",
     "chapterLine_few": "Ten rozdział: {{stars}} gwiazdki z {{max}}. {{gate}}",
@@ -411,6 +413,8 @@
     "button": "Opuść etap",
     "title": "Opuścić etap?",
     "body": "Dostaniesz 0 gwiazdek, a następny etap się otworzy.",
+    "bodyLocked": "Dostaniesz 0 gwiazdek, a następny etap pozostanie zablokowany.",
+    "bodyLast": "Dostaniesz 0 gwiazdek.",
     "confirm": "Wyjdź",
     "cancel": "Graj dalej"
   },

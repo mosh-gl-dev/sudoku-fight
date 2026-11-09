@@ -14,6 +14,8 @@ export {
   type HitNames,
   hitOf,
   hitSeconds,
+  type HitSender,
+  hitSendersOf,
   hitSeedOf,
   isHitOn,
   isolateName,

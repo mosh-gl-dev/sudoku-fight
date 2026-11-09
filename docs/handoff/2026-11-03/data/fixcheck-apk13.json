@@ -1,0 +1,221 @@
+{
+ "checks": [
+  {
+   "id": "1 apk10-go-to-board-no-empty-frame (pregame-found-countdown-reduced)",
+   "result": "partial",
+   "evidence": "טלפון 3, APK 13, מול הבוט הסמוי, צילום רציף (cap.sh, 5–10 פריימים לשנייה). בלי הפחתת תנועה, 5 משחקים: אין אף פריים עם הרקע בלבד בין GO! ללוח. GO! קבוע בבהירות מלאה עד שהלוח מופיע (qa-shots/fix8-RF8Y30L038L-goboard-1.png). עם הפחתת תנועה באפליקציה, 2 משחקים: אין פריים ריק ואין תנועה (fix8-…-goboard-rm-1.png). מהפריים הראשון של GO! עד הלוח: כ־1.37 ש' בצילום קל, וכ־1.24–1.37 ש' עם הפחתת תנועה (הצפי היה ~1.0 ש'). בצילום כבד (4 לולאות) נמדדו 2.6–3.0 ש', כנראה בגלל העומס של הצילום עצמו. הקשה על משבצת 116 ms אחרי שהלוח הופיע: נבחרה A1 (fix8-…-firsttap.png). כניעה ואז 'חזרה' בתוצאות הגיעו לבית בלחיצה אחת. מ'מחפש' ו'חזרה' הגעתי לסוג משחק, משם למשחק חדש ומשם לבית, בלי תוצאות ישנות. ב־logcat אין רצף שגיאות [Reanimated]. נכשל: 'חזרה' של Android בזמן ש־GO! עדיין על המסך פתח את חלון הכניעה מעל GO! (fix8-RF8Y30L038L-backgo-1.png).",
+   "qaAction": "pregame-found-countdown-reduced סומנה מחדש partial עם actual חדש: הלוח מופיע כ־1.24–1.37 ש' אחרי GO! ולא 'ב־GO', ו'חזרה' בזמן GO! פותחת את חלון הכניעה"
+  },
+  {
+   "id": "2 results-search-gap (pregame-found-countdown-reduced)",
+   "result": "partial",
+   "evidence": "טלפון 3, בלי הפחתת תנועה, 'משחק חדש' בתוצאות 3 פעמים עם צילום רציף. פעמיים: מעבר הדרגתי נקי, התוצאות דוהות והחיפוש נכנס (fix8-RF8Y30L038L-newgame-1.png, -newgame-3.png). פעם אחת (newgame-2): כ־170–500 ms של רקע עם ספרות מרחפות, ורק הכפתור 'ביטול חיפוש' מעליו, בלי תוצאות ובלי מסך החיפוש (fix8-RF8Y30L038L-newgame-2.png). עם הפחתת תנועה, פעם אחת: נקי. באימון: בתוצאות לחצתי 'משחק חדש', והתוצאות נשארו עד שהלוח החדש הופיע, בלי פריים ריק. 'חזרה' בזמן החיפוש מגיעה למסך סוג המשחק, ומשם למשחק חדש ולבית, בלי תוצאות ישנות. 'לבית' ו'חזרה' בתוצאות מגיעים לבית.",
+   "qaAction": "אין (המשימה pregame-found-countdown-reduced סומנה כבר partial בסעיף 1)"
+  },
+  {
+   "id": "3 pregame-found-sound / apk10-sounds-first-ranked",
+   "result": "pass",
+   "evidence": "טלפון 1, לפי dumpsys audio (לא שמעתי בפועל; עוצמת הרמקול היא 0 בשני הטלפונים, ולא שיניתי אותה). אחרי הפעלה קרה: event:started של חימום ב־05:31:04.8, ו־event:started בהקשה על 'שחק' (14.53→14.73). במשחק המדורג הראשון: 4 התחלות בהפרש של כשנייה (פעימות ו־GO). בחירת המשבצת הראשונה (22.75→22.95) והספרה הנכונה הראשונה (24.24→24.53) רשמו התחלה. אחרי הפעלה קרה, בהקשה הראשונה על משבצת: באימון לבד (12.62→12.82) ובשלב 77 (29.71→29.94) נרשמה התחלה. לחיצה על Home כ־0.8 ש' אחרי ההפעלה, וחזרה אחרי 5 ש': ההקשה על 'שחק' רשמה התחלה. כך גם במשחק: Home בזמן שהלוח נכנס, חזרה, והקשה על משבצת רשמה התחלה. עם הצליל כבוי בהגדרות: 0 התחלות, גם בבחירת משבצת, בספרה ובטעות. הצליל הוחזר למופעל.",
+   "qaAction": "אין (המשימה pregame-found-sound שייכת למשה, untested; השמיעה עצמה נשארה למשה)"
+  },
+  {
+   "id": "interference-picker-grid-small (2P header 320-360dp)",
+   "result": "pass",
+   "evidence": "טלפון 3, ב־density 540, באנגלית: בכרטיס שלי סימן X בתיבה ו־'0' (בלי 'No mi/stakes'). אחרי טעות הוצג '1' אדום לרגע, ואז אפור (fix8-RF8Y30L038L-mistake-en540.png). הכפתור הוא אייקון בלבד. ה־content-desc: 'Interfere with ליהי33 · costs 2 pts' (וכשחסרות נקודות: '2 pts short'). ה־VS בין הכרטיסים. בגרמנית 'Keine / Fehler' בשתי שורות. ברוסית ובאיטלקית סימן ומספר. בעברית 'אין / טעויות' בשתי שורות. בכל השפות הכפתור הוא אייקון בלבד (card-de540/ru540/he540). בגודל רגיל (450): בעברית 'הפרעה' בגודל מלא, אבל 'אין טעויות' בשורה אחת (נכנס שלם). באנגלית אייקון בלבד ו־'No / mistakes' בשתי שורות. VS לא נוגע בדגלים. D (nl/tr) לא נבדק.",
+   "qaAction": "אין (המשימה כבר V)"
+  },
+  {
+   "id": "interference-picker-opens ('יעד' chip half under the scrim)",
+   "result": "pass",
+   "evidence": "טלפון 3, במשחק מדורג מול הבוט. התג 'יעד' / 'Target' / 'Bersaglio' יושב על הקו התחתון של המסגרת הצהובה, שיורדת מתחת לכרטיס. התג בהיר כולו, בעברית, באנגלית ובאיטלקית, גם ב־450 וגם ב־540 (fix8-RF8Y30L038L-picker-he450-1.png, -picker-en450, -picker-it450, -picker-he540, -picker-en540, -picker-it540). בעברית ב־450 סגרתי ופתחתי 3 פעמים, והתג נשאר זהה. חדר של 3–4 שחקנים לא נבדק.",
+   "qaAction": "אין (המשימה כבר V)"
+  },
+  {
+   "id": "appBug 6 / account-settings-licenses-expand",
+   "result": "pass",
+   "evidence": "טלפון 3, בעברית. SIL OFL נפתח משמאל לימין ומיושר לשמאל. פסקת PREAMBLE רציפה מ־'The goals' עד 'with others.'. הכותרות PREAMBLE, DEFINITIONS, PERMISSION & CONDITIONS, TERMINATION ו־DISCLAIMER, כל אחת בשורה משלה. סעיפים 1) עד 5) מתחילים כל אחד בשורה חדשה. הכותרת 'SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007' בשורה משלה. (שורות המקפים ארוכות מרוחב המסך, ולכן נשברות ל־2 שורות: '----…' ועוד '--------'.) לחיצה שנייה סגרה. MIT: 'MIT License' לבד, והפסקה רציפה. BSD-3: כל '*' מתחיל שורה. Apache: '1. Definitions.' בשורה משלו, והפסקאות רציפות. צילומים: fix8-RF8Y30L038L-lic-*.png",
+   "qaAction": "אין (המשימה כבר V)"
+  },
+  {
+   "id": "postgame-progress-english (MAJOR, navigation after wm size/density/font change)",
+   "result": "untested",
+   "evidence": "דילגתי לפי ההוראות: הסשן הראשי בדק את זה כבר ב־APK 13, ועבר. לא בדקתי את שלבי ה־rework 5–6 (הפחתת תנועה אחרי יצירה מחדש, מסך דולק). ראיתי שינוי density באמצע משחק מדורג, והוא מחזיר לבית: ראה באג density-change-orphans-ranked-game.",
+   "qaAction": "אין"
+  },
+  {
+   "id": "ranked-end-i-surrender-my-lock-5x (empty frame between board and Results)",
+   "result": "fail",
+   "evidence": "טלפון 3, בעברית, צילום רציף. כניעה מדורגת עם משבצת נעולה ('כניעה' ← 'כן, להיכנע'): ב־4 מתוך 4 יש 0.6–1.0 ש' בלי לוח ובלי תוצאות. רואים רק את הרקע הכהה והספרות, ובהמשך גם 'לבית' בראש המסך. הלוח מגיע לחצי בהירות ונעלם, ורק אחר כך התוצאות נכנסות (fix8-RF8Y30L038L-surrender-1.png). אימון מול Mr. Hoot ('סיום אימון' ← 'כן, לסיים'): 3 מתוך 3, כ־0.5–0.9 ש' ריקות (fix8-…-practice-end-3.png). עם הפחתת תנועה באפליקציה: 1 מתוך 1, כ־0.9 ש' ריקות. 'חזרה' בתוצאות מגיעה לבית בלחיצה אחת, מדורג וגם אימון. מסך התוצאות נפתח פעם אחת בכל פעם.",
+   "qaAction": "אין: המשימה ranked-end-i-surrender-my-lock-5x מסומנת V, וההוראות הן לבדוק מחדש רק fail/partial. מומלץ לסמן אותה מחדש: השורה 'אף פעם לא ריק' לא מתקיימת"
+  },
+  {
+   "id": "ranked-four-type-and-search (4P search seats under 'ביטול חיפוש')",
+   "result": "pass",
+   "evidence": "(a) בעברית, בגודל רגיל: טקסט סוג המשחק מדויק. כשהופיע 'כרגע אין מספיק שחקנים…', על המסך בלי גלילה: רדאר קטן עם האווטר ו־'אני 1068', ההודעה, 'יריבים 0/3' ושלושה מקומות ('?' + 'מחפש…' + ▲■◆), כולם מעל 'ביטול חיפוש' (fix8-RF8Y30L038L-four-he450-2.png). (b) בעברית ב־480/1.3: הרדאר הוא רק 'אני 1055', והכל מעל הכפתור בלי גלילה (four-he360). (c) באנגלית ב־1.3: אותו דבר, בלי גלילה ובלי חפיפה עם הכפתור (four-en360). אחרי דקה הופיע 'עדיין אין מספיק שחקנים…' עם 'המשך לחפש'.",
+   "qaAction": "אין (המשימה כבר V)"
+  },
+  {
+   "id": "postgame-leaderboard-english (pinned 'my row' LevelProvisional, 360dp/1.3)",
+   "result": "pass",
+   "evidence": "(a) טלפון 3 (אחוותא, ארד רמה 7, זמני), באנגלית, 450: בכל 5 הלשוניות 'Bronze' ו־'• Level 7' מתחת לשם, ו־Provisional נפרד (fix8-RF8Y30L038L-lb-en450-*.png). (b) ב־480/1.3, באנגלית: General/Fast/Normal/Hard בשורה ו־Friends בשורה שנייה, הכל שלם. 'Play' מתחת לשורה, ו־Bronze, '• Level 7' ו־Provisional שלמים ולא על ה־7. השמות ארי_המלך ושני_הנסיכה קריאים. בעברית: 5 הלשוניות בשורה אחת ושלמות, 'זמני' לא על ה־7, ו'שחק' מתחת (lb-he360-*). הערה: באנגלית ב־360/1.3, '1232' של מקום 2 בפודיום נוגע בקצה השמאלי של המסך.",
+   "qaAction": "qa fix 2 postgame-leaderboard-english --fixed-in apk13 (הערה בעברית)"
+  },
+  {
+   "id": "general-display-small-big-font: my game card 'No mis/takes'",
+   "result": "pass",
+   "evidence": "480/1.3 באנגלית: באימון מול Mr. Hoot ובמדורג 2P, בכרטיס שלי X בתיבה ו־'0', ואף מילה לא שבורה (fix8-RF8Y30L038L-card-bot-en360.png, card-ranked-en360.png). באותו כותרת: 'Mr. Ho…' והתג '3 • Adva…' של הבוט מקוצרים.",
+   "qaAction": "general-display-small-big-font סומנה מחדש partial (actual מעודכן, ראה סעיף בחר יריב בוט)"
+  },
+  {
+   "id": "general-display-small-big-font: player card 'Mistak es per' / 'Playing since'",
+   "result": "partial",
+   "evidence": "באנגלית ב־360/1.3: הסטטיסטיקות 2 בשורה, 'Mistakes per game' שלם, ו־'Playing since October / 2026' בשתי שורות. אבל השורה 'Stages: 9 • ★ 0' חתוכה בתחתית: הזנב של ה־g ותחתית האותיות. בעברית: 'במשחק מאז אוקטובר / 2026' בשתי שורות, ו'שלבים: 9 • 0 ★' תקין. אבל הסטטיסטיקות 4 בשורה ולא 2: 'אחוז / ניצחונות' ו'טעויות / למשחק' בשתי שורות, שלמות (fix8-RF8Y30L038L-playercard-he360.png).",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: bot select names / 'Think time per move'",
+   "result": "pass",
+   "evidence": "480/1.3 באנגלית ובעברית: Pip, Biscuit, Mr. Hoot, Maestro ו־Overlord שלמים. התג ('2 • Amateur', '3 • Advanced', '5 • Grandmaster', '3 • מתקדם') מתחת לשם כשצריך. 'Think time per / move' בשתי שורות, ובעברית 'זמן חשיבה למהלך' בשורה אחת שלמה (fix8-RF8Y30L038L-botsel-en360*.png, botsel-he360.png). עדיין: באנגלית, התיאורים של Pip ו־Biscuit נגמרים ב־'…'.",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: replay 'Previous st…'",
+   "result": "partial",
+   "evidence": "באנגלית ב־360/1.3: 'Previous / step' בשתי שורות ושלם, אבל החץ (chevron) עדיין מוצג, וההגדרה הייתה בלי החץ. בעברית: 'שלב קודם' עם החץ (fix8-RF8Y30L038L-replay-en360.png, replay-he360.png).",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: history 'Loss • Ranke…' / 'הפסד • אימו…'",
+   "result": "partial",
+   "evidence": "באנגלית ב־360/1.3: 'Loss • Ranked • / Fast' ו־'Loss • Practice / vs bot • Fast' בשתי שורות, שלמים (fix8-RF8Y30L038L-history-en360.png). בעברית מדורג תקין ('הפסד • מדורג • / מהיר'). אבל בכרטיסי אימון השורה עדיין נחתכת אחרי 2 שורות: 'הפסד • אימון / מול בוט • מ…' ו'האימון / הסתיים • אי…' (history-he360.png).",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: achievements 'Bronz…'",
+   "result": "pass",
+   "evidence": "באנגלית ב־360/1.3: Bronze/Silver/Gold בשורה הראשונה ו־Diamond/Legend בשנייה, כולם שלמים (fix8-RF8Y30L038L-ach-en360.png). בגודל רגיל לא בדקתי שזו שורה אחת.",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: map 'שלב 10 · מרוץ מו…'",
+   "result": "pass",
+   "evidence": "בעברית ב־360/1.3, בפאנל: 'שלב 10 • מרוץ מול / הבוט' בשתי שורות ושלם (level-panel-title מלא, fix8-RF8Y30L038L-map10-he360.png).",
+   "qaAction": "כלול ב־partial של general-display-small-big-font"
+  },
+  {
+   "id": "general-display-small-big-font: solo practice 'Solo prac…'",
+   "result": "pass",
+   "evidence": "480/1.3 באנגלית: מתחת ל־Me כתוב 'Normal' שלם, ו־'End practice' מימין (fix8-RF8Y30L038L-solo-en360.png). בעברית: 'אימון לבד · רגיל' שלם (solo-he360.png). בגודל רגיל (450, אורי): 'אימון לבד · רגיל/מהיר' מלא.",
+   "qaAction": "general-display-small-big-font סומנה מחדש partial: נשארו קיצוצים בהיסטוריה בעברית, ב־Stages באנגלית, בתיאורי הבוטים, בשם/תג הבוט במשחק, בהודעת 'אין מספיק נקודות' ובפודיום"
+  },
+  {
+   "id": "postgame-leaderboard-english (Friends tab places)",
+   "result": "untested",
+   "evidence": "ממתין ל־deploy של השרת (FRIENDS_PLACES). לא נבדק.",
+   "qaAction": "אין"
+  },
+  {
+   "id": "general-sr-names (history avatar unlabelled)",
+   "result": "pass",
+   "evidence": "טלפון 3, היסטוריה, כרטיס מדורג. ב־uiautomator dump: history-card-4ac39f2a…-player-d3b740ed… עם clickable=false ו־focusable=false (לא NAF), והכרטיס עצמו נקרא כפריט אחד: 'הפסד, דניאל_Jet. מדורג · מהיר. 3 : 51.5. דירוג −11. היום'. הקשה על האווטר עדיין פתחה את כרטיס השחקן של דניאל_Jet. TalkBack אמיתי ותפריט Actions לא נבדקו.",
+   "qaAction": "qa fix 2 general-sr-names --fixed-in apk13 (בהערה: TalkBack וחדר חברים נשארו למשה)"
+  },
+  {
+   "id": "postgame-replay-english ('sees a 8')",
+   "result": "pass",
+   "evidence": "טלפון 3, באנגלית, שלב 4 (Fill the row). נתתי לזמן להיגמר 3 פעמים, ובכל פעם Why? כתב 'sees the N': '...B3 sees the 1 in column 3. So B1 = 1.', '...C8 sees the 6 in column 8...', '...I1 sees the 3 in column 1...'. לא הגעתי לנוסח 'can't hold 8' (לא יצא בשלבים שבדקתי).",
+   "qaAction": "אין (המשימה כבר V)"
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "surrender-end-empty-frame-still",
+   "title": "עדיין יש פריים ריק (רקע בלבד) בין הלוח לתוצאות אחרי כניעה או סיום אימון",
+   "severity": "minor",
+   "what": "APK 13 (1.1.0, 09.11 01:54), טלפון 3, בעברית, הפחתת תנועה כבויה. במשחק מדורג מהיר מול הבוט: בוחרים משבצת ריקה, 'כניעה' ← 'כן, להיכנע'. בצילום רציף: הלוח דוהה לכ־50% ונעלם, ואז 0.6–1.0 ש' רואים רק את הרקע הכהה והספרות המרחפות (בחצי השני גם 'לבית' בראש המסך), ורק אז 'הפסד' נכנס. קרה 4 מתוך 4 פעמים, וגם 3 מתוך 3 ב'סיום אימון' מול Mr. Hoot, וגם עם הפחתת תנועה מופעלת. אין מעבר הדרגתי מהלוח לתוצאות. תיקון loop 7 לא עבד. צילומים: qa-shots/fix8-RF8Y30L038L-surrender-1.png, fix8-RF8Y30L038L-practice-end-3.png"
+  },
+  {
+   "id": "results-newgame-empty-frame-intermittent",
+   "title": "'משחק חדש' בתוצאות: לפעמים יש רגע ריק עם 'ביטול חיפוש' בלבד",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3, הפחתת תנועה כבויה. בתוצאות משחק מדורג לוחצים 'משחק חדש'. ב־1 מתוך 3 פעמים, בין התוצאות ל'מתחבר לתור…' היו כ־170–500 ms של רקע וספרות, עם הכפתור 'ביטול חיפוש' בלבד: בלי כותרת, בלי רדאר ובלי תוצאות. בשתי הפעמים האחרות המעבר נקי. צילום: qa-shots/fix8-RF8Y30L038L-newgame-2.png"
+  },
+  {
+   "id": "back-during-go-opens-surrender",
+   "title": "'חזרה' של Android בזמן GO! פותח את חלון הכניעה",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3. משחק מדורג מהיר מול הבוט. לוחצים 'חזרה' של Android כשהמסך מציג GO! (כ־0.3–0.6 ש' לפני שהלוח מופיע, כשמסך המשחק כבר מתחת לכיסוי GO!). מה רואים: החלון 'אתה בטוח שאתה רוצה להיכנע?' עולה מעל GO!, והלוח מופיע מאחוריו. מה מצופה: 'חזרה' בזמן GO! לא עושה כלום. צילום: qa-shots/fix8-RF8Y30L038L-backgo-1.png"
+  },
+  {
+   "id": "density-change-orphans-ranked-game",
+   "title": "שינוי גודל תצוגה באמצע משחק מדורג מוציא לבית, והמשחק ממשיך בשרת ונגמר בהפסד",
+   "severity": "major",
+   "what": "APK 13, טלפון 3, באנגלית. באמצע משחק מדורג 2P מהיר (מול ליהי33) מריצים adb shell wm density 540, שזה כמו לשנות את 'גודל התצוגה' בהגדרות. האפליקציה נבנית מחדש על הבית, בלי משחק פעיל ובלי דרך לחזור אליו. חיפוש חדש נעצר עם 'The search stopped · You already have a ranked search or game going' (alreadyQueued-526). אחרי כמה דקות המשחק נרשם בהיסטוריה כהפסד (4.5 : 28, דירוג −13). ייתכן שכל יצירה מחדש של ה־activity (גופן, גודל תצוגה, ואולי שינויי תצורה אחרים) עושה את אותו דבר באמצע משחק."
+  },
+  {
+   "id": "history-he-practice-line-cut-360",
+   "title": "היסטוריה בעברית ב־360dp/1.3: שורת המשנה בכרטיסי אימון נחתכת",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3, wm density 480 ו־font_scale 1.3, בעברית. בהיסטוריה, בכרטיסי אימון מול בוט מופיע 'הפסד • אימון / מול בוט • מ…', ובאימון לבד 'האימון / הסתיים • אי…'. השורה צריכה 3 שורות, ומוצגות רק 2 עם '…'. באנגלית ובכרטיסים מדורגים זה תקין. צילום: qa-shots/fix8-RF8Y30L038L-history-he360.png"
+  },
+  {
+   "id": "playercard-en-stages-clipped-360",
+   "title": "כרטיס שחקן באנגלית ב־360dp/1.3: 'Stages: 9 • ★ 0' חתוך בתחתית",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3, density 480 ו־font 1.3, באנגלית. בכרטיס השחקן שלי, השורה האחרונה בכרטיס העליון 'Stages: 9 • ★ 0' חתוכה בתחתית: הזנב של ה־g ותחתית הספרות נחתכים בקו ישר. בעברית ('שלבים: 9 • 0 ★') זה תקין. בעברית הסטטיסטיקות מוצגות 4 בשורה ולא 2, והתוויות בשתי שורות."
+  },
+  {
+   "id": "not-enough-points-toast-cut",
+   "title": "ההודעה 'אין מספיק נקודות להפרעה הבאה' נחתכת ב־360dp",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3, wm density 540 (360dp), font 1.0. במשחק מדורג, עם פחות מ־2 נקודות, לוחצים על כפתור ההפרעה. ההודעה בראש המסך נחתכת: באנגלית 'Not enough points for the next i…', ובעברית 'אין מספיק נקודות להפרעה הבאה (2 …'. אי אפשר לקרוא כמה נקודות חסרות."
+  },
+  {
+   "id": "bot-header-chip-cut-360",
+   "title": "כותרת המשחק מול בוט ב־360dp/1.3: התג '3 • Adva…' נחתך",
+   "severity": "minor",
+   "what": "APK 13, טלפון 3, density 480 ו־font 1.3. באימון מול Mr. Hoot, בכרטיס של הבוט: באנגלית 'Mr. Ho…' והתג '3 • Adva…', ובעברית 'Mr. Ho…'. השם מותר להיחתך, אבל תג הרמה נחתך באמצע מילה. צילום: qa-shots/fix8-RF8Y30L038L-card-bot-en360.png"
+  },
+  {
+   "id": "leaderboard-podium-edge-360",
+   "title": "טבלת מובילים באנגלית ב־360dp/1.3: הדירוג של מקום 2 בפודיום נוגע בקצה המסך",
+   "severity": "cosmetic",
+   "what": "APK 13, טלפון 3, density 480 ו־font 1.3, באנגלית, בלשונית General. בפודיום, '1232 Provisional' של מקום 2 (יאיר) רחב מהעמודה, וה־'1' צמוד לקצה השמאלי של המסך (x≈5px). צילום: qa-shots/fix8-RF8Y30L038L-lb-en360-general.png"
+  },
+  {
+   "id": "botselect-en-desc-ellipsis-360",
+   "title": "בחר יריב בוט באנגלית ב־360dp/1.3: התיאורים נגמרים ב־'…'",
+   "severity": "cosmetic",
+   "what": "APK 13, טלפון 3, density 480 ו־font 1.3, באנגלית. 'Slow, makes a fair few mistakes, and lets you …' ו־'Relaxed, slips here and there, and sometimes …' נחתכים אחרי 2 שורות. בעברית התיאורים מלאים."
+  },
+  {
+   "id": "replay-prev-chevron-360",
+   "title": "Replay באנגלית ב־360dp/1.3: החץ עדיין מוצג ליד 'Previous step'",
+   "severity": "cosmetic",
+   "what": "APK 13, טלפון 3, density 480 ו־font 1.3, באנגלית. הכפתור מציג '‹ Previous / step', כלומר הטקסט שלם בשתי שורות אבל עם החץ. לפי בדיקת התיקון, בגודל הזה החץ היה אמור להיעלם. צילום: qa-shots/fix8-RF8Y30L038L-replay-en360.png"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "ranked-end-i-surrender-my-lock-5x",
+   "issue": "המשימה מסומנת V ב־run 2, אבל ב־APK 13 יש 0.6–1.0 ש' של מסך ריק (רקע בלבד) בין הלוח לתוצאות, ב־4 מתוך 4 פעמים. זה סותר את השורה 'אף פעם לא מסך שחור או ריק'. לא סימנתי אותה מחדש, כי ההוראה היא לבדוק רק fail/partial. מומלץ לסמן partial."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "issue": "השורה 'הלוח מופיע ב־GO כרגיל' סותרת את התכנון הנוכחי, שלפיו הלוח מופיע כ־1.0–1.3 ש' אחרי GO! (לפי בדיקת התיקון). כדאי לנסח מחדש, למשל 'GO! מוצג כשנייה ואז הלוח נכנס בדהייה, בלי פריים ריק', אחרת המשימה תישאר partial לתמיד."
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "issue": "לפי בדיקת התיקון (C), בעברית ב־450 'אין טעויות' צריך להיות בשתי שורות. בפועל הוא נכנס שלם בשורה אחת, וזה תקין. כדאי לנסח 'שלם, בשורה אחת או בשתיים'."
+  },
+  {
+   "taskId": "general-sr-names",
+   "issue": "המשימה דורשת TalkBack אמיתי ומתויגת both. בלי TalkBack, Claude יכול לבדוק רק לפי uiautomator dump. כדאי לפצל לחלק של dump (Claude) ולחלק של TalkBack (משה)."
+  },
+  {
+   "taskId": "pregame-found-sound",
+   "issue": "המשימה מסומנת moshe, אבל אפשר לבדוק את רוב החלקים ב־dumpsys audio (event:started בכל צליל). כדאי להוסיף חלק claude לפי dumpsys, ולהשאיר למשה רק את השמיעה."
+  }
+ ],
+ "phoneState": "שני הטלפונים מחוברים ב־USB, על APK 13 (1.1.0). לא התקנתי ולא מחקתי כלום, ולא התנתקתי מאף חשבון. בשניהם הרצתי adb.ts reset, ועכשיו: wm size 1080x2340 פיזי, density 450 פיזי (בלי override), font_scale 1.0, אנימציות 1, מצב טיסה כבוי, שפת האפליקציה he. שניהם הופעלו מחדש ונמצאים בבית בעברית: טלפון 1 (אורי) וטלפון 3 (אחוותא). מחקתי את קובצי הצילום הזמניים מ־/data/local/tmp/qa בשני הטלפונים. טלפון 3: 'הפחתת תנועה' באפליקציה הוחזרה ל'כבויה', כמו שהייתה. הצליל מופעל. טלפון 1: הצליל כובה לבדיקה והוחזר למופעל. את 'הפחתת תנועה' באפליקציה העברתי ל'כמו במכשיר' ולא בדקתי קודם מה היה מסומן, אז ייתכן שהיה 'כבויה'. בדיקות שבוצעו: טלפון 1: סאונד. טלפון 3: כל השאר. בטלפון 3 נוספו בדרך כ־14 משחקים מדורגים שנכנעתי בהם או שהופסדו, ודירוג המהיר ירד מ־1079 לכ־1016. ב־run 2 בוצעו 4 פעולות QA: mark partial ל־pregame-found-countdown-reduced ול־general-display-small-big-font, ו־fix (apk13) ל־postgame-leaderboard-english ול־general-sr-names."
+}

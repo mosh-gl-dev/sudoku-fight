@@ -242,7 +242,30 @@ describe('find (kind 1)', () => {
     expect(s.session.over).toMatchObject({ reason: 'quit', stars: 0 });
     await wait(s, motion.duration.sheetOut + 300);
     expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith();
     expect(screen.queryByText('לצאת מהשלב?')).toBeNull();
+  });
+
+  it('QA N1: the time runs out under "לצאת מהשלב?": the dialog closes, and the result is told it came under it', async () => {
+    const s = await show(FIND);
+    await fireEvent.press(screen.getByTestId('stage-exit'));
+    await wait(s, motion.duration.sheetIn + 50);
+    expect(screen.getByText('לצאת מהשלב?')).toBeOnTheScreen();
+    await wait(s, FIND.timeLimitMs, 500);
+    expect(s.session.over).toMatchObject({ reason: 'timeUp' });
+    await wait(s, motion.duration.sheetOut + ANSWER_HOLD_MS + 300);
+    expect(screen.queryByText('לצאת מהשלב?')).toBeNull();
+    expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith({ underDialog: true });
+  });
+
+  it('B39: on a boss whose gate stays shut after the quit, the X says the next stage stays locked', async () => {
+    // Chapter 1's boss with no stars in the chapter (no records): the quit plays it, the gate needs 20.
+    const s = await show(firstBossOf('findDuel', 1));
+    await fireEvent.press(screen.getByTestId('stage-exit'));
+    await wait(s, motion.duration.sheetIn + 50);
+    expect(screen.getByText('תקבל 0 כוכבים, והשלב הבא יישאר נעול.')).toBeOnTheScreen();
+    expect(screen.queryByText('תקבל 0 כוכבים, והשלב הבא ייפתח.')).toBeNull();
   });
 
   it('the result does not come (levels.db stuck): a way on after the watchdog; "לבית" and back leave the stage', async () => {
@@ -461,7 +484,7 @@ describe('the race (kind 2)', () => {
     expect(screen.getAllByTestId('glyph-triangle', hidden).length).toBeGreaterThan(0);
     expect(screen.getByTestId('race-bot-who')).toHaveProp(
       'accessibilityLabel',
-      'Pip, בוט רמה 1, טירון, 0 מקומות',
+      '‏Pip, בוט רמה 1, טירון, 0 מקומות',
     );
   });
 

@@ -553,6 +553,13 @@ describe('loadConfig', () => {
       for (const bad of ['sudokufight.app/invite', 'javascript:alert(1)', 'ftp://x.example'])
         expect(issuesOf({ INVITE_URL: bad })[0]).toMatch(/^INVITE_URL: /);
     });
+
+    it('FRIENDS_PLACES [D99]: unset by default (global places), global or among', () => {
+      expect(load({ FRIENDS_PLACES: ' ' }).config.progress.friendsPlaces).toBeUndefined();
+      expect(load({ FRIENDS_PLACES: ' Among ' }).config.progress.friendsPlaces).toBe('among');
+      expect(load({ FRIENDS_PLACES: 'global' }).config.progress.friendsPlaces).toBe('global');
+      expect(issuesOf({ FRIENDS_PLACES: 'list' })[0]).toMatch(/^FRIENDS_PLACES: /);
+    });
   });
 
   describe('Sentry (stage 14)', () => {

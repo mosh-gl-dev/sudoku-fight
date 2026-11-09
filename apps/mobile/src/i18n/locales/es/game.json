@@ -138,10 +138,12 @@
     "error": {
       "title": "Error de conexión",
       "offlineTitle": "Sin conexión a internet",
+      "expiredTitle": "No volviste a tiempo",
       "body": {
         "offline": "Tu teléfono no tiene red ahora. Conéctate a internet y vuelve a intentarlo.",
         "unreachable": "No pudimos conectar con el servidor de juego. Revisa tu conexión y vuelve a intentarlo.",
         "lost": "Se cortó la conexión con el servidor de juego y no pudimos recuperarla.",
+        "expired": "La conexión no volvió a tiempo, así que la partida cuenta como abandono.",
         "refused": "El servidor no nos dejó entrar a la sala."
       },
       "refusal": {
@@ -177,7 +179,9 @@
       "confirm": "Sí, me rindo",
       "cancel": "Cancelar",
       "footnote": "La partida sigue en segundo plano",
-      "dialog": "Confirmar la rendición"
+      "dialog": "Confirmar la rendición",
+      "notSent": "No te rendiste y la partida sigue. Puedes intentarlo de nuevo",
+      "notSentOffline": "No hay conexión con el servidor, así que no te rendiste. Puedes intentarlo de nuevo cuando vuelva"
     },
     "lobby": {
       "title": "Sala privada",
@@ -431,9 +435,35 @@
       "label_one": "Jugada de la partida: {{points}} punto, {{digit}} en {{cell}}",
       "label_many": "Jugada de la partida: {{points}} de puntos, {{digit}} en {{cell}}",
       "label_other": "Jugada de la partida: {{points}} puntos, {{digit}} en {{cell}}",
-      "formula": "Cómo puntuó",
-      "formulaLabel": "Cómo puntuó: {{line}}",
-      "none": "No hubo jugadas correctas en esta práctica"
+      "before": "Casillas llenas antes de la jugada",
+      "count": {
+        "row": "en la fila",
+        "col": "en la columna",
+        "box": "en el cuadro",
+        "num": "números {{digit}} en el tablero"
+      },
+      "filled": {
+        "row_one": "{{count}} en la fila",
+        "row_many": "{{count}} en la fila",
+        "row_other": "{{count}} en la fila",
+        "col_one": "{{count}} en la columna",
+        "col_many": "{{count}} en la columna",
+        "col_other": "{{count}} en la columna",
+        "box_one": "{{count}} en el cuadro",
+        "box_many": "{{count}} en el cuadro",
+        "box_other": "{{count}} en el cuadro",
+        "num_one": "el {{digit}} ya estaba una vez",
+        "num_many": "el {{digit}} ya estaba {{count}} de veces",
+        "num_other": "el {{digit}} ya estaba {{count}} veces"
+      },
+      "countName": {
+        "row": "la fila",
+        "col": "la columna",
+        "box": "el cuadro",
+        "num": "los {{digit}}"
+      },
+      "why": "Cuanto más vacío alrededor de la casilla, más vale la jugada. Los dos conteos más altos deciden los puntos: {{highest}} con peso completo y {{next}} con medio peso.",
+      "none": "No hiciste ninguna jugada correcta en esta partida"
     },
     "stats": {
       "time": "Duración",
@@ -465,6 +495,13 @@
     "actions": {
       "home": "Inicio",
       "newGame": "Nueva partida"
+    },
+    "again": {
+      "solo": "Empieza al instante otra práctica en solitario, {{type}}",
+      "bot": "Empieza al instante otra partida contra {{bot}}, {{type}}",
+      "botAny": "Empieza al instante otra partida contra el bot, {{type}}",
+      "ranked": "Otra partida clasificatoria, {{type}}",
+      "friends": "Vuelve al juego con amigos"
     },
     "loading": "Cargando el resultado…",
     "missing": "No encontramos esta práctica",

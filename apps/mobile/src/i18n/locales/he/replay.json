@@ -65,6 +65,7 @@
     "noLogic": "התשובה: {{cell}} → {{digit}}",
     "scoreLine": "חישוב הניקוד",
     "penaltyLine": "הקנס: כמה הייתה שווה הספרה הנכונה",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "הבחירה בוטלה",
       "timeout": "הזמן נגמר",

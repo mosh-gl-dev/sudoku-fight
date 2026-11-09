@@ -26,7 +26,7 @@ describe('settings persistence', () => {
         haptics: true,
         reduceMotion: 'on',
       },
-      version: 2,
+      version: 3,
     });
     useSettings.getState().setLanguage('he');
     expect(onDisk()?.state).toMatchObject({ language: 'he' });
@@ -40,13 +40,13 @@ describe('settings persistence', () => {
     Storage.setItemSync(
       'settings',
       JSON.stringify({
-        state: { language: 'en', languageSource: 'app', sound: false, haptics: true, reduceMotion: 'off' },
-        version: 2,
+        state: { language: 'en', languageSource: 'app', sound: false, haptics: true, reduceMotion: 'on' },
+        version: 3,
       }),
     );
     void useSettings.persist.rehydrate();
     // No await: already there.
-    expect(useSettings.getState()).toMatchObject({ language: 'en', sound: false, reduceMotion: 'off' });
+    expect(useSettings.getState()).toMatchObject({ language: 'en', sound: false, reduceMotion: 'on' });
     expect(useSettings.persist.hasHydrated()).toBe(true);
   });
 
@@ -67,6 +67,35 @@ describe('settings persistence', () => {
       sound: false,
       reduceMotion: 'on',
     });
-    expect(onDisk()).toMatchObject({ state: { language: 'he', languageSource: 'migrated' }, version: 2 });
+    expect(onDisk()).toMatchObject({ state: { language: 'he', languageSource: 'migrated' }, version: 3 });
+  });
+
+  it('reduced motion starts off (Moshe, 31.10.2026), and an older record that held the old default takes it', () => {
+    expect(useSettings.getInitialState().reduceMotion).toBe('off');
+    const saved = { language: 'en', languageSource: 'app', appLocalesSeen: null, systemLocaleSeen: null };
+    Storage.setItemSync(
+      'settings',
+      JSON.stringify({ state: { ...saved, sound: true, haptics: true, reduceMotion: 'system' }, version: 2 }),
+    );
+    void useSettings.persist.rehydrate();
+    expect(useSettings.getState()).toMatchObject({
+      language: 'en',
+      languageSource: 'app',
+      reduceMotion: 'off',
+    });
+    expect(onDisk()).toMatchObject({ state: { reduceMotion: 'off' }, version: 3 });
+    // A choice the player made stays: 'on' from before, and 'system' chosen from now on.
+    Storage.setItemSync(
+      'settings',
+      JSON.stringify({ state: { ...saved, sound: true, haptics: true, reduceMotion: 'on' }, version: 2 }),
+    );
+    void useSettings.persist.rehydrate();
+    expect(useSettings.getState().reduceMotion).toBe('on');
+    Storage.setItemSync(
+      'settings',
+      JSON.stringify({ state: { ...saved, sound: true, haptics: true, reduceMotion: 'system' }, version: 3 }),
+    );
+    void useSettings.persist.rehydrate();
+    expect(useSettings.getState().reduceMotion).toBe('system');
   });
 });

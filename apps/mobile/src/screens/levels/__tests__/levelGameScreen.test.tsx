@@ -189,6 +189,15 @@ describe('fill the box on the game screen', () => {
     expect((await s.session.result).outcome).toMatchObject({ reason: 'quit', stars: 0 });
   });
 
+  it('B39: the dialog’s body is the one the route reads for the quit (useExitBody); "…ייפתח." without it', () => {
+    const t = i18n.getFixedT('he', 'levels') as LevelsT;
+    const opens = t('exit.body');
+    expect(opens).toBe('תקבל 0 כוכבים, והשלב הבא ייפתח.');
+    expect(levelChrome(BOX, t, { onOver: jest.fn() })!.endDialog.body).toBe(opens);
+    const locked = t('exit.bodyLocked');
+    expect(levelChrome(BOX, t, { onOver: jest.fn(), exitBody: locked })!.endDialog.body).toBe(locked);
+  });
+
   it('[D65] away: the board covered and frozen; back, 3-2-1, then the box goes on', async () => {
     const s = await show(BOX);
     await wait(s, 2000);
@@ -289,6 +298,20 @@ describe('the duel on the game screen', () => {
     await wait(s, DUEL.timeLimitMs + levelEndDelayMs('timeUp', false) + 200, 250);
     expect(s.session.over).toMatchObject({ reason: 'timeUp' });
     expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith();
+    expect(s.onEnded).not.toHaveBeenCalled();
+  });
+
+  it('QA N1: the time runs out under "לצאת מהשלב?": the dialog closes, and onOver says it came under it', async () => {
+    const s = await show(DUEL);
+    await fireEvent.press(screen.getByTestId('stage-exit'));
+    await wait(s, motion.duration.sheetIn + 50);
+    expect(screen.getByText('לצאת מהשלב?')).toBeOnTheScreen();
+    await wait(s, DUEL.timeLimitMs + motion.duration.sheetOut + levelEndDelayMs('timeUp', false) + 400, 250);
+    expect(s.session.over).toMatchObject({ reason: 'timeUp' });
+    expect(screen.queryByText('לצאת מהשלב?')).toBeNull();
+    expect(s.onOver).toHaveBeenCalledTimes(1);
+    expect(s.onOver).toHaveBeenCalledWith({ underDialog: true });
     expect(s.onEnded).not.toHaveBeenCalled();
   });
 

@@ -63,7 +63,8 @@
       "timeout": "サーバーから時間内に応答がありませんでした。もう一度お試しください。",
       "signedOut": "ログインしていません。もう一度ログインしてください。",
       "unexpected": "サーバーから予期しない応答がありました。もう一度試すか、アプリを更新してください。"
-    }
+    },
+    "avatarUnavailable": "このアバターはまだサーバーで使えません。別のアバターを選んでください。"
   },
   "splash": {
     "tagline": "盤面はひとつ。全員で解く。勝つのはひとり。",
@@ -244,6 +245,9 @@
     "deleteGoogleBody": "アカウントを削除するには、Googleアカウント{{email}}をもう一度選んでください。",
     "deleteGoogleSubmit": "Googleで確認して削除",
     "deleteGoogleAgain": "アカウントの削除には改めて確認が必要です。もう一度試して、Googleアカウントを選んでください。",
-    "deleteWithPassword": "代わりにパスワードで確認"
+    "deleteWithPassword": "代わりにパスワードで確認",
+    "deleteGoogleOffTitle": "Googleでのログインが必要です",
+    "deleteGoogleOffBody": "このアカウントはGoogleでログインしているため、削除にはGoogleでの確認が必要です。このバージョンのアプリにはGoogleでのログインがないため、ここではアカウントを削除できません。ストア（Google Play）のアプリから削除できます。",
+    "deleteGoogleOffOk": "わかりました"
   }
 }

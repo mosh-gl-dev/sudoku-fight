@@ -30,14 +30,14 @@
       "box": "Kotak {{label}} hanya kekurangan {{digit}}."
     },
     "missing": {
-      "row": "Baris {{label}} kekurangan {{digits}}.",
-      "col": "Kolom {{label}} kekurangan {{digits}}.",
-      "box": "Kotak {{label}} kekurangan {{digits}}."
+      "row_other": "Baris {{label}} kekurangan {{digits}}.",
+      "col_other": "Kolom {{label}} kekurangan {{digits}}.",
+      "box_other": "Kotak {{label}} kekurangan {{digits}}."
     },
     "seen": {
-      "row": "Baris {{label}} sudah berisi {{digits}}.",
-      "col": "Kolom {{label}} sudah berisi {{digits}}.",
-      "box": "Kotak {{label}} sudah berisi {{digits}}."
+      "row_other": "Baris {{label}} sudah berisi {{digits}}.",
+      "col_other": "Kolom {{label}} sudah berisi {{digits}}.",
+      "box_other": "Kotak {{label}} sudah berisi {{digits}}."
     },
     "eliminated": "{{digit}} sudah dicoret dari {{cell}} pada langkah {{step}}.",
     "only": "Jadi hanya {{digit}}."

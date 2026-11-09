@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 
 import { color } from '../../../theme';
@@ -67,10 +67,86 @@ describe('CodeInput (friends-room.md §3.3)', () => {
   it('a digit typed over one replaces it; anything but a digit is dropped', async () => {
     await render(<Harness />);
     await fireEvent.changeText(box(0), '3');
-    await fireEvent.changeText(box(0), '35');
+    // Its box tapped (the digit selected): the new digit alone comes in, and replaces it.
+    await fireEvent.changeText(box(0), '5');
     expect(values()[0]).toBe('5');
+    // The caret in front of the digit: the new one wins too.
+    await fireEvent.changeText(box(0), '75');
+    expect(values()[0]).toBe('7');
     await fireEvent.changeText(box(1), 'x');
     expect(values()[1]).toBe('');
+  });
+
+  it('QA: typed fast, a key that reaches a box before the focus moved on goes on to the next box', async () => {
+    const onComplete = jest.fn();
+    await render(<Harness onComplete={onComplete} />);
+    await fireEvent.changeText(box(0), '1');
+    // The "2" landed in the first box, after its "1" (it used to replace it: "12345" came out "2345").
+    await fireEvent.changeText(box(0), '12');
+    expect(values()).toEqual(['1', '2', '', '', '', '']);
+    await fireEvent.changeText(box(2), '345');
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '']);
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('QA: keys faster than the screen renders each build on the one before (no digit lost)', async () => {
+    await render(<Harness />);
+    // Both keys before the boxes render again: the second box's handler is still the old render's.
+    const first = box(0).props as { onChangeText: (s: string) => void };
+    const second = box(1).props as { onChangeText: (s: string) => void };
+    await act(() => {
+      first.onChangeText('1');
+      second.onChangeText('2');
+    });
+    expect(values()).toEqual(['1', '2', '', '', '', '']);
+  });
+
+  it('QA: once the code is whole, another digit changes nothing (a seventh never replaces the sixth)', async () => {
+    const onComplete = jest.fn();
+    await render(<Harness onComplete={onComplete} />);
+    for (const [i, d] of [...'918273'].entries()) await fireEvent.changeText(box(i), d);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith('918273');
+    // A seventh digit typed after the sixth box's own, and one typed after a middle box's digit.
+    await fireEvent.changeText(box(5), '35');
+    await fireEvent.changeText(box(2), '84');
+    expect(values()).toEqual(['9', '1', '8', '2', '7', '3']);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    // A box chosen and its digit typed over (the digit selected): that is an edit, and it completes again;
+    // the same digit typed over itself too (a try again).
+    await fireEvent.changeText(box(5), '4');
+    expect(values()).toEqual(['9', '1', '8', '2', '7', '4']);
+    expect(onComplete).toHaveBeenLastCalledWith('918274');
+    await fireEvent.changeText(box(5), '4');
+    expect(onComplete).toHaveBeenCalledTimes(3);
+  });
+
+  it('the sixth box with a digit, the code not whole: a digit typed after it is written nowhere', async () => {
+    const onComplete = jest.fn();
+    await render(<Harness onComplete={onComplete} />);
+    await fireEvent.changeText(box(0), '1');
+    await fireEvent.changeText(box(5), '6');
+    await fireEvent.changeText(box(5), '67');
+    expect(values()).toEqual(['1', '', '', '', '', '6']);
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('QA: a held backspace deletes digit after digit, faster than the screen renders', async () => {
+    await render(<Harness />);
+    for (const [i, d] of [...'12345'].entries()) await fireEvent.changeText(box(i), d);
+    const fifth = box(4).props as {
+      onChangeText: (s: string) => void;
+      onKeyPress: (e: { nativeEvent: { key: string } }) => void;
+    };
+    const backspace = { nativeEvent: { key: 'Backspace' } };
+    // On Android a key press comes before the text it changes: the first one clears the fifth box's digit,
+    // the second one (the box now empty) goes back and clears the fourth.
+    await act(() => {
+      fifth.onKeyPress(backspace);
+      fifth.onChangeText('');
+      fifth.onKeyPress(backspace);
+    });
+    expect(values()).toEqual(['1', '2', '3', '', '', '']);
   });
 
   it('backspace in an empty box clears the one before', async () => {

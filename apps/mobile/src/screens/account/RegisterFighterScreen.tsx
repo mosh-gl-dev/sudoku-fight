@@ -124,6 +124,8 @@ export function RegisterFighterScreen() {
           size="md"
           wrapLabel
           loading={busy}
+          // submit() plays the press itself, and only for a valid form (an invalid one nudges).
+          cue={null}
           onPress={() => void submit()}
           testID="fighter-submit"
         />

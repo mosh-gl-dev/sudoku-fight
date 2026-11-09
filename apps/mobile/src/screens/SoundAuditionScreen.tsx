@@ -179,7 +179,7 @@ export function SoundAuditionScreen({ onClose, testID = 'dev-sounds-screen' }: S
 const TRACK = { false: color.border, true: color.accent } as const;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { paddingHorizontal: tokens.layout.gutterHome, gap: space[8] },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[6] },
   heading: { flexShrink: 1, gap: space[2] },

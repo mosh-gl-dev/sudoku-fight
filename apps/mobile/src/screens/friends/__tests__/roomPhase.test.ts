@@ -64,6 +64,16 @@ describe('the room route’s phase (screens/friends/roomPhase.ts)', () => {
     expect(roomScreenPhase(view({ phase: 'game' }), null, 0)).toEqual({ kind: 'starting' });
   });
 
+  it('the board before the phone’s own GO (a clock a little behind): GO! all the same (QA loop 8)', () => {
+    // The joiner's count still said "1" when the game came: GO!, never "1" faded onto the board.
+    const game = roomScreenPhase(view({ phase: 'game', startsAt: 10_000 }), null, 9_200);
+    expect(game).toMatchObject({ kind: 'countdown', step: 'go', myId: 'me' });
+    // Back into a game already running (no count seen): nothing to count, straight on.
+    expect(roomScreenPhase(view({ phase: 'game', startsAt: null }), null, 9_200)).toEqual({
+      kind: 'starting',
+    });
+  });
+
   it('back to a seat whose game started meanwhile: "המשחק התחיל בלעדיך" [D83]', () => {
     const closed = {
       closeReason: 'lostConnection' as const,

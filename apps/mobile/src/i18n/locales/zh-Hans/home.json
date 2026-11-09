@@ -57,6 +57,9 @@
     "title": "新对局",
     "footnote": "排位赛需要联网 · 练习随时可玩",
     "soon": "即将推出",
+    "needsConnection": {
+      "rankedAndFriends": "排位赛与好友对战"
+    },
     "groups": {
       "ranked": {
         "title": "排位赛",

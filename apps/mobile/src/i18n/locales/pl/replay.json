@@ -65,6 +65,7 @@
     "noLogic": "Odpowiedź: {{cell}} → {{digit}}",
     "scoreLine": "Wynik",
     "penaltyLine": "Kara: tyle była warta właściwa cyfra",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Wybór anulowany",
       "timeout": "Koniec czasu",

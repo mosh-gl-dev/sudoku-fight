@@ -8,8 +8,10 @@ import {
 import { ratingKeysFor } from '@sudoku-fight/protocol';
 
 import {
+  DEFAULT_FRIENDS_PLACES,
   DEFAULT_LEVEL_XP_CARRY_OVER,
   DEFAULT_PRACTICE_XP_DAILY_CAP,
+  type FriendsPlaces,
   type ProgressConfig,
   type ServerConfig,
 } from '../config';
@@ -17,7 +19,7 @@ import {
 /**
  * What the progress routes go by (stage 12; spec §11.3, §14.2, §15): the engine's progress rules (XP, levels,
  * leagues [D38]) and its levels' rules (staged practice, 1.0.2), the server's RATING_OPTION [D7], and the
- * settings of src/config.ts (the daily practice cap, the invite link, the level XP carry-over).
+ * settings of src/config.ts (the daily practice cap, the invite link, the level XP carry-over, the friends tab's places).
  */
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -28,6 +30,8 @@ export interface ProgressSettings extends ProgressConfig {
   /** The levels: how many there are, the gates (the engine's LEVEL_RULES). */
   levelRules: LevelRules;
   levelXpCarryOver: boolean;
+  /** The places on the friends tab [D99] (FRIENDS_PLACES, default 'global'). */
+  friendsPlaces: FriendsPlaces;
   /** A practice result that ended longer ago than this is refused (default 30 days). */
   practiceMaxAgeMs: number;
   /** How far ahead of the server's clock a practice result may say it ended: the phone's clock (5 minutes). */
@@ -48,6 +52,7 @@ export function progressSettings(
     practiceXpDailyCap: config.progress?.practiceXpDailyCap ?? DEFAULT_PRACTICE_XP_DAILY_CAP,
     inviteUrl: config.progress?.inviteUrl ?? null,
     levelXpCarryOver: config.progress?.levelXpCarryOver ?? DEFAULT_LEVEL_XP_CARRY_OVER,
+    friendsPlaces: config.progress?.friendsPlaces ?? DEFAULT_FRIENDS_PLACES,
     practiceMaxAgeMs: PRACTICE_MAX_AGE_MS,
     practiceClockSkewMs: PRACTICE_CLOCK_SKEW_MS,
     ...overrides,

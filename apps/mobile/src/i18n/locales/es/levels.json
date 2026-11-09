@@ -327,6 +327,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "la puerta necesita {{need}}",
     "chapterOpen": "la puerta está abierta",
+    "chapterNeedSentence": "La puerta necesita {{need}}",
+    "chapterOpenSentence": "La puerta está abierta",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Este capítulo: 1 estrella de {{max}}. {{gate}}",
     "chapterLine_many": "Este capítulo: {{stars}} de estrellas de {{max}}. {{gate}}",
@@ -379,6 +381,8 @@
     "button": "Salir de la fase",
     "title": "¿Salir de la fase?",
     "body": "Obtendrás 0 estrellas, y se abrirá la siguiente fase.",
+    "bodyLocked": "Obtendrás 0 estrellas, y la siguiente fase seguirá bloqueada.",
+    "bodyLast": "Obtendrás 0 estrellas.",
     "confirm": "Salir",
     "cancel": "Seguir jugando"
   },

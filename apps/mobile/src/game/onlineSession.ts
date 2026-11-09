@@ -17,7 +17,7 @@ import {
 
 import type { OnlineError } from '../net/errors';
 import type { DevRoomOptions } from '../net/onlineClient';
-import type { FriendsRejoin, OnlineInfo, RemoteGameHost } from '../net/remoteGameHost';
+import type { FriendsRejoin, LobbyInfo, OnlineInfo, RemoteGameHost } from '../net/remoteGameHost';
 import { gameEndProps, gameStartProps } from './analyticsProps';
 
 /**
@@ -49,8 +49,11 @@ import { gameEndProps, gameStartProps } from './analyticsProps';
  */
 export type OnlineRequest =
   | { kind: 'create'; options: DevRoomOptions }
-  /** `gameType`: what a rejoined match's room plays, before its game says so. */
-  | { kind: 'join'; code: string; gameType?: GameType }
+  /**
+   * `gameType`: what a rejoined match's room plays, before its game says so; `queueKey`: the queue of a ranked
+   * match's room joined again by its id (its results' "משחק חדש" searches there again).
+   */
+  | { kind: 'join'; code: string; gameType?: GameType; queueKey?: QueueKey }
   | { kind: 'match'; queueKey: QueueKey; matchId: string; reservation: MatchSeatReservation }
   | FriendsRequest;
 
@@ -156,9 +159,13 @@ export class OnlineSession {
   readonly connection: SessionConnection;
   /** Settles once the room is joined or refused (never rejects: the refusal is in `online`). */
   readonly ready: Promise<void>;
-  /** The players' avatars and countries by id (a ranked match's); null for a room by code. */
-  readonly profiles: OnlineProfiles | null;
 
+  /** The profiles given before the game (a ranked match's "found"); else the lobby's, while it is the same. */
+  private readonly given: OnlineProfiles | null;
+  private lobbyProfiles: { lobby: LobbyInfo | null; profiles: OnlineProfiles | null } = {
+    lobby: null,
+    profiles: null,
+  };
   private started = false;
   private ended = false;
   private closed = false;
@@ -182,7 +189,7 @@ export class OnlineSession {
     this.key = `online-${++sessions}`;
     this.host = host;
     this.request = request;
-    this.profiles = profiles;
+    this.given = profiles;
     this.clock = host.clock;
     this.track = track;
     this.onEnd = onEnd;
@@ -230,6 +237,19 @@ export class OnlineSession {
     );
   }
 
+  /**
+   * The players' avatars and countries by id, for the game screen and the results: a ranked match's from its
+   * "found"; a friends room's from its lobby, whose seats carry them (kept after the start: the lobby is the
+   * last one sent). Null for a dev room (its lobby has names only) and before any lobby.
+   */
+  get profiles(): OnlineProfiles | null {
+    if (this.given) return this.given;
+    const lobby = this.host.online.lobby;
+    // The same object for the same lobby: the screens memoize on it.
+    if (lobby !== this.lobbyProfiles.lobby) this.lobbyProfiles = { lobby, profiles: profilesOfLobby(lobby) };
+    return this.lobbyProfiles.profiles;
+  }
+
   /** The game's id once the server sent it; before that, this session's own key. */
   get id(): string {
     return this.host.game?.config.id ?? this.key;
@@ -272,9 +292,13 @@ export class OnlineSession {
     return this.request.kind === 'friends' ? this.request.code : null;
   }
 
-  /** The matchmaking queue a ranked match came from (stage 9); null for a room by code. */
+  /**
+   * The matchmaking queue a ranked match came from (stage 9), also when its room was joined again by its id;
+   * null for any other room by code.
+   */
   get queueKey(): QueueKey | null {
-    return this.request.kind === 'match' ? this.request.queueKey : null;
+    if (this.request.kind === 'match') return this.request.queueKey;
+    return this.request.kind === 'join' ? (this.request.queueKey ?? null) : null;
   }
 
   /** A game is here: getView() works. */
@@ -416,6 +440,18 @@ export class OnlineSession {
 }
 
 const players = (state: GameState): number => state.config.players.length;
+
+/**
+ * The avatars and countries a lobby's seats carry (a friends room's, protocol LobbyPlayer); a dev room's seats
+ * have names only: null. Names and ratings stay out: the loading card's are a ranked match's (OnlineProfile).
+ */
+function profilesOfLobby(lobby: LobbyInfo | null): OnlineProfiles | null {
+  const seats = (lobby?.players ?? []).filter((p) => p.avatarId !== undefined || p.country !== undefined);
+  if (seats.length === 0) return null;
+  return Object.fromEntries(
+    seats.map((p) => [p.id, { avatarId: p.avatarId ?? null, country: p.country ?? null }]),
+  );
+}
 
 /**
  * Why this player was out of a friends room before its game (protocol FriendsCloseReason): left on purpose, the

@@ -327,6 +327,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "o portão pede {{need}}",
     "chapterOpen": "o portão está aberto",
+    "chapterNeedSentence": "O portão pede {{need}}",
+    "chapterOpenSentence": "O portão está aberto",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Estrelas neste capítulo: {{stars}} de {{max}}. {{gate}}",
     "chapterLine_many": "Este capítulo: {{stars}} de estrelas de {{max}}. {{gate}}",
@@ -379,6 +381,8 @@
     "button": "Sair da fase",
     "title": "Sair da fase?",
     "body": "Você vai ficar sem estrelas, e a próxima fase vai abrir.",
+    "bodyLocked": "Você vai ficar sem estrelas, e a próxima fase vai continuar bloqueada.",
+    "bodyLast": "Você vai ficar sem estrelas.",
     "confirm": "Sair",
     "cancel": "Continuar jogando"
   },

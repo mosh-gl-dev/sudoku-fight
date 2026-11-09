@@ -82,6 +82,8 @@ const MALFORMED_CODES = new Set(['badRequest', 'tooLarge']);
 export class PracticeSync {
   private inFlight: Promise<SyncOutcome> | null = null;
   private again = false;
+  /** A retryNow() while a flush ran: the flush after it goes past the backoff that one may have set. */
+  private retryAfter = false;
   private failures = 0;
   private timer: unknown = null;
   private lastOwner: string | null = null;
@@ -128,6 +130,8 @@ export class PracticeSync {
         this.inFlight = null;
         if (this.again) {
           this.again = false;
+          if (this.retryAfter) this.cancelTimer();
+          this.retryAfter = false;
           void this.flush();
         }
       });
@@ -138,7 +142,20 @@ export class PracticeSync {
   /** Stops the scheduled retry (sign-out, tests). */
   stop(): void {
     this.cancelTimer();
+    this.retryAfter = false;
     this.failures = 0;
+  }
+
+  /**
+   * The connection is back (or Home came into view): what waits goes now, not when the backoff runs out (as
+   * LevelsSync.retryNow). The failures stay counted. Never throws.
+   */
+  retryNow(): Promise<SyncOutcome> {
+    this.cancelTimer();
+    // A request still on its way (sent before the connection was back) may fail and set a new backoff: the
+    // flush after it goes anyway, not 'waiting' (QA levels-xp-offline, loop 5).
+    if (this.inFlight) this.retryAfter = true;
+    return this.flush();
   }
 
   // -----------------------------------------------------------------------------------------------------

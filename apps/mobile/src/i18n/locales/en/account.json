@@ -68,7 +68,8 @@
       "timeout": "The server didn't answer in time. Try again.",
       "signedOut": "You're not signed in. Sign in again.",
       "unexpected": "The server sent an unexpected answer. Try again, or update the app."
-    }
+    },
+    "avatarUnavailable": "This avatar isn't available on the server yet. Choose another one."
   },
   "splash": {
     "tagline": "One board. Everyone solves. Only one wins.",
@@ -250,6 +251,9 @@
     "deleteGoogleBody": "To delete the account, choose the Google account {{email}} again.",
     "deleteGoogleSubmit": "Confirm with Google and delete",
     "deleteGoogleAgain": "Deleting the account needs a fresh confirmation. Try again and choose your Google account.",
-    "deleteWithPassword": "Confirm with your password instead"
+    "deleteWithPassword": "Confirm with your password instead",
+    "deleteGoogleOffTitle": "Google sign-in needed",
+    "deleteGoogleOffBody": "This account signs in with Google, so deleting it needs a confirmation with Google. This version of the app has no Google sign-in, so the account can't be deleted here. You can delete it in the app from the store (Google Play).",
+    "deleteGoogleOffOk": "Got it"
   }
 }

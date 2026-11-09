@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isSuspended } from '../../api/me';
@@ -14,6 +14,8 @@ import { Icon, type IconName } from '../../components/Icon';
 import { LevelTile } from '../../components/levels/LevelTile';
 import { Avatar, paletteAt, SeatGlyph } from '../../components/player';
 import { Button, type ButtonSize } from '../../components/ui/Button';
+import { Enter } from '../../components/ui/Enter';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { FRIENDS_UI } from '../../config/friends';
 import type { LevelsSummary } from '../../levels/levelsRepo';
@@ -41,12 +43,13 @@ import {
   MODE_OPTIONS,
   type ModeGroup,
   type ModeOption,
+  type ModesSection,
   modesSections,
   rankedRatingIn,
 } from './homeModel';
 import { goBack } from './navigation';
 import { OfflineActions, OfflineBanner } from './OfflineBanner';
-import { Chip, GUTTER, ScreenHeader, SectionLabel } from './parts';
+import { Chip, chipSizeAt, GUTTER, linesAt, ScreenHeader, SectionLabel } from './parts';
 
 /**
  * "משחק חדש" (spec §5.1, the Modes board in direction C): six options, ranked 2 · 3 · 4, then practice against a
@@ -67,8 +70,10 @@ import { Chip, GUTTER, ScreenHeader, SectionLabel } from './parts';
  * §11.1) and the footnote goes; the budget test keeps it all on a 360 × 780 phone, in Hebrew and English.
  *
  * No connection (spec §16.1; the Offline board): the app asks the server (GET /health, net/connectivity.ts)
- * when the screen opens. Without an answer the ranked cards are dimmed with "דורש חיבור", the banner "אין
- * חיבור לאינטרנט" shows, the practices say "זמין אופליין", and the bottom offers "עבור לאימון" and "בדוק
+ * when the screen opens. Without an answer the banner "אין חיבור לאינטרנט" shows, the practices come first and
+ * say "זמין אופליין", and the ranked tables and the friends room fold into one line under them, "מדורג ועם
+ * חברים ——— זמין כשיש חיבור" (homeModel modesSections; the device check of 30.10.2026 found the top half of the
+ * screen all dimmed cards and the practices under the fold). The bottom offers "עבור לאימון" and "בדוק
  * שוב" ("עדיין אין חיבור · ניסיון 2" after another miss), in the friends footer's place (a room needs the
  * connection, and the banner says so); meanwhile it checks again in the background, and the ranked cards and
  * the friends buttons come back with the connection.
@@ -113,8 +118,8 @@ export function ModesScreen() {
     router.push({ pathname: '/game-type', params });
   };
 
+  // The primary button plays its own press cue (MOT-4).
   const practice = () => {
-    cue('primaryPress');
     router.push({ pathname: '/game-type', params: { mode: 'solo' } });
   };
 
@@ -123,9 +128,10 @@ export function ModesScreen() {
   // instead), or a group in it.
   const friends = FRIENDS_UI.modesGroup ? FRIENDS_UI.modesPlacement : null;
   const friendsFooter = friends === 'footer' && !offline;
+  const sections = modesSections(friends === 'list', offline);
+  // Its button plays the press cue (the primary's own, or the list's card's).
   const createRoom = () => {
     if (offline || suspended) return;
-    cue('primaryPress');
     router.push({ pathname: '/friends/room', params: { create: '1' } });
   };
   const joinRoom = () => {
@@ -140,19 +146,23 @@ export function ModesScreen() {
         title={t('modes.title')}
         onBack={goBack}
         end={<Me name={myName} avatarId={avatarId} />}
+        fitTitle
         style={styles.header}
       />
       <ScrollView
         testID="modes-scroll"
         contentContainerStyle={[
           styles.content,
-          // Over a bottom of the screen's own (the friends footer, or offline's), which takes the inset.
-          { paddingBottom: (offline || friendsFooter ? 0 : bottom) + CONTENT_BOTTOM },
+          // Over a bottom of the screen's own (the friends footer, or offline's), which takes the inset and
+          // draws its own rule and room above its buttons.
+          { paddingBottom: offline || friendsFooter ? CONTENT_BOTTOM_OVER_BAR : bottom + CONTENT_BOTTOM },
         ]}
       >
         {offline ? <OfflineBanner checking={connectivity.checking} /> : null}
-        {modesSections(friends === 'list').map((group) =>
-          group === 'friends' ? (
+        {sections.map((group) =>
+          group === 'needsConnection' ? (
+            <NeedsConnection key={group} friends={friends !== null} />
+          ) : group === 'friends' ? (
             <FriendsGroup
               key={group}
               offline={offline}
@@ -170,6 +180,7 @@ export function ModesScreen() {
               ratings={group === 'ranked' ? ratings : null}
               rankedType={rankedType}
               levels={levels}
+              firstIndex={firstCardIndex(sections, group)}
               onOpen={open}
             />
           ),
@@ -196,17 +207,73 @@ export function ModesScreen() {
 
 /**
  * Me, at the end of the header (the Modes board): my name (isolated, in its own direction) and my avatar in P1's
- * frame. Read as the name; the avatar next to it is decorative.
+ * frame. Read as the name; the avatar next to it is decorative. The title comes first (ScreenHeader `fitTitle`;
+ * B3: "Новая парт…" beside "אורי"): Me gets the rest of the row, and my name shows only where all of it fits beside
+ * the avatar (meShowsName), never cut with "…" (QA 2026-11-03: "אחוו…" beside "Новая партия" and "Nueva partida"),
+ * else the avatar alone. Read as my name either way.
  */
 function Me({ name, avatarId }: { name: string | null; avatarId: AvatarIdOrNone }) {
+  // What the title leaves me (it does not depend on the name), and my name's own width at this text size: both
+  // from the layout, the name measured out of the row (MeasureName), where nothing squeezes it.
+  const [room, setRoom] = useState<number | null>(null);
+  // The width of the name it was measured for (another name is measured again).
+  const [measured, setMeasured] = useState<{ name: string; width: number } | null>(null);
+  const nameWidth = measured !== null && measured.name === name ? measured.width : null;
+  // Null until both are known.
+  const fits = room !== null && nameWidth !== null ? meShowsName(room, nameWidth) : null;
   return (
-    <View style={styles.me} testID="modes-me">
-      {name ? (
-        <Text style={styles.meName} numberOfLines={1}>
+    <View
+      style={styles.me}
+      onLayout={(e) => setRoom(e.nativeEvent.layout.width)}
+      accessible={!!name}
+      accessibilityLabel={name ?? undefined}
+      testID="modes-me"
+    >
+      {/* Keyed by the name: a new one is laid out, and reports its width, even when as wide as the last. */}
+      {name ? <MeasureName key={name} name={name} onWidth={(width) => setMeasured({ name, width })} /> : null}
+      {name && fits !== false ? (
+        // Unseen until both widths are known: never one frame squeezed to "…" where it does not fit.
+        <Text
+          style={[styles.meName, fits === null && styles.meNameUnmeasured]}
+          numberOfLines={1}
+          testID="modes-me-name"
+        >
           {isolateName(name)}
         </Text>
       ) : null}
       <Avatar avatarId={avatarId} size="compact" colorIndex={0} testID="modes-me-avatar" />
+    </View>
+  );
+}
+
+/**
+ * Whether my whole name fits beside my avatar in what the header leaves me (`room`), from the widths the phone
+ * laid out: the name at its own width, the gap and the avatar.
+ */
+export function meShowsName(room: number, nameWidth: number): boolean {
+  return nameWidth + space[4] + size.avatar.compact.frame <= room;
+}
+
+/**
+ * My name as the phone draws it, laid out where nothing squeezes it (a box as wide as the window, out of the row,
+ * unseen and never read): its width is the one meShowsName needs.
+ */
+function MeasureName({ name, onWidth }: { name: string; onWidth: (width: number) => void }) {
+  const { width } = useWindowDimensions();
+  return (
+    <View
+      style={[styles.meMeasure, { width }]}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Text
+        style={styles.meName}
+        onLayout={(e) => onWidth(e.nativeEvent.layout.width)}
+        testID="modes-me-name-measure"
+      >
+        {isolateName(name)}
+      </Text>
     </View>
   );
 }
@@ -244,9 +311,15 @@ interface ChipSpec {
 
 function Group({
   group,
+  firstIndex,
   onOpen,
   ...context
-}: CardContext & { group: ModeGroup; onOpen: (option: ModeOption) => void }) {
+}: CardContext & {
+  group: ModeGroup;
+  /** Where its first card is in the screen's entrance (MOT-3: the cards stagger in once, on entry). */
+  firstIndex: number;
+  onOpen: (option: ModeOption) => void;
+}) {
   const { t } = useTranslation('home');
   const { t: tm } = useTranslation('match');
   // Every option is a row of its own, ranked 3 and 4 too; the rows are compact so a sixth type fits (Moshe's
@@ -267,9 +340,40 @@ function Group({
         title={t(`modes.groups.${group}.title`)}
         note={note}
       />
-      {options.map((o) => (
-        <ModeCard key={o.key} option={o} onPress={() => onOpen(o)} {...context} />
+      {options.map((o, i) => (
+        <Enter key={o.key} index={firstIndex + i}>
+          <ModeCard option={o} onPress={() => onOpen(o)} {...context} />
+        </Enter>
       ))}
+    </View>
+  );
+}
+
+/** How many mode cards come before `group`'s in the list (its first card's place in the entrance). */
+function firstCardIndex(sections: readonly ModesSection[], group: ModeGroup): number {
+  let n = 0;
+  for (const s of sections) {
+    if (s === group) return n;
+    if (s === 'ranked' || s === 'practice') n += MODE_OPTIONS.filter((o) => o.group === s).length;
+  }
+  return n;
+}
+
+/**
+ * Offline, under the practices: what needs the connection, in one line in place of its dimmed cards (the
+ * ranked tables, and with them the friends room): the lock, "מדורג ועם חברים" (or "מדורג" without the friends
+ * buttons), and "זמין כשיש חיבור". The banner above says why; the cards come back with the connection.
+ */
+function NeedsConnection({ friends }: { friends: boolean }) {
+  const { t } = useTranslation('home');
+  const { t: tm } = useTranslation('match');
+  return (
+    <View testID="modes-needs-connection">
+      <SectionLabel
+        icon="lock"
+        title={t(friends ? 'modes.needsConnection.rankedAndFriends' : 'modes.groups.ranked.title')}
+        note={tm('offline.rankedNote')}
+      />
     </View>
   );
 }
@@ -323,9 +427,11 @@ function FriendsFooter({
           style={styles.half}
           testID="modes-friends-create"
         />
+        {/* Beside the primary: skewed with it, the two edges between them parallel (the pair rule, D130). */}
         <Button
           label={join}
           variant="secondary"
+          skew
           size={FOOTER_BUTTON}
           disabled={suspended}
           onPress={onJoin}
@@ -416,26 +522,25 @@ function FriendsButton({
 }) {
   const { t } = useTranslation('home');
   const disabled = why !== null;
+  // A tappable card (D125): "צור חדר" in the accent's border, with the primary's press cue; "הצטרף עם קוד"
+  // leaves its sound to joinRoom.
   return (
-    <Pressable
+    <PressableCard
       accessibilityRole="button"
       accessibilityLabel={why ? [label, why].join(t('player:listSep')) : label}
       accessibilityHint={disabled ? undefined : hint}
       accessibilityState={{ disabled }}
       disabled={disabled}
+      tone={primary ? color.accent : undefined}
+      cue={primary ? 'primaryPress' : null}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.friendsButton,
-        primary && styles.friendsPrimary,
-        disabled && styles.cardOffline,
-        pressed && styles.cardPressed,
-      ]}
+      style={[styles.friendsButton, disabled && styles.cardOffline]}
       testID={testID}
     >
       <Text style={[styles.friendsLabel, primary && styles.friendsLabelPrimary]} numberOfLines={1}>
         {label}
       </Text>
-    </Pressable>
+    </PressableCard>
   );
 }
 
@@ -451,6 +556,8 @@ function ModeCard({
 }: CardContext & { option: ModeOption; onPress: () => void }) {
   const { t } = useTranslation('home');
   const { t: tm } = useTranslation('match');
+  // At a large text size the title and the tagline wrap rather than end in "…" (parts linesAt).
+  const { fontScale } = useWindowDimensions();
   const ranked = option.group === 'ranked';
   const built = isAvailable(option.key);
   // Spec §3.5: a suspended account plays no ranked game (it says so over "no connection": it lasts longer).
@@ -490,27 +597,24 @@ function ModeCard({
     .filter(Boolean)
     .join(t('player:listSep'));
 
+  // A tappable card (D125): the surface on its base and the one card press; `open` plays the tick.
   return (
-    <Pressable
+    <PressableCard
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !available }}
       disabled={!available}
+      cue={null}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        available ? styles.cardAvailable : styles.cardSoon,
-        (needsConnection || barred) && styles.cardOffline,
-        pressed && styles.cardPressed,
-      ]}
+      style={[styles.card, !built && styles.cardSoon, (needsConnection || barred) && styles.cardOffline]}
       testID={`mode-${option.key}`}
     >
       <Leading option={option} avatarId={avatarId} stage={levels?.current ?? 1} />
       <View style={styles.texts}>
-        <Text style={[styles.title, !available && styles.titleSoon]} numberOfLines={1}>
+        <Text style={[styles.title, !available && styles.titleSoon]} numberOfLines={linesAt(fontScale, 1)}>
           {title}
         </Text>
-        <Text style={styles.tagline} numberOfLines={1}>
+        <Text style={styles.tagline} numberOfLines={linesAt(fontScale, TAGLINE_LINES)}>
           {tagline}
         </Text>
         {chips.length > 0 || tag ? (
@@ -537,7 +641,7 @@ function ModeCard({
         ) : null}
       </View>
       {available ? <Icon name="chevronForward" size={size.icon.chevron} color={color.iconFaint} /> : null}
-    </Pressable>
+    </PressableCard>
   );
 }
 
@@ -597,10 +701,12 @@ function chipsOf(
 
 /** "דורש חיבור" with the lock (the Offline board); "החשבון מושעה" the same way. */
 function OfflineChip({ label, testID }: { label: string; testID?: string }) {
+  const { fontScale } = useWindowDimensions();
+  // As the other chips (parts.tsx chipSizeAt): grows with the text, never a fixed 22 that cuts it.
   return (
-    <View style={styles.offlineChip} testID={testID}>
+    <View style={[styles.offlineChip, chipSizeAt(fontScale)]} testID={testID}>
       <Icon name="lock" size={space[7]} color={color.textMuted} />
-      <Text style={styles.offlineChipText} numberOfLines={1}>
+      <Text style={styles.offlineChipText} numberOfLines={linesAt(fontScale, 1)}>
         {label}
       </Text>
     </View>
@@ -666,8 +772,14 @@ const BOT_COLOR_INDEX = 1;
 const BOT_PALETTE = paletteAt(BOT_COLOR_INDEX);
 /** The robot in the bot's frame: the Modes board's 26 in a 40 box, scaled to the 44 frame (no token). */
 const BOT_GLYPH = 28;
-/** Under the last row: above the navigation bar's inset, or above the screen's own bottom (it takes the inset). */
+/** Under the last row, above the navigation bar's inset. */
 const CONTENT_BOTTOM = space[8];
+/**
+ * Under the last row, above the screen's own bottom (the friends footer, offline's): that bottom takes the inset
+ * and has its rule and 12 over its buttons. Less than CONTENT_BOTTOM so the six rows fit with room to spare on a
+ * phone with a tall status bar (QA's 360 × 780 on the Galaxy A16 keeps its 50 dp one and scrolled 2 dp, B3).
+ */
+const CONTENT_BOTTOM_OVER_BAR = space[4];
 /** The friends footer's two buttons, side by side: the pair's size (see FriendsFooter). */
 const FOOTER_BUTTON: ButtonSize = 'modal';
 /**
@@ -683,16 +795,41 @@ export function cardPaddingVertical(typeface: Typeface = appTypeface()): number 
   return Math.max(space[1], space[3] - Math.ceil((growth('sheetTitle') + growth('caption')) / 2));
 }
 
-/** The Modes board's chips (22). */
-const CHIP_HEIGHT = 22;
+/**
+ * A row's tagline: one line in every real language (ModesAndGameType.test holds it to its column, D124), a second
+ * one, broken between words, for a longer one rather than "…" (QA 2026-11-03: en-XA's "[Šĥöŕť šťåĝéš • ûþ ťö 3
+ * šťåŕš one two …").
+ */
+export const TAGLINE_LINES = 2;
 /** Offline: the ranked cards stay readable but plainly out of reach. */
 const OFFLINE_CARD_OPACITY = 0.6;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: GUTTER.screen },
-  me: { flexDirection: 'row', alignItems: 'center', gap: space[4], flexShrink: 1, minWidth: 0 },
+  // The rest of the header after the title (ScreenHeader `fitTitle`), at its end; at least my avatar.
+  me: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: space[4],
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: size.avatar.compact.frame,
+  },
   meName: { ...text('label'), color: color.textMuted, flexShrink: 1 },
+  meNameUnmeasured: { opacity: 0 },
+  // MeasureName's box: out of the row at its start, unseen, its width the window's (set where it is drawn); the
+  // name in it at its own width (a row's item keeps its basis, it never shrinks).
+  meMeasure: {
+    position: 'absolute',
+    top: 0,
+    start: 0,
+    opacity: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   // Compact (Moshe's device test, 15.10.2026): six rows and the footnote fit on a 360 × 780 phone.
   content: { paddingHorizontal: GUTTER.screen, paddingTop: space[4], gap: space[8] },
   group: { gap: space[4] },
@@ -703,14 +840,11 @@ const styles = StyleSheet.create({
     minHeight: size.listRow,
     paddingVertical: cardPaddingVertical(),
     paddingHorizontal: space[6],
-    borderRadius: radius.card,
+    // The card surface (PressableCard, D125) gives the fill, the lit border and the base; the width is layout.
     borderWidth: tokens.border.hairline,
-    borderColor: color.border,
   },
-  cardAvailable: { backgroundColor: color.surface },
   cardSoon: { backgroundColor: color.bg },
   cardOffline: { borderStyle: 'dashed', opacity: OFFLINE_CARD_OPACITY },
-  cardPressed: { backgroundColor: color.surface2 },
   leadBox: {
     width: size.touch,
     height: size.touch,
@@ -741,7 +875,10 @@ const styles = StyleSheet.create({
   title: { ...text('sheetTitle'), color: color.text },
   titleSoon: { color: color.textMuted },
   tagline: { ...text('caption'), color: color.textMuted },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3], marginTop: space[1] },
+  // The chips' line, the card's bottom one, may run into the gap before the chevron (never under it): 226 on a
+  // 360 phone, so beside staged practice's "Aşama 300 · ★ 900" Turkish and Vietnamese keep their own word for
+  // offline (B9; modesChipWidth.test).
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[3], marginTop: space[1], marginEnd: -space[6] },
   footnote: { ...text('caption'), color: color.textMuted, textAlign: 'center' },
   // The friends footer [D100]: as GameType's bottom and OfflineActions (its inset added where it is drawn).
   footer: {
@@ -750,7 +887,6 @@ const styles = StyleSheet.create({
     gap: space[3],
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
-    backgroundColor: color.bg,
   },
   footerNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[2] },
   footerRow: { flexDirection: 'row', gap: space[6] },
@@ -764,24 +900,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space[4],
-    borderRadius: radius.card,
     borderWidth: tokens.border.hairline,
-    borderColor: color.border,
-    backgroundColor: color.surface,
   },
-  friendsPrimary: { borderColor: color.accent },
   friendsLabel: { ...text('button'), color: color.text },
   friendsLabelPrimary: { color: color.accent },
   offlineChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
-    height: CHIP_HEIGHT,
+    flexShrink: 1,
+    maxWidth: '100%',
     paddingHorizontal: space[4],
     borderRadius: radius.badge,
     borderWidth: tokens.border.hairline,
     borderColor: color.border,
     backgroundColor: color.surface2,
   },
-  offlineChipText: { ...text('micro'), color: color.textMuted },
+  offlineChipText: { ...text('micro'), color: color.textMuted, flexShrink: 1 },
 });

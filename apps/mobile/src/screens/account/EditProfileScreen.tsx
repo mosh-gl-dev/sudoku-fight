@@ -113,6 +113,8 @@ function EditProfileForm({ me }: { me: Me }) {
           size="lg"
           loading={busy}
           disabled={!changed}
+          // save() plays the press itself, and only for a valid form (an invalid one nudges).
+          cue={null}
           onPress={() => void save()}
           testID="edit-save"
         />

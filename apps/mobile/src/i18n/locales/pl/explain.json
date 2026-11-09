@@ -30,14 +30,32 @@
       "box": "W kwadracie {{label}} brakuje już tylko {{digit}}."
     },
     "missing": {
-      "row": "W wierszu {{label}} brakuje: {{digits}}.",
-      "col": "W kolumnie {{label}} brakuje: {{digits}}.",
-      "box": "W kwadracie {{label}} brakuje: {{digits}}."
+      "row_one": "W wierszu {{label}} brakuje: {{digits}}.",
+      "row_few": "W wierszu {{label}} brakuje: {{digits}}.",
+      "row_many": "W wierszu {{label}} brakuje: {{digits}}.",
+      "row_other": "W wierszu {{label}} brakuje: {{digits}}.",
+      "col_one": "W kolumnie {{label}} brakuje: {{digits}}.",
+      "col_few": "W kolumnie {{label}} brakuje: {{digits}}.",
+      "col_many": "W kolumnie {{label}} brakuje: {{digits}}.",
+      "col_other": "W kolumnie {{label}} brakuje: {{digits}}.",
+      "box_one": "W kwadracie {{label}} brakuje: {{digits}}.",
+      "box_few": "W kwadracie {{label}} brakuje: {{digits}}.",
+      "box_many": "W kwadracie {{label}} brakuje: {{digits}}.",
+      "box_other": "W kwadracie {{label}} brakuje: {{digits}}."
     },
     "seen": {
-      "row": "W wierszu {{label}} są już: {{digits}}.",
-      "col": "W kolumnie {{label}} są już: {{digits}}.",
-      "box": "W kwadracie {{label}} są już: {{digits}}."
+      "row_one": "W wierszu {{label}} jest już cyfra {{digits}}.",
+      "row_few": "W wierszu {{label}} są już: {{digits}}.",
+      "row_many": "W wierszu {{label}} są już: {{digits}}.",
+      "row_other": "W wierszu {{label}} są już: {{digits}}.",
+      "col_one": "W kolumnie {{label}} jest już cyfra {{digits}}.",
+      "col_few": "W kolumnie {{label}} są już: {{digits}}.",
+      "col_many": "W kolumnie {{label}} są już: {{digits}}.",
+      "col_other": "W kolumnie {{label}} są już: {{digits}}.",
+      "box_one": "W kwadracie {{label}} jest już cyfra {{digits}}.",
+      "box_few": "W kwadracie {{label}} są już: {{digits}}.",
+      "box_many": "W kwadracie {{label}} są już: {{digits}}.",
+      "box_other": "W kwadracie {{label}} są już: {{digits}}."
     },
     "eliminated": "Cyfra {{digit}} odpadła z pola {{cell}} w kroku {{step}}.",
     "only": "Zostaje więc tylko {{digit}}."

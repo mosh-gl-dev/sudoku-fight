@@ -30,10 +30,13 @@ export const DEFAULT_DECIMAL = '.';
  * A score as the cards show it: Latin digits, one decimal only for halves, U+2212 for a minus (55, 39.5, −2;
  * "39,5" with `decimal` ",").
  */
-export function formatScore(n: number, decimal: string = DEFAULT_DECIMAL): string {
+export function formatScore(n: number, decimal?: string): string {
   'worklet';
+  // Not a default parameter: a worklet's closure (DEFAULT_DECIMAL) is read in its body, after the parameters
+  // (src/__tests__/workletClosures.test.ts).
+  const sep = decimal ?? DEFAULT_DECIMAL;
   const abs = Math.abs(n);
-  const body = Number.isInteger(abs) ? String(abs) : abs.toFixed(1).replace('.', decimal);
+  const body = Number.isInteger(abs) ? String(abs) : abs.toFixed(1).replace('.', sep);
   return n < 0 && abs !== 0 ? `${MINUS}${body}` : body;
 }
 
@@ -47,9 +50,10 @@ export function formatSigned(n: number, decimal: string = DEFAULT_DECIMAL): stri
  * A score as screen text: a negative one is an LTR isolate, so the minus stays before the number in Hebrew
  * (CLAUDE.md). On Android `writingDirection` is ignored, and "−2" alone in an RTL line would show as "2−".
  */
-export function scoreText(n: number, decimal: string = DEFAULT_DECIMAL): string {
+export function scoreText(n: number, decimal?: string): string {
   'worklet';
-  return n < 0 ? ltr(formatScore(n, decimal)) : formatScore(n, decimal);
+  const sep = decimal ?? DEFAULT_DECIMAL;
+  return n < 0 ? ltr(formatScore(n, sep)) : formatScore(n, sep);
 }
 
 /** A signed change as screen text ("+3.5", "−2"), always an LTR isolate (CLAUDE.md). */
@@ -69,14 +73,33 @@ export function scoreFormat(decimal: string = DEFAULT_DECIMAL): (n: number) => s
 }
 
 /**
- * Text the engine wrote with "." between digits, with the language's separator instead: the score line
- * "points = 9 − 7 + (9 − 6) / 2 = 3,5" ("." stays as it is in Hebrew and English).
+ * Text written with "." between digits, with the language's separator instead: a how-to-play chip "+3,5" ("."
+ * stays as it is in Hebrew and English).
  */
 export const withDecimal = (s: string, decimal: string = DEFAULT_DECIMAL): string =>
   decimal === DEFAULT_DECIMAL ? s : s.replace(/(\d)\.(?=\d)/g, `$1${decimal}`);
 
 /** Seconds as the timers show them: always rounded up, never below 0 (7 while 6.2 s are left). */
 export const secondsOf = (ms: number): number => Math.max(0, Math.ceil(ms / 1000));
+
+/** How often a running clock's accessibility label changes, in seconds (Q1). */
+export const CLOCK_LABEL_STEP_S = 5;
+
+/**
+ * A running clock's seconds as its accessibility label says them (Q1): in steps of CLOCK_LABEL_STEP_S, never every
+ * second. A label that changes every second sends a change event every second: a screen reader gains nothing from
+ * it, and the screen never settles (uiautomator: "could not get idle state"). Both round down, so a label never
+ * says more time has passed, or more is left, than the clock shows; time left is exact in its last step (5, 4, 3…),
+ * so it never says "0" while some is left (labelSecondsLeft).
+ */
+export function clockLabelSeconds(ms: number, kind: 'elapsed' | 'left'): number {
+  if (kind === 'elapsed') return Math.floor(Math.max(0, ms) / 1000 / CLOCK_LABEL_STEP_S) * CLOCK_LABEL_STEP_S;
+  return labelSecondsLeft(secondsOf(ms));
+}
+
+/** Whole seconds left (a timer's `secondsOf`) as a label says them: exact in the last step, else down to it. */
+export const labelSecondsLeft = (seconds: number): number =>
+  seconds <= CLOCK_LABEL_STEP_S ? seconds : Math.floor(seconds / CLOCK_LABEL_STEP_S) * CLOCK_LABEL_STEP_S;
 
 /** `#rrggbb` at an opacity, for fills the tokens define as "ring at 16%". */
 export function withAlpha(hex: string, alpha: number): string {

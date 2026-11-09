@@ -60,6 +60,9 @@
     "title": "Yeni maç",
     "footnote": "Dereceli için internet bağlantısı gerekir · Antrenman her zaman açık",
     "soon": "Yakında",
+    "needsConnection": {
+      "rankedAndFriends": "Dereceli ve arkadaşlarla"
+    },
     "groups": {
       "ranked": {
         "title": "Dereceli",
@@ -117,7 +120,7 @@
       "taglineNew_one": "1 kısa aşama · 0–3 yıldız",
       "taglineNew_other": "{{total}} kısa aşama · 0–3 yıldız",
       "chip": "Aşama {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Çevrimdışı",
       "chipLabel_one": "Aşama {{stage}} · 1 yıldız",
       "chipLabel_other": "Aşama {{stage}} · {{count}} yıldız",
       "label": "Aşamalı antrenman"

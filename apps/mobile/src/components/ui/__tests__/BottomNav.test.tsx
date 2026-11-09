@@ -1,10 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { I18nManager, StyleSheet, type ViewStyle } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import i18n from '../../../i18n';
-import { color, size } from '../../../theme';
-import { BottomNav, NAV_TABS } from '../BottomNav';
+import { useSettings } from '../../../state/settings';
+import { appTypeface, color, radius, size, text, uiFont } from '../../../theme';
+import { BottomNav, NAV_TABS, PILL_FROM_SCALE } from '../BottomNav';
 import { directionProblems, hostStyles } from '../testing/layout';
 
 jest.mock(
@@ -52,6 +53,58 @@ describe('BottomNav', () => {
         expect(within(el).getByText(/./)).toHaveStyle({ color: color.nav.inactive });
       }
     }
+  });
+
+  it('VIS-10: the active tab has a pill behind its icon and a bold label; the others neither', async () => {
+    await render(<BottomNav active="history" onSelect={jest.fn()} testID="nav" />);
+    expect(styleOf(screen.getByTestId('nav-history-pill'))).toMatchObject({
+      backgroundColor: color.nav.activePill,
+      borderRadius: radius.pill,
+    });
+    // The pill fills the icon's 56 × 32 box.
+    const box = styleOf((screen.getByTestId('nav-history-pill') as unknown as { parent: never }).parent);
+    expect(box).toMatchObject({ width: size.navPill.width, height: size.navPill.height });
+    expect(within(screen.getByTestId('nav-history')).getByText(/./)).toHaveStyle(
+      uiFont(appTypeface(), '700'),
+    );
+    for (const key of ['home', 'leaderboard', 'achievements']) {
+      expect(screen.queryByTestId(`nav-${key}-pill`)).not.toBeOnTheScreen();
+      expect(within(screen.getByTestId(`nav-${key}`)).getByText(/./)).toHaveStyle({
+        fontFamily: text('label').fontFamily,
+      });
+    }
+  });
+
+  it('the pill pops in as the screen opens (from 0.8, fading in); with reduced motion it is simply there', async () => {
+    jest.useFakeTimers();
+    try {
+      useSettings.setState({ reduceMotion: 'off' });
+      await render(<BottomNav active="home" onSelect={jest.fn()} testID="nav" />);
+      const pill = () =>
+        (
+          screen.getByTestId('nav-home-pill').props as {
+            jestAnimatedStyle?: { value: { opacity: number; transform: { scale: number }[] } };
+          }
+        ).jestAnimatedStyle!.value;
+      expect(pill().opacity).toBe(0);
+      expect(pill().transform[0]!.scale).toBe(PILL_FROM_SCALE);
+      await act(async () => void jest.advanceTimersByTime(1000));
+      expect(pill().opacity).toBe(1);
+      expect(pill().transform[0]!.scale).toBeCloseTo(1, 3);
+      await screen.unmount();
+
+      useSettings.setState({ reduceMotion: 'on' });
+      await render(<BottomNav active="home" onSelect={jest.fn()} testID="nav" />);
+      expect(screen.getByTestId('nav-home-pill')).toHaveAnimatedStyle({
+        opacity: 1,
+        transform: [{ scale: 1 }],
+      });
+      await screen.unmount();
+    } finally {
+      jest.useRealTimers();
+      useSettings.setState({ reduceMotion: 'off' });
+    }
+    expect(PILL_FROM_SCALE).toBe(0.8);
   });
 
   it('reports the pressed tab', async () => {

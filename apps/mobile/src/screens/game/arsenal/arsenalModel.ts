@@ -11,7 +11,7 @@ import {
 import { metrics as playerMetrics } from '../../../components/player/metrics';
 import type { Rect } from '../geometry';
 import { ARSENAL_CONFIG } from './config';
-import { type ArsenalMetrics, arsenalMetrics } from './metrics';
+import { type ArsenalMetrics, arsenalMetrics, arsenalMetricsAt, textGrowth } from './metrics';
 
 /**
  * The interference picker as a pure view model (spec §7.2, §7.3; components.md §13), read from the engine's
@@ -148,17 +148,19 @@ export const isInterferenceRefusal = (action: HostAction['type']): boolean => ac
 
 /** The target frame grows this far outside the card (components.md §3.4: padding 6 + outline 2). */
 const FRAME_OUTSET = playerMetrics.targetFrame.padding + playerMetrics.targetFrame.outline;
+/** Further down (padding 14 + outline 2): the "יעד" chip on the bottom edge lies inside the frame (QA loop 6). */
+const FRAME_OUTSET_BOTTOM = playerMetrics.targetFrame.paddingBottom + playerMetrics.targetFrame.outline;
 
 /**
  * The target frame of a card measured in the window, as drawn around it (the frame grows outwards, so the card
- * itself does not move): the scrim's hole and the launch ripple.
+ * itself does not move), its "יעד" chip included: the scrim's hole and the launch ripple.
  */
 export function targetFrameOf(card: Rect): Rect {
   return {
     x: card.x - FRAME_OUTSET,
     y: card.y - FRAME_OUTSET,
     width: card.width + 2 * FRAME_OUTSET,
-    height: card.height + 2 * FRAME_OUTSET,
+    height: card.height + FRAME_OUTSET + FRAME_OUTSET_BOTTOM,
   };
 }
 
@@ -244,4 +246,32 @@ export function pickerLayout({
     bottomInset;
   const maxHeight = height * m.sheet.maxShare;
   return { columns, columnWidth, rows, sheetHeight, maxHeight, fits: sheetHeight <= maxHeight };
+}
+
+/** How far apart the text sizes tried by fittedPicker are. */
+const GROWTH_STEP = 0.05;
+
+/**
+ * The picker's dimensions and layout at the system text size (`fontScale`): its words as large as it asks, up to
+ * the picker's cap, or as large as still shows every kind at once on this window (D45): on a small phone the
+ * words grow less, never below the design's size. `metricsAt`: the dimensions at a growth (the app's language by
+ * default; another language's in its layout test).
+ */
+export function fittedPicker(
+  {
+    width,
+    height,
+    bottomInset = 0,
+    count,
+    fontScale,
+  }: { width: number; height: number; bottomInset?: number; count: number; fontScale: number },
+  metricsAt: (growth: number) => ArsenalMetrics = arsenalMetricsAt,
+): { metrics: ArsenalMetrics; layout: PickerLayout } {
+  let growth = textGrowth(fontScale);
+  for (;;) {
+    const metrics = metricsAt(growth);
+    const layout = pickerLayout({ width, height, bottomInset, count, metrics });
+    if (layout.fits || growth <= 1) return { metrics, layout };
+    growth = Math.max(1, Math.round((growth - GROWTH_STEP) * 100) / 100);
+  }
 }

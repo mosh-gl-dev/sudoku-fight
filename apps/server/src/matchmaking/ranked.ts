@@ -1,5 +1,11 @@
 import type { GameType } from '@sudoku-fight/engine';
-import type { GameRoomRuleOverrides, QueueKey } from '@sudoku-fight/protocol';
+import type {
+  AvatarId,
+  CountryCode,
+  GameRoomRuleOverrides,
+  NO_AVATAR_ID,
+  QueueKey,
+} from '@sudoku-fight/protocol';
 
 import type { StealthBotSeat } from '../stealth/seat';
 
@@ -35,6 +41,12 @@ export interface RankedMatchPlayer {
   rating: number;
   /** Games already played in that key (the first 10 are provisional, spec §11.2). */
   games: number;
+  /**
+   * The public card "found" showed (avatar, flag): the room's `lobby` carries it, so an app that came back
+   * into the game with nothing kept (a cold start) still draws the others' avatars and flags.
+   */
+  avatarId?: AvatarId | typeof NO_AVATAR_ID;
+  country?: CountryCode | null;
 }
 
 export interface RankedMatchSetup {

@@ -32,8 +32,13 @@ import {
 
 /** The record's key in expo-sqlite's key-value store (state/settings.ts persists under it). */
 export const SETTINGS_STORE_KEY = 'settings';
-/** The record's version: 2 from 1.1.0 (the language may be 'system', with its source and what was seen). */
-export const SETTINGS_VERSION = 2;
+/**
+ * The record's version: 2 from 1.1.0 (the language may be 'system', with its source and what was seen); 3 from
+ * 31.10.2026 (reduced motion starts off, state/settings.ts).
+ */
+export const SETTINGS_VERSION = 3;
+/** The first version whose record holds the language fields (D102). */
+const LANGUAGE_PREFS_SINCE = 2;
 
 /** 'system' follows the phone (and Android 13+'s per-app language); otherwise the language chosen. */
 export type LanguageSetting = 'system' | AppLanguage;
@@ -82,7 +87,7 @@ const SOURCES: readonly LanguageSource[] = ['default', 'migrated', 'app', 'syste
 export function languagePrefsOf(state: unknown, version: number): LanguagePrefs {
   const s = (typeof state === 'object' && state !== null ? state : {}) as Record<string, unknown>;
   const defaults = defaultLanguagePrefs();
-  if (version < SETTINGS_VERSION) {
+  if (version < LANGUAGE_PREFS_SINCE) {
     if (!isLanguage(s.language)) return defaults;
     const keep = I18N_CONFIG.migrateExisting === 'explicit';
     return { ...defaults, language: keep ? s.language : 'system', languageSource: 'migrated' };

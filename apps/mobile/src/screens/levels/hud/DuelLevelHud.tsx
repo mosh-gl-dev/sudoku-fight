@@ -6,7 +6,7 @@ import type { AvatarIdOrNone } from '../../../avatars';
 import { BossCrown } from '../../../components/levels/BossBadge';
 import { StarsBar } from '../../../components/levels/StarsBar';
 import { Avatar, formatScore, SeatGlyph, signedText } from '../../../components/player';
-import { secondsOf } from '../../../components/player/format';
+import { clockLabelSeconds } from '../../../components/player/format';
 import { IconButton } from '../../../components/ui';
 import { Text } from '../../../components/ui/Text';
 import { decimalSeparator } from '../../../i18n/compose';
@@ -93,7 +93,7 @@ export function DuelLevelHud({ level, view, now, myAvatar, onExit, onReactions, 
           <Text
             style={styles.clock}
             accessibilityRole="timer"
-            accessibilityLabel={t('hud.duel.finishLabel', { target, s: secondsOf(left) })}
+            accessibilityLabel={t('hud.duel.finishLabel', { target, s: clockLabelSeconds(left, 'left') })}
             testID="duel-clock"
           >
             {clockText(left)}

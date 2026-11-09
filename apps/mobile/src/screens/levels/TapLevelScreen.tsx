@@ -54,10 +54,12 @@ import { FLASH_CLEAR_MS } from '../game/model';
 import { REACTION_MS } from '../game/ReactionLayer';
 import { ReactionPicker, useReactions } from '../game/reactions';
 import { useLiveAnnouncer } from '../game/useLiveAnnouncer';
+import { useRoomHeight } from '../game/useRoomHeight';
 import { FindHud, FindTargetPanel, levelClock, scopeText, StageHeader } from './hud/FindHud';
 import { RaceHud } from './hud/RaceHud';
 import { SpotErrorHud, SpotErrorTip, spotTipShown } from './hud/SpotErrorHud';
-import { levelEndDelayMs } from './levelChrome';
+import { levelEndDelayMs, useExitBody } from './levelChrome';
+import type { StageOver } from './useStageShell';
 
 /**
  * The tap stages' screen (components.md §19.7; the Lv-Find, Lv-Race and Idea-1 boards; plan §2.1, §2.2, Idea-1):
@@ -88,8 +90,8 @@ import { levelEndDelayMs } from './levelChrome';
 
 export interface TapLevelScreenProps {
   session: LevelSession;
-  /** The stage is over and its last picture held: its result. */
-  onOver: () => void;
+  /** The stage is over and its last picture held: its result (`over` when it came under the dialog). */
+  onOver: (over?: StageOver) => void;
   /** Out of the stage (to the map): the way out when its result does not come (the watchdog's fallback). */
   onLeave: () => void;
   /** How long the result may take to replace this screen before the fallback shows. */
@@ -144,6 +146,7 @@ export function TapLevelScreen({
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const myAvatar = useProfile((s) => s.avatarId);
+  const exitBody = useExitBody(session.level, session.rules, t);
   const level = session.played;
 
   // ---- the host's picture, re-read on every update ----
@@ -200,27 +203,35 @@ export function TapLevelScreen({
   // ---- the end: held, then onOver from a timer, never while the dialog is still on the screen ----
   const [confirmOpen, setConfirmOpen] = useState(false);
   const dialogUp = useRef(false);
+  /** The dialog asks and has no answer yet: open, neither cancelled nor confirmed. */
+  const asking = useRef(false);
   const whenDialogGone = useRef<(() => void) | null>(null);
   const ended = useRef(false);
   // The result asked for and this screen still here after the watchdog's time: a way on, over everything.
   const [stuck, setStuck] = useState(false);
   /** onOver, watched: the result should replace this screen (and its timers) before the watchdog fires. */
-  const toResult = useCallback(() => {
-    safely('the result', onOver);
-    later(resultsWatchdogMs, () => {
-      crashReporter().recordError(
-        new Error('the stage result did not replace the board'),
-        'levels: results watchdog',
-      );
-      setStuck(true);
-    });
-  }, [later, onOver, resultsWatchdogMs]);
+  const toResult = useCallback(
+    (underDialog = false) => {
+      safely('the result', () => (underDialog ? onOver({ underDialog: true }) : onOver()));
+      later(resultsWatchdogMs, () => {
+        crashReporter().recordError(
+          new Error('the stage result did not replace the board'),
+          'levels: results watchdog',
+        );
+        setStuck(true);
+      });
+    },
+    [later, onOver, resultsWatchdogMs],
+  );
   const finish = useCallback(
     (over: FindLevelOver, answer: boolean) => {
       if (ended.current) return;
       ended.current = true;
+      // The end came by itself while the dialog was still asking: it closes, and the result is told (QA N1).
+      const underDialog = asking.current;
+      asking.current = false;
       setConfirmOpen(false);
-      const go = () => later(tapEndDelayMs(over, reduce, answer), toResult);
+      const go = () => later(tapEndDelayMs(over, reduce, answer), () => toResult(underDialog));
       if (dialogUp.current) whenDialogGone.current = go;
       else go();
     },
@@ -352,10 +363,15 @@ export function TapLevelScreen({
   const openConfirm = useCallback(() => {
     if (ended.current) return;
     dialogUp.current = true;
+    asking.current = true;
     setConfirmOpen(true);
   }, []);
-  const closeConfirm = useCallback(() => setConfirmOpen(false), []);
+  const closeConfirm = useCallback(() => {
+    asking.current = false;
+    setConfirmOpen(false);
+  }, []);
   const confirmExit = () => {
+    asking.current = false;
     setConfirmOpen(false);
     cue('surrender');
     safely('quit', () => session.quit());
@@ -376,7 +392,8 @@ export function TapLevelScreen({
   }, []);
 
   // ---- the board ----
-  const [roomHeight, setRoomHeight] = useState<number | null>(null);
+  // Read before the first frame where it can be (QA levels-freeze-ready: no first frame at another size).
+  const { ref: roomRef, height: roomHeight, setHeight: setRoomHeight } = useRoomHeight();
   // [D75c] A row or a column with the rails on: A–I and 1–9 beside the board, which gives up their room.
   const rails = LEVEL_UI.regionRails && (find?.scope?.kind === 'row' || find?.scope?.kind === 'col');
   const side = rails
@@ -485,7 +502,7 @@ export function TapLevelScreen({
             ) : null}
           </View>
         )}
-        <View style={styles.room} onLayout={(e) => setRoomHeight(e.nativeEvent.layout.height)}>
+        <View ref={roomRef} style={styles.room} onLayout={(e) => setRoomHeight(e.nativeEvent.layout.height)}>
           <View>
             <Board
               model={board}
@@ -535,7 +552,7 @@ export function TapLevelScreen({
         placement="bottom"
         icon="close"
         title={t('exit.title')}
-        body={t('exit.body')}
+        body={exitBody}
         confirmLabel={t('exit.confirm')}
         cancelLabel={t('exit.cancel')}
         accessibilityLabel={t('exit.button')}
@@ -606,7 +623,7 @@ function DigitDrop({ cell, digit, width }: { cell: CellIndex; digit: Digit; widt
 const gutter = tokens.layout.gutterGame;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flex: 1, gap: space[6] },
   gutter: { marginHorizontal: gutter },
   stage: { gap: space[6] },

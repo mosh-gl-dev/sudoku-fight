@@ -49,12 +49,30 @@ export function loadFont(path) {
     return composite(buf, start, (i) => contours(i, depth + 1));
   }
 
+  const indexOf = (char) => {
+    const index = glyphIndex(char.codePointAt(0));
+    if (!index) throw new Error(`${path}: no glyph for "${char}"`);
+    return index;
+  };
+  const hhea = () => {
+    if (!tables.hhea || !tables.hmtx) throw new Error(`${path}: no hhea / hmtx table`);
+    return tables.hhea.offset;
+  };
+
   return {
     unitsPerEm,
     glyph(char) {
-      const index = glyphIndex(char.codePointAt(0));
-      if (!index) throw new Error(`${path}: no glyph for "${char}"`);
-      return toPath(contours(index));
+      return toPath(contours(indexOf(char)));
+    },
+    /** How far the pen moves after `char`, in font units (hmtx; gen-clock-glyphs.mjs). */
+    advance(char) {
+      const metrics = buf.readUInt16BE(hhea() + 34);
+      const index = Math.min(indexOf(char), metrics - 1);
+      return buf.readUInt16BE(tables.hmtx.offset + index * 4);
+    },
+    /** The line's ascent above the baseline and descent under it, in font units, both positive (hhea). */
+    vertical() {
+      return { ascent: buf.readInt16BE(hhea() + 4), descent: -buf.readInt16BE(hhea() + 6) };
     },
   };
 }

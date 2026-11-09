@@ -1,0 +1,815 @@
+{
+ "fixcheck": [
+  {
+   "checks": [
+    {
+     "id": "H1 T3-HISTORY-FREEZE + T3-HISTORY-ALL-ONE-CARD + NEW-history-hidden-cards",
+     "result": "pass",
+     "detail": "apk6, phone 1. I opened Home → 'היסטוריה' 6 times, once right after a force-stop. Every time: 0 synchronouslyUpdateUIProps failures, no Skipped frames and no Davey. The longest frame was 77–116 ms (it used to be 6.5–7.4 s). In the shot taken about 1 s after the tap on a cold start, the cards are already there. Under 'הכל', all cards are fully opaque, and after scrolling the ranked games and the older practice games are sharp (summary '47 משחקים · 55% ניצחונות · 50 אימונים'). Quick filter switching ('מדורג'/'הכל'/'אימון'/'הכל', 0.7 s apart, starting 1 s after opening): 0 failures, longest frame 107 ms. Leaderboard: opening it gave 0 failures and an 82 ms max frame. Switching 'רגיל'↔'כללי' 4 times, 0.3–0.7 s apart: 0 failures, longest frame 147 ms, a brief skeleton, and the pinned 'me' row visible in all 4 shots. 'הישגים': 0 failures, max frame 48 ms. Not checked: the skeleton with reduced motion on, and step 4 (airplane mode, which needs 'no practice games on the phone'). Shots: qa-shots/RF8Y60PP2XZ-H1-cold-1s.png, RF8Y60PP2XZ-H1-mont.png."
+    },
+    {
+     "id": "H3 T3-FIRST-PLAY-SLOW",
+     "result": "fail",
+     "detail": "Not fixed. Force-stop, open, wait 6–12 s on Home, gfxinfo reset, tap 'שחק'. In 4 runs: press frames up to about 85 ms, then no frame at all until 533–606 ms after the tap (before the fix it was 544 ms). Longest frame 136–159 ms. The fade ends around 0.7–0.8 s. On a second visit in the same process, the first frame comes at 270–320 ms and the whole change takes about 0.45 s. I also did force-stop, open, and 'עוד סיבוב' about 2.6 s after launch: the game started with 0 failures, no Skipped frames and no Davey, and the longest frame in the window I could see was 45 ms."
+    },
+    {
+     "id": "H4 T3-MOVE-UIPROPS / T3-GAME-RESULTS-HITCH",
+     "result": "pass",
+     "detail": "Practice game against Pip (רגיל): 10 moves 2 s apart (9 correct, 1 wrong, A7=2). Each move had 0 failures, and so did the total (logcat -T plus the awk count of 'more times'). No Skipped frames or Davey. Game → results, over 3 games, filling the board to the end: 0 failures every time, no Skipped/Davey, and in framestats polled every 0.8 s (439 frames over 4.9 s) the longest frame was 149 ms, none over 200 ms. A 10-shot screencap burst after the last move goes board → Results header → the 'ניצחון!' content rising in. There is no spinner and no 'טוען את התוצאה…'. I did not judge the look of the lock pulse, the flash or the bot avatar. Montage: scratchpad r/mont.png (session)."
+    },
+    {
+     "id": "F4 NEW-hunter-stars-labels-maxfont",
+     "result": "pass",
+     "detail": "font_scale 2.0, L041. Hebrew: '13' x=745–781, '15.5' x=881–956, '17.5' x=972–1043, a 15 px gap between 15.5 and 17.5, and the final 5 whole. The bar ends at x=1034, so 9 px (about 3.4 dp) past it. English: the same positions to the pixel. Digit height is 36 px at 2.0 against 27 at 1.0 (×1.33). The board is not covered. Time bar on L34 (36/48/60) in English at 2.0: '60' whole at x=1007–1053, screen edge 1080. At 1.0: '13' 744–771, '15.5' 881–938, '17.5' 991–1044, so the right edge is not further right at 2.0. Font back to 1.0 and locale he. Shots: qa-shots/RF8Y60PP2XZ-F4-he-f2.png, -he-f2-crop.png, -en-f2.png, -en-f2-L34.png, -he-f1.png."
+    },
+    {
+     "id": "NEW-home-hero-scale (K14)",
+     "result": "pass",
+     "detail": "I read the bounds of play-face from uiautomator 13 times: 5 presses on 'שחק' with system Back, 3 with the in-app back arrow, a press with drag-off, a long press, and 4 cold starts (each also checked again after 15 s). Every time [68,1314][1013,1584], full size. The bug's reduced size [85,1319][996,1579] never appeared."
+    },
+    {
+     "id": "B14 general-ambient-screen-change",
+     "result": "partial",
+     "detail": "Re-marked partial. No sliding and no black flash. 0 failures on every change. Times: Settings ~0.37 s, back arrow ~0.2 s, Back ~0.23 s, 'שחק' second time ~0.45 s, History ~0.4–0.5 s (cards ~0.8 s), History→Home ~0.33 s. But the first 'שחק' after a cold start is ~0.7–0.8 s (no frame until 533–606 ms). Known K8, and H3 not fixed. Digit movement was not measured in pixels, and there is no ffmpeg for the recording."
+    },
+    {
+     "id": "avatars-idle-still",
+     "result": "untested",
+     "detail": "Not checked and not re-marked. Every step needs a ranked search (3 players / 2 phones on the VS), and this batch was told no ranked search, and only one phone."
+    }
+   ],
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי), apk6 מותקן (תואם ל־latest-build). בוצע adb.ts reset (font 1, אנימציות 1, בלי מצב טיסה). שפת האפליקציה he, ו־font_scale 1.0 (הוחזר אחרי בדיקת 2.0). האפליקציה הופעלה מחדש ונמצאת בבית. המתג 'פתח את כל השלבים (בדיקה)' היה דלוק לפני שהתחלתי, ולא נגעתי בו. שיחקתי 3 משחקי אימון מול Pip, ושלבים 41 (פעמיים) ו־34 נוסו בלי כוכבים (פג זמן / יציאה)."
+  },
+  {
+   "checks": [
+    {
+     "id": "CONFLICT",
+     "result": "untested",
+     "detail": "עצרתי את הבדיקה: סוכן אחר מפעיל את טלפון 3 (RF8Y30L038L) באותו זמן. אלה כנראה הניסיון הקודם, שדווח כקטוע אבל עדיין רץ. ראיתי את הפקודות שלו בין 18:19 ל־18:21: tap mode-levels, key back, ui, tap play, tap open-settings, tap setting-language. הוא רץ בסבב שפות. שינוי השפה שלו ל־fr החליף את השפה שאני קבעתי (it). אם שני סוכנים יפעילו טלפון אחד, שתי הריצות יתקלקלו, ולכן לא נגעתי בטלפון יותר ולא סימנתי שום משימה. לפני שגיליתי את זה, בערך ב־18:19, שיניתי פעם אחת את שפת האפליקציה ל־it וסגרתי ופתחתי אותה (stop/launch). ייתכן שזה הפריע לו לצעד אחד. מומלץ לבדוק את הסימונים שלו בדיוק סביב 18:19–18:20."
+    },
+    {
+     "id": "F1 P3-B3-name",
+     "result": "pass",
+     "detail": "לא בדקתי שוב: הסוכן השני בדק את זה היום על apk6. general-lang19-fit-new-game מסומנת V עם 'בדיקת תיקון'. ראיתי בעצמי רק את de ברזולוציה רגילה: 'Neues Spiel' ו־'אחוותא' שלם ליד האווטר. wm size 1080x2340 ו־density 450 הוחזרו כמו שצריך."
+    },
+    {
+     "id": "F2 P3-pseudo-cut",
+     "result": "pass",
+     "detail": "לפי הסימון של היום (V, בדיקת תיקון, apk6) ב־general-lang19-pseudo, לא בבדיקה שלי. בבית: '[Þŕövîšîöñåļ' / 'one]' בשתי שורות. ההערה של המדורג והשורה של השלבים בשתי שורות שמסתיימות ב־']'. שורת הבדיקה בהגדרות בשתי שורות, בגובה 180px."
+    },
+    {
+     "id": "F3 P3-offline-chip",
+     "result": "partial",
+     "detail": "בדקתי רק חלק, בגלל ההתנגשות. de (ראיתי בעצמי ב־18:18): בשלבים 'Etappe 1 · ★ 0' ו־'Ohne Netz' בשורה אחת. בבוט ובלבד 'Ungewertet' ו־'Auch ohne Netz' בשורה אחת. nl (צילום של הסוכן השני מ־17:56, f6/RF8Y30L038L-F3-nl.png): 'Etappe 1 · ★ 0' ו־'Ook offline'. בבוט ובלבד 'Werkt offline', כפי שהתיקון השאיר בכוונה. it, id, es ומצב טיסה לא נבדקו. בשום מקום שנבדק אין 'Offline' לבד."
+    },
+    {
+     "id": "P3-AR-CLIP",
+     "result": "pass",
+     "detail": "לפי הסימון של היום ב־general-lang19-arabic-rtl (V, apk6): 'سلسلة الفوز' שלם בכרטיס השחקן, ו־'تدريب فردي · سريع' שלם בכותרת התוצאות. לא בדקתי שוב."
+    },
+    {
+     "id": "P3-HOME-AR",
+     "result": "pass",
+     "detail": "לפי הסימון של היום ב־general-lang19-arabic-rtl (V, apk6): 6 הפעלות מחדש (he→ar ×2, ar→he ×2, he→en, en→de עם הפחתת תנועה). 'هيا نلعب', 'جولة أخرى' ו'المباريات الأخيرة' גלויים, והכפתורים מגיבים. לא בדקתי שוב."
+    },
+    {
+     "id": "P3-TH-CHIP",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות. לסוכן השני יש צילום (f6/RF8Y30L038L-th-hist.png, 18:10), אבל המשימה לא סומנה."
+    },
+    {
+     "id": "P3-JA-A11Y",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות. לסוכן השני יש צילום (f6/RF8Y30L038L-ja-replay.png, 18:14), אבל המשימה לא סומנה."
+    },
+    {
+     "id": "P3-AR-PLURAL",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות."
+    },
+    {
+     "id": "NEW-he-hidden-single-row-gender",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות."
+    },
+    {
+     "id": "NEW-replay-hud-large-font",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות. font_scale בטלפון הוא 1.0."
+    },
+    {
+     "id": "B3 (general-lang19-fit-new-game)",
+     "result": "pass",
+     "detail": "המשימה כבר מסומנת היום V (בדיקת תיקון, apk6), ולא סימנתי אותה שוב."
+    },
+    {
+     "id": "B12 (general-motion-phone-off-ambient)",
+     "result": "untested",
+     "detail": "לא נבדק בגלל ההתנגשות. המשימה מסומנת V מבדיקה קודמת בטלפון 1. לסוכן השני יש צילום f6/RF8Y30L038L-de-motion.png, שלא סומן."
+    },
+    {
+     "id": "B50 (general-ambient-everywhere)",
+     "result": "untested",
+     "detail": "לא נבדק: כפתור 'הפרעה' דורש משחק מדורג 2P, וזה אסור בסבב הזה. גם ההתנגשות מנעה בדיקה."
+    },
+    {
+     "id": "general-lang19-arabic-rtl",
+     "result": "pass",
+     "detail": "מסומנת היום V (בדיקת תיקון, apk6), ולא סימנתי אותה שוב."
+    },
+    {
+     "id": "general-lang19-numbers-app",
+     "result": "untested",
+     "detail": "עדיין ½ מ־03.11 (הסימון לא עודכן). לא נבדק בגלל ההתנגשות."
+    },
+    {
+     "id": "general-lang19-fit-new-game",
+     "result": "pass",
+     "detail": "מסומנת היום V (בדיקת תיקון, apk6)."
+    },
+    {
+     "id": "general-lang19-sweep",
+     "result": "partial",
+     "detail": "עדיין ½ מ־03.11. ראיתי חלק מתיקון F3 (de, nl, למעלה). לא סימנתי שוב, כי הסוכן השני כנראה עובד עליה עכשיו (הוא מחליף שפות)."
+    },
+    {
+     "id": "general-lang19-pseudo",
+     "result": "pass",
+     "detail": "מסומנת היום V (בדיקת תיקון, apk6)."
+    }
+   ],
+   "phoneState": "טלפון 3 (RF8Y30L038L) נמצא בשימוש של סוכן אחר, שהפעיל אותו לפחות בין 18:19 ל־18:21 (tap/ui/setting-language). לכן לא הרצתי reset, לא החזרתי לעברית ולא עשיתי relaunch, כדי לא לשבש את הריצה שלו. מצב אחרון שראיתי: שפת האפליקציה fr (קבע אותה הסוכן השני). wm size 1080x2340, density 450, font_scale 1.0, שלוש מהירויות האנימציה 1, TalkBack כבוי. הבנייה apk6, ותואמת ל־latest-build. מישהו צריך להחזיר את הטלפון לעברית ולבית, אחרי שהסוכן השני יסיים או ייעצר."
+  },
+  {
+   "checks": [
+    {
+     "id": "K1 NEW-black-new-game",
+     "result": "pass",
+     "detail": "apk6 is on both phones and matches latest-build. Ranked 2P fast, phone vs phone. I tapped 'משחק חדש' on BOTH Results screens, winner and loser, in 6 ranked games. Timings: g1 ~20-35 s after Results (phone 3 loser, phone 1 winner); g2 ~10-20 s; g3 the moment the buttons appeared (an on-device pixel watcher tapped 0.65 s and 1.2 s after the yellow button showed; the recording has the buttons at ~9.35 s and the taps at 10.0 and 10.55 s); g4 phone 3 (winner) ~9 s; g5 (reduced motion on) ~1 s, when the buttons appeared; g6 (RM on) ~6 s on both. Every time the search opened within 0.15-0.4 s ('מתחבר לתור…' then 'מחפש יריב…'). There was never a dark screen. Frame luminance in the recording never dropped below the search screen's own level, apart from a 100-150 ms fade. In 4 of the rounds both phones went on to a new game together. Friends room: phone 1 hosted, phone 3 joined with the code, phone 3 surrendered, then 'משחק חדש' on both. The host got a new room (503 862) and the guest got 'הצטרף עם קוד'. No dark screen. Controls: ranked Results → 'לבית' (stealth-bot game and g7) opened Home normally. logcat -T for each of the 7 rounds on both phones: 0 lines for addViewAt|handleHostException|getOrCreateDestroyTask, 0 'synchronouslyUpdateUIProps failed', 0 'ANR in'. Logs: scratchpad/k7/<serial>-r1..r7.log."
+    },
+    {
+     "id": "K2 B37-still",
+     "result": "partial",
+     "detail": "I recorded both phones with screenrecord 540x1170 and extracted frames every 50 ms. Reduced motion OFF in 3 games, 6 recordings (g1, g2, g4). '3' appeared first in every recording. VS lasted 0.95-1.05 s, then a cross-fade to '3' with no dark frame. Digits: '3' 0.9-0.95 s, '2' 0.9-1.0 s, '1' 0.8-0.95 s, even, with a 50-100 ms fade between them. GO! until the board: 1.0-1.1 s in g2/g4, but 1.75 s on BOTH phones in g1, the first ranked game after launch (GO! fully visible 6700-8400 ms, then the board in one step). Reduced motion ON in 2 games, 4 recordings (g5, g7): no ring and no landing; '3' 0.95-1.05 s, '2' 0.95-1.0 s, '1' 0.85-1.0 s; GO! fully visible 0.8-0.85 s, then the board fades in and is complete ~1.0 s after GO!. Sound and haptics not checked. One blank 50-150 ms frame stays between search and VS, and between '1' and GO! when reduced motion is off. Re-marked pregame-found-countdown-reduced as partial: board ~1.0 s after GO! against an expected ~0.4 s, which is the known A16 residual. Reduced motion is back to 'כבויה' on both phones."
+    },
+    {
+     "id": "K3 B43-badges-phone3",
+     "result": "partial",
+     "detail": "Reduced motion OFF (g1, g2, g4), both phones: both tiles showed the 'מוכן' badges (with 2/2 'כל השחקנים מוכנים') before the count. In g1 they appeared 0.6 s after the VS's first frame, at the same moment on both phones, and stayed 0.4 s before the cross-fade to '3'. Problems: (1) The badges appear in a single frame, and the whole VS block jumps up about 50 device px, then settles about 13 px back. (2) Nod: the avatar region changes in only 2 frames (about 0.15 and 0.3 s after the badges; mean diff 4-8), not a ~0.9 s movement. The smile is kept. Reduced motion ON: in g7 the badges appeared 0.4 s after the VS started, not together with it. In g5 the badge of אחוותא (phone 3) stayed 'מתחבר…', with '1/2 מוכנים · מחכים שכולם יתחברו…', on BOTH phones for the whole VS (1.15-1.3 s), and the count started anyway. That is the B43 symptom on phone 3 again (1 of 5 games). Sheets: scratchpad/k7/p3g5-badge.png, p1g5-badge.png, p1g1-tiles2.png, p3g1-tiles2.png."
+    },
+    {
+     "id": "K4 NEW-3p-timeout-early",
+     "result": "pass",
+     "detail": "Phone 3, ranked 3 players fast, alone. Recorded 80 s with screenrecord, no UI dumps during the search. Tap ≈1.05 s into the recording. The search screen's first frame ('מתחבר לתור…', 0:00) was at 1.15 s, and 'מחפש יריבים…' at 2.95 s. The clock ran steadily: 0:58 at 61.8 s, '0:59' from ~61.95 to 62.85 s. One blank frame at 62.90 s, then the timeout screen at 62.95 s: '1:00', 'עדיין אין מספיק שחקנים שמחפשים משחק כזה', 'חיפשנו דקה שלמה, ולא היו מספיק שחקנים שמחפשים משחק כזה. אפשר להמשיך לחכות, או להתאמן מול בוט בינתיים.', with buttons 'המשך לחפש', 'שחק מול בוט בינתיים' and 'חזרה לבית'. So the timeout came 60.0 s after the clock started counting ('מחפש'), 61.8 s after the search screen appeared, and ~61.9 s after the tap. The text matches the clock. The known-open K4 (timeout after ~20 s) no longer happens. Also for avatars-idle-still: my avatar on this search screen did not change for 15 s."
+    }
+   ],
+   "phoneState": "שני הטלפונים עם apk6 (תואם latest-build, לא התקנתי כלום). בסוף הורץ adb.ts reset בשניהם: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה he. 'הפחתת תנועה' הוחזרה ל'כבויה' בשניהם, כמו שהייתה (אומת בצילום). האפליקציה הופעלה מחדש ונמצאת בבית בשני הטלפונים. מחקתי את הקבצים הזמניים שלי (/data/local/tmp/watch*.sh, w.raw, /sdcard/k7-*.mp4). חשוב: בתחילת הסבב טלפון 1 (RF8Y60PP2XZ) היה 'unauthorized' ונפל פעמיים מה־USB (פעם אחת לכ־3 דקות). אחרי adb reconnect הוא עובד, אבל ברקע שלו פתוח דיאלוג המערכת 'האם לאפשר ניפוי באגים ב-USB?' עם המפתח של המחשב הזה (74:77:5F:…:06:09). אי אפשר לאשר אותו דרך adb, ומשה צריך לסמן 'אפשר תמיד מהמחשב הזה' ← 'יש אישור' בטלפון עצמו. נוצרו משחקים מדורגים בין הטלפונים: 7 משחקים, ועוד משחק נגד הבוט הסמוי RoniCat (טלפון 1 נכנע). דירוג מהיר: אורי 1298, אחוותא 1243. נוצר גם משחק חברים, וחדר החברים (503 862) נסגר ב'יציאה מהחדר'. הקלטות ופריימים נשמרו ב־scratchpad/k7."
+  }
+ ],
+ "batches": [
+  {
+   "lane": "טלפון 1",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ) נשאר באפליקציה, במסך הבית, עם אורי מחובר. כבר היה מותקן עליו apk6, ולא התקנתי כלום. הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, מצב טיסה כבוי. שפת האפליקציה עברית (he). את ה־density שיניתי זמנית ל־480 והחזרתי עם reset, והיא שוב 450. במתג 'פתח את כל השלבים' לא נגעתי, ונראה שהוא כבר דלוק, כי בקפיצה לפרק כל הפרקים פתוחים. לאורי נוספו ניסיונות ב־L001, ‏L002, ‏L004, ‏L005 ו־L051 (בעיקר ניסיונות שבהם הזמן נגמר), והשיאים שלו לא השתנו.",
+   "ids": [
+    "levels-howto-chapter1",
+    "levels-gate-locked",
+    "levels-find-card",
+    "levels-find-howto",
+    "levels-again-best-kept",
+    "levels-again-matches-board",
+    "levels-panel-no-region",
+    "levels-fillbox-rules",
+    "levels-fillbox-l002",
+    "levels-fillline-again"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 1 (RF8Y60PP2XZ) נפל מ־ADB באמצע הסבב, אחרי היציאה מ־L003. הוא היה במצב offline, ואחרי adb reconnect offline הוא עבר ל־unauthorized ואז שוב ל־offline. משה צריך לאשר בטלפון את 'ניפוי באגים ב־USB', או לחבר את הכבל מחדש. לכן לא הרצתי adb.ts reset ולא חזרתי לבית: כנראה האפליקציה עדיין פתוחה על מסך התוצאה של L003 ('יצאת מהשלב'). לא שיניתי שום הגדרה, והאפליקציה בעברית. נשארו מ־L034 שיא חדש וכוכבים (פרק 4: 6/30). מ־L003 נשאר ניסיון שנגמר ביציאה, אבל השיא של 3 כוכבים לא נפגע. לא נשארו קבצים זמניים ב־/sdcard (מחקתי אותם).",
+   "ids": [
+    "levels-puzzle-ready",
+    "levels-puzzle-drag",
+    "levels-puzzle-fixed",
+    "levels-puzzle-tap",
+    "levels-puzzle-wrong-swap",
+    "levels-puzzle-no-lock",
+    "levels-puzzle-solved",
+    "levels-puzzle-howto-pictures",
+    "levels-puzzle-again",
+    "levels-race-rules"
+   ]
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "את טלפון 1 (RF8Y60PP2XZ) לא נגעתי בכלל. בתחילת הבאץ' adb launch נכשל עם 'device offline'. הרצתי 'adb reconnect offline', שמחבר מחדש רק מכשירים במצב offline, ומאז המכשיר במצב 'unauthorized'. בדקתי שוב ושוב במשך כ-2.5 דקות, והמצב לא השתנה. כנראה מוצג על הטלפון חלון אישור RSA ל-USB debugging, ומשה צריך ללחוץ עליו 'אפשר' (עדיף עם 'אפשר תמיד ממחשב זה'). את ה-build לא אפשר לבדוק על הטלפון. לפי installed-RF8Y60PP2XZ.txt מותקן apk6, והוא תואם ל-latest-build.json, אז לא נדרשת התקנה. לא הרצתי reset ולא launch, כי אין חיבור. את RF8Y30L038L לא העברתי לשום פקודה, והוא נשאר במצב 'device'. לא הרצתי adb kill-server, כדי לא לנתק את הבודק השני.",
+   "ids": [
+    "levels-no-reactions",
+    "levels-boss-intro",
+    "levels-boss-screen",
+    "levels-boss-win",
+    "levels-boss-loss-with-star",
+    "levels-boss-tie",
+    "levels-boss-map",
+    "levels-exit",
+    "levels-freeze-background",
+    "levels-freeze-ready"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L), apk6 (מותקן ותואם ל־latest-build). מחובר בתור אחוותא, ולא התנתקתי. בהתחלה האפליקציה הייתה בקוריאנית (ko), על מסך שלבי האימון. הגדרתי עברית (he) והפעלתי מחדש, והבית עלה בעברית. אחר כך הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. כשבדקתי שוב, שפת האפליקציה התחלפה לאיטלקית (it) והיא הייתה שוב על מסך 'Allenamento a fasi'. אני לא עשיתי את זה. נראה שתהליך אחר, כנראה סוכן בדיקות שפות, מפעיל את הטלפון הזה במקביל. לכן לא החזרתי לעברית שוב, כדי לא לשבור לו את הבדיקה. מי שמריץ את הבדיקות צריך לוודא שיש רק סוכן אחד על כל טלפון, ובסוף להריץ: adb -s RF8Y30L038L shell cmd locale set-app-locales com.mosheg.sudokufight --locales he.",
+   "ids": [
+    "account-open-guard",
+    "account-open-login-look",
+    "account-open-login-arena",
+    "account-open-login-empty",
+    "account-open-login-bad-email",
+    "account-open-login-wrong-password",
+    "account-open-login-unknown-email",
+    "account-open-login-offline",
+    "account-open-login-success",
+    "account-open-login-unverified"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על apk6, במסך הבית, מחובר כ'אחוותא', והאפליקציה בעברית. כשהתחלתי, שפת האפליקציה הייתה איטלקית (מבדיקה קודמת), והחזרתי אותה לעברית. במהלך הבדיקה עברתי לאנגלית והחזרתי לעברית. את עריכת הפרופיל לא שמרתי, והפרופיל נשאר: אווטאר מחשבון, השם אחוותא, מדינה ישראל. בסוף הרצתי reset: גודל גופן 1, אנימציות 1, מצב טיסה כבוי.",
+   "ids": [
+    "account-open-login-eye",
+    "account-open-english",
+    "account-fighter-look",
+    "account-fighter-preview",
+    "account-fighter-avatar-sheet",
+    "account-fighter-country-sheet",
+    "account-fighter-country-search-latin",
+    "account-fighter-country-long",
+    "account-fighter-name-length",
+    "account-fighter-name-chars"
+   ]
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L) נשאר על apk6 (\"1.1.0 (06.11 18:25, K1 fix + Reanimated patch)\"), שכבר היה מותקן, ולא הותקן שום דבר חדש. הוא עדיין מחובר כ\"אחוותא\", ולא התנתקתי. הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. שפת האפליקציה עברית ([he]). האפליקציה הופעלה מחדש ונשארה על מסך הבית. לא שיניתי שום הגדרה. כל עשר המשימות דורשות להיות מנותקים במסך ההתחברות. לפי app/register/* ו־src/auth/redirect.ts, שחקן במצב ready מועבר מ־/register/* לבית, ובמסכי ה־dev אין תצוגה מקדימה של ההרשמה. לכן כל המשימות סומנו untested, עם ההערה \"נשאר למשה: דורש התחברות/התנתקות\".",
+   "ids": [
+    "account-fighter-name-available",
+    "account-fighter-name-taken",
+    "account-fighter-name-blocked",
+    "account-fighter-name-empty",
+    "account-fighter-large-font",
+    "account-signup-look",
+    "account-signup-edit-fighter",
+    "account-signup-empty",
+    "account-signup-password-rule",
+    "account-signup-strength"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "שני הטלפונים במסך הבית של האפליקציה, באפליקציה apk6 (המותקנת כבר מקודם, לא היה צורך להתקין). אף אחד מהם לא נשאר בחדר: שניהם יצאו מחדר 199415. בשניהם בוצע reset (גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי), ושפת האפליקציה עברית. שום הגדרה לא שונתה בלי שהוחזרה.",
+   "ids": [
+    "friends-room-create",
+    "friends-room-host-background-3min",
+    "friends-room-host-background-15min",
+    "friends-room-host-away-guest-view",
+    "friends-room-host-app-closed",
+    "friends-room-guest-appears",
+    "friends-room-guest-view",
+    "friends-room-server-restart"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "שני הטלפונים מעודכנים ל־apk7, הגרסה 1.1.0 (07.11 21:45, loop-1 fixes), וזה נרשם ב־installed-<serial>.txt. בשניהם הורץ adb reset: גודל גופן 1, אנימציות 1, תיקון צבעים כבוי, מצב טיסה כבוי. שפת האפליקציה עברית. האפליקציה הופעלה מחדש ונשארה במסך הבית. בטלפון 1 (אורי) נוספו כמה ניסיונות ב־L010 וב־L020, ושיא L010 נשאר שלושה כוכבים. בטלפון 3 (אחוותא) שוחקו שלבים 4, 5 ו־6 ונגמרו בלי כוכבים. קובצי העזר הזמניים ב־packages/engine/.qa-tmp נמחקו.",
+   "ids": [
+    "levels-no-reactions",
+    "levels-boss-intro",
+    "levels-boss-screen",
+    "levels-boss-win",
+    "levels-boss-loss-with-star",
+    "levels-boss-tie",
+    "levels-boss-map",
+    "levels-exit"
+   ]
+  },
+  {
+   "lane": "two",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "Both phones were reset (font scale 1, animations 1, airplane mode off) and the app locale is he. Both were relaunched and are on the Home screen. Both already had apk7, so no install was needed. Phone 1 (אורי): stages 35 and 34 each got one extra exited or timed-out attempt with 0 stars. Stage 34 keeps its 2-star best, and stage 35 now shows 'בלי כוכבים' ('next' state unchanged). Phone 3 was only launched and reset; it was not used for these tasks.",
+   "ids": [
+    "levels-freeze-background",
+    "levels-freeze-ready"
+   ]
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "general-ambient-screen-change",
+   "title": "T3-FIRST-PLAY-SLOW still: the first 'שחק' after a cold start waits about 0.55 s before the first frame (apk6)",
+   "what": "Phone 1 SM-A165F, build 1.1.0 (06.11 18:25, K1 fix + Reanimated patch). Steps: adb shell am force-stop com.mosheg.sudokufight; launch; wait 6–12 s on Home (longer than the ~1.2 s warm-up); adb shell dumpsys gfxinfo com.mosheg.sudokufight reset; input tap on 'שחק' (541,1449); dump framestats. 4 runs: press frames up to ~85 ms after the tap, then no frame at all until 533, 545, 552 and 606 ms. The first 'משחק חדש' frames take 75–159 ms, and the fade ends ~0.7–0.8 s after the tap. The fix check expected the first frame at ~250–300 ms and the end at ~0.45–0.55 s. The second and later visits in the same process are fine: first frame at 270–320 ms, ~0.45 s in total. 0 synchronouslyUpdateUIProps failures, no Skipped/Davey. So the warm-up does not seem to cover what makes the first New Game mount slow.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "avatars-idle-still",
+   "title": "B43 still (1 of 5): phone 3's 'מוכן' badge stays 'מתחבר…' through the whole VS and the count starts anyway (reduced motion on)",
+   "what": "Phone 1 (אורי, RF8Y60PP2XZ) and phone 3 (אחוותא, RF8Y30L038L), both SM-A165F, 1.1.0 (06.11 18:25, K1 fix + Reanimated patch), staging. Steps: Settings → 'הפחתת תנועה' → 'מופעלת' on both phones, back to Home. On both: 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב', tapped at the same moment (game g5, 21:00:47). Phone 3 had just come back from a 3-player search timeout ('חזרה לבית'), then Settings. Seen in the screen recordings at 50 ms (scratchpad/k7/p3g5-badge.png, p1g5-badge.png): the VS showed 'מתחבר…' on both tiles, then אורי turned 'מוכן' about 0.4 s later. אחוותא's badge stayed 'מתחבר…', with '1/2 מוכנים · מחכים שכולם יתחברו…', on BOTH phones for the whole VS (1.15-1.3 s), and then the count '3' started anyway. In the other 4 games (3 with reduced motion off, 1 with it on) both badges turned 'מוכן'. Related, reduced motion off (g1): the badges pop in a single frame and the whole VS block jumps up about 50 device px, then settles about 13 px back. The avatar 'nod' shows as only 2 changed frames (about 0.15 and 0.3 s after the badge), not about 0.9 s of movement.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "title": "K2 still: GO! stays 1.75 s before the board in the first ranked game after launch (reduced motion off)",
+   "what": "Both phones SM-A165F, 1.1.0 (06.11 18:25, K1 fix + Reanimated patch), reduced motion 'כבויה'. Steps: launch the app, open Settings, back to Home, 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב' on both phones at once (first ranked game of the session, 20:36:14). Recorded with screenrecord 540x1170, frames every 50 ms. VS 1.0 s, then '3' 0.9 s, '2' 0.95 s, '1' 0.95 s. A blank 150 ms, then GO! fully visible from 6700 to 8400 ms (1.75 s) on BOTH phones, then the board in one step. In the following games, in the same process, GO! lasted 1.0-1.1 s (reduced motion off) and 0.8-0.85 s plus a ~0.2 s fade (on). The known A16 residual is up to ~1 s, so the first game is ~0.75 s over it. This probably has the same cause as T3-FIRST-PLAY-SLOW / K8 (the first game-screen mount in a process). Recordings: scratchpad/k7/RF8Y60PP2XZ-g1.mp4, RF8Y30L038L-g1.mp4, sheet p1g1-go.png.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "postgame-results-v2-new-game-ranked",
+   "title": "Ranked surrender: 'כן, להיכנע' tapped about 1 s after the dialog opens closes the dialog without surrendering",
+   "what": "Phone 3 (and once phone 3 again) SM-A165F, 1.1.0 (06.11 18:25). In a ranked 2P game: tap 'כניעה' (785,499). About 1.0-1.5 s later, tap 'כן, להיכנע' (258,1970, found by its testID ranked-surrender-confirm in the uiautomator dump). It happened 2 times out of 9 (20:37:56 and 21:01:47). The dialog disappeared and the game went on, with no surrender and no Results. Waiting 2 s after 'כניעה' before the tap always worked. Likely cause: the tap lands while the sheet is still animating in, so it hits the scrim (ranked-surrender-scrim), which cancels. A real user who taps quickly could lose the surrender. Not seen in the friends game (2 s wait).",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-puzzle-solved",
+   "title": "במסך התוצאה של פאזל חסרה השורה של מספר ההחלפות והמינימום",
+   "what": "טלפון 1, SM-A165F, ‏1.1.0 (06.11 18:25, K1 fix + Reanimated patch), בעברית. צעדים: אימון בשלבים ← L034 (פאזל) ← פותרים ב־3 החלפות. אפשר גם להחליף פעם אחת לא נכון ואז לפתור. בתוצאה מופיעים 'שלב 34 הושלם', הכוכבים, הזמן (48.1 / 45.4 ש׳), 'שיא חדש!', ‏+10 XP, 'בפרק הזה', 'בלי טעויות' או '2 טעויות' ו'למה?'. אין את השורה 'N החלפות · המינימום M' שהאפיון מצפה לה. בקוד, ‏puzzleSwapsText ב־apps/mobile/src/screens/levels/levelWording.ts והמפתח result.swaps קיימים, ויש להם בדיקות, אבל אף מסך לא מציג אותם (LevelResultView לא משתמש בהם).",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-puzzle-fixed",
+   "title": "הקשה על ריבוע קבוע בפאזל לא מציגה שום הודעה",
+   "what": "טלפון 1, SM-A165F, ‏1.1.0 (apk6), בעברית. צעדים: L034 ← מקישים על ריבוע אפור עם מנעול. על המסך לא מופיעה שום הודעה (צילום כשנייה אחרי ההקשה). ב־PuzzleLevelScreen.tsx הפונקציה onFixed קוראת רק ל־announce(t('hud.puzzle.fixedTap')), והטקסט נכתב לאזור חי שקוף (level-live, לקורא מסך). לכן משתמש בלי TalkBack לא מקבל שום משוב. עזיבה של ריבוע על ריבוע קבוע עובדת: הגרור חוזר למקומו.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-exit",
+   "title": "'חזרה' של אנדרואיד בזמן 'מוכן?' או פתיחת הבוס יוצא בלי שאלה, והשלב ממשיך לרוץ ברקע",
+   "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), apk7, SM-A165F, עברית. שלבים: אימון בשלבים, בוחרים שלב (נבדק על L001 בטלפון 3, ועל L020 בוס בטלפון 1), ולוחצים 'שחק'. בזמן שמסך 'מוכן?' או פתיחת הבוס ('שלב בוס!') עדיין מוצג, כ־1 ש׳ אחרי 'שחק', לוחצים 'חזרה' של אנדרואיד. מה קורה: חוזרים מיד למפה, בלי הדיאלוג 'לצאת מהשלב?' ובלי מסך תוצאה. השלב לא בוטל: הוא ממשיך לרוץ מוסתר. מחכים כ־22 ש׳ ולוחצים שוב 'שחק' על אותו שלב. במקום 'מוכן?' חדש, מיד מופיע מסך השלב עם 'התשובה: D1' ואחריו תוצאה 'הזמן נגמר', ‏20 ש׳, בלי כוכבים. בבוס L020 נפתחה מיד התוצאה 'הבוס ניצח הפעם · הזמן נגמר · זמן 30 ש׳ · Pip: 3 מקומות'. כנראה BackHandler רשום רק ב־TapLevelScreen (שלב 'playing'), ולא בשלבי ready ו־tutorial ב־app/levels/play.tsx. בנוסף, ה־session ממשיך גם אחרי שהמסך נסגר. צילומים: qa-shots/RF8Y30L038L-backready-1.png (מסך 'מוכן?' לפני ה'חזרה') ו־RF8Y30L038L-levels-exit-back.png (המפה אחרי 'חזרה').",
+   "severity": "major"
+  },
+  {
+   "taskId": "levels-freeze-background",
+   "title": "Board visible in the recents thumbnail while a stage is frozen",
+   "what": "Phone 1 (RF8Y60PP2XZ) SM-A165F, 1.1.0 apk7 (07.11 21:45), Hebrew. Steps: open Levels and start stage 34 (puzzle). In the middle of the stage, press Recents (KEYCODE_APP_SWITCH). The app card shows the full board with every digit, and no cover. Meanwhile the stage is frozen, because the app is not in the foreground. Android takes the task snapshot before the opaque 'המשחק עצור' cover is drawn. You can also see this on return from Home: during the open animation the board is still visible under the cover for a moment. This goes against D65 ('opaque over the board, so the freeze gives no time to think'), because a player can study the board in Recents without the clock running. A possible fix is to draw the cover synchronously on blur or pause, or to hide the content from the snapshot (setRecentsScreenshotEnabled(false) on Android 13 and later, rather than FLAG_SECURE). Screenshot: qa-shots/RF8Y60PP2XZ-levels-freeze-background-60.png.",
+   "severity": "minor"
+  },
+  {
+   "taskId": "levels-freeze-ready",
+   "title": "Stage board jumps in size about 0.5 s after the stage starts",
+   "what": "Phone 1 (RF8Y60PP2XZ) SM-A165F, 1.1.0 apk7, Hebrew. Steps: Levels, then stage 35 (duel to 30), then 'שחק'. When 'מוכן?' ends, the board first draws at full width (x 45 to 1034 px of 1080) with a full-width keypad. In the next frame, about 0.6 s later, both shrink to x 96 to 984 px, centred, and the board top moves from about 838 to 889 px. Reproduced twice (frames ready-3 to ready-5 and ready-74 to ready-75 in qa-shots). It looks like the first render sizes the board before the 'room' height is measured (roomHeight null, so boardSide falls back to width only) and then re-lays it out after onLayout. The fix is to hide the board until the height is measured, or measure it before showing.",
+   "severity": "minor"
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "levels-gate-locked",
+   "issue": "אפשר לבדוק את המשימה רק בחשבון או בנתונים חדשים, כי בפרק 1 צריכים להיות פחות מ־20 כוכבים. כדאי לכתוב את זה כתנאי מוקדם, או לסמן אותה 'משה' בלבד."
+  },
+  {
+   "taskId": "levels-find-card",
+   "issue": "בצעד 1 יש פסיק מיותר ('ברוחב 360dp,.'). כדאי להוסיף איך מגיעים לרוחב הזה ב־A16, למשל ‎'adb shell wm density 480'‎ ואחר כך reset. כדאי גם לציין ששלב מיקום מדויק בשורה מופיע רק מפרק 6 (L051), כי במערכה 1 כל המטרות בריבוע. ועוד שאלה לניסוח: האם מותר שהטקסט יישבר ל־4 שורות ('רק הקשה' לבד בשורה)? הצפוי אומר רק 'לא נחתכת'."
+  },
+  {
+   "taskId": "levels-puzzle-fixed",
+   "issue": "השורה 'הקשה על ריבוע קבוע: \"הריבוע הזה קבוע\"' מצפה להודעה שרואים על המסך. באפליקציה ההודעה נשלחת רק לקורא מסך. צריך להחליט: או שזה באג, או שצריך לנסח את השורה מחדש ('TalkBack מקריא...')."
+  },
+  {
+   "taskId": "levels-puzzle-ready",
+   "issue": "התנאי המוקדם (ניקוי נתונים או התקנה נקייה) תמיד נופל על 'נשאר למשה'. כדאי להוסיף לתפריט 'בדיקה' כפתור 'אפס הדרכות שלבים' (levels-tutorials store), כדי שאפשר יהיה לבדוק את זה ואת levels-puzzle-howto-pictures בלי ניקוי נתונים."
+  },
+  {
+   "taskId": "levels-puzzle-drag",
+   "issue": "השלבים כתובים 'בית ← \"משחק חדש\"' בעותק של הריצה, אבל הכפתור בבית נקרא 'שחק' (בקטלוג v6 זה כבר תוקן). עוד דבר: בפאזל השעון רץ בזמן שה־ui של uiautomator נכשל (שולי מספרים מונפשים ברקע), כך שקשה לבדוק באוטומציה מתוך 60 שניות. עדיף להשתמש ב־screencap על המכשיר."
+  },
+  {
+   "taskId": "levels-boss-intro",
+   "issue": "העותק בריצה 2 עדיין אומר 'בית ← \"משחק חדש\"' בצעד 1, והקטלוג v6 אומר 'בית ← \"שחק\"'. העותק בריצה ישן. כנראה זה נכון גם לשאר משימות levels-*."
+  },
+  {
+   "taskId": "account-open-guard",
+   "issue": "כל עשר המשימות בקבוצה 'פתיחה והתחברות' מתחילות מנותקים. ב־apps/mobile/src/auth/redirect.ts משתמש מחובר מופנה ממסך /login לבית. לכן סוכן שאסור לו להתנתק לא יכול לבדוק אף אחת מהן, גם לא את בדיקות השדות המקומיות (שדות ריקים, מייל לא תקין). כדאי לסמן את כולן who: moshe, או להוסיף כניסה למסך ההתחברות בתצוגת פיתוח בלבד, בקטע 'בדיקה'."
+  },
+  {
+   "taskId": "account-fighter-avatar-sheet",
+   "issue": "כל משימות 'הרשמה, שלב 1' דורשות התנתקות. חלון האווטאר, חלון המדינה ושדה השם (AvatarPicker, CountryPicker, NameField) משותפים גם ל'עריכת פרופיל' (הגדרות ← עריכת פרופיל), ושם אפשר לבדוק אותם בלי התנתקות ובלי לשמור. כדאי להוסיף להן גרסה דרך עריכת פרופיל."
+  },
+  {
+   "taskId": "account-open-english",
+   "result": "",
+   "issue": "בחשבון מחובר, מסך הפתיחה (JS splash) מופיע פחות משנייה ואז עובר לבית, ולכן קשה לתפוס בו את כל השורות גם בצילומים רצופים. המשימה כבר דורשת התנתקות והקלטה, וזה בסדר, אבל בלי ffmpeg במחשב אי אפשר לחלץ פריימים מההקלטה."
+  },
+  {
+   "taskId": "friends-room-guest-view",
+   "issue": "בשורה הצפויה כתוב 'מחכים ש־MosheG יתחיל', אבל זה רק שם לדוגמה. באפליקציה מופיע השם של המארח ('מחכים ש־אורי יתחיל'). כדאי לנסח 'מחכים ש־<שם המארח> יתחיל'."
+  },
+  {
+   "taskId": "friends-room-guest-appears",
+   "issue": "השורה 'תוך שנייה בערך' לא נמדדה במדויק, כי קריאת מסך ב־uiautomator לוקחת כ־2 שניות. החבר הופיע כבר בקריאה הראשונה אחרי ההצטרפות."
+  },
+  {
+   "taskId": "friends-room-host-background-15min",
+   "issue": "המבחן של 15 הדקות מכסה גם את המבחן של 3 הדקות. אפשר לשקול לאחד אותם, או להריץ את שניהם במקביל."
+  },
+  {
+   "taskId": "levels-boss-loss-with-star",
+   "issue": "ב־L010 אי אפשר בפועל להגיע ל־2 מול 3. ‏Pip צריך 8.8–13.2 ש׳ לכל מקום (findMs), כלומר לפחות 26.4 ש׳ לשלושה מקומות מתוך 30, ועוד צריך להשאיר זמן לשני המקומות שלי. הבדיקה עברה על L020 (‏Pip צריך 7.2–10.8 ש׳). מוצע לכתוב 'שלב בוס מרוץ (למשל L020)' במקום L010."
+  },
+  {
+   "taskId": "levels-boss-tie",
+   "issue": "כדאי לציין שבמרוץ, הקשה מחוץ לאזור המטרה לא נחשבת שגויה. רק הקשה על משבצת ריקה לא נכונה בתוך הריבוע המסומן נחשבת. זה רלוונטי גם ל־levels-no-reactions: 'מקישים במקום שגוי' צריך להיות 'בתוך ריבוע המטרה'."
+  },
+  {
+   "taskId": "levels-exit",
+   "issue": "בחשבון של טלפון 3 כל שלבי פרק 1 כבר פתוחים ('עוד לא שוחק', ואפשר לשחק בהם). לכן אי אפשר לראות ש'השלב הבא נפתח' אחרי 'יציאה'. הדיאלוג כן אומר 'והשלב הבא ייפתח'. הבדיקה צריכה חשבון שבו השלב הבא עוד נעול."
+  },
+  {
+   "taskId": "levels-boss-map",
+   "issue": "הצעדים אומרים 'בית ← שחק', אבל בגרסה של הבדיקה בקטלוג (run) כתוב 'משחק חדש'. הכפתור באפליקציה נקרא 'שחק', והמסך שנפתח נקרא 'משחק חדש'."
+  },
+  {
+   "taskId": "levels-freeze-background",
+   "issue": "The expected line says that on return the board is covered '(\"המשחק עצור\")' with 3, 2, 1. On return, the cover actually reads 'ממשיכים בעוד' plus the number. 'המשחק עצור' is shown only while the app is away, so a tester never sees it. Suggested wording: 'בחזרה הלוח מכוסה כולו (\"ממשיכים בעוד\"), ומעליו 3, 2, 1'. Also, the duel stage is 30 s, so it ends before a second pause (screen off) can be done in the same stage. The steps could say to use a fresh stage, or the puzzle stage, for the screen-off part."
+  },
+  {
+   "taskId": "levels-freeze-ready",
+   "issue": "The run's copy (older) still says 'בית ← \"משחק חדש\"'. Catalog v6 says 'שחק', which matches the app."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "general-ambient-screen-change",
+   "result": "partial",
+   "summary": "אין החלקה ואין הבהוב, 0 כשלים. היסטוריה בלי הקפאה (פריים מקסימלי 116 ms). 'שחק' ראשון אחרי הפעלה קרה עדיין ~0.7–0.8 ש׳ (K8 / T3-FIRST-PLAY-SLOW). שאר המעברים 0.2–0.5 ש׳"
+  },
+  {
+   "taskId": "postgame-results-v2-new-game-ranked",
+   "result": "pass",
+   "summary": "מנצח: כתר, 'ניצחון!' ותג זהב 'מקום 1 מתוך 2'. מפסיד: 'הפסד' באפור ו'נכנעת לפני שהלוח התמלא'. 'משחק חדש' פותח ישר 'מחפש יריב…' עם 'מדורג · 2 שחקנים · מהיר' ו'אני 1298' (הדירוג החדש). 'ביטול חיפוש' סוגר. K1: אין מסך כהה ב־6 תוצאות מדורג ובחדר חברים, 0 שגיאות בלוג"
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "result": "partial",
+   "summary": "בהפחתת תנועה: בלי טבעת ובלי נחיתה, '3' מופיע תמיד, כל ספרה 0.85–1.05 ש׳. אבל הלוח מלא רק כ־1.0 ש׳ אחרי GO! (צפוי 0.4; שארית ידועה ב־A16). בלי הפחתה, במשחק הראשון אחרי הפעלה, GO! נמשך 1.75 ש׳"
+  },
+  {
+   "taskId": "avatars-idle-still",
+   "result": "pass",
+   "summary": "בחיפוש האווטר לא זז 15 ש׳. ה־VS נשאר 0.95–1.05 ש׳, תגי 'מוכן' על שני האריחים (הפחתת תנועה כבויה), ובין התגובות האווטרים לא ממצמצים"
+  },
+  {
+   "taskId": "levels-panel-no-region",
+   "result": "pass",
+   "summary": "בפאנל של L001/L005 (מיקום מדויק), L002 (ריבוע) ו־L004 (שורה) מופיעים רק כותרת, מטרה וספי זמן. אין מספר ריבוע, אות שורה או מספר עמודה."
+  },
+  {
+   "taskId": "levels-fillbox-l002",
+   "result": "pass",
+   "summary": "ב'מוכן?' של L002: 'ריבוע 6', ‏★★★ עד 10 ש׳, ‏★★ עד 15 ו־★ עד 20. בלוח מלא חסרות 2 משבצות, וכשהזמן נגמר מופיע 'הזמן נגמר' עם 20 ש׳."
+  },
+  {
+   "taskId": "levels-fillbox-rules",
+   "result": "pass",
+   "summary": "הקשה על A1, מחוץ לריבוע 6, לא בחרה משבצת. הקלדת 5 שגוי ב־D9 הציגה 'טעות +5 ש׳', וה־5 נצבע באדום ונחסם. הקשה חוזרת על 5 לא הוסיפה עונש."
+  },
+  {
+   "taskId": "levels-again-best-kept",
+   "result": "pass",
+   "summary": "ב־L002 היה ניסיון של ★★ ב־12.5 ש׳, אחריו 'שוב' שבו הזמן נגמר, ואז 'שוב' שלישי. כל ניסיון נתן לוח אחר, ובמפה נשאר השיא: שלושה כוכבים מתוך שלושה, 8 ש׳."
+  },
+  {
+   "taskId": "levels-fillline-again",
+   "result": "pass",
+   "summary": "L004 שוחק פעם אחת ועוד 'שוב' פעמיים: שורה B, ואז C, ואז I. האות זהה ב'מוכן?', בכותרת ובשורה המסומנת בלוח, והשלב תמיד שורה ולא עמודה."
+  },
+  {
+   "taskId": "levels-again-matches-board",
+   "result": "pass",
+   "summary": "ב־L005 השתנו הספרה והריבוע בין הניסיונות: 2 בריבוע 9, ‏3 בריבוע 4, ‏9 בריבוע 7. בכל ניסיון 'מוכן?', הכותרת, הכרטיס והלוח זהים. גם ב־L002 (ריבוע 6) וב־L004 (שורות B/C/I) 'מוכן?' תואם ללוח."
+  },
+  {
+   "taskId": "levels-find-card",
+   "result": "pass",
+   "summary": "בבדיקה ב־density 480 (רוחב 360dp, הוחזר אחר כך): 'בריבוע 5' (L001) ו'בשורה D' (L051) גדולים, מודגשים ולבנים, ו'· בלי מקלדת, רק הקשה' קטן ואפור. הטקסט לא נחתך (אין …): הוא נשבר ל־4 שורות."
+  },
+  {
+   "taskId": "levels-howto-chapter1",
+   "result": "untested",
+   "summary": "נשאר למשה: הבדיקה דורשת התקנה נקייה או ניקוי נתונים. בטלפון 1 'איך משחקים' כבר הוצג, ולכן L001, ‏L002, ‏L004 ו־L005 נפתחו ישר ב'מוכן?'."
+  },
+  {
+   "taskId": "levels-find-howto",
+   "result": "untested",
+   "summary": "נשאר למשה: הבדיקה דורשת התקנה נקייה או ניקוי נתונים. L001 נפתח ישר ב'מוכן?' בלי 'איך משחקים'."
+  },
+  {
+   "taskId": "levels-gate-locked",
+   "result": "untested",
+   "summary": "נשאר למשה: באורי יש בפרק 1 כבר ‎27/30 כוכבים וכל הפרקים פתוחים. אי אפשר לרדת מתחת ל־20 כוכבים בלי נתונים או חשבון חדשים."
+  },
+  {
+   "taskId": "levels-puzzle-drag",
+   "result": "pass",
+   "summary": "L034: גרירת ריבוע זז אל ריבוע זז אחר החליפה ביניהם, החלפות: 1"
+  },
+  {
+   "taskId": "levels-puzzle-tap",
+   "result": "pass",
+   "summary": "הקשה על שני ריבועים החליפה ביניהם. הקשה ראשונה מסמנת מסגרת תכלת, והקשה שנייה על אותו ריבוע מבטלת את הבחירה"
+  },
+  {
+   "taskId": "levels-puzzle-wrong-swap",
+   "result": "pass",
+   "summary": "החלפת ריבועים 3 ו־9 (שניהם לא במקום) הציגה 'החלפה שגויה +5 ש׳'"
+  },
+  {
+   "taskId": "levels-puzzle-no-lock",
+   "result": "pass",
+   "summary": "ריבוע שהגיע למקומו לא קיבל מנעול או מסגרת, והזזתי אותו שוב בגרירה (ההחלפה נספרה כטעות)"
+  },
+  {
+   "taskId": "levels-puzzle-again",
+   "result": "pass",
+   "summary": "אחרי 'שוב' הספרות (וגם אילו ריבועים קבועים) שונות מהניסיון הקודם, ב־4 ניסיונות"
+  },
+  {
+   "taskId": "levels-puzzle-fixed",
+   "result": "partial",
+   "summary": "עזיבה על ריבוע קבוע לא מזיזה אותו והגרור חוזר למקומו. הקשה על ריבוע קבוע לא מציגה שום הודעה על המסך: 'הריבוע הזה קבוע' נשלח רק לאזור חי שקוף, לקורא מסך"
+  },
+  {
+   "taskId": "levels-puzzle-solved",
+   "result": "partial",
+   "summary": "השלב נגמר מיד עם מסגרת זהב על כל 9 הריבועים, אבל בתוצאה אין את השורה 'N החלפות · המינימום M'"
+  },
+  {
+   "taskId": "levels-puzzle-ready",
+   "result": "untested",
+   "summary": "נשאר למשה: צריך לנקות נתונים או להתקין מחדש כדי לראות שוב את 'איך משחקים'. נבדק: ב־L003 מופיע 'מוכן?' עם '3 ריבועים זזים · 6 ריבועים קבועים', בלי מפה קטנה"
+  },
+  {
+   "taskId": "levels-puzzle-howto-pictures",
+   "result": "untested",
+   "summary": "נשאר למשה: 'איך משחקים' של הפאזל כבר הוצג בטלפון, ואין דרך להציג אותו שוב בלי ניקוי נתונים. צריך גם שיפוט של המראה"
+  },
+  {
+   "taskId": "levels-race-rules",
+   "result": "untested",
+   "summary": "לא נבדק: טלפון 1 נפל מ־ADB באמצע הסבב (מצב offline, ואחרי reconnect מצב unauthorized)"
+  },
+  {
+   "taskId": "account-open-guard",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. המשימה מתחילה מנותקים במסך ההתחברות, ומשתמש מחובר מופנה מ־/login לבית."
+  },
+  {
+   "taskId": "account-open-login-look",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות. אי אפשר להגיע למסך ההתחברות כשמחוברים."
+  },
+  {
+   "taskId": "account-open-login-arena",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות (מסך ההתחברות, וגם החלפת שפה עם התנתקות)."
+  },
+  {
+   "taskId": "account-open-login-empty",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות. מסך ההתחברות לא נגיש למשתמש מחובר."
+  },
+  {
+   "taskId": "account-open-login-bad-email",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות. מסך ההתחברות לא נגיש למשתמש מחובר."
+  },
+  {
+   "taskId": "account-open-login-wrong-password",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות, וגם מייל של חשבון בדיקה."
+  },
+  {
+   "taskId": "account-open-login-unknown-email",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות. מסך ההתחברות לא נגיש למשתמש מחובר."
+  },
+  {
+   "taskId": "account-open-login-offline",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התחברות/התנתקות, וגם פרטי חשבון בדיקה."
+  },
+  {
+   "taskId": "account-open-login-success",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות והתחברות מחדש."
+  },
+  {
+   "taskId": "account-open-login-unverified",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש הרשמה של חשבון חדש, התנתקות והתחברות."
+  },
+  {
+   "taskId": "account-open-login-eye",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. שדה הסיסמה קיים רק במסך ההתחברות, ולא נבדק בו דבר."
+  },
+  {
+   "taskId": "account-open-english",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. באנגלית ראיתי במסך הפתיחה Loading the arena… ותגית Tip, בלי עברית. לא תפסתי את SUDOKU FIGHT ואת שורת הסלוגן, ומסך ההתחברות לא נבדק. השפה הוחזרה לעברית."
+  },
+  {
+   "taskId": "account-fighter-look",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך שלב 1 בהרשמה לא נגיש לחשבון מחובר."
+  },
+  {
+   "taskId": "account-fighter-preview",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. הכרטיס המקדים קיים רק בהרשמה."
+  },
+  {
+   "taskId": "account-fighter-avatar-sheet",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל, שמשתמשת באותו רכיב, כל הצפוי עבר: כותרת, הבחירה שלך, כותרות לפי סוג, מסגרת P1 עם וי, ובחירה סוגרת את החלון. לא נשמר."
+  },
+  {
+   "taskId": "account-fighter-country-sheet",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל, שמשתמשת באותו רכיב, כל הצפוי עבר: חלון עם חיפוש, דגל ושם מלא, מיון לפי השם, וי על ישראל, ובחירה סוגרת את החלון. לא נשמר."
+  },
+  {
+   "taskId": "account-fighter-country-search-latin",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל עבר: germany מציג גרמניה, usa מציג קודם את ארצות הברית, zzzz מציג 'לא נמצאה מדינה'."
+  },
+  {
+   "taskId": "account-fighter-country-long",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל, ג׳ורג׳יה הדרומית… והונג קונג (…) מוצגות מלאות בשורה אחת ברשימה ובשדה, בלי לעלות על 'שינוי'."
+  },
+  {
+   "taskId": "account-fighter-name-length",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל עבר: ab מציג 'לא תקין' ו'לפחות 3 תווים', 17 תווים מציגים 'עד 16 תווים', ו'בודק…' לא מופיע. לא נשמר."
+  },
+  {
+   "taskId": "account-fighter-name-chars",
+   "result": "untested",
+   "summary": "נשאר למשה (הרשמה). בעריכת פרופיל עבר: qa-1 מציג 'לא תקין' ו'אי אפשר להשתמש ב: -'. לא נשמר."
+  },
+  {
+   "taskId": "account-fighter-name-available",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה לא נגיש לשחקן מחובר, כי שער ההתחברות מחזיר אותו לבית."
+  },
+  {
+   "taskId": "account-fighter-name-taken",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 1) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "account-fighter-name-blocked",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 1) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "account-fighter-name-empty",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 1) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "account-fighter-large-font",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות (שלב 2 של המשימה הוא התנתקות). גודל הגופן לא שונה."
+  },
+  {
+   "taskId": "account-signup-look",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 2) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "account-signup-edit-fighter",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסכי ההרשמה לא נגישים כשמחוברים."
+  },
+  {
+   "taskId": "account-signup-empty",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 2) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "account-signup-password-rule",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות ויצירת משתמש חדש (הרשמה). אסור בריצה הזו."
+  },
+  {
+   "taskId": "account-signup-strength",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש התנתקות. מסך ההרשמה (שלב 2) לא נגיש כשמחוברים."
+  },
+  {
+   "taskId": "friends-room-create",
+   "result": "pass",
+   "summary": "החדר נפתח מיד: 'חדר עם חברים', 'מהיר · 1 מתוך 4', קוד ⁦199 415⁩ בשתי קבוצות, אורי בכיסא 1 בכחול עם ● ועם 'אני' ו'מארח', שלושה כיסאות 'ממתין לשחקן…', 'התחל משחק' כבוי עם ההסבר"
+  },
+  {
+   "taskId": "friends-room-host-background-3min",
+   "result": "pass",
+   "summary": "3:19 דקות ברקע, חזרה מהאחרונים: אותו חדר, אותו קוד 199 415, עדיין 'מארח'"
+  },
+  {
+   "taskId": "friends-room-guest-appears",
+   "result": "pass",
+   "summary": "אחוותא הופיע אצל המארח בכיסא 2 כבר בקריאת המסך הראשונה: אווטאר, שם, דגל, 1243, כתום עם ▲, וגם כפתור X להוצאה"
+  },
+  {
+   "taskId": "friends-room-guest-view",
+   "result": "pass",
+   "summary": "אצל החבר: אורי בכיסא 1 עם 'מארח', אחוותא בכחול עם ● ו'אני', אין 'התחל משחק' ואין X, 'מחכים ש־אורי יתחיל', ויש 'שתף קישור'"
+  },
+  {
+   "taskId": "friends-room-host-away-guest-view",
+   "result": "pass",
+   "summary": "המארח ברקע: אצל החבר הכיסא של אורי מעומעם (אווטאר אפור) עם 'לא בחדר כרגע', ולמטה 'המארח לא בחדר כרגע'. כשחזר, הכיסא חזר לרגיל"
+  },
+  {
+   "taskId": "friends-room-host-background-15min",
+   "result": "pass",
+   "summary": "טלפון 1 היה ברקע 16 דקות, וטלפון 3 הצטרף עם הקוד בזמן הזה. בחזרה: אותו קוד, אורי עדיין מארח, אחוותא בכיסא 2"
+  },
+  {
+   "taskId": "friends-room-host-app-closed",
+   "result": "pass",
+   "summary": "האפליקציה הוחלקה מהאחרונים והתהליך נסגר: בטלפון 3 'לא בחדר כרגע'. בפתיחה מחדש טלפון 1 חזר ישר לחדר, לכיסא 1, כמארח, ובטלפון 3 הכיסא חזר לרגיל"
+  },
+  {
+   "taskId": "friends-room-server-restart",
+   "result": "untested",
+   "summary": "נשאר למשה: דורש deploy של השרת ל־staging, ורק באישור של משה"
+  },
+  {
+   "taskId": "levels-boss-map",
+   "result": "pass",
+   "summary": "בצומת 10 יש פינות זהב, כתר ואווטאר של Pip, גם בטלפון 3 שעומד בשלב 1. לשלב הנוכחי יש טבעת והילה, ולבוס אין."
+  },
+  {
+   "taskId": "levels-boss-intro",
+   "result": "pass",
+   "summary": "הופיעו 'שלב בוס!', ‏Pip עם כתר ו'הבוט הראשון: Pip' למשך כ־3 ש׳, ואחר כך הלוח מיד, בלי 'מוכן?'."
+  },
+  {
+   "taskId": "levels-boss-screen",
+   "result": "pass",
+   "summary": "למעלה פס 'בוס · פרק 1', ארבע פינות זהב סביב הלוח, וכתר על האווטאר של Pip בכרטיס."
+  },
+  {
+   "taskId": "levels-boss-win",
+   "result": "untested",
+   "summary": "ניצחון 5 מול 0 ב־L010: 'ניצחת את הבוס!' עם מדליון כתר. נשאר למשה לראות שהכתר באמת קופץ, כי זו אנימציה."
+  },
+  {
+   "taskId": "levels-boss-loss-with-star",
+   "result": "pass",
+   "summary": "ב־L020 (2 מקומות מול 3): 'הבוס ניצח הפעם' עם כוכב אחד. ב־L010 אי אפשר בפועל להגיע ל־2 מול 3."
+  },
+  {
+   "taskId": "levels-boss-tie",
+   "result": "pass",
+   "summary": "ב־L010, 2 מול 2 כשהזמן נגמר: למעלה 'הבוס ניצח הפעם', ובשורת הבוט 'תיקו: הבוס נשאר'."
+  },
+  {
+   "taskId": "levels-exit",
+   "result": "pass",
+   "summary": "‏X וגם 'חזרה' באמצע שלב פתחו את 'לצאת מהשלב?'. 'המשך לשחק' חזר לשלב, ו'יציאה' הובילה ל'יצאת מהשלב' בלי כוכבים. בדרך נמצא באג נפרד בלחיצה על 'חזרה' בזמן 'מוכן?'."
+  },
+  {
+   "taskId": "levels-no-reactions",
+   "result": "pass",
+   "summary": "אין כפתור תגובות. אחרי הקשה שגויה בתוך ריבוע המטרה הופיע 😂 בכרטיס של Pip."
+  },
+  {
+   "taskId": "levels-freeze-background",
+   "result": "pass",
+   "summary": "שלב 35 (דו־קרב): מעבר ל־30 ש׳ ב־0:11, בחזרה כיסוי אטום 'ממשיכים בעוד' 3,2,1, השעון 0:11 ו־Pip נשאר 5. שלב 34 (פאזל): כיבוי מסך פעמיים ומעבר לאפליקציה אחרת, ואין קפיצה בשעון (לפי פס ההתקדמות: 30.06 ש׳ לפני, 30.91 ש׳ אחרי)"
+  },
+  {
+   "taskId": "levels-freeze-ready",
+   "result": "pass",
+   "summary": "בבית 6 ש׳ אחרי חצי שנייה של 'מוכן?'. בחזרה 'מוכן?' עדיין מוצג, והלוח עלה כ־1 עד 1.5 ש׳ אחר כך עם 0:29. שתי השניות עמדו"
+  }
+ ],
+ "missing": []
+}

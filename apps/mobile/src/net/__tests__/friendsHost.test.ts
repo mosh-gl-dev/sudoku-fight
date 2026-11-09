@@ -2,7 +2,7 @@ import type { HostUpdate } from '@sudoku-fight/engine';
 import type { MatchSeatReservation } from '@sudoku-fight/protocol';
 
 import { OnlineSession, type OnlineTrackName } from '../../game/onlineSession';
-import { OnlineError } from '../errors';
+import { friendsProblemOf, OnlineError } from '../errors';
 import type { OnlineInfo } from '../remoteGameHost';
 import { AVI, DANA, elapse, FakeFriendsTable, FCODE, FROOM } from '../testing/fakeFriends';
 import { CODE, FakeTable, ME } from '../testing/fakeServer';
@@ -104,6 +104,70 @@ describe('RemoteGameHost in a friends room: getting in, and the lobby', () => {
     late.consumeRefusal = 'roomClosed: the room closed';
     await expect(late.host.enterFriends(FCODE, late.reservation(), late.rejoin)).rejects.toThrow();
     expect(late.host.online.error?.code).toBe('roomClosed');
+  });
+
+  // QA loop 4: force-stop in (or right after) a friends game, then the app opened again: the server still held
+  // my seat for the dead connection and refused the new one ('alreadyInRoom'), which read as a server failure.
+  const HELD = `alreadyInRoom: ${ME} is connected already`;
+
+  it('my seat still held for a dead connection of mine: waits the hold out, then takes it', async () => {
+    const table = new FakeFriendsTable();
+    table.consumeRefusal = HELD;
+    const entering = table.host.enterFriends(FCODE, table.reservation(), table.rejoin);
+    let done = false;
+    void entering.then(
+      () => (done = true),
+      () => (done = true),
+    );
+    // Tries at 0, 3 and 9 s, each after the first with a fresh reservation from the route.
+    await elapse(table, 10_000, 100);
+    expect(kinds(table)).toEqual(['reserved', 'rejoin', 'reserved', 'rejoin', 'reserved']);
+    expect(table.host.online.status).toBe('connecting');
+    expect(done).toBe(false);
+    // The hold lapses; the next try (at 21 s) gets in.
+    table.consumeRefusal = null;
+    await elapse(table, 12_000, 100);
+    await entering;
+    expect(table.host.online.error).toBeNull();
+    await elapse(table, 50);
+    expect(table.host.online.status).toBe('lobby');
+  });
+
+  it('the room closed while my seat was held: its route says so (roomClosed), never a server failure', async () => {
+    const table = new FakeFriendsTable();
+    table.consumeRefusal = HELD;
+    const entering = table.host.enterFriends(FCODE, table.reservation(), table.rejoin);
+    const failed = expect(entering).rejects.toBeInstanceOf(OnlineError);
+    await elapse(table, 4_000, 100);
+    table.rejoinRefusal = 'roomClosed';
+    await elapse(table, 6_000, 100);
+    await failed;
+    expect(table.host.online).toMatchObject({ status: 'closed', closeReason: 'refused' });
+    expect(table.host.online.error).toMatchObject({ code: 'roomClosed', friends: 'roomClosed' });
+    expect(friendsProblemOf(table.host.online.error!)).toBe('roomClosed');
+  });
+
+  it('a hold that never lapses: it gives up after friendsHeldSeatWaitMs, with few calls to the route', async () => {
+    const table = new FakeFriendsTable();
+    table.consumeRefusal = HELD;
+    const entering = table.host.enterFriends(FCODE, table.reservation(), table.rejoin);
+    const failed = expect(entering).rejects.toBeInstanceOf(OnlineError);
+    await elapse(table, 80_000, 500);
+    await failed;
+    expect(kinds(table).filter((k) => k === 'rejoin').length).toBeLessThanOrEqual(5);
+    expect(table.host.online.status).toBe('closed');
+  });
+
+  it('leaving while the hold is waited out: no more tries', async () => {
+    const table = new FakeFriendsTable();
+    table.consumeRefusal = HELD;
+    const entering = table.host.enterFriends(FCODE, table.reservation(), table.rejoin);
+    const failed = expect(entering).rejects.toThrow();
+    await elapse(table, 1_000, 100);
+    table.host.close();
+    await elapse(table, 30_000, 500);
+    await failed;
+    expect(kinds(table)).toEqual(['reserved']);
   });
 });
 
@@ -345,6 +409,55 @@ describe('OnlineSession in a friends room: the analytics (generation 3)', () => 
     await session.ready;
     await elapse(table, 50);
     expect(session.online.status).toBe('lobby');
+  });
+
+  it('its game knows the players’ avatars and flags from the lobby (QA B42, B51: no grey silhouette)', async () => {
+    const table = new FakeFriendsTable({
+      others: [{ id: DANA, name: 'Dana', avatarId: 'pirate', country: 'DE', rating: 1190 }],
+    });
+    const { session } = sessionOn(table);
+    expect(session.profiles).toBeNull(); // no lobby yet
+    await session.ready;
+    await elapse(table, 50);
+    const profiles = session.profiles;
+    // Avatars and flags only: names and ratings are the loading card's, a ranked match's (OnlineProfile).
+    expect(profiles).toEqual({
+      [ME]: { avatarId: 'av00', country: 'IL' },
+      [DANA]: { avatarId: 'pirate', country: 'DE' },
+    });
+    // The same object while the lobby is the same: the game screen memoizes on it.
+    expect(session.profiles).toBe(profiles);
+    table.countdown(3000);
+    await elapse(table, 3000, 100);
+    table.startGame();
+    await elapse(table, 100);
+    expect(session.hasGame).toBe(true);
+    expect(session.profiles).toBe(profiles);
+  });
+
+  it('a dev room’s lobby (names only) gives no profiles; a ranked match’s own win', async () => {
+    const dev = new FakeTable();
+    const devSession = new OnlineSession({ host: dev.host, request: { kind: 'join', code: CODE } });
+    await devSession.ready;
+    dev.lobby([
+      { id: ME, name: 'Moshe' },
+      { id: 'p2', name: 'Nina' },
+    ]);
+    await elapse(dev, 50);
+    expect(devSession.online.lobby?.players).toHaveLength(2);
+    expect(devSession.profiles).toBeNull();
+
+    const table = new FakeFriendsTable();
+    const given = { [DANA]: { avatarId: 'maya', country: 'FR' } };
+    const ranked = new OnlineSession({
+      host: table.host,
+      request: { kind: 'friends', code: FCODE, reservation: table.reservation() },
+      friends: { rejoin: table.rejoin },
+      profiles: given,
+    });
+    await ranked.ready;
+    await elapse(table, 50);
+    expect(ranked.profiles).toBe(given);
   });
 
   it('needs the way back in', () => {

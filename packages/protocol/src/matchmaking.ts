@@ -132,6 +132,11 @@ export const MATCH_TIMEOUT_MS = 60_000;
 export const KEEP_SEARCHING_WINDOW_MS = 60_000;
 /** After "found", every player must connect to the game room within this (spec §10, D37: 10 s). */
 export const READY_TIMEOUT_MS = 10_000;
+/**
+ * The VS holds at least this long after "found": the countdown starts then at the earliest, even when everyone
+ * is in at once (spec §10; motion tokens `sequence.matchFound.countdownAt`).
+ */
+export const FOUND_HOLD_MS = 1200;
 /** 3… 2… 1…: one step a second, then GO at `startsAt` (spec §10). */
 export const COUNTDOWN_STEPS = [3, 2, 1] as const;
 export const COUNTDOWN_STEP_MS = 1000;
@@ -325,4 +330,29 @@ export type MatchmakingError = (typeof MATCHMAKING_ERRORS)[number];
 export function matchmakingErrorOf(message: string): MatchmakingError | null {
   const head = message.split(':', 1)[0]!.trim();
   return (MATCHMAKING_ERRORS as readonly string[]).includes(head) ? (head as MatchmakingError) : null;
+}
+
+/**
+ * The text of `alreadyQueued` when the account's ranked game runs (QA "density-change-orphans-ranked-game"): it
+ * names the game's room, so the app can offer the way back into it (a join by that room id with the same
+ * account takes the seat the server holds, until the grace runs out), and its queue (the game's type and
+ * players, for the loading card and the results' "משחק חדש"). An app before this one reads only the error at
+ * the start of the message.
+ */
+export const rankedGameRefusalText = (roomId: string, queue?: QueueKey): string =>
+  `this account is in a ranked game that has not ended (room ${roomId}${queue ? `, queue ${queue}` : ''})`;
+
+const REFUSAL_ROOM = /\(room ([A-Za-z0-9_-]{1,64})(?:, queue ([a-z]+-[234]p))?\)\s*$/;
+
+/** The room of the account's running ranked game, named by an `alreadyQueued` refusal; null when none. */
+export function matchmakingRoomOf(message: string): string | null {
+  if (matchmakingErrorOf(message) !== 'alreadyQueued') return null;
+  return REFUSAL_ROOM.exec(message)?.[1] ?? null;
+}
+
+/** The queue of the account's running ranked game, named by an `alreadyQueued` refusal; null when none. */
+export function matchmakingQueueOf(message: string): QueueKey | null {
+  if (matchmakingErrorOf(message) !== 'alreadyQueued') return null;
+  const queue = REFUSAL_ROOM.exec(message)?.[2];
+  return isQueueKey(queue) ? queue : null;
 }

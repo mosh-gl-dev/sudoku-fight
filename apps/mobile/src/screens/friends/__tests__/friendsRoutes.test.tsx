@@ -1,8 +1,9 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
 import { router } from 'expo-router';
-import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
-import { BackHandler, Share, Text } from 'react-native';
+import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
+import { useState } from 'react';
+import { AppState, BackHandler, Share, Text } from 'react-native';
 
 import FriendsJoinRoute from '../../../../app/friends/join';
 import FriendsRoomRoute from '../../../../app/friends/room';
@@ -18,10 +19,13 @@ import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
 import { createFriendsRooms } from '../../../net/friends';
 import { deviceFriendsDeps, setFriendsRooms } from '../../../net/friendsDevice';
+import { GoCover } from '../../match/GoCover';
+import { handedGoCover, handGoCover } from '../../match/goHandoff';
 import { DANA, elapse, FakeFriendsTable, FakeRoomsApi, FCODE } from '../../../net/testing/fakeFriends';
+import { ME } from '../../../net/testing/fakeServer';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
-import { iso } from '../../game/connection/testing/setup';
+import { hidden, iso } from '../../game/connection/testing/setup';
 import { renderApp } from '../../home/testing/homeTesting';
 
 /**
@@ -54,8 +58,18 @@ const ROUTES = {
   'friends/room': () => <FriendsRoomRoute />,
   'friends/join': () => <FriendsJoinRoute />,
   'room/[code]': () => <RoomByCodeRoute />,
-  game: () => <Text testID="stub-game">game</Text>,
+  game: () => <StubGame />,
 };
+
+/** The game route as app/game.tsx opens it: on the GO! handed over (GoCover), read as it first renders. */
+function StubGame() {
+  const [goCover] = useState(handedGoCover);
+  return (
+    <GoCover model={goCover}>
+      <Text testID="stub-game">game</Text>
+    </GoCover>
+  );
+}
 
 let table: FakeFriendsTable;
 let api: FakeRoomsApi;
@@ -64,7 +78,13 @@ beforeEach(async () => {
   jest.useRealTimers();
   const repo = await openPracticeRepo(await memoryDb());
   jest.mocked(practiceStorageOrNull).mockImplementation(async () => repo);
-  useProfile.setState({ name: 'Moshe', avatarId: 'av00', country: 'IL', lastPlay: null });
+  useProfile.setState({
+    name: 'Moshe',
+    avatarId: 'av00',
+    country: 'IL',
+    lastPlay: null,
+    friendsGameType: null,
+  });
   useSettings.setState({ reduceMotion: 'on' });
   await i18n.changeLanguage('he');
   // A signed-in player (a room link's screen waits for that); the routes are the fake's.
@@ -131,6 +151,46 @@ describe('the friends routes', () => {
     expect(useProfile.getState().lastPlay).toEqual({ mode: 'ranked', gameType: 'hard', players: 2 });
   });
 
+  it('the board before my own GO (a clock a little behind the server’s): GO! first, then the game (QA loop 8), opened at once over that GO! (QA go-hold-joiner, loop 13)', async () => {
+    const app = await renderApp('/friends/room?create=1', ROUTES);
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-code')).toBeOnTheScreen());
+    await act(async () =>
+      table.arrive({ id: DANA, name: 'Dana', avatarId: 'av00', country: 'IL', rating: 1190 }),
+    );
+    await serve();
+    await fireEvent.press(screen.getByRole('button', { name: 'התחל משחק · 2 שחקנים' }));
+    await act(async () => void table.countdown(3000));
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-countdown-step')).toHaveTextContent('3'));
+    // The game comes while this phone still counts "1".
+    await act(async () => {
+      await elapse(table, 2300);
+      table.startGame();
+    });
+    await serve();
+    // GO!, never "1", and the game screen opens at once over it: no hold on the room first (it put the game's
+    // whole mount after 250 ms of GO!), the game screen keeping this GO! until the game is drawn under it.
+    expect(app.pathname()).toBe('/game');
+    // The game screen's first frame is the room's GO! picture (header, players, GO! and its line), never "1".
+    const frame = screen.getByTestId('friends-go-frame', hidden);
+    expect(within(frame).getByTestId('friends-countdown-step', hidden)).toHaveTextContent('GO!');
+    expect(within(frame).getByText('מכינים את הלוח…', hidden)).toBeOnTheScreen();
+    expect(within(frame).getByTestId(`friends-countdown-${ME}`, hidden)).toBeOnTheScreen();
+    expect(within(frame).getByTestId(`friends-countdown-${DANA}`, hidden)).toBeOnTheScreen();
+    for (const step of screen.getAllByTestId('friends-countdown-step', hidden))
+      expect(step).toHaveTextContent('GO!');
+    expect(handedGoCover()).toEqual({
+      kind: 'friendsGo',
+      lobby: expect.objectContaining({
+        players: [expect.objectContaining({ id: ME }), expect.objectContaining({ id: DANA })],
+      }),
+      myId: ME,
+      shownAt: expect.any(Number),
+    });
+    await act(async () => handGoCover(null));
+  });
+
   it('"שתף קישור" and "העתק קוד" use the share sheet and the clipboard', async () => {
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
     await renderApp('/friends/room?create=1', ROUTES);
@@ -144,6 +204,69 @@ describe('the friends routes', () => {
     await waitFor(() => expect(screen.getByTestId('friends-copied')).toBeOnTheScreen());
     expect(clipboard.setStringAsync).toHaveBeenCalledWith(FCODE);
     share.mockRestore();
+  });
+
+  it('the next "צור חדר" opens with the type I chose in my last room, not the last practice’s (QA friends-room-type-not-remembered)', async () => {
+    // The last game elsewhere was hard: the first room opens with it [D82].
+    useProfile.setState({
+      lastPlay: { mode: 'ranked', gameType: 'hard', players: 2 },
+      friendsGameType: null,
+    });
+    const app = await renderApp('/modes', ROUTES);
+    await fireEvent.press(screen.getByTestId('modes-friends-create'));
+    await serve();
+    expect(api.calls).toEqual([{ kind: 'create', body: expect.objectContaining({ gameType: 'hard' }) }]);
+    await waitFor(() => expect(screen.getByTestId('friends-code')).toBeOnTheScreen());
+    // I choose "מהיר" there, and the server takes it (its lobby says so).
+    await fireEvent.press(screen.getByRole('radio', { name: 'מהיר' }));
+    await serve();
+    expect(table.commands).toEqual([{ type: 'setGameType', gameType: 'fast' }]);
+    table.gameType = 'fast';
+    await act(async () => table.lobby());
+    await serve();
+    expect(useProfile.getState().friendsGameType).toBe('fast');
+    // Home's "עוד סיבוב" keeps the last practice or ranked game.
+    expect(useProfile.getState().lastPlay).toEqual({ mode: 'ranked', gameType: 'hard', players: 2 });
+    await fireEvent.press(screen.getByRole('button', { name: 'יציאה מהחדר' }));
+    await serve();
+    expect(app.pathname()).toBe('/modes');
+
+    // A new room later (a fresh server table): it opens with "מהיר".
+    table = new FakeFriendsTable();
+    api = new FakeRoomsApi(table);
+    setFriendsRooms(createFriendsRooms(deviceFriendsDeps({ api: () => api, makeHost: () => table.host })));
+    await fireEvent.press(screen.getByTestId('modes-friends-create'));
+    await serve();
+    expect(api.calls).toEqual([{ kind: 'create', body: expect.objectContaining({ gameType: 'fast' }) }]);
+  });
+
+  it('a room whose hosting passed to me (its host left) is not my choice: its type is not remembered, until I change it', async () => {
+    useProfile.setState({ friendsGameType: 'fast' });
+    table = new FakeFriendsTable({ host: false });
+    table.gameType = 'hard';
+    api = new FakeRoomsApi(table);
+    setFriendsRooms(createFriendsRooms(deviceFriendsDeps({ api: () => api, makeHost: () => table.host })));
+    const app = await renderApp('/friends/join', ROUTES);
+    for (const [i, d] of [...FCODE].entries())
+      await fireEvent.changeText(screen.getByTestId(`friends-code-input-${i}`), d);
+    await serve();
+    await waitFor(() => expect(app.pathname()).toBe('/friends/room'));
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-code')).toBeOnTheScreen());
+    // Dana (the host) leaves: I host her "קשה" room now.
+    table.players = table.players.filter((p) => p.id !== DANA);
+    table.hostId = ME;
+    await act(async () => table.lobby());
+    await serve();
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'מהיר' })).toBeOnTheScreen());
+    expect(useProfile.getState().friendsGameType).toBe('fast');
+    // My own choice there is remembered.
+    await fireEvent.press(screen.getByRole('radio', { name: 'רגיל' }));
+    await serve();
+    table.gameType = 'normal';
+    await act(async () => table.lobby());
+    await serve();
+    expect(useProfile.getState().friendsGameType).toBe('normal');
   });
 
   it('"יציאה מהחדר" leaves the room (the seat is freed) and goes back', async () => {
@@ -330,5 +453,44 @@ describe('the friends routes', () => {
     await serve();
     await waitFor(() => expect(screen.getByText('המארח הוציא אותך מהחדר.')).toBeOnTheScreen());
     expect(screen.getByRole('button', { name: 'צור חדר' })).toBeOnTheScreen();
+  });
+});
+
+describe('the room screen going with its React root (QA density-change-orphans-ranked-game)', () => {
+  /** A lobby I host, Dana in it. */
+  async function lobby() {
+    await renderApp('/friends/room?create=1', ROUTES);
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-code')).toBeOnTheScreen());
+    await act(async () =>
+      table.arrive({ id: DANA, name: 'Dana', avatarId: 'av00', country: 'IL', rating: 1190 }),
+    );
+    await serve();
+  }
+
+  it('left by the player (the app in front): the seat is freed, as before', async () => {
+    await lobby();
+    await act(async () => screen.unmount());
+    await serve();
+    expect(useGameStore.getState().online).toBeNull();
+    expect(table.players.some((p) => p.id === 'me')).toBe(false);
+  });
+
+  it('Android recreating the activity (paused first): the seat and the room stay, for the new root', async () => {
+    await lobby();
+    const session = useGameStore.getState().online;
+    // The activity's pause reached AppState before its surface's stop unmounted the tree. (The test
+    // environment's AppState holds a mock function there: set the value, then put it back.)
+    const appState = AppState as { currentState: unknown };
+    const was = appState.currentState;
+    appState.currentState = 'background';
+    try {
+      await act(async () => screen.unmount());
+    } finally {
+      appState.currentState = was;
+    }
+    await serve();
+    expect(useGameStore.getState().online).toBe(session);
+    expect(table.players.some((p) => p.id === 'me')).toBe(true);
   });
 });

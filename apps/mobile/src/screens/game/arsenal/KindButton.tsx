@@ -8,7 +8,7 @@ import { Text } from '../../../components/ui/Text';
 import { decimalSeparator } from '../../../i18n/compose';
 import { color, tokens } from '../../../theme';
 import { type ArsenalToken, launchable } from './arsenalModel';
-import { arsenalMetrics as m } from './metrics';
+import { type ArsenalMetrics, arsenalMetrics as m } from './metrics';
 import { TokenArt } from './TokenArt';
 import { blockedPill, kindTitle, tokenLabel } from './wording';
 
@@ -24,6 +24,8 @@ export interface KindButtonProps {
   bubble: string | null;
   /** The second tap [D45]: the picker launches it, or says why it can't. */
   onPress: (kind: InterferenceKind) => void;
+  /** The picker's dimensions at the system text size (fittedPicker); the design's by default. */
+  metrics?: ArsenalMetrics;
 }
 
 /**
@@ -33,11 +35,24 @@ export interface KindButtonProps {
  * "רמה 3" for a kind above my level); a tap on it only explains. Screen readers: activating it launches, and
  * its label always says the price and the target.
  */
-export function KindButton({ token, targetName, width, reduce, bubble, onPress }: KindButtonProps) {
+export function KindButton({
+  token,
+  targetName,
+  width,
+  reduce,
+  bubble,
+  onPress,
+  metrics: sized = m,
+}: KindButtonProps) {
   const { t } = useTranslation('game');
   const { kind } = token;
   const ready = launchable(token);
   const locked = token.blockedReason === 'locked';
+  // At the system text size the name grows (up to the picker's growth), and its two lines' room and the button with
+  // it. A name that still needs a third line then shrinks to fit. Every name fits two lines at the design's size
+  // (pickerFits.test.ts), so the shrink stops there: on Android by that fit (its search keeps the largest size that
+  // fits; Fabric ignores minimumFontScale), on iOS by minimumFontScale as well.
+  const grown = sized.textScale > 1;
 
   return (
     <View style={{ width }}>
@@ -49,14 +64,21 @@ export function KindButton({ token, targetName, width, reduce, bubble, onPress }
         testID={`arsenal-kind-${kind}`}
         style={({ pressed }) => [
           styles.button,
+          { minHeight: sized.button.height },
           pressed && ready && styles.pressed,
           pressed && ready && !reduce && styles.pressedScale,
           !ready && styles.blocked,
         ]}
       >
         <TokenArt kind={kind} size={m.button.art} still={reduce || !ready} />
-        <View style={styles.nameBox}>
-          <Text style={[m.button.nameStyle, styles.name]} numberOfLines={m.button.nameLines}>
+        <View style={[styles.nameBox, { height: sized.button.nameBox }]} testID={`arsenal-kind-${kind}-name`}>
+          <Text
+            style={[m.button.nameStyle, styles.name]}
+            numberOfLines={m.button.nameLines}
+            maxFontSizeMultiplier={sized.textScale}
+            adjustsFontSizeToFit={grown}
+            minimumFontScale={grown ? 1 / sized.textScale : undefined}
+          >
             {kindTitle(kind, t)}
           </Text>
         </View>
@@ -82,7 +104,10 @@ export function KindButton({ token, targetName, width, reduce, bubble, onPress }
         </View>
       </Pressable>
       {bubble ? (
-        <View style={styles.bubbleRow} pointerEvents="none">
+        <View
+          style={[styles.bubbleRow, { bottom: sized.button.height + m.button.chipTop }]}
+          pointerEvents="none"
+        >
           <View style={styles.bubble} testID={`arsenal-bubble-${kind}`}>
             <Text style={[m.bubble.style, styles.bubbleText]}>{bubble}</Text>
           </View>
@@ -109,7 +134,7 @@ const styles = StyleSheet.create({
   blocked: { opacity: tokens.opacity.inactivePlayer },
   // Two lines' room whatever the name, so the chips of a row line up.
   nameBox: {
-    height: m.button.nameLines * (m.button.nameStyle.lineHeight ?? 0),
+    height: m.button.nameBox,
     marginTop: m.button.nameTop,
     alignSelf: 'stretch',
     justifyContent: 'center',

@@ -15,7 +15,9 @@ import FIXTURE from './__fixtures__/numberPlurals.json';
  * own plural rules). What differs is listed there ("changes") and checked here, all of it deliberate: the singular
  * for 1, "1 point" for "1 points" and "שנייה אחת" for "1 שניות". Where the number may be a fraction (points),
  * Hebrew 0.5 stays plural ("0.5 נקודות", as the phone always showed it: services/pluralRules.ts keeps Hebrew's
- * "one" for 1 only), and Hebrew's "two" forms are the plural, unchanged.
+ * "one" for 1 only), and Hebrew's "two" forms are the plural, unchanged. One later, deliberate change is in the
+ * fixture's Hebrew values too: B27 (QA run 2) starts levels:hud.duel.meLabel and botLabel with an RLM, as every
+ * right-to-left stage line that begins with a Latin name (levelWording.test.ts).
  */
 
 type Lang = 'en' | 'he';

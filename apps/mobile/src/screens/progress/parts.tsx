@@ -1,10 +1,12 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { Icon, type IconName } from '../../components/Icon';
+import { type Probe, useProbeWidths, WidthProbes, widthsOf } from '../../components/player/statusFit';
 import { Button, Spinner, type StateAction, type StateTone, StateView } from '../../components/ui';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { opaqueOver } from '../../theme/blend';
 
 /**
  * Pieces shared by the stage-12 screens (the leaderboard, the player card, progress, the interferences), in
@@ -148,7 +150,8 @@ export interface SegmentItem<K> {
 /**
  * A row of chips, one chosen (the leaderboard's tabs, the 2 / 3 / 4 picker): tabs in a tablist, or radios in a
  * radio group. Each is a 44 dp target; the chosen one has the gold border of a selected chip (components.md
- * §1.2).
+ * §1.2). Every fill is opaque, the ground's own colour or a tint laid over it: they sit on the screen, in front of
+ * the wandering digits (D126, B12).
  */
 export function Segmented<K extends string | number>({
   items,
@@ -168,13 +171,26 @@ export function Segmented<K extends string | number>({
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
+  // Each label measured at its full size, and the row's width (QA loop 7, 360 dp at font 1.3: "Gene…", "Nor…",
+  // "Frien…"): when a label does not fit an equal share, the segments take their labels' widths and wrap.
+  const [rowWidth, setRowWidth] = useState<number | null>(null);
+  const [widths, report] = useProbeWidths();
+  const probes: Probe[] = items.map((item, k) => ({
+    id: `segment-${k}`,
+    text: item.label,
+    style: text('label'),
+  }));
+  const measured = widthsOf(probes, widths);
+  const wrap = rowWidth !== null && measured !== null && !segmentsFit(rowWidth, measured);
   return (
     <View
-      style={[styles.segments, style]}
+      style={[styles.segments, wrap && styles.segmentsWrap, style]}
       accessibilityRole={role === 'tab' ? 'tablist' : 'radiogroup'}
       accessibilityLabel={label}
+      onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
       testID={testID}
     >
+      <WidthProbes probes={probes} onWidth={report} />
       {items.map((item) => {
         const on = item.key === value;
         return (
@@ -188,6 +204,7 @@ export function Segmented<K extends string | number>({
             }}
             style={({ pressed }) => [
               styles.segment,
+              wrap ? styles.segmentWrap : styles.segmentEqual,
               on && styles.segmentOn,
               pressed && styles.segmentPressed,
             ]}
@@ -201,6 +218,19 @@ export function Segmented<K extends string | number>({
       })}
     </View>
   );
+}
+
+const SEGMENT_PADDING = space[2];
+
+/**
+ * Whether every label (`labels`, measured at full size) fits an equal share of a row `rowWidth` wide: the share
+ * less the segment's padding and border.
+ */
+export function segmentsFit(rowWidth: number, labels: readonly number[]): boolean {
+  const n = labels.length;
+  if (n === 0) return true;
+  const share = (rowWidth - space[2] * (n - 1)) / n;
+  return Math.max(...labels) + 2 * SEGMENT_PADDING + 2 * tokens.border.hairline <= share;
 }
 
 const styles = StyleSheet.create({
@@ -227,19 +257,22 @@ const styles = StyleSheet.create({
     borderColor: color.border,
   },
   segments: { flexDirection: 'row', gap: space[2] },
+  segmentsWrap: { flexWrap: 'wrap' },
   segment: {
-    flex: 1,
-    minWidth: 0,
     minHeight: size.touch,
-    paddingHorizontal: space[2],
+    paddingHorizontal: SEGMENT_PADDING,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.button,
     borderWidth: tokens.border.hairline,
     borderColor: color.border,
+    backgroundColor: color.bg,
   },
-  segmentOn: { borderColor: color.accent, backgroundColor: color.accentSubtle },
-  segmentPressed: { backgroundColor: color.pressedOverlay },
+  // Equal shares (the design); or each as wide as its label, growing to fill its line, the lines wrapping.
+  segmentEqual: { flex: 1, minWidth: 0 },
+  segmentWrap: { flexGrow: 1, flexShrink: 0 },
+  segmentOn: { borderColor: color.accent, backgroundColor: opaqueOver(color.accentSubtle) },
+  segmentPressed: { backgroundColor: opaqueOver(color.pressedOverlay) },
   segmentTextOn: { color: color.accent },
   muted: { color: color.textMuted },
   centered: { textAlign: 'center' },

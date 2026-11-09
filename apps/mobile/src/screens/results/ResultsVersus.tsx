@@ -2,7 +2,15 @@ import type { GameType } from '@sudoku-fight/engine';
 import type { TFunction } from 'i18next';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import {
+  type LayoutChangeEvent,
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { AVATAR_STAGES, type AvatarIdOrNone, endFaceOf, placeCue, useAfter } from '../../avatars';
 import { Icon, type IconName } from '../../components/Icon';
@@ -19,11 +27,13 @@ import {
   signedText,
 } from '../../components/player';
 import { shownName } from '../../components/player/temporaryName';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { decimalSeparator, labelValue, stopSentences } from '../../i18n/compose';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { formatSeconds } from '../game/model';
+import { PODIUM_STAGGER_MS, useEntrance, useGrow, victory } from './resultsMotion';
 import type {
   AwardResult,
   OpponentResult,
@@ -43,13 +53,13 @@ import type {
  *
  * The avatars react to the end (spec §3.4, avatars/reactions.ts): as the players' section lands, the winner
  * laughs and spins (and idles on), whoever is behind or left looks sad, a draw smiles. With reduced motion only
- * the faces change.
+ * the faces change. The podium's columns grow from their feet (motion.md §4.7 `podium`), and after a win the
+ * awards come in one by one, each badge popping (`awards`); with reduced motion both are simply there.
  */
 
 /** The players' section is in place (motion.md §4.7: section 1 of the sequence): the end's reactions play. */
 function useEndReactions(): boolean {
   const reduce = useReduceMotion();
-  const victory = motion.sequence.victory;
   return useAfter(
     reduce
       ? motion.duration.reducedFade
@@ -83,9 +93,11 @@ function PlayerRow({
         {children}
       </View>
     );
+  // Inside its card, a row has no surface of its own: the one card press (D125), as the leaderboard's podium.
   return (
-    <Pressable
-      style={({ pressed }) => [style, pressed && styles.pressed]}
+    <PressableCard
+      variant="bare"
+      style={style}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={t('leaderboard.openHint')}
@@ -93,7 +105,7 @@ function PlayerRow({
       testID={testID}
     >
       {children}
-    </Pressable>
+    </PressableCard>
   );
 }
 
@@ -213,11 +225,17 @@ export function RankingSection({
   ranking,
   myAvatar,
   onOpenPlayer,
+  growAt = null,
 }: {
   ranking: readonly RankingRow[];
   myAvatar: AvatarIdOrNone;
   /** A ranked game: another player opens their card (spec §14.3). */
   onOpenPlayer?: (playerId: string) => void;
+  /**
+   * When the podium starts to grow (ms after the results open; its columns 100 ms apart, in screen order).
+   * Null: the steps are at their height from the start (reduced motion, or a podium on its own).
+   */
+  growAt?: number | null;
 }) {
   const { t } = useTranslation('history');
   const { t: tg } = useTranslation('game');
@@ -258,7 +276,7 @@ export function RankingSection({
   return (
     <Card title={t('results.ranking.title')} icon="leaderboard" testID="results-ranking">
       <View style={styles.podium}>
-        {PODIUM_ORDER.map((k) => {
+        {PODIUM_ORDER.map((k, column) => {
           const r = podium[k];
           if (!r) return null;
           const palette = paletteAt(r.colorIndex);
@@ -291,14 +309,13 @@ export function RankingSection({
               </View>
               <Text style={[text('rating'), { color: palette.ring }]}>{scoreText(r.score, decimal)}</Text>
               {delta(r)}
-              <View
-                style={[
-                  styles.podiumStep,
-                  { height: STEP_HEIGHT[k], borderColor: r.isMe ? palette.ring : color.border },
-                ]}
-              >
-                <Text style={[text('h1'), r.place === 1 ? styles.accent : styles.strong]}>{r.place}</Text>
-              </View>
+              <PodiumStep
+                place={r.place}
+                height={STEP_HEIGHT[k]}
+                borderColor={r.isMe ? palette.ring : color.border}
+                growAt={growAt === null ? null : growAt + column * PODIUM_STAGGER_MS}
+                testID={`results-podium-${r.place}-${r.playerId}-step`}
+              />
             </PlayerRow>
           );
         })}
@@ -344,6 +361,28 @@ export function RankingSection({
   );
 }
 
+/** A podium's step under a player, with their place on it: it grows from its foot from `growAt` (`podium`). */
+function PodiumStep({
+  place,
+  height,
+  borderColor,
+  growAt,
+  testID,
+}: {
+  place: number;
+  height: number;
+  borderColor: string;
+  growAt: number | null;
+  testID: string;
+}) {
+  const grow = useGrow(growAt ?? 0, growAt === null);
+  return (
+    <Animated.View style={[styles.podiumStep, { height, borderColor }, grow]} testID={testID}>
+      <Text style={[text('h1'), place === 1 ? styles.accent : styles.strong]}>{place}</Text>
+    </Animated.View>
+  );
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // My rating change (spec §12: "שינוי דירוג מונפש")
 
@@ -373,12 +412,27 @@ export function RatingSection({
   gameType,
   pairs = [],
   guards = [],
+  waiting = false,
+  onValueLayout,
+  countAt = motion.sequence.victory.ratingCountAt,
 }: {
   rating: RatingResult;
   gameType: GameType;
   pairs?: readonly RatingPairRow[];
   /** My pairs a leave guard held at 0 (spec §11.2): one caption each, saying why. */
   guards?: readonly RatingGuardRow[];
+  /**
+   * The number is not on the screen yet (below the fold, under the action bar: QA loop 8 on a 1080 × 2340 phone):
+   * the count waits on the old rating until it is, then runs (never before `ratingCountAt`).
+   */
+  waiting?: boolean;
+  /** Where the number and the change are laid out in this card (the screen tells when they come into view). */
+  onValueLayout?: (e: LayoutChangeEvent) => void;
+  /**
+   * When the count may start, ms after this card mounts: `ratingCountAt`, or less for a card that mounted after
+   * the screen's first frame (the results' stack fade on Android, ResultsScreen), so it still counts at the same time.
+   */
+  countAt?: number;
 }) {
   const { t } = useTranslation('history');
   const { t: tg } = useTranslation('game');
@@ -390,10 +444,10 @@ export function RatingSection({
   const [started, setStarted] = useState(false);
   useEffect(() => {
     if (reduce) return;
-    const id = setTimeout(() => setStarted(true), motion.sequence.victory.ratingCountAt);
+    const id = setTimeout(() => setStarted(true), countAt);
     return () => clearTimeout(id);
-  }, [reduce]);
-  const target = reduce || started ? after : before;
+  }, [reduce, countAt]);
+  const target = reduce || (started && !waiting) ? after : before;
   const delta = signedText(rating.delta, decimal);
   const pairLabels = pairs.map((p) =>
     t('results.rating.pairLabel', { name: displayName(p, tp), delta: signedText(p.delta, decimal) }),
@@ -419,8 +473,8 @@ export function RatingSection({
       testID="results-rating"
     >
       <View style={styles.head}>
-        <Icon name="leaderboard" size={size.icon.inline} color={color.textMuted} />
-        <Text style={[text('label'), styles.muted, styles.shrink]}>
+        <HeadBadge icon="leaderboard" />
+        <Text style={[text('playerName'), styles.strong, styles.shrink]}>
           {t('results.rating.title', { type: tg(`type.${gameType}`) })}
         </Text>
         {pairs.length ? (
@@ -429,7 +483,7 @@ export function RatingSection({
           </Text>
         ) : null}
       </View>
-      <View style={styles.ratingRow}>
+      <View style={styles.ratingRow} onLayout={onValueLayout} testID="results-rating-row">
         <CountUpText
           value={target}
           format={ratingText}
@@ -505,74 +559,123 @@ function awardValue(a: AwardResult, t: GameT): string {
   }
 }
 
-export function AwardsSection({ awards }: { awards: readonly AwardResult[] }) {
+/**
+ * The game's awards (spec §12), one line each: the award, who won it, and the value. What an award is for is a
+ * tap away (the line opens to show it), so the list reads at a glance; a screen reader hears it with the line.
+ * `popAt` (after a win, full motion): the lines come in from then, 150 ms apart, each badge popping (motion.md
+ * §4.7 `awards`). Null: they come in with their card.
+ */
+export function AwardsSection({
+  awards,
+  popAt = null,
+}: {
+  awards: readonly AwardResult[];
+  popAt?: number | null;
+}) {
   const { t } = useTranslation('game');
-  const { t: tp } = useTranslation('player');
-  const { t: th } = useTranslation('history');
   return (
-    <Card title={t('results.awards.title')} icon="trophy" testID="results-awards">
-      {awards.map((a) => {
-        const title = t(`results.awards.${a.kind}`);
-        const who = a.winners
-          .map((w) => (w.mine ? t('me') : w.name === null ? tp('unknownName') : shownName(w.name, tp)))
-          .join(t('listSep'));
-        const value = awardValue(a, t);
-        const definition = th(`results.awardDefinitions.${a.kind}`);
-        const mine = a.winners.some((w) => w.mine);
-        return (
-          <View
+    <Card title={t('results.awards.title')} icon="trophy" tone="gold" testID="results-awards">
+      <View style={styles.awards}>
+        {awards.map((a, i) => (
+          <AwardRow
             key={a.kind}
-            style={styles.row}
-            accessible
-            accessibilityRole="text"
-            accessibilityLabel={stopSentences(
-              [t('results.awards.label', { title, who, value }), definition],
-              t,
-            )}
-            testID={`results-award-${a.kind}`}
-          >
-            <View style={[styles.badge, mine ? styles.badgeMine : null]}>
-              <Icon
-                name={AWARD_ICONS[a.kind]}
-                size={size.icon.inline}
-                color={mine ? color.accent : color.textMuted}
-              />
-            </View>
-            <View style={styles.who}>
-              <Text style={[text('label'), styles.strong]} numberOfLines={1}>
-                {title}
-              </Text>
-              <Text style={[text('caption'), styles.muted]} numberOfLines={1}>
-                {who}
-              </Text>
-              <Text style={[text('micro'), styles.faint]} testID={`results-award-${a.kind}-definition`}>
-                {definition}
-              </Text>
-            </View>
-            <Text style={[text('cellRef'), styles.strong]}>{value}</Text>
-          </View>
-        );
-      })}
+            award={a}
+            popAt={popAt === null ? null : popAt + i * victory.awardsStagger}
+          />
+        ))}
+      </View>
     </Card>
   );
 }
 
+function AwardRow({ award: a, popAt }: { award: AwardResult; popAt: number | null }) {
+  const { t } = useTranslation('game');
+  const { t: tp } = useTranslation('player');
+  const { t: th } = useTranslation('history');
+  const reduce = useReduceMotion();
+  const [open, setOpen] = useState(false);
+  const still = popAt === null;
+  const row = useEntrance('fade', popAt ?? 0, still || reduce);
+  const badge = useEntrance('pop', popAt ?? 0, still || reduce);
+  const title = t(`results.awards.${a.kind}`);
+  const who = a.winners
+    .map((w) => (w.mine ? t('me') : w.name === null ? tp('unknownName') : shownName(w.name, tp)))
+    .join(t('listSep'));
+  const value = awardValue(a, t);
+  const definition = th(`results.awardDefinitions.${a.kind}`);
+  const mine = a.winners.some((w) => w.mine);
+  return (
+    <Animated.View style={still ? null : row} testID={`results-award-${a.kind}-in`}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={({ pressed }) => [styles.award, pressed && styles.awardDown]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={stopSentences([t('results.awards.label', { title, who, value }), definition], t)}
+        testID={`results-award-${a.kind}`}
+      >
+        <View style={styles.awardLine}>
+          <Animated.View style={[styles.awardBadge, mine ? styles.badgeMine : null, still ? null : badge]}>
+            <Icon
+              name={AWARD_ICONS[a.kind]}
+              size={size.icon.inline}
+              color={mine ? color.accent : color.textMuted}
+            />
+          </Animated.View>
+          {/* The whole award and who won it, on two lines if it must ("Меньше всех ошибок", B22), never "…". */}
+          <Text style={[text('label'), styles.awardTitle]} testID={`results-award-${a.kind}-title`}>
+            <Text style={styles.strong}>{title}</Text>
+            <Text style={styles.muted}>{`${tp('sep')}${who}`}</Text>
+          </Text>
+          <Text style={[text('rowTitle'), mine ? styles.accent : styles.strong]} numberOfLines={1}>
+            {value}
+          </Text>
+          <View style={open ? styles.chevronOpen : null}>
+            <Icon name="chevronDown" size={size.icon.inline} color={color.textFaint} />
+          </View>
+        </View>
+        <Text
+          style={[text('caption'), styles.faint, styles.definition, open ? null : styles.closed]}
+          testID={`results-award-${a.kind}-definition`}
+        >
+          {definition}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+/** A card's head (VIS-4): a 28 dp tinted badge with the icon, and the title in the text colour. */
+export function HeadBadge({ icon, tone = 'plain' }: { icon: IconName; tone?: HeadTone }) {
+  const gold = tone === 'gold';
+  return (
+    <View style={[styles.headBadge, gold ? styles.headBadgeGold : null]}>
+      <Icon name={icon} size={HEAD_ICON} color={gold ? color.accent : color.textMuted} />
+    </View>
+  );
+}
+
+/** A plain card, or one about a prize (the best move, the awards): its badge in gold. */
+export type HeadTone = 'plain' | 'gold';
+
 function Card({
   title,
   icon,
+  tone = 'plain',
   children,
   testID,
 }: {
   title: string;
   icon: IconName;
+  tone?: HeadTone;
   children: ReactNode;
   testID: string;
 }) {
   return (
     <View style={styles.card} testID={testID}>
       <View style={styles.head}>
-        <Icon name={icon} size={size.icon.inline} color={color.textMuted} />
-        <Text style={[text('label'), styles.muted]} accessibilityRole="header">
+        <HeadBadge icon={icon} tone={tone} />
+        <Text style={[text('playerName'), styles.strong, styles.shrink]} accessibilityRole="header">
           {title}
         </Text>
       </View>
@@ -581,8 +684,13 @@ function Card({
   );
 }
 
+/** The icon in a card's head badge (16), inside its 28 dp tile (VIS-4). */
+const HEAD_ICON = space[8];
+const HEAD_BADGE = space[11];
+/** An award's badge on its line (32). */
+const AWARD_BADGE = space[12];
+
 const styles = StyleSheet.create({
-  pressed: { opacity: 0.85 },
   card: {
     gap: space[6],
     padding: space[8],
@@ -591,7 +699,7 @@ const styles = StyleSheet.create({
     borderColor: color.border,
     backgroundColor: color.surface,
   },
-  head: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  head: { flexDirection: 'row', alignItems: 'center', gap: space[5] },
   row: { flexDirection: 'row', alignItems: 'center', gap: space[6], minHeight: size.touch },
   who: { flex: 1, minWidth: 0, gap: space[1], alignItems: 'flex-start' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space[2], maxWidth: '100%' },
@@ -610,6 +718,8 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
+    // It grows from its foot (useGrow).
+    transformOrigin: 'bottom',
     marginTop: space[2],
     borderTopStartRadius: radius.lg,
     borderTopEndRadius: radius.lg,
@@ -638,13 +748,37 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface2,
   },
   pairText: { flex: 1, minWidth: 0, gap: space[1], alignItems: 'flex-start' },
-  badge: {
-    width: size.iconButton,
-    height: size.iconButton,
-    borderRadius: radius.button,
+  awardBadge: {
+    width: AWARD_BADGE,
+    height: AWARD_BADGE,
+    borderRadius: radius.md,
     backgroundColor: color.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeMine: { borderWidth: tokens.border.hairline, borderColor: color.accent },
+  headBadge: {
+    width: HEAD_BADGE,
+    height: HEAD_BADGE,
+    borderRadius: radius.badge,
+    backgroundColor: color.iconBg.info,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headBadgeGold: { backgroundColor: color.iconBg.warning },
+  awards: { gap: space[2] },
+  award: {
+    minHeight: size.touch,
+    justifyContent: 'center',
+    gap: space[2],
+    paddingVertical: space[2],
+    borderRadius: radius.button,
+  },
+  // Held down: the pressed overlay, as a plain icon button and a ghost (D125); never a fade.
+  awardDown: { backgroundColor: color.pressedOverlay },
+  awardLine: { flexDirection: 'row', alignItems: 'center', gap: space[5] },
+  awardTitle: { flex: 1, minWidth: 0 },
+  chevronOpen: { transform: [{ rotate: '180deg' }] },
+  definition: { paddingStart: AWARD_BADGE + space[5] },
+  closed: { display: 'none' },
 });

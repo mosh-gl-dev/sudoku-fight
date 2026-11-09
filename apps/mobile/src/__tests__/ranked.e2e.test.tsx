@@ -33,6 +33,7 @@ import { FakeMatchmaking } from '../net/testing/fakeMatchmaking';
 import { elapse, FakeTable, ME, OPP } from '../net/testing/fakeServer';
 import { rankedRefresh } from '../progress/appProgress';
 import type { HistoryApi } from '../screens/history/historyApi';
+import { COVERED_DROP_FALLBACK_MS } from '../screens/results/dropWhenCovered';
 import { track } from '../services/analytics';
 import { useProfile } from '../state/profile';
 import { useSettings } from '../state/settings';
@@ -441,7 +442,12 @@ describe('ranked games, end to end (work plan stages 9–10)', () => {
     await act(async () => useSettings.setState({ reduceMotion: 'off' }));
 
     // ---- the results: "ניצחון!", the rating counting from 1200 to the engine's ----
-    await passUntil(() => app.pathname() === `/results/${final.config.id}`);
+    // (drawn two frames after the route, app/results/[id].tsx)
+    await passUntil(
+      () =>
+        app.pathname() === `/results/${final.config.id}` &&
+        screen.queryByTestId('results-rating-value', hidden) !== null,
+    );
     // The number counts on the UI thread (an animated text, silent for screen readers: the card's label says
     // "from … to …"): what it shows now is its animated `text`, as Reanimated's Jest props hold it.
     const value = () =>
@@ -543,7 +549,7 @@ describe('ranked games, end to end (work plan stages 9–10)', () => {
     app.unmount();
   });
 
-  it('offline (spec §16.1): the ranked cards dimmed, the banner, and "עבור לאימון"', async () => {
+  it('offline (spec §16.1): the banner, the practices first, ranked folded into one line, and "עבור לאימון"', async () => {
     let checks = 0;
     setHealthCheck(async () => {
       checks++;
@@ -555,12 +561,17 @@ describe('ranked games, end to end (work plan stages 9–10)', () => {
     expect(await screen.findByTestId('offline-banner')).toHaveAccessibleName(
       'אין חיבור לאינטרנט. משחקים מדורגים לא זמינים',
     );
-    for (const k of ['ranked2', 'ranked3', 'ranked4']) {
-      expect(screen.getByTestId(`mode-${k}`)).toHaveProp('accessibilityState', { disabled: true });
-      expect(screen.getByTestId(`offline-${k}`)).toHaveTextContent('דורש חיבור');
-    }
-    await press('mode-ranked2');
-    expect(app.pathname()).toBe('/modes');
+    // D127 (the device check of 30.10.2026): no wall of dimmed ranked cards. The practices come first, and the
+    // ranked tables (with the friends room) are one line under them, "זמין כשיש חיבור": nothing to tap there.
+    for (const k of ['ranked2', 'ranked3', 'ranked4']) expect(screen.queryByTestId(`mode-${k}`)).toBeNull();
+    const scroll = screen.getByTestId('modes-scroll');
+    expect(within(scroll).getAllByTestId(/^(modes-group-practice|modes-needs-connection)$/)).toEqual([
+      within(scroll).getByTestId('modes-group-practice'),
+      within(scroll).getByTestId('modes-needs-connection'),
+    ]);
+    expect(
+      within(screen.getByTestId('modes-needs-connection')).getByText('זמין כשיש חיבור'),
+    ).toBeOnTheScreen();
     expect(screen.getByTestId('mode-solo')).toHaveProp('accessibilityState', { disabled: false });
     // Checking again in the background, every 10 s.
     await pass(10_000, 500);
@@ -683,7 +694,11 @@ describe('ranked games, end to end (work plan stages 9–10)', () => {
       await server(() => void table.opponent({ type: 'surrender' }));
       const final = table.game!.state;
       expect(final.status).toBe('over');
-      await passUntil(() => app.pathname() === `/results/${final.config.id}`);
+      // The results are drawn two frames after the route (app/results/[id].tsx).
+      await passUntil(
+        () =>
+          app.pathname() === `/results/${final.config.id}` && screen.queryByTestId('results-title') !== null,
+      );
       return final;
     }
 
@@ -742,7 +757,10 @@ describe('ranked games, end to end (work plan stages 9–10)', () => {
       const final = await playAndWin(app);
       const mine = final.result!.ratingChanges.find((c) => c.playerId === ME)!;
       const after = Math.round(mine.after);
-      // Android's back on the results: the game type, the session still in the store, nothing read on the way.
+      // The game under the results leaves the history once they cover it (app/game.tsx, dropWhenCovered; QA
+      // loop 7), then Android's back on the results: the game type, the session still in the store, nothing
+      // read on the way.
+      await pass(COVERED_DROP_FALLBACK_MS, 100);
       await act(async () => router.back());
       await waitFor(() => expect(app.pathname()).toBe('/game-type'));
       expect(shownRating()).toBe(1200);

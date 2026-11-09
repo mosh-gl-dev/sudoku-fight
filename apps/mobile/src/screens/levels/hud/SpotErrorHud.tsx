@@ -12,7 +12,7 @@ import Animated, {
 
 import { Icon, type IconName } from '../../../components/Icon';
 import { StarsBar } from '../../../components/levels/StarsBar';
-import { ltr, secondsOf } from '../../../components/player/format';
+import { clockLabelSeconds, ltr, secondsOf } from '../../../components/player/format';
 import { IconButton } from '../../../components/ui';
 import { timing } from '../../../components/ui/motion';
 import { Text } from '../../../components/ui/Text';
@@ -90,8 +90,8 @@ export function SpotErrorHud({ level, view, now, penalty = null, onExit, style }
             accessible
             accessibilityRole="timer"
             accessibilityLabel={t('hud.spotError.timeLabel', {
-              count: secondsOf(elapsedMs),
-              s: secondsOf(elapsedMs),
+              count: clockLabelSeconds(elapsedMs, 'elapsed'),
+              s: clockLabelSeconds(elapsedMs, 'elapsed'),
               limit: secondsOf(limit),
             })}
             testID="spot-clock"
@@ -236,7 +236,7 @@ export function TipCard({ title, tip, icon, closeLabel, onClose, style, testID }
         icon="close"
         accessibilityLabel={closeLabel}
         onPress={onClose}
-        style={styles.tipClose}
+        plain
         testID={`${testID}-close`}
       />
     </View>
@@ -320,5 +320,4 @@ const styles = StyleSheet.create({
   tipWords: { flex: 1, minWidth: 0, gap: space[2], alignItems: 'flex-start' },
   tipTitle: { ...text('label'), color: color.textMuted },
   tipText: { ...text('body'), color: color.text },
-  tipClose: { borderWidth: 0 },
 });

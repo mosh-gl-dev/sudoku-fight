@@ -1,6 +1,6 @@
 import { OnlineError } from '../../../../net/errors';
 import type { OnlineInfo } from '../../../../net/remoteGameHost';
-import { connectionStatusOf, refusalOf } from '../connectionStatus';
+import { connectionStatusOf, refusalOf, supportCodeLabel } from '../connectionStatus';
 
 /** The host's socket state → the connection UI's status (stage 7): every case, nothing decided here. */
 
@@ -75,6 +75,7 @@ describe('connectionStatusOf', () => {
     ).toEqual({
       kind: 'reconnecting',
       attempt: 2,
+      cause: 'drop',
       lostAt: 900,
       softEndsAt: 10_900,
       playable: true,
@@ -100,7 +101,7 @@ describe('connectionStatusOf', () => {
           reconnect: { ...reconnect, cause: 'background', attempt: 0 },
         }),
       ),
-    ).toMatchObject({ kind: 'reconnecting', attempt: 1 });
+    ).toMatchObject({ kind: 'reconnecting', attempt: 1, cause: 'background' });
     expect(
       connectionStatusOf(
         info({
@@ -133,18 +134,18 @@ describe('connectionStatusOf', () => {
     expect(refused(new OnlineError('network', 'Network request failed'))).toEqual({
       kind: 'failed',
       failure: 'unreachable',
-      code: 'network',
+      code: 'ERR_NETWORK',
     });
     expect(refused(new OnlineError('notFound', 'room "X" not found', 522))).toEqual({
       kind: 'failed',
       failure: 'refused',
-      code: 'notFound-522',
+      code: 'ERR_NOT_FOUND · 522',
       refusal: 'notFound',
     });
     expect(refused(new OnlineError('roomFull', 'locked', 522))).toMatchObject({ refusal: 'full' });
     expect(refused(new OnlineError('gameStarted', 'gameStarted: …', 4211))).toMatchObject({
       refusal: 'gameStarted',
-      code: 'gameStarted-4211',
+      code: 'ERR_GAME_STARTED · 4211',
     });
     expect(refused(new OnlineError('unknown', '?'))).toMatchObject({ failure: 'refused', refusal: null });
 
@@ -157,22 +158,48 @@ describe('connectionStatusOf', () => {
           error: new OnlineError('network', 'x'),
         }),
       ),
-    ).toEqual({ kind: 'failed', failure: 'lost', code: 'network' });
+    ).toEqual({ kind: 'failed', failure: 'lost', code: 'ERR_NETWORK' });
     expect(connectionStatusOf(info({ status: 'closed', closeReason: 'lostConnection' }))).toEqual({
       kind: 'failed',
       failure: 'lost',
-      code: 'lostConnection',
+      code: 'ERR_LOST_CONNECTION',
     });
     expect(connectionStatusOf(info({ status: 'closed', closeReason: 'serverClosed' }))).toEqual({
       kind: 'failed',
       failure: 'lost',
-      code: 'serverClosed',
+      code: 'ERR_SERVER_CLOSED',
     });
     expect(
       connectionStatusOf(
         info({ status: 'closed', closeReason: 'protocol', error: new OnlineError('protocol', 'v2') }),
       ),
-    ).toEqual({ kind: 'failed', failure: 'refused', code: 'protocol' });
+    ).toEqual({ kind: 'failed', failure: 'refused', code: 'ERR_PROTOCOL' });
+  });
+
+  it('gave up past the abandonment time: "you did not come back in time", not a plain lost connection (connection-lost-no-recovery)', () => {
+    expect(
+      connectionStatusOf(
+        info({
+          status: 'closed',
+          closeReason: 'lostConnection',
+          hasGame: true,
+          pastGrace: true,
+          error: new OnlineError('network', 'x'),
+        }),
+      ),
+    ).toEqual({ kind: 'failed', failure: 'expired', code: 'ERR_NETWORK' });
+  });
+});
+
+describe('supportCodeLabel (connection-error-english-chip)', () => {
+  it('shows the support code as a code (design: "ERR_SOCKET_TIMEOUT · 504"), never a bare English word', () => {
+    expect(supportCodeLabel('network')).toBe('ERR_NETWORK');
+    expect(supportCodeLabel('notFound-522')).toBe('ERR_NOT_FOUND · 522');
+    expect(supportCodeLabel('tokenExpired')).toBe('ERR_TOKEN_EXPIRED');
+    expect(supportCodeLabel('network-1006')).toBe('ERR_NETWORK · 1006');
+    expect(supportCodeLabel('4002')).toBe('ERR_4002');
+    expect(supportCodeLabel('ERR_SOCKET_TIMEOUT')).toBe('ERR_SOCKET_TIMEOUT');
+    expect(supportCodeLabel('')).toBe('ERR_UNKNOWN');
   });
 });
 

@@ -25,6 +25,13 @@ export {
   SkeletonTiles,
 } from './Skeleton';
 export { Spinner, type SpinnerProps } from './Spinner';
+export {
+  PressableCard,
+  type PressableCardProps,
+  type SurfaceKind,
+  TactileSurface,
+  type TactileSurfaceProps,
+} from './tactile';
 export { type StateAction, type StateTone, StateView, type StateViewProps, SupportCode } from './StateView';
 export { supportCodeOf } from './stateModel';
 export { languageTextProps, Text, type TextProps } from './Text';

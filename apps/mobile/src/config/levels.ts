@@ -74,6 +74,32 @@ export interface LevelUiSettings {
    * a small phone, and a fallback when dragging is awkward). A screen reader's activate always works (PuzzleBoard).
    */
   puzzleTapSwap: boolean;
+
+  // 31.10.2026, the board-game road (Moshe: "מסך אימון בשלבים נראה ממש דלוח ועלוב"; components.md §19.2–§19.4,
+  // §19.14; DECISIONS-PENDING 3.29). Each is a ☐ default, judged on the phone.
+
+  /**
+   * The map's quiet scenery beside the road (screens/levels/sceneryModel.ts): each chapter's translucent tone
+   * zones, a faint sudoku box, a big digit, a signpost and a pennant. Off: the road and the coins alone.
+   */
+  mapScenery: boolean;
+  /** My avatar stands beside the current stage like a board-game piece (P1 frame, ●). Off: 1.0.2's 22 dp pin. */
+  mapToken: boolean;
+  /**
+   * Back from a stage: the new stars pop on the coin, the gold pours along the road to the next stage and my token
+   * hops there (motion.md level.map.*). Off: the new state at once. Reduced Motion: always at once.
+   */
+  mapChoreography: boolean;
+  /** A stage with ★★★ is a gold coin. Off: it keeps the gold edge of one or two stars. */
+  goldPerfectCoins: boolean;
+
+  /**
+   * A stage that ends by itself while "לצאת מהשלב?" is open (its clock ran out under the dialog; QA N1): the
+   * dialog closes, and the result's buttons take no press for this long once it shows, so a tap meant for the
+   * dialog's "יציאה" cannot press "למפה" under the same finger. 0: no guard. The spec has no rule here: whether
+   * the open dialog should stop the stage's clock instead is Moshe's decision (not built; the clock runs on).
+   */
+  resultGuardMs: number;
 }
 
 export const LEVEL_UI: LevelUiSettings = {
@@ -93,6 +119,11 @@ export const LEVEL_UI: LevelUiSettings = {
   bossReadyMs: 3000,
   mergeFirstBossTutorial: true,
   puzzleTapSwap: true,
+  mapScenery: true,
+  mapToken: true,
+  mapChoreography: true,
+  goldPerfectCoins: true,
+  resultGuardMs: 1000,
 };
 
 /** The puzzle board's feel (levels-ui.md §4; D78): PuzzleBoard and PuzzleLevelScreen read these. */
@@ -149,4 +180,41 @@ export const LEVEL_MOTION = {
   bossChipStaggerMs: 120,
   /** "ניצחת את הבוס!": the crown medallion pops (`lv-pop`). */
   bossWonPopMs: 420,
+} as const;
+
+/**
+ * The level map's motion (31.10.2026; motion.md §4.11 `level.node.current`, `level.node.press`,
+ * `level.map.token.land`, `level.map.stars`, `level.map.pour`, `level.map.token.hop`, `level.gate.unlock`,
+ * `level.map.panel`). Every one has a Reduced Motion form, played where it is drawn. The map's one repeating
+ * motion, the current stage's beacon, runs in beats with rests between them (avatars/idleBeat.ts: an endless view
+ * animation keeps Android's accessibility layer and uiautomator from ever seeing a quiet screen).
+ */
+export const MAP_MOTION = {
+  /** The beacon: a burst of `beaconBeats` pulses of `beaconBeatMs` (half out, half back), then a rest. */
+  beaconBeatMs: 1200,
+  beaconBeats: 2,
+  beaconRestMs: 3600,
+  /** The first burst, this long after the map shows (or comes back in front). */
+  beaconWakeMs: 400,
+  /**
+   * My token lands on its spot when the map first shows: after this, from this far above, on the `pop` spring (its
+   * own length, about 420 ms).
+   */
+  tokenLandDelayMs: 200,
+  tokenDropDp: 20,
+  /** Back from a stage: the steps start this long after the map has followed the current stage. */
+  stepGapMs: 350,
+  /** The gold pours along the road to the new stage in this long (split by length over a gate's two segments). */
+  pourMs: 600,
+  /** The cream middle dash fades in over the pour's last this long. */
+  pourDashFadeMs: 120,
+  /** Then my token hops there, on an arc this high, and lands with a squash. */
+  hopMs: 520,
+  hopArcDp: 28,
+  landSquashMs: 160,
+  /** A gate opening: its barrier swings up and away. */
+  gateBarrierMs: 360,
+  /** The panel's content, when the choice changes: a fade in, rising this far. */
+  panelSwapMs: 160,
+  panelRiseDp: 6,
 } as const;

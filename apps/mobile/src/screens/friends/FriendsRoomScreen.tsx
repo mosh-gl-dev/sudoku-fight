@@ -2,7 +2,7 @@ import { GAME_TYPES, type GameType, type PlayerId } from '@sudoku-fight/engine';
 import type { FriendsLobbyError, FriendsRoomClosedReason } from '@sudoku-fight/protocol';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { Spinner } from '../../components/ui/Spinner';
 import { StateView } from '../../components/ui/StateView';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { useToast } from '../../components/ui/toastStore';
 import { FRIENDS_UI, type FriendsUiSettings } from '../../config/friends';
@@ -29,7 +30,6 @@ import {
   type FriendsFailure,
   type FriendsLobby,
   type FriendsPlayer,
-  type FriendsT,
   isolateCode,
   isRetryable,
   lobbyChanges,
@@ -37,6 +37,7 @@ import {
   maxPlayersOf,
   nameIn,
   namesIn,
+  roomSubtitleOf,
   seatsOf,
   shareMessageOf,
   spellDigits,
@@ -105,6 +106,11 @@ export interface FriendsRoomScreenProps {
   onHome: () => void;
   /** "לסגור את החדר הקודם?": close it and open a new one, or go back to it. */
   onReplace: (choice: 'close' | 'rejoin') => void;
+  /**
+   * When GO! was first shown here (phone time): its slam is set by it, as the game screen's GO! that takes it over
+   * (FriendsCountdown `goShownAt`; QA go-cover-slam-jump, loop 15).
+   */
+  goShownAt?: number | null;
   settings?: FriendsUiSettings;
 }
 
@@ -129,6 +135,7 @@ export function FriendsRoomScreen({
   onJoinWithCode,
   onHome,
   onReplace,
+  goShownAt,
   settings = FRIENDS_UI,
 }: FriendsRoomScreenProps) {
   const { t } = useTranslation('friends');
@@ -157,7 +164,9 @@ export function FriendsRoomScreen({
           </View>
         );
       case 'countdown':
-        return <FriendsCountdown lobby={phase.lobby} myId={phase.myId} step={phase.step} />;
+        return (
+          <FriendsCountdown lobby={phase.lobby} myId={phase.myId} step={phase.step} goShownAt={goShownAt} />
+        );
       case 'lobby':
         return (
           <Lobby
@@ -232,7 +241,7 @@ export function FriendsRoomScreen({
       <ScreenHeader
         title={t('title')}
         subtitle={
-          phase.kind === 'lobby' || phase.kind === 'countdown' ? subtitleOf(t, phase.lobby) : undefined
+          phase.kind === 'lobby' || phase.kind === 'countdown' ? roomSubtitleOf(t, phase.lobby) : undefined
         }
         onBack={
           phase.kind === 'countdown' || phase.kind === 'starting' || phase.kind === 'gone'
@@ -247,13 +256,6 @@ export function FriendsRoomScreen({
     </View>
   );
 }
-
-const subtitleOf = (t: FriendsT, lobby: FriendsLobby): string =>
-  t('subtitle', {
-    type: t(`game:type.${lobby.gameType}`),
-    count: lobby.players.length,
-    max: maxPlayersOf(lobby),
-  });
 
 type LobbyProps = Pick<
   FriendsRoomScreenProps,
@@ -357,10 +359,7 @@ function Lobby({
 
   return (
     <>
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: bottom + space[9] }]}
-        testID="friends-lobby"
-      >
+      <ScrollView contentContainerStyle={styles.content} testID="friends-lobby">
         <Animated.View style={[styles.column, enter]}>
           {phase.reconnecting ? (
             <View style={styles.reconnecting} accessibilityLiveRegion="polite" testID="friends-reconnecting">
@@ -437,32 +436,41 @@ function Lobby({
               />
             ))}
           </View>
-
-          {start.isHost ? (
-            <View style={styles.startBox}>
-              <Button
-                label={t('start.button', { count: start.connected })}
-                onPress={pressStart}
-                disabled={!start.canStart}
-                accessibilityHint={start.canStart ? undefined : t('start.needMore')}
-                testID="friends-start"
-              />
-              {start.connected < (lobby.minPlayers ?? 2) ? (
-                <Text style={styles.hint} testID="friends-start-hint">
-                  {t('start.needMore')}
-                </Text>
-              ) : null}
-            </View>
-          ) : guestLine ? (
-            <View style={styles.waiting} testID="friends-waiting">
-              <Spinner color={color.accent} size={size.icon.inline} />
-              <Text style={styles.status}>{guestLine}</Text>
-            </View>
-          ) : null}
-
-          <Button label={t('leave')} onPress={onLeave} variant="ghost" icon="close" testID="friends-leave" />
         </Animated.View>
       </ScrollView>
+
+      {/* Pinned above the system navigation bar (QA B40, B53): the start and "יציאה מהחדר" are always there to
+          tap, however long the room, never under a 3-button bar. */}
+      <Animated.View
+        style={[styles.footer, { paddingBottom: bottom + space[6] }, enter]}
+        testID="friends-lobby-footer"
+      >
+        {start.isHost ? (
+          <View style={styles.startBox}>
+            <Button
+              label={t('start.button', { count: start.connected })}
+              // pressStart() plays the press itself when it starts; asking first leaves it to the dialog.
+              cue={null}
+              onPress={pressStart}
+              disabled={!start.canStart}
+              accessibilityHint={start.canStart ? undefined : t('start.needMore')}
+              testID="friends-start"
+            />
+            {start.connected < (lobby.minPlayers ?? 2) ? (
+              <Text style={styles.hint} testID="friends-start-hint">
+                {t('start.needMore')}
+              </Text>
+            ) : null}
+          </View>
+        ) : guestLine ? (
+          <View style={styles.waiting} testID="friends-waiting">
+            <Spinner color={color.accent} size={size.icon.inline} />
+            <Text style={styles.status}>{guestLine}</Text>
+          </View>
+        ) : null}
+
+        <Button label={t('leave')} onPress={onLeave} variant="ghost" icon="close" testID="friends-leave" />
+      </Animated.View>
       <Announcer line={announcement} testID="friends-live" />
       {copied ? <Announcer line={t('copy.done')} /> : null}
       <ConfirmModal
@@ -487,7 +495,6 @@ function Lobby({
         cancelLabel={t('startWithout.cancel')}
         onConfirm={() => {
           setAskStart(false);
-          cue('primaryPress');
           onStart(start.away.map((p) => p.id));
         }}
         onCancel={() => setAskStart(false)}
@@ -522,25 +529,25 @@ function GameTypePicker({
       <View style={styles.typeRow} accessibilityRole="radiogroup" accessibilityLabel={t('gameType.title')}>
         {GAME_TYPES.map((type) => {
           const checked = type === value;
+          // A radio card, as GameType's (D125): the one card press, checked = the accent border over its tint.
+          // No tick of its own: the lobby plays it with the change.
           return (
-            <Pressable
+            <PressableCard
               key={type}
               accessibilityRole="radio"
               accessibilityLabel={t(`game:type.${type}`)}
               accessibilityState={{ checked, disabled: !editable }}
               disabled={!editable}
+              selected={checked}
+              cue={null}
               onPress={() => onChange(type)}
-              style={({ pressed }) => [
-                styles.typeOption,
-                checked && styles.typeChecked,
-                pressed && styles.typePressed,
-              ]}
+              style={styles.typeOption}
               testID={`friends-type-${type}`}
             >
               <Text style={[styles.typeText, checked && styles.typeTextChecked]}>
                 {t(`game:type.${type}`)}
               </Text>
-            </Pressable>
+            </PressableCard>
           );
         })}
       </View>
@@ -549,10 +556,15 @@ function GameTypePicker({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: tokens.layout.gutterGame },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[6], padding: space[9] },
-  content: { flexGrow: 1, paddingHorizontal: tokens.layout.gutterGame, paddingTop: space[4] },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: tokens.layout.gutterGame,
+    paddingTop: space[4],
+    paddingBottom: space[9],
+  },
   column: { gap: space[8] },
   reconnecting: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[4] },
   reconnectingText: { ...text('caption'), color: color.textMuted },
@@ -584,22 +596,25 @@ const styles = StyleSheet.create({
   typeHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[4] },
   typeNote: { ...text('caption'), color: color.textMuted, flexShrink: 1 },
   typeRow: { flexDirection: 'row', gap: space[4] },
+  // The card surface (PressableCard) gives the fill, the border (the accent when checked) and the base.
   typeOption: {
     flex: 1,
     minHeight: size.touch,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.button,
-    borderWidth: tokens.border.hairline,
-    borderColor: color.border,
-    backgroundColor: color.surface,
   },
-  typeChecked: { borderColor: color.accent, borderWidth: tokens.border.focus },
-  typePressed: { backgroundColor: color.surface2 },
   typeText: { ...text('button'), color: color.textMuted },
   typeTextChecked: { color: color.accent },
   players: { gap: space[4] },
   sectionTitle: { ...text('label'), color: color.textMuted },
+  /** The start and "יציאה מהחדר", above the system navigation bar (the screen's bottom inset added). */
+  footer: {
+    gap: space[4],
+    paddingHorizontal: tokens.layout.gutterGame,
+    paddingTop: space[6],
+    borderTopWidth: tokens.border.hairline,
+    borderTopColor: color.border,
+  },
   startBox: { gap: space[4] },
   hint: { ...text('caption'), color: color.textMuted, textAlign: 'center' },
   waiting: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[4] },

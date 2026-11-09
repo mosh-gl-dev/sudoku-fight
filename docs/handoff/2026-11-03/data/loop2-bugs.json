@@ -1,0 +1,38 @@
+[
+ {
+  "taskId": "avatars-idle-still",
+  "title": "B43 still (1 of 5): phone 3's 'מוכן' badge stays 'מתחבר…' through the whole VS and the count starts anyway (reduced motion on)",
+  "what": "Phone 1 (אורי, RF8Y60PP2XZ) and phone 3 (אחוותא, RF8Y30L038L), both SM-A165F, 1.1.0 (06.11 18:25, K1 fix + Reanimated patch), staging. Steps: Settings → 'הפחתת תנועה' → 'מופעלת' on both phones, back to Home. On both: 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב', tapped at the same moment (game g5, 21:00:47). Phone 3 had just come back from a 3-player search timeout ('חזרה לבית'), then Settings. Seen in the screen recordings at 50 ms (scratchpad/k7/p3g5-badge.png, p1g5-badge.png): the VS showed 'מתחבר…' on both tiles, then אורי turned 'מוכן' about 0.4 s later. אחוותא's badge stayed 'מתחבר…', with '1/2 מוכנים · מחכים שכולם יתחברו…', on BOTH phones for the whole VS (1.15-1.3 s), and then the count '3' started anyway. In the other 4 games (3 with reduced motion off, 1 with it on) both badges turned 'מוכן'. Related, reduced motion off (g1): the badges pop in a single frame and the whole VS block jumps up about 50 device px, then settles about 13 px back. The avatar 'nod' shows as only 2 changed frames (about 0.15 and 0.3 s after the badge), not about 0.9 s of movement.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "pregame-found-countdown-reduced",
+  "title": "K2 still: GO! stays 1.75 s before the board in the first ranked game after launch (reduced motion off)",
+  "what": "Both phones SM-A165F, 1.1.0 (06.11 18:25, K1 fix + Reanimated patch), reduced motion 'כבויה'. Steps: launch the app, open Settings, back to Home, 'שחק' → '2 שחקנים' → 'מהיר' → 'מצא יריב' on both phones at once (first ranked game of the session, 20:36:14). Recorded with screenrecord 540x1170, frames every 50 ms. VS 1.0 s, then '3' 0.9 s, '2' 0.95 s, '1' 0.95 s. A blank 150 ms, then GO! fully visible from 6700 to 8400 ms (1.75 s) on BOTH phones, then the board in one step. In the following games, in the same process, GO! lasted 1.0-1.1 s (reduced motion off) and 0.8-0.85 s plus a ~0.2 s fade (on). The known A16 residual is up to ~1 s, so the first game is ~0.75 s over it. This probably has the same cause as T3-FIRST-PLAY-SLOW / K8 (the first game-screen mount in a process). Recordings: scratchpad/k7/RF8Y60PP2XZ-g1.mp4, RF8Y30L038L-g1.mp4, sheet p1g1-go.png.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "postgame-results-v2-new-game-ranked",
+  "title": "Ranked surrender: 'כן, להיכנע' tapped about 1 s after the dialog opens closes the dialog without surrendering",
+  "what": "Phone 3 (and once phone 3 again) SM-A165F, 1.1.0 (06.11 18:25). In a ranked 2P game: tap 'כניעה' (785,499). About 1.0-1.5 s later, tap 'כן, להיכנע' (258,1970, found by its testID ranked-surrender-confirm in the uiautomator dump). It happened 2 times out of 9 (20:37:56 and 21:01:47). The dialog disappeared and the game went on, with no surrender and no Results. Waiting 2 s after 'כניעה' before the tap always worked. Likely cause: the tap lands while the sheet is still animating in, so it hits the scrim (ranked-surrender-scrim), which cancels. A real user who taps quickly could lose the surrender. Not seen in the friends game (2 s wait).",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-exit",
+  "title": "'חזרה' של אנדרואיד בזמן 'מוכן?' או פתיחת הבוס יוצא בלי שאלה, והשלב ממשיך לרוץ ברקע",
+  "what": "Build 1.1.0 (07.11 21:45, loop-1 fixes), apk7, SM-A165F, עברית. שלבים: אימון בשלבים, בוחרים שלב (נבדק על L001 בטלפון 3, ועל L020 בוס בטלפון 1), ולוחצים 'שחק'. בזמן שמסך 'מוכן?' או פתיחת הבוס ('שלב בוס!') עדיין מוצג, כ־1 ש׳ אחרי 'שחק', לוחצים 'חזרה' של אנדרואיד. מה קורה: חוזרים מיד למפה, בלי הדיאלוג 'לצאת מהשלב?' ובלי מסך תוצאה. השלב לא בוטל: הוא ממשיך לרוץ מוסתר. מחכים כ־22 ש׳ ולוחצים שוב 'שחק' על אותו שלב. במקום 'מוכן?' חדש, מיד מופיע מסך השלב עם 'התשובה: D1' ואחריו תוצאה 'הזמן נגמר', ‏20 ש׳, בלי כוכבים. בבוס L020 נפתחה מיד התוצאה 'הבוס ניצח הפעם · הזמן נגמר · זמן 30 ש׳ · Pip: 3 מקומות'. כנראה BackHandler רשום רק ב־TapLevelScreen (שלב 'playing'), ולא בשלבי ready ו־tutorial ב־app/levels/play.tsx. בנוסף, ה־session ממשיך גם אחרי שהמסך נסגר. צילומים: qa-shots/RF8Y30L038L-backready-1.png (מסך 'מוכן?' לפני ה'חזרה') ו־RF8Y30L038L-levels-exit-back.png (המפה אחרי 'חזרה').",
+  "severity": "major"
+ },
+ {
+  "taskId": "levels-freeze-background",
+  "title": "Board visible in the recents thumbnail while a stage is frozen",
+  "what": "Phone 1 (RF8Y60PP2XZ) SM-A165F, 1.1.0 apk7 (07.11 21:45), Hebrew. Steps: open Levels and start stage 34 (puzzle). In the middle of the stage, press Recents (KEYCODE_APP_SWITCH). The app card shows the full board with every digit, and no cover. Meanwhile the stage is frozen, because the app is not in the foreground. Android takes the task snapshot before the opaque 'המשחק עצור' cover is drawn. You can also see this on return from Home: during the open animation the board is still visible under the cover for a moment. This goes against D65 ('opaque over the board, so the freeze gives no time to think'), because a player can study the board in Recents without the clock running. A possible fix is to draw the cover synchronously on blur or pause, or to hide the content from the snapshot (setRecentsScreenshotEnabled(false) on Android 13 and later, rather than FLAG_SECURE). Screenshot: qa-shots/RF8Y60PP2XZ-levels-freeze-background-60.png.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "levels-freeze-ready",
+  "title": "Stage board jumps in size about 0.5 s after the stage starts",
+  "what": "Phone 1 (RF8Y60PP2XZ) SM-A165F, 1.1.0 apk7, Hebrew. Steps: Levels, then stage 35 (duel to 30), then 'שחק'. When 'מוכן?' ends, the board first draws at full width (x 45 to 1034 px of 1080) with a full-width keypad. In the next frame, about 0.6 s later, both shrink to x 96 to 984 px, centred, and the board top moves from about 838 to 889 px. Reproduced twice (frames ready-3 to ready-5 and ready-74 to ready-75 in qa-shots). It looks like the first render sizes the board before the 'room' height is measured (roomHeight null, so boardSide falls back to width only) and then re-lays it out after onLayout. The fix is to hide the board until the height is measured, or measure it before showing.",
+  "severity": "minor"
+ }
+]

@@ -14,12 +14,13 @@ import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { BossBand } from '../../../components/levels/BossBadge';
 import { LevelTile } from '../../../components/levels/LevelTile';
 import { StarsBar } from '../../../components/levels/StarsBar';
-import { secondsOf, signedText } from '../../../components/player/format';
+import { clockLabelSeconds, signedText } from '../../../components/player/format';
 import { TimerRing } from '../../../components/player/TimerRing';
 import { IconButton } from '../../../components/ui';
 import { Text } from '../../../components/ui/Text';
 import { decimalSeparator } from '../../../i18n/compose';
 import { color, radius, size, space, text, tokens } from '../../../theme';
+import { opaqueOver } from '../../../theme/blend';
 import { secondsText } from '../../home/homeModel';
 import { findSub, kindName, type LevelsT } from '../levelWording';
 
@@ -160,7 +161,8 @@ export function FindTargetPanel({ view, now, penaltyMs, penalty = null, style }:
   const scope = find?.scope ? scopeText(find.scope, t) : '';
   const limit = view.limitMs ?? 0;
   const { elapsedMs, remainingMs: left } = levelClock(view, now);
-  const ringLabel = t('hud.find.ringLabel', { count: secondsOf(left), s: secondsOf(left) });
+  const shownLeft = clockLabelSeconds(left, 'left');
+  const ringLabel = t('hud.find.ringLabel', { count: shownLeft, s: shownLeft });
   return (
     <View style={[styles.panelWrap, style]}>
       <View
@@ -296,7 +298,8 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: space[4],
     borderRadius: radius.xs,
-    backgroundColor: color.dangerSubtle,
+    // Laid flat over the ground: the wandering digits pass behind the HUD (B12).
+    backgroundColor: opaqueOver(color.dangerSubtle),
     borderWidth: tokens.border.hairline,
     borderColor: color.dangerBorder,
     justifyContent: 'center',

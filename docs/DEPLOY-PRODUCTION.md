@@ -7,7 +7,7 @@
 |---|---|---|
 | קובץ ההגדרות | `fly.toml` | `fly.production.toml` |
 | שם האפליקציה ב־Fly | `sudoku-fight-staging` | `sudoku-fight-prod` |
-| הכתובת | `https://sudoku-fight-staging.fly.dev` | `https://sudoku-fight-prod.fly.dev` |
+| הכתובת | `https://sudoku-fight-staging.fly.dev` | `https://sudokufight.app` (D128, סעיף 11א). ‏`sudoku-fight-prod.fly.dev` עובד גם, רק לבדיקות שלנו |
 | מי מתחבר | בניות `preview` (APK פנימי) | בניות `production` (TestFlight, ‏Play והחנויות) |
 | `SENTRY_ENVIRONMENT` | `staging` | `production` |
 
@@ -26,7 +26,7 @@
 - [ ] הכניסה עם Google לאתר הניהול (סעיף 9א שם): הספק Google דלוק, אפליקציית Web ‏"Sudoku Fight Admin" (ה־`apiKey` וה־`appId`), והכתובת של השרת ב־Authorized domains.
 - [ ] חשבון Sentry (‏sentry.io, התוכנית החינמית מספיקה לבטא).
 - [ ] חשבון Neon, או ההחלטה להשתמש ב־Postgres של Fly (סעיף 2).
-- [ ] הוחלט אם יש דומיין משלך לשרת (למשל `api.<הדומיין>`). **כדאי להחליט לפני הבנייה הראשונה לחנות**: הכתובת נכנסת לתוך האפליקציה בזמן הבנייה, ושינוי שלה דורש גרסה חדשה בחנויות (סעיף 11).
+- [x] הדומיין לשרת: ‏`sudokufight.app` (משה קנה ב־Cloudflare ב־30.10.2026, D128). הכתובת נכנסת לתוך האפליקציה בזמן הבנייה, ושינוי שלה דורש גרסה חדשה בחנויות. ההגדרה: סעיף 11א.
 
 ## 1. האפליקציה ב־Fly
 
@@ -34,8 +34,8 @@
 fly apps create sudoku-fight-prod
 ```
 
-- אם השם תפוס: בוחרים שם אחר, ומעדכנים אותו **בשלושה מקומות**: `app` ב־`fly.production.toml`, ‏`EXPO_PUBLIC_SERVER_HOST` בפרופיל `production` של `apps/mobile/eas.json`,
-  והכתובת `<השם>.fly.dev` ב־Authorized domains של Firebase (`docs/FIREBASE-SETUP.md` סעיף 9א). בלי האחרון הכניסה עם Google לאתר הניהול נכשלת (`auth/unauthorized-domain`), ובלי סיסמה אין דרך אחרת להיכנס.
+- אם השם תפוס: בוחרים שם אחר, ומעדכנים את `app` ב־`fly.production.toml` ואת `-a` בפקודות כאן. הכתובת באפליקציה (`EXPO_PUBLIC_SERVER_HOST` בפרופיל `production` של `apps/mobile/eas.json`) נשארת `sudokufight.app`, ו־`fly certs add` (סעיף 11א) רץ עם השם החדש.
+  ‏`sudokufight.app` צריך להיות ב־Authorized domains של Firebase (`docs/FIREBASE-SETUP.md` סעיף 9א). בלעדיו הכניסה עם Google לאתר הניהול נכשלת (`auth/unauthorized-domain`), ובלי סיסמה אין דרך אחרת להיכנס.
 - לא משתמשים ב־`fly launch`. הוא כותב `fly.toml` משלו, ודורס את של ה־Staging.
 
 ## 2. מסד הנתונים: Postgres עם גיבויים
@@ -140,7 +140,7 @@ fly secrets list -a sudoku-fight-prod
 - `--stage` שומר בלי להפעיל מחדש. הפריסה בסעיף 5 מפעילה עם כולם.
 
 ### 4א. משחק עם חברים (1.0.4): הקישור לחדר
-הקישור לחדר הוא `https://sudoku-fight-prod.fly.dev/r/<code>` (ההחלטה C1 של משה, `docs/MOSHE-TODO.md`). השרת מגיש את הדף בדפדפן, ואת הקבצים שמאמתים שהאפליקציה שלנו רשאית לפתוח את הקישורים האלה (אפיון 5.4.5). **אף אחד מאלה לא סוד,** ולכן הם ב־`[env]` של `fly.production.toml` (הם כבר שם, בהערה):
+הקישור לחדר הוא `https://sudokufight.app/r/<code>` (D128; ההחלטה C1 של משה, `docs/MOSHE-TODO.md`). השרת מגיש את הדף בדפדפן, ואת הקבצים שמאמתים שהאפליקציה שלנו רשאית לפתוח את הקישורים האלה (אפיון 5.4.5). **אף אחד מאלה לא סוד,** ולכן הם ב־`[env]` של `fly.production.toml` (הם כבר שם, בהערה):
 
 | הגדרה | מה | בלעדיה |
 |---|---|---|
@@ -150,8 +150,8 @@ fly secrets list -a sudoku-fight-prod
 | `FRIENDS_CREATES_PER_HOUR`, ‏`FRIENDS_JOINS_PER_10_MIN`, ‏`FRIENDS_JOINS_PER_10_MIN_PER_IP` (לא חובה) | הגבלות הקצב של חדרים (10, ‏20 ו־60 כברירת מחדל) | ברירות המחדל |
 
 - **ב־staging** (`fly.toml`) הרשימה כוללת את מפתח הבדיקות, עם `ANDROID_APP_LINK_ALLOW_DEBUG_KEY = "true"`, כדי שה־APK מהמחשב ייפתח מהקישור. **בייצור אסור להגדיר את זה.** השרת מזהיר בעלייה כשזה דלוק.
-- **בדיקה אחרי פריסה:** `https://sudoku-fight-prod.fly.dev/.well-known/assetlinks.json` מחזיר JSON עם טביעות האצבע, ו־`/r/123456` מחזיר את הדף.
-- **דומיין משלך בעתיד:** צריך גרסה חדשה בחנות (הכתובת בתוך האפליקציה), ו־`assetlinks.json` בדומיין החדש. קישורים ישנים בוואטסאפ ימשיכו להוביל ל־`fly.dev`.
+- **בדיקה אחרי פריסה:** `https://sudokufight.app/.well-known/assetlinks.json` מחזיר JSON עם טביעות האצבע, ו־`/r/123456` מחזיר את הדף.
+- **הדומיין (D128):** ‏`sudokufight.app` נקבע לפני הבנייה הראשונה לחנות, ולכן אין קישורים לייצור ב־`fly.dev`. האפליקציה מאמתת את הקישורים (`autoVerify`) מול הכתובת שהיא נבנתה מולה, ולכן `assetlinks.json` חייב לעבוד ב־`sudokufight.app` (סעיף 11א). מעבר לדומיין אחר בעתיד: גרסה חדשה בחנות, וקישורים ישנים בוואטסאפ ימשיכו להוביל ל־`sudokufight.app`.
 - **מכונה אחת:** טבלת החדרים בזיכרון של השרת. אם יעברו לכמה מכונות, היא תעבור ל־Redis או ל־Postgres, ו־Colyseus ל־RedisDriver. עד אז `fly.production.toml` נשאר עם מכונה אחת.
 - **פריסה סוגרת את החדרים הפתוחים,** כמו שהיא מסיימת משחקים. מי שבחדר רואה "החדר נסגר.".
 
@@ -183,9 +183,10 @@ fly deploy --config fly.production.toml --ha=false
 ```
 fly status -a sudoku-fight-prod
 fly logs -a sudoku-fight-prod
-curl https://sudoku-fight-prod.fly.dev/health
+curl https://sudokufight.app/health
 ```
 
+- עד שהתעודה של `sudokufight.app` מוכנה (סעיף 11א), אותן בדיקות ב־`https://sudoku-fight-prod.fly.dev`.
 - ב־`fly status`: מכונה אחת, במצב `started`, והבדיקה של `/health` במצב `passing`.
 - ב־`fly logs` (השורה המלאה):
   `[server] production, database Postgres, admin site on (Google sign-in for 3 addresses), Sentry on (production, sudoku-fight-server@0.1.0+…, traces 0.05)`
@@ -236,15 +237,15 @@ DATABASE_URL='postgres://<user>:<password>@localhost:15432/<db>?sslmode=disable'
 
 ## 8. אתר הניהול והדפים המשפטיים
 
-- **אתר הניהול:** https://sudoku-fight-prod.fly.dev/admin. נכנסים עם חשבון Google שב־`ADMIN_EMAILS` (סעיף 4), או עם `ADMIN_PASSWORD` אם הוגדרה.
+- **אתר הניהול:** https://sudokufight.app/admin. נכנסים עם חשבון Google שב־`ADMIN_EMAILS` (סעיף 4), או עם `ADMIN_PASSWORD` אם הוגדרה.
   - **יש בו פעולות** (אפיון 3.5 ו־27.3): סגירת דיווחים, איפוס שם, השעיית חשבון וביטול השעיה. כל פעולה נרשמת ב"יומן פעולות" עם הכתובת של המנהל.
   - **הפעולות רק בכניסה עם Google.** כניסה עם `ADMIN_PASSWORD` רואה הכל, אבל פעולה מקבלת `googleRequired`: הסיסמה משותפת, והיומן לא יידע מי פעל. אם הגדרת סיסמה, שמור אותה כמו כל סוד.
-  בלוג מופיע `admin sign-in: <הכתובת>` בכל כניסה. הכתובת `sudoku-fight-prod.fly.dev` צריכה להיות ב־Authorized domains של Firebase (`docs/FIREBASE-SETUP.md` סעיף 9א).
+  בלוג מופיע `admin sign-in: <הכתובת>` בכל כניסה. הכתובת `sudokufight.app` צריכה להיות ב־Authorized domains של Firebase (`docs/FIREBASE-SETUP.md` סעיף 9א), וגם `sudoku-fight-prod.fly.dev` אם נכנסים דרכו.
 - **הדפים המשפטיים** (הכתובות שנכנסות לחנויות ולאפליקציה):
-  - https://sudoku-fight-prod.fly.dev/legal/privacy (מדיניות פרטיות; ‏`?lang=en` לאנגלית)
-  - https://sudoku-fight-prod.fly.dev/legal/terms (תנאי שימוש)
-  - https://sudoku-fight-prod.fly.dev/legal/delete-account (מחיקת חשבון, לטופס של Google Play)
-- אם עוברים לדומיין משלך (סעיף 11), הכתובות האלה משתנות גם בחנויות.
+  - https://sudokufight.app/legal/privacy (מדיניות פרטיות; ‏`?lang=en` לאנגלית)
+  - https://sudokufight.app/legal/terms (תנאי שימוש)
+  - https://sudokufight.app/legal/delete-account (מחיקת חשבון, לטופס של Google Play)
+- אלה הכתובות שנמסרות לחנויות (D128). את הכתובת ב־`fly.dev` לא נותנים לאף אחד: אם יום אחד עוברים ספק, היא תפסיק לעבוד.
 
 ## 9. חזרה לגרסה קודמת (Rollback)
 
@@ -288,16 +289,40 @@ fly deploy --config fly.production.toml --ha=false --image registry.fly.io/sudok
 |---|---|---|
 | `development` | Development Build במחשב שלך | מה שב־`apps/mobile/.env.local` (‏Metro במחשב) |
 | `preview` | APK פנימי לבדיקות מהירות | `sudoku-fight-staging.fly.dev`, פורט 443, ‏`SECURE=true` |
-| `production` | TestFlight, ‏Play Closed testing והחנויות | `sudoku-fight-prod.fly.dev`, פורט 443, ‏`SECURE=true` |
+| `production` | TestFlight, ‏Play Closed testing והחנויות | `sudokufight.app` (D128), פורט 443, ‏`SECURE=true` |
 
 - **הגנה:** בנייה בפרופיל `production` ב־EAS **נכשלת** אם הכתובת היא `localhost`, כתובת ברשת המקומית, placeholder, או בלי `SECURE=true` (`apps/mobile/app.config.ts`). כמו ההגנה של Firebase.
-- **דומיין משלך** (מומלץ לפני הבנייה הראשונה לחנות, כי אז הכתובת לא תלויה בשם האפליקציה ב־Fly):
-  ```
-  fly certs add api.<הדומיין> -a sudoku-fight-prod
-  ```
-  ‏Fly מדפיס את רשומות ה־DNS (‏A/AAAA, או CNAME) להוסיף אצל רשם הדומיין. כשהתעודה מוכנה (`fly certs show api.<הדומיין> -a sudoku-fight-prod`),
-  מעדכנים את `EXPO_PUBLIC_SERVER_HOST` בפרופיל `production`, ובונים מחדש.
-  מוסיפים גם את `api.<הדומיין>` ל־Authorized domains של Firebase (`docs/FIREBASE-SETUP.md` סעיף 9א). בלי זה הכניסה עם Google לאתר הניהול בכתובת החדשה נכשלת (`auth/unauthorized-domain`).
+- **הדומיין:** ‏`sudokufight.app` (סעיף 11א). הכתובת באפליקציה לא תלויה בשם האפליקציה ב־Fly.
+
+### 11א. דומיין: sudokufight.app
+
+משה קנה את `sudokufight.app` ב־Cloudflare ב־30.10.2026, ואישר להעביר אליו את הייצור (אפיון D128, ‏[DECISIONS-PENDING](DECISIONS-PENDING.md) 1.6). זו הכתובת באפליקציה (`EXPO_PUBLIC_SERVER_HOST` בפרופיל `production`, כבר ב־`apps/mobile/eas.json`), בקישורי החדרים ובחנויות.
+
+- **השרת לא צריך שינוי:** הוא מגיש את `/r/<code>`, ‏`/legal/*`, ‏`/.well-known/assetlinks.json` ו־`/admin` בכל כתובת.
+- **האפליקציה ב־Fly נשארת `sudoku-fight-prod`,** ולכן כל הפקודות עם `-a sudoku-fight-prod` נשארות. משתנות רק הכתובות הציבוריות.
+- **‏`.app` עובד רק ב־HTTPS:** הדפדפנים לא פותחים אותו ב־http בכלל. לכן בודקים רק אחרי שהתעודה מוכנה (שלב 3).
+
+1. **אחרי שהאפליקציה קיימת** (סעיף 1), ‏Claude או משה:
+   ```
+   fly certs add sudokufight.app -a sudoku-fight-prod
+   ```
+   ‏Fly מדפיס את הרשומות שצריך להוסיף: בדרך כלל `A` ו־`AAAA` לדומיין עצמו (`@`), ולפעמים גם `CNAME` ל־`_acme-challenge`. אם עוד אין לאפליקציה כתובות IP ו־Fly לא מציג `A` או `AAAA`, חוזרים לשלב הזה מיד אחרי הפריסה הראשונה (סעיף 5).
+2. **משה, ב־Cloudflare:** הדומיין ← **DNS** ← **Records** ← **Add record**. כל רשומה בדיוק כמו ש־Fly הדפיס, עם **Proxy status כבוי** (ענן אפור, **DNS only**). עם ענן כתום Cloudflare עומד באמצע, ו־Fly לא מצליח להנפיק את התעודה.
+3. בודקים שהתעודה הונפקה (בדרך כלל כמה דקות):
+   ```
+   fly certs check sudokufight.app -a sudoku-fight-prod
+   ```
+   ממשיכים רק כשכתוב שהתעודה הונפקה. ‏`fly certs show sudokufight.app -a sudoku-fight-prod` מציג את כל הפרטים.
+4. בודקים בדפדפן (או ב־`curl.exe` ב־PowerShell):
+   - https://sudokufight.app/health מחזיר `{"ok":true,…}`.
+   - https://sudokufight.app/legal/privacy: מדיניות הפרטיות, בלי placeholder אדום ובלי פס "טיוטה".
+   - https://sudokufight.app/r/123456: דף ההזמנה לחדר (אותו דף לכל קוד תקין, אפיון 5.4.5).
+   - https://sudokufight.app/.well-known/assetlinks.json: ‏JSON עם טביעות האצבע. מחזיר 404 עד שמוגדר `ANDROID_APP_LINK_SHA256` (סעיף 4א).
+5. **Firebase:** ‏Authentication ← **Settings** ← **Authorized domains** ← **Add domain**: ‏`sudokufight.app` (`docs/FIREBASE-SETUP.md` סעיף 9א). בלי זה הכניסה עם Google לאתר הניהול ב־`https://sudokufight.app/admin` נכשלת (`auth/unauthorized-domain`).
+
+- **לפני הבנייה הראשונה לחנות:** כל הבדיקות בשלב 4 עוברות. האפליקציה מאמתת את הקישורים לחדרים מול `sudokufight.app`, ולא מול `fly.dev`.
+- **המייל, ב־Cloudflare (משה; ‏Claude מנחה לפי צילום מסך):** ניתוב של `support@sudokufight.app` ל־Gmail של משה (Email Routing), ודומיין משלנו לשולח של המיילים מ־Firebase, עם רשומת SPF אחת שמאחדת את שניהם. הפירוט: `docs/handoff/2026-10-27/play-release/plan.md`, צעד 1ג.
+- **המייל בדפים המשפטיים** (`LEGAL_CONTACT_EMAIL`) הוא היום המייל מההחלטה C2 (`docs/MOSHE-TODO.md`). מעבר ל־`support@sudokufight.app`, אחרי שהניתוב עובד, רק באישור של משה.
 
 ## 12. מה לא לעשות
 

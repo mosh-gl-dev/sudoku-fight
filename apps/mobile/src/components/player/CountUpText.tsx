@@ -15,6 +15,8 @@ export interface CountUpTextProps {
   durationMs?: number;
   /** A text style, and animated styles on top of it (a score's colour and bump). */
   style?: ComponentProps<typeof AnimatedTextInput>['style'];
+  /** How far the system text size may grow it (BRD-3: ui/Text FONT_SCALE_CAPS); no cap by default. */
+  maxFontSizeMultiplier?: number;
   testID?: string;
 }
 
@@ -32,6 +34,7 @@ export function CountUpText({
   format,
   durationMs = motion.duration.scoreCount,
   style,
+  maxFontSizeMultiplier,
   testID,
 }: CountUpTextProps) {
   const reduce = useReduceMotion();
@@ -50,6 +53,7 @@ export function CountUpText({
       aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
       style={[styles.input, style]}
       testID={testID}
     />

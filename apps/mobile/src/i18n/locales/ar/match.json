@@ -147,6 +147,7 @@
     },
     "code": "رمز الخطأ: {{code}}",
     "retry": "البحث مجددًا",
+    "backToGame": "العودة إلى المباراة",
     "verify": "توثيق البريد",
     "practice": "الانتقال إلى التدريب",
     "practiceNote": "التدريب الفردي أو ضد بوت يعمل دون اتصال أيضًا.",
@@ -163,11 +164,11 @@
     "retry": "التحقق مجددًا",
     "retrying": "جارٍ التحقق من الاتصال…",
     "stillOffline": "لا اتصال بعد · المحاولة {{count}}",
-    "rankedNote": "متاحة عند الاتصال",
+    "rankedNote": "عند الاتصال",
     "needsConnection": "يتطلب اتصالًا",
     "needsConnectionLabel": "يتطلب اتصالًا بالإنترنت",
     "practiceNote": "متاح دون إنترنت",
-    "availableOffline": "يعمل دون اتصال",
+    "availableOffline": "دون اتصال",
     "back": "عاد الاتصال. المباريات المصنفة متاحة."
   },
   "modes": {

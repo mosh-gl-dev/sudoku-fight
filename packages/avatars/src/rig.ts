@@ -322,6 +322,7 @@ function openEye(face: FaceDef, slot: EyeSlot, s: Extract<EyeShape, { kind: 'ope
 
   // round / oval: an eyeball and a pupil that follows the gaze.
   const ball = { cx: slot.c.x, cy: slot.c.y, rx: bx * k, ry: by * k };
+  if (face.eyes.iris !== undefined && !l.small) return irisEye(face, face.eyes.iris, ball, slot, s, cut);
   const pk = (s.pupil ?? 1) * r;
   const free = { x: bx * k - px * pk, y: by * k - py * pk }; // how far the pupil can travel
   const pc = { x: slot.c.x + look.x * free.x * 0.7, y: slot.c.y + look.y * free.y * 0.7 };
@@ -329,6 +330,38 @@ function openEye(face: FaceDef, slot: EyeSlot, s: Extract<EyeShape, { kind: 'ope
   out += shape({ cx: pc.x, cy: pc.y, rx: px * pk, ry: py * pk }, cut, ink);
   if (!l.small) out += shine({ x: pc.x + 0.32 * px * pk, y: pc.y - 0.38 * py * pk }, 0.34 * px * pk);
   return out;
+}
+
+/** An eye with an iris (EyeLook.iris): the iris is this many times the plain pupil; the pupil, this much of it. */
+export const IRIS_EYE = { size: 1.32, pupil: 0.5 } as const;
+
+/**
+ * A round or oval eye with a coloured iris (40 px and up): the eyeball, the iris that follows the gaze (its size
+ * stays; a surprised pupil shrinks inside it), the pupil, and two catchlights. Lids cut all of them alike.
+ */
+function irisEye(
+  face: FaceDef,
+  iris: string,
+  ball: Ellipse,
+  slot: EyeSlot,
+  s: Extract<EyeShape, { kind: 'open' }>,
+  cut: Region | undefined,
+): string {
+  const [, , px, py] = STYLE_SHAPE[face.eyes.style];
+  const r = slot.r;
+  const look = s.look ?? { x: 0, y: 0 };
+  const ir = { x: px * r * IRIS_EYE.size, y: py * r * IRIS_EYE.size };
+  const pupil = IRIS_EYE.pupil * (s.pupil ?? 1);
+  const free = { x: Math.max(0, ball.rx - ir.x), y: Math.max(0, ball.ry - ir.y) };
+  const c = { x: slot.c.x + look.x * free.x * 0.7, y: slot.c.y + look.y * free.y * 0.7 };
+  const shine = (p: Point, rr: number) => (inside(cut, p) ? circle(p, rr, FACE.white) : '');
+  return (
+    shape(ball, cut, face.eyes.white ?? FACE.white) +
+    shape({ cx: c.x, cy: c.y, rx: ir.x, ry: ir.y }, cut, iris) +
+    shape({ cx: c.x, cy: c.y, rx: pupil * ir.x, ry: pupil * ir.y }, cut, face.eyes.ink ?? face.ink) +
+    shine({ x: c.x + 0.36 * ir.x, y: c.y - 0.4 * ir.y }, 0.3 * ir.x) +
+    shine({ x: c.x - 0.34 * ir.x, y: c.y + 0.38 * ir.y }, 0.12 * ir.x)
+  );
 }
 
 function closedEye(face: FaceDef, slot: EyeSlot, l: Lod): string {

@@ -4,6 +4,7 @@ import {
   botLevel,
   type BotLevelId,
   type FillRegion,
+  type GateState,
   LEVEL_METRIC,
   LEVEL_RULES,
   type LevelKind,
@@ -17,6 +18,7 @@ import type { TFunction } from 'i18next';
 import { formatScore, ltr } from '../../components/player/format';
 import { decimalSeparator, listOf, percent, spaceWords } from '../../i18n/compose';
 import { secondsText } from '../home/homeModel';
+import type { AfterQuit } from './mapModel';
 
 /**
  * What a stage says about itself (components.md §19; plan §2, §3, §6; 1.0.3: levels-ui.md §6), in the 'levels'
@@ -184,6 +186,16 @@ export function puzzleSwapAnnouncement(from: number, to: number, penaltyMs: numb
 export const puzzleSwapsText = (swaps: number, minSwaps: number, t: LevelsT): string =>
   t('result.swaps', { count: swaps, min: minSwaps });
 
+/**
+ * "לצאת מהשלב?"'s body, as the quit would really end (mapModel afterQuit, B39): "תקבל 0 כוכבים, והשלב הבא
+ * ייפתח.", "…, והשלב הבא יישאר נעול." (a boss whose gate stays shut), "תקבל 0 כוכבים." (the last stage).
+ */
+export function exitBodyText(after: AfterQuit, t: LevelsT): string {
+  if (after === 'locked') return t('exit.bodyLocked');
+  if (after === 'last') return t('exit.bodyLast');
+  return t('exit.body');
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // The boss
 
@@ -224,6 +236,25 @@ export function bossGateText(
 ): string {
   const count = ltr(`★ ${stars}/${need}`);
   return t(open ? 'boss.result.gateOpen' : 'boss.result.gateClosed', { n: chapter + 1, stars: count });
+}
+
+/**
+ * The result's chapter line as spoken: "This chapter: 18 stars of 30. The gate needs 20". The gate is a sentence
+ * of its own there, so it has its own keys, capitalized in the languages that have case (QA levels-lang-english:
+ * the visible line's fragment, "· the gate is open", read "…of 30. the gate is open"). The last chapter has no gate.
+ */
+export function chapterLineLabel(
+  stars: number,
+  max: number,
+  gate: Pick<GateState, 'open' | 'need'> | null,
+  t: LevelsT,
+): string {
+  const sentence = gate
+    ? gate.open
+      ? t('result.chapterOpenSentence')
+      : t('result.chapterNeedSentence', { need: gate.need })
+    : '';
+  return t('result.chapterLine', { count: stars, stars, max, gate: sentence }).trim();
 }
 
 /** The boss band over a boss's stage: "בוס · פרק 3". */

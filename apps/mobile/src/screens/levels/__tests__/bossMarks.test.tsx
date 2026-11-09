@@ -109,7 +109,8 @@ describe('the crown on the bot’s avatar', () => {
     );
     expect(screen.getByTestId('race-bot-who')).toHaveProp(
       'accessibilityLabel',
-      expect.stringMatching(/^Pip, הבוס, בוט רמה 1/),
+      // B27: an RLM first (the label and the boss's name both start with "Pip").
+      expect.stringMatching(/^‏+Pip, הבוס, בוט רמה 1/),
     );
     await screen.unmount();
 
@@ -121,7 +122,7 @@ describe('the crown on the bot’s avatar', () => {
     expect(screen.queryByTestId('stage-boss', hidden)).toBeNull();
     expect(screen.getByTestId('race-bot-who')).toHaveProp(
       'accessibilityLabel',
-      expect.stringMatching(/^Pip, בוט רמה/),
+      expect.stringMatching(/^‏Pip, בוט רמה/),
     );
   });
 

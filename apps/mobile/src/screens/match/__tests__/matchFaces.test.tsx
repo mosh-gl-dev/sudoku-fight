@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen } from '@testing-library/react-native';
 
-import { shownFace } from '../../../avatars/testing/avatarTesting';
+import { shownFace, svgXmlsIn } from '../../../avatars/testing/avatarTesting';
 import { useAfter, useReadyFace } from '../../../avatars/useFaces';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
@@ -52,6 +52,25 @@ describe('the VS (Match-Found): SeatTile', () => {
 
   it('ready from the start: the smile, with nothing to play', async () => {
     await render(<SeatTile seat={seat(true)} showReady reduce={false} />);
+    expect(face()).toBe('smile');
+  });
+
+  it('in before its badge: the smile, still; the nod as its "מוכן" pops (QA B43)', async () => {
+    const art = () => screen.getByTestId('seat-opp-avatar-image', hidden);
+    const view = await render(<SeatTile seat={seat(true)} showReady={false} reduce={false} />);
+    expect(face()).toBe('smile');
+    expect(svgXmlsIn(art())).toHaveLength(1);
+    await view.rerender(<SeatTile seat={seat(true)} showReady reduce={false} />);
+    await act(async () => {
+      jest.advanceTimersByTime(0);
+    });
+    // Nodding: its layers move, the smile on.
+    expect(svgXmlsIn(art()).length).toBeGreaterThan(1);
+    expect(face()).toBe('smile');
+    await act(async () => {
+      jest.advanceTimersByTime(2_000);
+    });
+    expect(svgXmlsIn(art())).toHaveLength(1);
     expect(face()).toBe('smile');
   });
 });

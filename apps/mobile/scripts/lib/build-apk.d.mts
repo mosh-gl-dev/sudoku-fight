@@ -22,6 +22,9 @@ export interface ApkOptions {
   cleanNative: boolean;
   verbose: boolean;
   dryRun: boolean;
+  keyOnly: boolean;
+  /** --resign-sha1: the SHA-1 (lower-case hex) of the key that signs the APK again after the build, or null. */
+  resignSha1: string | null;
 }
 
 export declare function parseApkArgs(
@@ -88,7 +91,22 @@ export declare function prebuildPlan(state: {
   currentHash: string;
   cleanNative: boolean;
 }): { run: boolean; clean: boolean; reason: string };
-export declare function releaseSigningConfig(gradleText: string): string | null;
+export declare const APK_KEY_ALIAS: string;
+export declare const TEMPLATE_DEBUG_KEY_SHA1: string;
+export declare function localApkEnv(
+  keySha1: string,
+  resignSha1: string | null,
+): { SF_LOCAL_APK: '1'; SF_LOCAL_APK_SHA1: string };
+export declare function signingEnv(key: {
+  storeFile: string;
+  password: string;
+  alias: string;
+}): Record<string, string>;
+export declare function hexFingerprint(text: unknown): string | null;
+export declare function colonFingerprint(hex: string): string;
+export declare function keytoolFingerprints(text: string): { sha1: string; sha256: string } | null;
+export declare function apkSignerSha256s(text: string): string[];
+export declare function newestBuildTools(names: readonly string[]): string | null;
 
 export declare function javaMajorVersion(text: string): number | null;
 

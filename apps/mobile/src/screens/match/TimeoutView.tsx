@@ -120,7 +120,7 @@ export function TimeoutView({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: tokens.layout.gutterHome },
   column: { alignItems: 'center', gap: space[6] },
   illustration: {

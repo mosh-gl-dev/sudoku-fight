@@ -177,11 +177,13 @@ describe('plurals as they show', () => {
     const changed = [...onOldPhone]
       .filter(([id, text]) => /^(he|en) /.test(id) && !id.includes(' sample:') && onPhone.get(id) !== text)
       .map(([id]) => id);
-    // The 7 keys below with a "two" of their own, but game:hit.seconds, whose "two" reads as its plural at 2.
+    // The 8 keys below with a "two" of their own, but game:hit.seconds, whose "two" reads as its plural at 2.
     expect(changed.sort()).toEqual(
       [
         'game:live.leadMine',
         'game:live.leadTheirs',
+        // The results' best move (VIS-4, 30.10.2026): "הספרה 9 פעמיים בלוח".
+        'game:results.best.filled.num',
         'levels:hud.puzzle.fixed',
         'levels:hud.puzzle.moving',
         'moderation:report.errors.rateLimited',
@@ -221,7 +223,7 @@ describe('plurals as they show', () => {
     );
   });
 
-  // The 7 Hebrew keys whose "two" differs from the plural: these now show on the phone (an allowed change).
+  // The 8 Hebrew keys whose "two" differs from the plural: these now show on the phone (an allowed change).
   it('lists the Hebrew keys whose "two" form the phone shows now', () => {
     const differ = PLURALS.filter(({ lang, ns }) => lang === 'he' && ns !== 'sample').flatMap(
       ({ ns, base }) => {
@@ -233,6 +235,7 @@ describe('plurals as they show', () => {
       'game:hit.seconds',
       'game:live.leadMine',
       'game:live.leadTheirs',
+      'game:results.best.filled.num',
       'levels:hud.puzzle.fixed',
       'levels:hud.puzzle.moving',
       'moderation:report.errors.rateLimited',

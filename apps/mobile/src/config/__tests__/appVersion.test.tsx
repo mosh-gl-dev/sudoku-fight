@@ -77,18 +77,32 @@ describe('VersionInfo', () => {
     await i18n.changeLanguage('he');
     await render(<VersionInfo info={{ version: '1.0.0', build: 'a1b2c3d', server: 'staging' }} />);
     expect(screen.getByTestId('app-version-version')).toHaveTextContent(`גרסה ${ltr('1.0.0')}`);
-    expect(screen.getByTestId('app-version-details')).toHaveTextContent(ltr('build a1b2c3d · staging'));
+    expect(screen.getByTestId('app-version-details')).toHaveTextContent(
+      ltr(`build ${ltr('a1b2c3d')} · staging`),
+    );
     expect(screen.getByTestId('app-version')).toHaveProp(
       'accessibilityLabel',
-      `גרסה ${ltr('1.0.0')}, build a1b2c3d · staging`,
+      `גרסה ${ltr('1.0.0')}, build ${ltr('a1b2c3d')} · staging`,
     );
+  });
+
+  it('in Arabic the commit and the engine keep their order: each in its own isolate (B5)', async () => {
+    await i18n.changeLanguage('ar');
+    await render(
+      <VersionInfo info={{ version: '1.1.0', build: '87760ce-dirty', server: 'staging' }} engine="0.4.0" />,
+    );
+    // Not "87760 البناءce-dirty": the commit's leading digits can no longer join the Arabic word before them.
+    expect(screen.getByTestId('app-version-details')).toHaveTextContent(
+      ltr(`البناء ${ltr('87760ce-dirty')} · staging · المحرك ${ltr('0.4.0')}`),
+    );
+    await i18n.changeLanguage('he');
   });
 
   it('in English; nothing at all without a version', async () => {
     await i18n.changeLanguage('en');
     await render(<VersionInfo info={{ version: '2.3.4', build: null, server: 'local' }} engine={3} />);
     expect(screen.getByTestId('app-version-version')).toHaveTextContent(`Version ${ltr('2.3.4')}`);
-    expect(screen.getByTestId('app-version-details')).toHaveTextContent(ltr('local · engine 3'));
+    expect(screen.getByTestId('app-version-details')).toHaveTextContent(ltr(`local · engine ${ltr('3')}`));
     await render(<VersionInfo info={{ version: null, build: 'a1b2c3d', server: 'local' }} />);
     expect(screen.queryByTestId('app-version')).toBeNull();
     await i18n.changeLanguage('he');

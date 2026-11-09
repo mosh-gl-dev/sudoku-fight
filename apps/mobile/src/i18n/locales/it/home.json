@@ -63,6 +63,9 @@
     "title": "Nuova partita",
     "footnote": "Le classificate richiedono internet · L’allenamento è sempre disponibile",
     "soon": "Presto",
+    "needsConnection": {
+      "rankedAndFriends": "Classificata e con amici"
+    },
     "groups": {
       "ranked": {
         "title": "Classificata",
@@ -75,13 +78,13 @@
       },
       "practice": {
         "title": "Allenamento",
-        "note": "Niente pressione, niente punteggio"
+        "note": "Senza pressione né punteggio"
       }
     },
     "chips": {
       "rated": "Classificata",
       "unrated": "Non classificata",
-      "offline": "Funziona offline"
+      "offline": "Anche offline"
     },
     "ranked": {
       "name": "Classificata"
@@ -121,7 +124,7 @@
       "taglineNew_many": "{{total}} di fasi brevi · 0–3 stelle",
       "taglineNew_other": "{{total}} fasi brevi · 0–3 stelle",
       "chip": "Fase {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Anche offline",
       "chipLabel_one": "Fase {{stage}} · {{count}} stella",
       "chipLabel_many": "Fase {{stage}} · {{count}} di stelle",
       "chipLabel_other": "Fase {{stage}} · {{count}} stelle",

@@ -36,7 +36,9 @@ import type { AvatarId, CountryCode, NO_AVATAR_ID } from './account';
  * place is a "loss" (the card's stats and streaks). XP follows §15's "place 1": a shared first place in a
  * ranked game earns xp.win too; a tie against a bot earns xp.played. On the 'friends' tab
  * `entries` is empty and `nextCursor` null: the list is `friends.recentOpponents`, each with their 'general'
- * rating and rank; `me` is my 'general' row.
+ * rating and rank, best first; `me` is my 'general' row. The ranks are on the general board [D99] (the
+ * server's FRIENDS_PLACES=global, the default), or, with FRIENDS_PLACES=among, places among those opponents and
+ * me, mine included.
  */
 
 export const PROGRESS_PATHS = {

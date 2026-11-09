@@ -66,10 +66,13 @@
     "title": "Nowa partia",
     "footnote": "Partie rankingowe wymagają internetu · Trening jest zawsze dostępny",
     "soon": "Wkrótce",
+    "needsConnection": {
+      "rankedAndFriends": "Rankingowe i ze znajomymi"
+    },
     "groups": {
       "ranked": {
         "title": "Rankingowe",
-        "note": "Prawdziwi przeciwnicy, na żywo"
+        "note": "Prawdziwi gracze, na żywo"
       },
       "friends": {
         "title": "Ze znajomymi",

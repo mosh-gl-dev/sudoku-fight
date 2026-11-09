@@ -1,5 +1,13 @@
 import { AVATARS } from './catalog';
-import { CANVAS, defaultIdPrefix, GIMMICK_MIN_SIZE, renderAvatar, renderFace, viewBoxOf } from './render';
+import {
+  CANVAS,
+  defaultIdPrefix,
+  GIMMICK_MIN_SIZE,
+  renderAvatar,
+  renderExtras,
+  renderFace,
+  viewBoxOf,
+} from './render';
 import { FIXTURES } from './testing/fixtures';
 import { checkXml, duplicates } from './testing/xml';
 import { type AvatarDef, EXPRESSIONS } from './types';
@@ -101,7 +109,8 @@ describe('face art', () => {
       const want = art[e] ?? art.default;
       expect(svg).toContain(`<g id="sfa-demo-calculator-art" class="sfa-art">${want}</g>`);
       expect(svg.indexOf('-mouth"')).toBeLessThan(svg.indexOf('-art"'));
-      expect(svg.indexOf('-art"')).toBeLessThan(svg.indexOf('-extras"'));
+      const whole = renderAvatar(a, { expression: e });
+      expect(whole.indexOf('-art"')).toBeLessThan(whole.indexOf('-extras"'));
     }
     const noArt = AVATARS[0];
     if (!noArt) throw new Error('empty catalog');
@@ -134,6 +143,28 @@ describe('gimmicks in the render', () => {
       'sfa-g-steam-0',
     );
     order(renderAvatar(fixture('demo-pirate-egg')), 'class="sfa-face"', 'class="sfa-front"');
+  });
+
+  it('draws the extras over the front layers and gimmicks, in a group of their own', () => {
+    const angry = (id: string) => renderAvatar(fixture(id), { expression: 'angry' });
+    const pirate = angry('demo-pirate-egg');
+    order(pirate, 'class="sfa-face"', 'class="sfa-front"', 'class="sfa-extras"');
+    expect(pirate.indexOf('class="sfa-extras"')).toBeGreaterThan(pirate.lastIndexOf('sfa-gimmick'));
+    expect(pirate).toMatch(/<g id="sfa-demo-pirate-egg-extras" class="sfa-extras"><path/);
+    order(angry('demo-kettle'), 'class="sfa-face"', 'sfa-g-steam-0', 'class="sfa-extras"');
+    // renderExtras is what the group holds (a script swaps it with the face); a calm face has none
+    const egg = fixture('demo-pirate-egg');
+    expect(pirate).toContain(`class="sfa-extras">${renderExtras(egg, 'angry')}</g>`);
+    expect(renderExtras(egg, 'neutral')).toBe('');
+    expect(renderFace(egg, 'angry')).not.toContain('extras');
+  });
+
+  it('keeps the extras with a face that a gimmick holds, right after it', () => {
+    const svg = renderAvatar(fixture('demo-balloon'), { expression: 'sleepy' });
+    expect(svg).toMatch(
+      /<g class="sfa-gimmick sfa-g-skin">.*<g id="sfa-demo-balloon-face" class="sfa-face">.*<\/g><g id="sfa-demo-balloon-extras" class="sfa-extras"><path[^]*?<\/g><\/g>/,
+    );
+    expect(svg.match(/class="sfa-extras"/g)).toHaveLength(1);
   });
 
   it('wraps the face in the gimmick that holds it, after its markup', () => {

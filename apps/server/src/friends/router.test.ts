@@ -1,4 +1,6 @@
 import {
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   FRIENDS_ERROR_STATUS,
   FRIENDS_PATHS,
   type FriendRoomCreateRequest,
@@ -250,6 +252,27 @@ describe('POST /v1/rooms/join', () => {
     expect(rooms.calls.map((c) => c.request)).toEqual(
       Array(3).fill({ code: '123456', interferenceKinds: ['freeze'] }),
     );
+  });
+
+  it('a host with a pirate avatar: an app before the pirates (no catalog) gets none, so it can still join', async () => {
+    const pirate: FriendRoomTicket = {
+      ...TICKET,
+      room: { ...TICKET.room, host: { ...TICKET.room.host, avatarId: 'pirates-1-house' } },
+    };
+    rooms.answer = () => ({ ok: true, ticket: pirate });
+    const old = await post<FriendRoomTicket>(url, FRIENDS_PATHS.join, 'ben', { body: { code: '123456' } });
+    expect(old.status).toBe(200);
+    expect(isFriendRoomTicket(old.body)).toBe(true);
+    expect(old.body.room.host.avatarId).toBe(NO_AVATAR_ID);
+    const headers = { [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG) };
+    const now = await post<FriendRoomTicket>(url, FRIENDS_PATHS.join, 'ben', {
+      body: { code: '123456' },
+      headers,
+    });
+    expect(now.body).toEqual(pirate);
+    const created = await post<FriendRoomTicket>(url, FRIENDS_PATHS.rooms, 'ana', { body: {} });
+    expect(created.status).toBe(201);
+    expect(created.body.room.host.avatarId).toBe(NO_AVATAR_ID);
   });
 
   it('a code that is not one: 400 badRequest, field code (the service never sees it)', async () => {

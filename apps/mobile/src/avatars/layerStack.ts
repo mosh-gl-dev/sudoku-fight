@@ -45,8 +45,10 @@ export interface StackNode {
 export type StackItem = StackSvg | StackNode;
 
 /**
- * Every layer that may move on a stage view (idle): the body, the face and each eye, and each gimmick when
- * gimmicks play at this size (packages/avatars GIMMICK_MIN_SIZE; under it they stay merged in their rest pose).
+ * Every layer that may move on a stage view (idle): the body, the face and each eye, the face's extras when this
+ * face has any (a motion that moves the face moves them too; they are drawn apart, over the front layers), and
+ * each gimmick when gimmicks play at this size (packages/avatars GIMMICK_MIN_SIZE; under it they stay merged in
+ * their rest pose).
  */
 export function idleMovers(layers: NativeLayers): Set<string> {
   const gimmicks = layers.frame.size >= GIMMICK_MIN_SIZE;
@@ -54,7 +56,11 @@ export function idleMovers(layers: NativeLayers): Set<string> {
     layers.nodes
       .filter(
         (n) =>
-          n.kind === 'body' || n.kind === 'face' || n.kind === 'eye' || (gimmicks && n.kind === 'gimmick'),
+          n.kind === 'body' ||
+          n.kind === 'face' ||
+          n.kind === 'eye' ||
+          (n.kind === 'extras' && n.svg !== null) ||
+          (gimmicks && n.kind === 'gimmick'),
       )
       .map((n) => n.key),
   );

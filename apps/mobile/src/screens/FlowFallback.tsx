@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: space[8],
     paddingHorizontal: tokens.layout.gutterGame,
+    // Opaque, unlike the screens (D126): it is also drawn over a game whose results did not open, and hides it.
     backgroundColor: color.bg,
   },
   waiting: { alignItems: 'center', gap: space[6] },

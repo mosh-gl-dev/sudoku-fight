@@ -28,10 +28,16 @@ function rig({
   const progress: [string, MyProgress][] = [];
   const pending: [string, number][] = [];
   const who = { owner };
+  /** While it gives a promise, a request waits for it (a request on its way). */
+  const hold = { post: (): Promise<void> | null => null };
   const api: ProgressApi = createProgressApi({
     baseUrl: 'https://game.example',
     getToken: async () => 'tok',
-    fetch: server.fetch,
+    fetch: async (url, init) => {
+      const wait = hold.post();
+      if (wait) await wait;
+      return server.fetch(url, init);
+    },
     timeoutMs: 1000,
   });
   /** Whose API each flush asked for. */
@@ -66,7 +72,7 @@ function rig({
     timer.fire();
     await settle();
   };
-  return { server, queue, timers, progress, pending, who, sync, apiOf, fireRetry };
+  return { server, queue, timers, progress, pending, who, hold, sync, apiOf, fireRetry };
 }
 
 const settle = async () => {
@@ -196,6 +202,34 @@ describe('PracticeSync', () => {
     await expect(r.sync.flush()).resolves.toMatchObject({ status: 'done', sent: 1 });
     expect(r.server.taken).toEqual(new Set(['theirs']));
     await expect(r.queue.size('uid-1')).resolves.toBe(1);
+  });
+
+  it('QA levels-xp-offline (loop 5): retryNow while a request is still on its way sends again once it fails, past its new backoff', async () => {
+    const r = rig();
+    // A retry that went out just before the connection came back: still on its way, and it will fail.
+    r.server.state.offline = true;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let released = false;
+    r.hold.post = () => {
+      if (!released) return gate;
+      // The request after it: the connection is back.
+      r.server.state.offline = false;
+      return null;
+    };
+    await r.queue.add('uid-1', result('offline-1'));
+    const first = r.sync.flush();
+    await settle();
+    // The connection is back (connectivity offline → online): what waits goes now.
+    const again = r.sync.retryNow();
+    released = true;
+    release();
+    await expect(first).resolves.toMatchObject({ status: 'offline' });
+    await expect(again).resolves.toMatchObject({ status: 'offline' });
+    await settle();
+    expect(r.server.taken).toEqual(new Set(['offline-1']));
+    expect(r.timers).toHaveLength(0);
+    expect(r.sync.waiting).toBe(false);
   });
 
   it('a result added while a flush runs goes in the same run or right after it', async () => {

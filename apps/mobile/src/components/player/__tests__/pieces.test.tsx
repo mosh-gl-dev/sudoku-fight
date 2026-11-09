@@ -151,11 +151,30 @@ describe('LeadBar (§9)', () => {
 describe('LockStrip (§10)', () => {
   it('shows my cell, the seconds and a progress bar', async () => {
     await render(<LockStrip model={lockModel(twoPlayerView(), NOW)} testID="strip" />);
-    expect(screen.getByLabelText('המשבצת שלך F8, נותרו 7 שניות')).toBeTruthy();
+    // Q1: the label and the bar's value say the seconds in 5-second steps (7 → 5), so they don't change every
+    // second; the strip shows every second, and the lock's announcement says them exactly.
+    expect(screen.getByLabelText('המשבצת שלך F8, נותרו 5 שניות')).toBeTruthy();
     expect(screen.getByText('F8', hidden)).toBeTruthy();
     expect(screen.getByTestId('strip-seconds', hidden)).toHaveTextContent('7 שניות');
     const bar = screen.getByRole('progressbar', { name: 'זמן שנותר למשבצת F8' });
-    expect(bar).toHaveAccessibilityValue({ min: 0, max: 12, now: 7 });
+    expect(bar).toHaveAccessibilityValue({ min: 0, max: 12, now: 5 });
+  });
+
+  it('keeps its label and value through a second of the lock, and counts the last 5 one by one', async () => {
+    const view = withPlayer(twoPlayerView(), 'moshe', {
+      lock: { cell: 52, expiresAt: NOW + 12_000, remainingMs: 12_000 },
+    });
+    const { rerender } = await render(<LockStrip model={lockModel(view, NOW)} testID="strip" />);
+    const said = () => [
+      screen.getByTestId('strip-seconds', hidden).props.children,
+      screen.getByRole('progressbar').props.accessibilityValue.now,
+    ];
+    expect(said()).toEqual(['12 שניות', 10]);
+    await rerender(<LockStrip model={lockModel(view, NOW + 1000)} testID="strip" />);
+    expect(said()).toEqual(['11 שניות', 10]);
+    expect(screen.getByLabelText('המשבצת שלך F8, נותרו 10 שניות')).toBeTruthy();
+    await rerender(<LockStrip model={lockModel(view, NOW + 8000)} testID="strip" />);
+    expect(said()).toEqual(['4 שניות', 4]);
   });
 
   it('turns gold in the last 3 seconds, and muted when paused', async () => {

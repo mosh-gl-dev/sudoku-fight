@@ -30,7 +30,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_SERVER_HOST": "sudoku-fight-prod.fly.dev",
+        "EXPO_PUBLIC_SERVER_HOST": "sudokufight.app",
         "EXPO_PUBLIC_SERVER_PORT": "443",
         "EXPO_PUBLIC_SERVER_SECURE": "true",
         "EXPO_PUBLIC_SERVER_LABEL": "production"

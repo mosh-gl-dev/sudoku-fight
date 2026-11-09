@@ -92,6 +92,8 @@ function ChooseNameForm({ me }: { me: Me }) {
             label={t('chooseName.save')}
             size="lg"
             loading={busy}
+            // save() plays the press itself, and only for a name it can send (a refused one nudges).
+            cue={null}
             onPress={() => void save()}
             testID="choose-name-save"
           />

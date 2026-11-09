@@ -93,6 +93,12 @@ export interface EyeLook {
   ink?: string;
   /** Eyeball colour for `round` and `oval`. Default: white. */
   white?: string;
+  /**
+   * A coloured iris between the eyeball and the pupil, for `round` and `oval` eyes (other styles ignore it).
+   * Only at SMALL_SIZE (40 px) and up: smaller, the eye is the plain pupil, which reads better. Default: none,
+   * the plain pupil at every size.
+   */
+  iris?: string;
 }
 
 /** Two eyes: the default (`count` may be left out). */

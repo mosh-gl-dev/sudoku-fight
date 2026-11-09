@@ -63,8 +63,10 @@ export interface LobbyInfo {
  * - `unreachable`: there is a network, but the game server did not answer ("שגיאת חיבור").
  * - `refused`: the server answered no (see RoomRefusal).
  * - `lost`: the game's connection dropped and could not come back.
+ * - `expired`: it could not come back before the time to return ran out: the game counts as abandoned
+ *   ("לא חזרת למשחק בזמן"; connection-lost-no-recovery).
  */
-export type ConnectionFailure = 'offline' | 'unreachable' | 'refused' | 'lost';
+export type ConnectionFailure = 'offline' | 'unreachable' | 'refused' | 'lost' | 'expired';
 
 /**
  * Why the server refused a create or a join: the protocol's GameRoomError (gameRoomErrorOf(message)), or
@@ -90,7 +92,8 @@ export type ConnectionStatus =
    * the connection is shown); null when the game has none. `playable`: whether the host plays on here meanwhile
    * (false: the game was not running when the connection went, or its rules have no play offline: 'turns', no
    * offline moves); absent counts as true. `graceEndsAt`: when the server will call it abandonment, if the
-   * host knows better than lostAt + the soft phase + the grace.
+   * host knows better than lostAt + the soft phase + the grace. `cause`: 'background' when the host let go of
+   * the socket because the app went to the background (absent counts as a drop).
    */
   | {
       kind: 'reconnecting';
@@ -99,6 +102,7 @@ export type ConnectionStatus =
       softEndsAt?: number | null;
       playable?: boolean;
       graceEndsAt?: number | null;
+      cause?: 'drop' | 'background';
     }
   /** The socket is back; the fresh snapshot is on its way. */
   | {
@@ -194,6 +198,11 @@ export interface SelfReconnectingModel {
   remainingMs: number | null;
   graceMs: number;
   syncItems: SyncItem[];
+  /**
+   * 'lost' only: the app just came back from the background and the host is reconnecting (its first try): the
+   * player is here, so the lock card says "מסנכרן…", not "הלוח נעול עד שתחזור" (and no countdown shows).
+   */
+  returning?: boolean;
 }
 
 /**
@@ -263,6 +272,13 @@ export type ConnectionModel =
 export type ConnectionModelKind = ConnectionModel['kind'];
 
 const NONE: ConnectionModel = { kind: 'none' };
+
+/**
+ * Back from the background, the host's first try (about a second; RemoteGameHost attemptTimeoutMs at most)
+ * shows no abandonment countdown while more than this is left of the grace: the player is here already. With
+ * less left, the countdown shows at once, so a return that fails never ends in an abandonment unannounced.
+ */
+export const RETURN_QUIET_MS = 6_000;
 
 // ---------------------------------------------------------------------------------------------------------
 
@@ -350,8 +366,14 @@ export function connectionModel(
   const frozenForOpponent = inSoftPhase && view.status === 'paused' && awayOpponent(view) !== null;
   if (!frozenForOpponent) {
     if (status.kind === 'reconnecting') {
+      const attempt = Math.max(1, status.attempt);
       const endsAt = status.graceEndsAt ?? me?.graceEndsAt ?? status.lostAt + softGraceMs + graceMs;
-      return self('lost', Math.max(1, status.attempt), endsAt);
+      // Back from the background (the host's first try, which takes about a second): the player is here,
+      // so neither "יש לך עוד 10 שניות לחזור" nor "הלוח נעול עד שתחזור" is right; only "מתחבר מחדש". A
+      // return that fails (attempt 2), or one with little grace left, shows the countdown again.
+      if (status.cause === 'background' && attempt === 1 && endsAt - now > RETURN_QUIET_MS)
+        return { ...self('lost', attempt, null), returning: true };
+      return self('lost', attempt, endsAt);
     }
     if (status.kind === 'connecting') {
       // Joining again by code (the reconnection token was refused) while the game runs.

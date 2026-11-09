@@ -1,4 +1,5 @@
 import { AVATARS } from './catalog';
+import { PIRATE_CAST } from './catalog/pirates';
 import { FACE } from './palette';
 import {
   drawBrows,
@@ -241,6 +242,78 @@ describe('a covered eye', () => {
     const tear = drawExtras(fc, 'sad', { size: 160 });
     const xs = [...tear.matchAll(/M([\d.]+) /g)].map((m) => Number(m[1]));
     for (const x of xs) expect(x).toBeGreaterThan(50);
+  });
+});
+
+describe('an iris (EyeLook.iris)', () => {
+  const IRIS = '#4f74b3';
+  const withIris = (style: EyeStyle): FaceDef & { eyes: TwoEyes } => {
+    const fc = face(style);
+    return { ...fc, eyes: { ...fc.eyes, iris: IRIS } };
+  };
+  /** The centre of each ellipse path of one fill, from its "M{x-rx} {cy}a{rx} …" start. */
+  const discs = (svg: string, fill: string) =>
+    [
+      ...svg.matchAll(
+        new RegExp(`<path d="M([\\d.]+) ([\\d.]+)a([\\d.]+) [\\d.]+ [^"]*" fill="${fill}"`, 'g'),
+      ),
+    ].map((m) => ({ x: Number(m[1]) + Number(m[3]), y: Number(m[2]), r: Number(m[3]) }));
+
+  it('draws an iris in round and oval eyes, between the eyeball and the pupil', () => {
+    for (const style of ['round', 'oval'] as const) {
+      const svg = drawEyes(withIris(style), 'neutral', { size: 160 });
+      expect(count(svg, new RegExp(`fill="${IRIS}"`, 'g'))).toBe(2);
+      const ball = svg.indexOf(`fill="${FACE.white}"`);
+      const iris = svg.indexOf(`fill="${IRIS}"`);
+      const pupil = svg.indexOf(`fill="${FACE.ink}"`);
+      expect(ball).toBeLessThan(iris);
+      expect(iris).toBeLessThan(pupil);
+      // the pupil sits inside the iris, the iris inside the eyeball
+      const [i] = discs(svg, IRIS);
+      const [p] = discs(svg, FACE.ink);
+      expect(p!.r).toBeLessThan(i!.r);
+      expect(i!.r).toBeLessThan(5);
+    }
+  });
+
+  it('keeps the iris its size when surprised: the pupil shrinks inside it', () => {
+    const fc = withIris('round');
+    const plain = drawEyes(fc, 'neutral', { size: 160 });
+    const wide = drawEyes(fc, 'surprised', { size: 160 });
+    expect(discs(wide, IRIS)[0]!.r).toBeCloseTo(discs(plain, IRIS)[0]!.r, 1);
+    expect(discs(wide, FACE.ink)[0]!.r).toBeLessThan(discs(plain, FACE.ink)[0]!.r);
+  });
+
+  it('moves the iris with the gaze, and lids cut it like the rest of the eye', () => {
+    const fc = withIris('round');
+    const down = discs(drawEyes(fc, 'confused', { size: 160 }), IRIS);
+    expect(down[0]!.y).toBeLessThan(50); // confused looks up
+    const sleepy = drawEyes(fc, 'sleepy', { size: 160 });
+    expect(sleepy).toContain(`fill="${IRIS}"`);
+    expect(sleepy).not.toMatch(new RegExp(`<path d="M[\\d.]+ [\\d.]+a[^"]*" fill="${IRIS}"`)); // cut: no whole ellipse
+  });
+
+  it('leaves the plain pupil under 40 px, and every other eye style as it was', () => {
+    for (const style of EYE_STYLES) {
+      for (const e of EXPRESSIONS) {
+        expect(drawEyes(withIris(style), e, { size: SMALL_SIZE - 1 })).toBe(
+          drawEyes(face(style), e, { size: SMALL_SIZE - 1 }),
+        );
+        if (style === 'dot' || style === 'button')
+          expect(drawEyes(withIris(style), e, { size: 160 })).toBe(drawEyes(face(style), e, { size: 160 }));
+      }
+    }
+  });
+
+  it('changes nothing for a face without one (every avatar of the catalog but the invested pirates)', () => {
+    // The iris is the pirates' invested look (catalog/pirates/, choosable since 31.10.2026); no other has one.
+    expect(AVATARS.filter((a) => a.face.eyes.iris !== undefined).map((a) => a.id)).toEqual(
+      PIRATE_CAST.map((c) => c.looks.invested.id),
+    );
+    const fc = face('round');
+    expect(drawEyes({ ...fc, eyes: { ...fc.eyes, iris: undefined } }, 'smile', { size: 160 })).toBe(
+      drawEyes(fc, 'smile', { size: 160 }),
+    );
   });
 });
 

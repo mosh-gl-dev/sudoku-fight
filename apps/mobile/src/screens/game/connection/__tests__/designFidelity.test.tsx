@@ -104,7 +104,12 @@ describe.each(['he', 'en'] as const)('Opponent-Left board (%s)', (lang) => {
     const onHome = jest.fn();
     await render(ui(onHome));
     const home = screen.getByRole('button', { name: lang === 'he' ? 'לבית' : 'Home' });
-    expect(styleOf(home)).toMatchObject({ borderWidth: 1, borderColor: color.border });
+    // The secondary: a slate face with the border, on its own edge (D125), never the gold shadow.
+    expect(styleOf(screen.getByTestId('opponent-left-home-face'))).toMatchObject({
+      borderWidth: 1,
+      borderColor: color.border,
+    });
+    expect(screen.getByTestId('opponent-left-home-edge')).toBeOnTheScreen();
     expect(screen.queryByTestId('opponent-left-home-shadow')).not.toBeOnTheScreen();
     expect(screen.getByTestId('opponent-left-results-shadow')).toBeOnTheScreen();
     await fireEvent.press(home);

@@ -324,6 +324,7 @@ const BY_REASON = {
     'board:keypad.complete#left',
     'game:connection.opponent.ring#seconds',
     'levels:result.chapterNeed#need',
+    'levels:result.chapterNeedSentence#need',
     'levels:gateSheet.missing#stars',
     'levels:gateSheet.missing#missing',
     'levels:panel.lockedGate#stars',

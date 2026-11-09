@@ -9,6 +9,7 @@ import {
   type PlayerId,
   type PlayerView,
 } from '@sudoku-fight/engine';
+import type { TFunction } from 'i18next';
 import {
   type ReactNode,
   useCallback,
@@ -35,7 +36,7 @@ import {
   Keypad,
 } from '../../components/board';
 import { ResumeCountdown } from '../../components/board/ResumeCountdown';
-import { WarpFrame } from '../../components/interference';
+import { useHitClock, WarpFrame } from '../../components/interference';
 import {
   cardModel,
   type CardModel,
@@ -52,6 +53,8 @@ import {
   signedText,
 } from '../../components/player';
 import { ConfirmModal, useToast } from '../../components/ui';
+import type { ToastContent } from '../../components/ui/toastStore';
+import { Enter } from '../../components/ui/Enter';
 import { Text } from '../../components/ui/Text';
 import { NOT_PAUSED, type PauseState } from '../../game/backgroundPause';
 import type { MatchEffect, UiEffect } from '../../game/effects';
@@ -67,9 +70,11 @@ import { track } from '../../services/analytics';
 import { crashReporter } from '../../services/crashlytics';
 import { cue, cueCountUp, preloadCues } from '../../services/feedback';
 import { useProfile } from '../../state/profile';
+import { useSettings } from '../../state/settings';
 import { color, space, tokens } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { FlowFallback } from '../FlowFallback';
+import { useGoCoverGate } from '../match/goCoverGate';
 import { useModerationFlow } from '../moderation/useModerationFlow';
 import {
   ArsenalOverlay,
@@ -81,6 +86,7 @@ import {
   useSenderFeedback,
 } from './arsenal';
 import { BoardProgress } from './BoardProgress';
+import { BOARD_REVEAL, isFreshGame } from './boardReveal';
 import {
   blocksInput,
   ConnectionLayer,
@@ -105,7 +111,9 @@ import {
   within,
 } from './geometry';
 import { GroupHud } from './GroupHud';
-import { BoardHitLayer, HitLayer, hitOf, useKeypadShuffle } from './hit';
+import { BoardHitLayer, HitLayer, hitOf, hitSendersOf, isHitOn, useKeypadShuffle } from './hit';
+import { HitRehearsal } from './hit/HitRehearsal';
+import { useWarmHitCues } from './hit/warmHitCues';
 import { identityOf } from './identity';
 import {
   DIALOG_GONE_CEILING_MS,
@@ -131,6 +139,7 @@ import { REACTION_MS, type ReactionFloat, ReactionLayer, withFloat } from './Rea
 import { CardMenu, ReactionPicker, useReactionMutes, useReactions } from './reactions';
 import { SoloHud } from './SoloHud';
 import { useLiveAnnouncer } from './useLiveAnnouncer';
+import { useRoomHeight } from './useRoomHeight';
 
 /**
  * The game screen of practice (spec §5, §6): alone (Game-Solo in direction C) or against a bot (Game-Bot,
@@ -306,8 +315,11 @@ export interface LevelChrome {
   };
   /** No lock strip (locks with no timer: nothing to count down). */
   hideLockStrip?: boolean;
-  /** The stage is over and its hold has passed: the stage's result (no navigation). In place of onEnded. */
-  onOver: () => void;
+  /**
+   * The stage is over and its hold has passed: the stage's result (no navigation). In place of onEnded.
+   * `underDialog`: the end came by itself while "לצאת מהשלב?" was open (not by its "יציאה"), and closed it.
+   */
+  onOver: (over?: { underDialog: boolean }) => void;
   /** The hold on the final board before onOver; the game's endDelayMs by default. */
   endDelayMs?: (reason: EndReason | undefined, reduce: boolean) => number;
   /** Over everything (the D65 resume countdown over the covered board). */
@@ -367,6 +379,33 @@ function safely(context: string, run: () => void): void {
 const breadcrumb = (message: string) => crashReporter().log(`game: ${message}`);
 
 /**
+ * "לא נכנעת" (QA loop 2): my surrender did not happen and the game goes on, with the reason that matters to me.
+ * `offline`: my own connection is the reason (try again once it is back); else the game would not take it now.
+ */
+function surrenderNotice(offline: boolean, t: TFunction<'game'>): ToastContent {
+  return offline
+    ? { variant: 'warning', icon: 'wifiOff', message: t('connection.surrender.notSentOffline') }
+    : { variant: 'warning', message: t('connection.surrender.notSent') };
+}
+
+/** The surrender dialog closed under me for the connection layer (its `kind`): what to say, once it is gone. */
+interface DialogDrop {
+  kind: ConnectionModel['kind'];
+  /** Null when the game is over (the results say it all). */
+  notice: ToastContent | null;
+}
+
+const MY_LINK: ReadonlySet<ConnectionModel['kind']> = new Set([
+  'selfOffline',
+  'selfReconnecting',
+  'connecting',
+]);
+
+function dialogDrop(kind: ConnectionModel['kind'], over: boolean, t: TFunction<'game'>): DialogDrop {
+  return { kind, notice: over ? null : surrenderNotice(MY_LINK.has(kind), t) };
+}
+
+/**
  * [D65] A practice's freeze while the app is away (solo practice, a practice against a bot): the cover over the
  * board, or null. Never for an online game (no pause there) or a stage (its chrome draws its own).
  */
@@ -422,6 +461,9 @@ export function GameScreen({
     () => session.subscribe(() => setShown({ view: host.getView(), readAt: session.clock.now() })),
     [session, host],
   );
+  // MOT-6 / BRD-8: a fresh game's board and keypad come in at its start (boardReveal.ts); not a stage (its
+  // "מוכן?" covers the board) and not a game the screen comes back to. Decided once, on the first render.
+  const [reveal] = useState(() => !level && !covered && isFreshGame(view));
   // An opponent's second of immunity after a hit ends by the clock alone, with no update [D11]: read the view
   // again then, so "הפרעה" and the picker's kinds are ready on time. The game clock decides (it may run apart
   // from the phone's timers, e.g. synced to a server): the timer only looks again, a tick at most apart.
@@ -531,7 +573,12 @@ export function GameScreen({
   const opponentBotLevel = useMemo(() => {
     if (botLevel === null) return null;
     const words = { level: botLevel, title: t(`home:botSelect.levels.${botLevel}.title`) };
-    return { text: t('botLevel.tag', words), label: t('botLevel.label', words) };
+    // Shorter forms for a card too narrow for the whole tag at full size (PlayerCard): the title, then the number.
+    return {
+      text: t('botLevel.tag', words),
+      label: t('botLevel.label', words),
+      shorter: [words.title, String(botLevel)],
+    };
   }, [botLevel, t]);
   const nameOf = useCallback(
     (id: PlayerId) => (id === view.me ? myName : (identityOf(view, id).name ?? t('opponent'))),
@@ -600,7 +647,9 @@ export function GameScreen({
 
   // ---- where the board and the cards are (for the flights and floats) and how big the board can be ----
   const layouts = useRef<Layouts>({ cards: {} });
-  const [roomHeight, setRoomHeight] = useState<number | null>(null);
+  // Read before the first frame where it can be: the board never draws at another size first (QA
+  // levels-freeze-ready).
+  const { ref: roomRef, height: roomHeight, setHeight: setRoomHeight } = useRoomHeight();
   const side = boardSide(windowWidth, roomHeight);
   // A stage's frame over the board, made once per board size (a new element would redraw the board).
   const overlayOf = level?.overlay;
@@ -654,7 +703,7 @@ export function GameScreen({
       setRoomHeight(e.nativeEvent.layout.height);
       syncBoardRect();
     },
-    [syncBoardRect],
+    [syncBoardRect, setRoomHeight],
   );
   const onBoardLayout = useCallback(
     (e: LayoutChangeEvent) => {
@@ -679,6 +728,8 @@ export function GameScreen({
   const [confirmOpen, setConfirmOpen] = useState(false);
   /** True from the moment the end dialog opens (openConfirm) until it has left the screen (its onExited). */
   const dialogUp = useRef(false);
+  /** The end dialog asks and has no answer yet: open, neither cancelled nor confirmed. */
+  const asking = useRef(false);
   /** The report sheet or the block dialog (spec §3.5) is on the screen: useModerationFlow's `mounted`. */
   const modUp = useRef(false);
   /** Closes the report sheet and the block dialog (useModerationFlow's closeAll, once it exists below). */
@@ -705,10 +756,12 @@ export function GameScreen({
 
   /** onEnded, watched: the results should replace this screen (and its timers) before the watchdog fires. */
   const openResults = useCallback(
-    (gameId: string) => {
+    (gameId: string, underDialog = false) => {
       breadcrumb('opening the results');
       // A stage's result is a state of its own route (no navigation): its onOver.
-      safely('opening the results', () => (level ? level.onOver() : onEnded(gameId)));
+      const stageOver = (stage: LevelChrome) =>
+        underDialog ? stage.onOver({ underDialog: true }) : stage.onOver();
+      safely('opening the results', () => (level ? stageOver(level) : onEnded(gameId)));
       later(resultsWatchdogMs, () => {
         breadcrumb('results did not open');
         crashReporter().recordError(
@@ -731,13 +784,16 @@ export function GameScreen({
   const showResults = useCallback(
     (gameId: string, delay = 0) => {
       ended.current = true;
+      // The end came by itself while the end dialog was still asking (a stage's clock ran out under it).
+      const underDialog = asking.current;
+      asking.current = false;
       let opened = false;
       /** Now, whatever is on the screen (the ceiling's way out). */
       const go = () => {
         if (opened) return;
         opened = true;
         whenModalsGone.current = null;
-        openResults(gameId);
+        openResults(gameId, underDialog);
       };
       const closeWindows = () => {
         setConfirmOpen(false);
@@ -967,6 +1023,14 @@ export function GameScreen({
         // score dropped, the game froze before my tap arrived): nothing was sent and nothing charged [D45].
         if (isInterferenceRefusal(e.action))
           useToast.getState().show({ variant: 'warning', message: t('arsenal.refused') });
+        // My surrender, refused (the connection went as I confirmed, or the server said no): the dialog is gone,
+        // so a silent refusal would look like a surrender that went through and a game that did not end (QA
+        // loop 2). Not when the game is over anyway (the opponent's end crossed it): the results say it all.
+        if (e.action === 'surrender') {
+          breadcrumb(`surrender refused (${e.reason})`);
+          if (update.view.status !== 'over')
+            useToast.getState().show(surrenderNotice(e.reason === 'disconnected', t));
+        }
         return;
       case 'locked':
         if (e.byMe) setPendingCell(null);
@@ -1072,6 +1136,22 @@ export function GameScreen({
     });
     return info && { ...info, cost: hitEvent?.cost ?? null, id: hitEvent?.seq ?? null };
   }, [view, nameOf, avatars, hitEvent]);
+  // One clock for every layer of the hit: the board's dim, the effect, the banner and a warp's tilt start in the
+  // same frame and move together (QA fixcheck of APK 14: four clocks, the dim ~170 ms before a warp's overlay).
+  const hitElapsed = useHitClock(isHitOn(hit, now) ? hit : null, session.clock);
+  // The warp's overlay canvas stays mounted (unseen) while this game allows warps, so a warp's overlay starts in the
+  // same frame as its banner and dim (QA measure of APK 17: a new Skia surface at the hit showed 94–348 ms late).
+  const warpStandby =
+    view.rules.interferences && view.rules.interferenceKinds.includes('warp') ? 'warp' : null;
+  // Who may send me a hit: the banner keeps their avatars ready between hits (QA measure of APK 20: the banner, made
+  // at the hit, was ~140 of the first hit's new native views). None in a practice (D44).
+  const hitSenders = useMemo(
+    () =>
+      view.rules.interferences
+        ? hitSendersOf(view, { avatarOf: (id) => avatars[id] ?? identityOf(view, id).avatar })
+        : null,
+    [view, avatars],
+  );
   // [D47] "מקלדת מתערבלת" on me: the keys' order while it lasts, and the keypad's finger guards (a press that
   // started while the keys moved is dropped with a nudge).
   const keypadShuffle = useKeypadShuffle({ hit, now, clock: session.clock, reduce, onRefused: nudgeKey });
@@ -1106,7 +1186,16 @@ export function GameScreen({
         // The sender pays (spec §7.2, D10): a muted "−2" beside their score (components.md §3.4).
         setDeltas((d) => ({ ...d, [e.fromId]: { id: `cost-${e.seq}`, value: -e.cost, kind: 'cost' } }));
         // Mine went (spec §7.4): "זיקוקים ← NinaVolt", once the host took it.
-        if (e.byMe) notifySent({ kind: e.interference, targetName: nameOf(e.targetId), cost: e.cost });
+        // The chip goes under the cards (motion.md `sender.toast`): my wink and my score stay in sight.
+        if (e.byMe) {
+          const hud = layouts.current.hud;
+          notifySent({
+            kind: e.interference,
+            targetName: nameOf(e.targetId),
+            cost: e.cost,
+            top: hud ? hud.y + hud.height + space[2] : undefined,
+          });
+        }
         // On me: the hit layer plays it (cue, rumble, banner, the live region's lines), from the view.
         if (e.onMe) setHitEvent({ seq: e.seq, cost: e.cost });
         // Between two others (3–4 players, spec §7.4): the chip on the target's card, and a line said.
@@ -1133,6 +1222,11 @@ export function GameScreen({
   // A tray or a popover is open over the screen: screen readers stay in it (iOS hears it from the overlay's
   // accessibilityViewIsModal; Android needs the screen's content hidden).
   const overlayOpen = arsenalOpen || reactions.pickerOpen || reactions.menuFor !== null;
+  // A full cover over the game (a connection screen, the D65 countdown, the results watchdog): the game under it is
+  // hidden from screen readers on both platforms (VoiceOver ignores importantForAccessibility), so the cover's
+  // message is all they reach (fixcheck APK 18, a11y-game-nodes-under-error-cover).
+  const gameCovered = blocked || covered || stuck !== null;
+  const gameHidden = overlayOpen || gameCovered;
   const opponentId = opponent?.id ?? null;
   // "הפרעה" on a card: the picker aimed at THAT card (3–4 players: each opponent's card has its own, original §17).
   const onInterfereAt = useCallback(
@@ -1212,10 +1306,17 @@ export function GameScreen({
   // "לתוצאות" on "the opponent left" (the end was seen long ago: no hold).
   const toResults = useCallback(() => showResults(view.gameId), [showResults, view.gameId]);
 
-  // The sounds of the game are loaded once the screen is up (motion.md §8).
+  // The sounds of the game are loaded once the screen is up (motion.md §8), with sound on only (turned on later:
+  // then). QA go-hold-joiner (loop 12): with sound off, a friends joiner fresh from a cold start (whose lobby
+  // made no player: warmGame.ts) built all 13 players here, each on the UI thread while JS waited, so the
+  // phone drew nothing for over a second under GO! (2.2–2.5 s against 1.2 s with sound on), for players that
+  // would never play.
+  const soundOn = useSettings((s) => s.sound);
   useEffect(() => {
-    preloadCues();
-  }, []);
+    if (soundOn) preloadCues();
+  }, [soundOn]);
+  // And the interferences' sounds, ahead of the first hit (QA loop 8: made under the hit, they froze its start).
+  useWarmHitCues(view.rules);
 
   // A digit entered while my connection is lost [D42] joins the queue: said once ("D5: 7 ממתין לחיבור").
   const queuedCount = queuedMoves?.length ?? 0;
@@ -1250,13 +1351,17 @@ export function GameScreen({
   );
   const onDigit = useCallback(
     (digit: Digit) => {
-      const mine = latest.current.board.myLock;
+      // BRD-1: the cell the player sees as selected, the one just tapped while its lock is on the way (its select
+      // goes first, on the same socket), else my lock. Never the old lock behind a new tap.
+      const cell = latest.current.board.keypadCell;
       // The last digit of the board ends the game: its listeners run inside this press.
-      if (mine) safely('place', () => host.place(mine.cell, digit));
+      if (cell !== null) safely('place', () => host.place(cell, digit));
     },
     [host],
   );
   const onIdlePress = useCallback(() => {
+    // A tap is on its way (BRD-1): "בחר משבצת" would say the opposite of what the board shows.
+    if (latest.current.board.pendingCell !== null) return;
     setNudge((n) => n + 1);
     cue('nudge');
   }, []);
@@ -1267,15 +1372,21 @@ export function GameScreen({
 
   const openConfirm = useCallback(() => {
     dialogUp.current = true;
+    asking.current = true;
     setConfirmOpen(true);
   }, []);
-  const closeConfirm = useCallback(() => setConfirmOpen(false), []);
+  const closeConfirm = useCallback(() => {
+    breadcrumb('end dialog cancelled');
+    asking.current = false;
+    setConfirmOpen(false);
+  }, []);
   /**
    * "כן, לסיים" / "כן, להיכנע" (spec §6.6): the game ends now (a practice: at once, inside this press), and the
    * results open once the dialog has left the screen (showResults). Whatever fails on the way is reported, and
    * the end still reaches the results (bug 9).
    */
   const confirmEnd = () => {
+    asking.current = false;
     setConfirmOpen(false);
     cue('surrender');
     breadcrumb(isOnline ? 'surrender confirmed' : 'end of practice confirmed');
@@ -1293,8 +1404,12 @@ export function GameScreen({
   // Android back asks first, like "סיום אימון" / "כניעה" (an open dialog handles back itself). Online, while the
   // connection layer is up it decides: the error screen goes home, the rest take no back (the surrender too).
   const back = useRef<() => void>(() => undefined);
+  // A ranked match's GO! still over the game (GoCover): back does nothing until it has faded into the board
+  // (goCoverGate.ts; QA: it opened the surrender over GO!).
+  const goCover = useGoCoverGate();
   useLayoutEffect(() => {
     back.current = () => {
+      if (goCover?.covering()) return;
       if (connection.kind === 'error') onHome?.();
       // Out of a game that goes on (3–4 players): nothing to give up any more; online, back leaves it.
       else if (out) {
@@ -1313,10 +1428,14 @@ export function GameScreen({
   // The connection went (or the game froze): the dialogs, the report sheet and the trays close, as nothing can
   // be done with them, and none may cover the connection's screens (adjusted while rendering, the moment it
   // happens).
+  // The end dialog closed that way, without my answer: said once it is gone (the effect below), so the close is
+  // never a silent one that looks like a lost tap (QA loop 2).
+  const [dropped, setDropped] = useState<DialogDrop | null>(null);
   const [wasBlocked, setWasBlocked] = useState(blocked);
   if (blocked !== wasBlocked) {
     setWasBlocked(blocked);
     if (blocked) {
+      if (confirmOpen) setDropped(dialogDrop(connection.kind, view.status === 'over', t));
       setConfirmOpen(false);
       closeModeration();
       closeArsenal();
@@ -1344,11 +1463,18 @@ export function GameScreen({
   if (selfOffline !== wasOffline) {
     setWasOffline(selfOffline);
     if (selfOffline) {
+      if (confirmOpen) setDropped(dialogDrop(connection.kind, view.status === 'over', t));
       setConfirmOpen(false);
       closeArsenal();
       closePicker();
     }
   }
+  useEffect(() => {
+    if (!dropped) return;
+    asking.current = false;
+    breadcrumb(`end dialog closed by the connection (${dropped.kind})`);
+    if (dropped.notice) useToast.getState().show(dropped.notice);
+  }, [dropped]);
 
   // Never an empty screen: a game without my seat (it should not happen) offers a way out.
   if (!myCard || !me) {
@@ -1384,13 +1510,21 @@ export function GameScreen({
   return (
     <View style={styles.root} testID={testID}>
       {/* What a warp tilts when it plays on the whole screen [D35]; everything else draws over it, upright. */}
-      <WarpFrame hit={hit} now={now} clock={session.clock} region="screen" style={styles.fill}>
+      <WarpFrame
+        hit={hit}
+        now={now}
+        clock={session.clock}
+        region="screen"
+        style={styles.fill}
+        elapsed={hitElapsed}
+      >
         <View
           style={[
             styles.content,
             { paddingTop: insets.top + space[2], paddingBottom: insets.bottom + space[6] },
           ]}
-          importantForAccessibility={overlayOpen || blocked || covered ? 'no-hide-descendants' : 'auto'}
+          importantForAccessibility={gameHidden ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={gameHidden}
           testID={`${testID}-content`}
         >
           {level ? (
@@ -1490,34 +1624,55 @@ export function GameScreen({
               testID="lock-strip"
             />
           )}
-          <View style={styles.room} onLayout={onRoomLayout} testID="board-room">
+          <View ref={roomRef} style={styles.room} onLayout={onRoomLayout} testID="board-room">
             <View onLayout={onBoardLayout} testID="board-slot">
-              {/* What a warp tilts when it plays on the board alone [D35]. */}
-              <WarpFrame hit={hit} now={now} clock={session.clock} region="board">
-                {/* Out of the game (D36): the board is there to watch; it takes nothing. */}
-                <Board
-                  model={board}
-                  width={side}
-                  onCellPress={out ? undefined : onCellPress}
-                  flashes={flashes}
-                  label={level?.boardLabel}
-                >
-                  {levelOverlay}
-                </Board>
-                {/* A hit on me darkens the board [D46] (and scrambles its digits [D47]); taps go through. */}
-                <BoardHitLayer hit={hit} now={now} clock={session.clock} cells={board.cells} width={side} />
-              </WarpFrame>
+              <Enter
+                enabled={reveal}
+                delayMs={BOARD_REVEAL.boardAt}
+                distance={BOARD_REVEAL.rise}
+                testID="board-reveal"
+              >
+                {/* What a warp tilts when it plays on the board alone [D35]. */}
+                <WarpFrame hit={hit} now={now} clock={session.clock} region="board" elapsed={hitElapsed}>
+                  {/* Out of the game (D36): the board is there to watch; it takes nothing. */}
+                  <Board
+                    model={board}
+                    width={side}
+                    onCellPress={out ? undefined : onCellPress}
+                    flashes={flashes}
+                    label={level?.boardLabel}
+                  >
+                    {levelOverlay}
+                  </Board>
+                  {/* A hit on me darkens the board [D46] (and scrambles its digits [D47]); taps go through. */}
+                  <BoardHitLayer
+                    hit={hit}
+                    now={now}
+                    clock={session.clock}
+                    cells={board.cells}
+                    width={side}
+                    elapsed={hitElapsed}
+                  />
+                </WarpFrame>
+              </Enter>
             </View>
           </View>
           <View style={styles.keypad}>
-            <Keypad
-              model={board.keypad}
-              onDigit={onDigit}
-              onIdlePress={out ? undefined : onIdlePress}
-              width={side}
-              order={keypadShuffle.order}
-              guard={keypadShuffle.guard}
-            />
+            <Enter
+              enabled={reveal}
+              delayMs={BOARD_REVEAL.keypadAt}
+              distance={BOARD_REVEAL.keypadRise}
+              testID="keypad-reveal"
+            >
+              <Keypad
+                model={board.keypad}
+                onDigit={onDigit}
+                onIdlePress={out ? undefined : onIdlePress}
+                width={side}
+                order={keypadShuffle.order}
+                guard={keypadShuffle.guard}
+              />
+            </Enter>
           </View>
           <View style={styles.cancel}>
             <CancelSelection cell={board.myLock?.name ?? null} onPress={onCancel} />
@@ -1528,7 +1683,23 @@ export function GameScreen({
       <FlightLayer flights={flights} />
       <ReactionLayer floats={floats} muted={reactions.muted} />
       {/* An interference on me (spec §7.4): its 5 s effect and banner, never touchable, play goes on under it. */}
-      <HitLayer hit={hit} now={now} clock={session.clock} boardRect={boardRect} announce={announce} />
+      <HitLayer
+        hit={hit}
+        now={now}
+        clock={session.clock}
+        boardRect={boardRect}
+        announce={announce}
+        elapsed={hitElapsed}
+        standby={warpStandby}
+        senders={hitSenders}
+      />
+      {/* The first hit's mount costs (Skia's surface and shaders, the banner), paid ahead on idle moments, unseen. */}
+      <HitRehearsal
+        rules={view.rules}
+        hitOn={isHitOn(hit, now)}
+        boardRect={boardRect}
+        banner={!hitSenders?.length}
+      />
       {duel || groupCards ? (
         <>
           <ReactionPicker
@@ -1572,7 +1743,12 @@ export function GameScreen({
         </>
       ) : null}
       {/* The live region (components.md §11.6): invisible, read by screen readers as it changes. */}
-      <View style={styles.live} pointerEvents="none">
+      <View
+        style={styles.live}
+        pointerEvents="none"
+        importantForAccessibility={gameCovered ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={gameCovered}
+      >
         <Text accessibilityLiveRegion="polite" style={styles.liveText} testID="game-live">
           {message}
         </Text>
@@ -1641,6 +1817,7 @@ export function GameScreen({
           avatars={avatars}
           countries={countries}
           myId={me.id}
+          overGame
         />
       ) : null}
       {devMetrics ? <DevMetricsToggle source={devMetrics} /> : null}
@@ -1681,7 +1858,7 @@ const gutter = tokens.layout.gutterGame;
 const game = tokens.layout.game;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   fill: { flex: 1 },
   content: { flex: 1 },
   gutter: { marginHorizontal: gutter },

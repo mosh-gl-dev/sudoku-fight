@@ -68,7 +68,9 @@ describe('Login (spec §3.3)', () => {
     const version = { version: '1.0.0', build: 'a1b2c3d', server: 'staging' };
     await renderAccount('/login', { login: () => <LoginScreen version={version} /> });
     expect(screen.getByTestId('app-version-version')).toHaveTextContent(`גרסה ${ltr('1.0.0')}`);
-    expect(screen.getByTestId('app-version-details')).toHaveTextContent(ltr('build a1b2c3d · staging'));
+    expect(screen.getByTestId('app-version-details')).toHaveTextContent(
+      ltr(`build ${ltr('a1b2c3d')} · staging`),
+    );
     // By default the installed app's own; a build without one shows no lines.
     await renderAccount('/login', { login: () => <LoginScreen version={null} /> });
     expect(screen.queryByTestId('app-version')).toBeNull();

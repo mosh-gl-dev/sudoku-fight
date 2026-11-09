@@ -58,7 +58,9 @@ import type { DevRoomOptions, OnlineClient, RoomLike } from './onlineClient';
  *   nothing heard for `answerTimeoutMs`) turns to 'reconnecting' and comes back with the reconnection token,
  *   with backoff, until the soft phase and the grace period are over (+ the time the server may take to
  *   notice, + 1 s); when the server holds no seat for the token but the room is alive, it rejoins by code with
- *   the same identity. Giving up is 'closed' with 'lostConnection'. The token is a bearer secret: in memory
+ *   the same identity. In a game that was running it goes on `afterGraceRetryMs` past that, while the server
+ *   keeps the finished game: a network back late brings the result (lost by abandonment). Giving up is
+ *   'closed' with 'lostConnection' (`pastGrace` once the abandonment time passed). The token is a bearer secret: in memory
  *   only, never logged. Once the game is over nothing reconnects: a drop, a silence or a gap after the end
  *   closes the host as 'gameOver' (the result is here already).
  * - The soft phase [D42] (Moshe, 2026-10-15): for rules.softGraceMs after the loss the game goes on for
@@ -215,6 +217,12 @@ export interface OnlineInfo {
   startsAt?: number | null;
   /** A friends room (1.0.4): its code, why it put me out, my refused command. Absent for any other room. */
   friends?: FriendsHostInfo;
+  /**
+   * Closed as 'lostConnection' in a game that was running, after the time to come back had run out (graceEndsAt,
+   * the server's abandonment as this phone reckons it): the screens say "you did not come back in time", not a
+   * plain connection error (connection-lost-no-recovery). Absent or false otherwise.
+   */
+  pastGrace?: boolean;
 }
 
 /** What RemoteGameHost needs of React Native's AppState. */
@@ -243,6 +251,20 @@ export interface RemoteHostOptions {
   attemptTimeoutMs: number;
   /** The server keeps a dropped seat this much longer than the game's grace (GameRoom's RECONNECT_SLACK_MS). */
   reconnectSlackMs: number;
+  /**
+   * Past the seat's deadline in a game that was running, the host keeps trying this much longer: the server keeps
+   * a finished game's room (GameRoom closeAfterGameMs, 60 s) and gives the finished game to its player who comes
+   * back by code (spec §16.2 "אחרי סוף המשחק"). So a network that comes back late still brings the result (the
+   * game lost by abandonment) within a try or two, not a dead-end error (connection-lost-no-recovery). 0: off.
+   */
+  afterGraceRetryMs: number;
+  /**
+   * Back in the foreground while coming back, the host tries at least this long, even past its time to give up:
+   * the network may still be coming up then (Wi-Fi joining again after airplane mode or a screen that went off),
+   * and a single failed try must not end the game on an error before the room could answer with its result
+   * (connection-lost-no-recovery, loop 12). 0: off.
+   */
+  resumeRetryMs: number;
   /** How long the server may take to notice a silent phone (its heartbeat), added to the deadline. */
   serverNoticeMs: number;
   /** The grace period before there is a game to read it from. */
@@ -267,6 +289,14 @@ export interface RemoteHostOptions {
    * tries this long to come back before it gives up (then "נסה שוב" rejoins by the code).
    */
   friendsLobbyReturnMs: number;
+  /**
+   * Into a friends room whose server still holds my seat for an earlier connection (`alreadyInRoom`: the app was
+   * killed in its game, or after its end): the waits before each new try (the last repeats), and how long to
+   * keep trying. The server holds such a seat until the grace runs out, or until a finished room closes
+   * (GameRoom closeAfterGameMs, 60 s). Each try is a POST /v1/rooms/join (20 in 10 minutes per account).
+   */
+  friendsHeldSeatDelaysMs: readonly number[];
+  friendsHeldSeatWaitMs: number;
   clock: ClockSyncOptions;
   metrics: Omit<NetMetricsOptions, 'track'>;
 }
@@ -282,12 +312,16 @@ export const DEFAULT_REMOTE_HOST_OPTIONS: RemoteHostOptions = {
   reconnectDelaysMs: [250, 500, 1000],
   attemptTimeoutMs: 5000,
   reconnectSlackMs: 1000,
+  afterGraceRetryMs: 60_000,
+  resumeRetryMs: 10_000,
   serverNoticeMs: 4500,
   defaultGraceMs: 15_000,
   defaultSoftGraceMs: 10_000,
   answerTimeoutMs: 2_500,
   offlineAnswerTimeoutMs: 3_000,
   friendsLobbyReturnMs: 60_000,
+  friendsHeldSeatDelaysMs: [3_000, 6_000, 12_000, 20_000],
+  friendsHeldSeatWaitMs: 75_000,
   clock: {},
   metrics: {},
 };
@@ -360,6 +394,8 @@ export class RemoteGameHost implements GameHost {
   private status: OnlineStatus = 'connecting';
   private closeReason: CloseReason | null = null;
   private error: OnlineError | null = null;
+  /** OnlineInfo.pastGrace. */
+  private pastGrace = false;
   private closed = false;
   private started = false;
   /** A friends room (1.0.4): its code, the way back without a token, and what its server said. */
@@ -472,9 +508,37 @@ export class RemoteGameHost implements GameHost {
     this.friends = { code, rejoin, closed: null, refused: null };
     this.code = code;
     this.notifyOnline();
-    await this.enter(async () =>
-      this.deps.client.consumeSeatReservation(reservation ?? (await rejoin(code))),
-    );
+    await this.enter(() => this.takeFriendsSeat(code, reservation, rejoin));
+  }
+
+  /**
+   * The seat of a friends room, waiting out a hold of my own: after the app was killed in a room's game (or
+   * after its end), the server still holds my seat for the dead connection (GameRoom onDrop: until the grace
+   * runs out, or until the finished room closes) and refuses a new one with `alreadyInRoom`. That is not a
+   * server failure: the way in tries again (a fresh reservation each time) until the hold lapses, and the room
+   * then takes me back or its route says it closed. Each try is a POST /v1/rooms/join, so the waits grow.
+   */
+  private async takeFriendsSeat(
+    code: string,
+    reservation: MatchSeatReservation | null,
+    rejoin: FriendsRejoin,
+  ): Promise<RoomLike> {
+    const { friendsHeldSeatDelaysMs: delays, friendsHeldSeatWaitMs } = this.opts;
+    const giveUpAt = this.now() + friendsHeldSeatWaitMs;
+    let seat = reservation;
+    for (let retry = 0; ; retry++) {
+      try {
+        return await this.deps.client.consumeSeatReservation(seat ?? (await rejoin(code)));
+      } catch (error) {
+        const delay = delays[Math.min(retry, delays.length - 1)] ?? 0;
+        if (onlineErrorOf(error).code !== 'alreadyInRoom' || this.closed || this.now() + delay > giveUpAt)
+          throw error;
+        this.log(`friends: my seat is still held (retry ${retry + 1})`);
+        await this.sleep(delay);
+        if (this.closed) throw error;
+        seat = null;
+      }
+    }
   }
 
   private async enter(open: () => Promise<RoomLike>): Promise<void> {
@@ -772,7 +836,12 @@ export class RemoteGameHost implements GameHost {
           ...(m.maxPlayers !== undefined && { maxPlayers: m.maxPlayers }),
         };
         if (this.state) this.notifyOnline();
-        else {
+        else if (this.lost !== null && this.startsAt !== null) {
+          // Back in the room's 3… 2… 1… after a drop: since loop 10 the room sends its lobby with the count (the
+          // players' cards, for an app that kept nothing). The return is not over until the snapshot at GO, which
+          // decides hard or soft, shows the banner when due and reports the reconnect: nothing reset here.
+          this.notifyOnline();
+        } else {
           // Back in a lobby after a drop (the seat was given up, and taken again by code).
           this.lost = null;
           this.comingBack = null;
@@ -1321,8 +1390,11 @@ export class RemoteGameHost implements GameHost {
     this.answerTimer = null;
   }
 
-  /** Tries to come back until it does, the deadline passes, or the room can't take this player any more. */
-  private async comeBack(): Promise<void> {
+  /**
+   * Tries to come back until it does, the deadline passes, or the room can't take this player any more.
+   * `tryUntil`: back in the foreground, it does not give up before then (resumeRetryMs), whatever the deadline.
+   */
+  private async comeBack(tryUntil = 0): Promise<void> {
     const run = ++this.run;
     this.comingBack = { startedAt: this.now(), snapshotAt: null, phase: 'hard', queued: 0 };
     let lastError: OnlineError | null = null;
@@ -1336,18 +1408,30 @@ export class RemoteGameHost implements GameHost {
       lastError = outcome;
       this.log(`attempt ${attempt} failed: ${outcome.code}`);
       if (FATAL_ON_RETURN.has(outcome.code)) break;
-      if (!this.lost || this.now() >= this.lost.deadline) break;
+      if (!this.lost) break;
+      const giveUpAt = Math.max(this.giveUpAt(this.lost), tryUntil);
+      if (this.now() >= giveUpAt) break;
       const delays = this.opts.reconnectDelaysMs;
       let delay = delays[Math.min(attempt, delays.length) - 1] ?? 1000;
-      // A friends room's route asked to wait (429): not before then, and not at all past the deadline.
+      // A friends room's route asked to wait (429): not before then, and not at all past the time to give up.
       if (outcome.code === 'tooManyRequests' && outcome.retryAfterMs !== null) {
-        if (this.now() + outcome.retryAfterMs > this.lost.deadline) break;
+        if (this.now() + outcome.retryAfterMs > giveUpAt) break;
         delay = Math.max(delay, outcome.retryAfterMs);
       }
       await this.sleep(delay);
     }
     if (this.isStale(run)) return;
     this.shutdown('lostConnection', lastError);
+  }
+
+  /**
+   * When the way back ends (phone time): the seat's deadline; in a game that was running, the finished game's
+   * room is still there for afterGraceRetryMs more (closeAfterGameMs), and a return by code brings its result.
+   * Not in a lobby (no game to finish), nor for a game whose end this phone has.
+   */
+  private giveUpAt(lost: ReconnectInfo): number {
+    const running = this.state !== null && this.state.status !== 'over';
+    return lost.deadline + (running ? Math.max(0, this.opts.afterGraceRetryMs) : 0);
   }
 
   /** One try: with the token, then (the token refused, the room alive) by code with the same identity. */
@@ -1507,7 +1591,7 @@ export class RemoteGameHost implements GameHost {
             deadline: Math.max(this.lost.deadline, this.now() + this.opts.friendsLobbyReturnMs),
           };
         this.log('back in the foreground: reconnecting');
-        void this.comeBack();
+        void this.comeBack(this.now() + Math.max(0, this.opts.resumeRetryMs));
       }
     }
   }
@@ -1526,6 +1610,13 @@ export class RemoteGameHost implements GameHost {
     const softEndsAt = this.lost?.softEndsAt ?? null;
     const phase = softEndsAt !== null && this.serverNow() < softEndsAt ? 'soft' : 'hard';
     const queued = this.offline.size;
+    // The way back ended after the server's abandonment (as this phone reckons it), in a game that was running.
+    this.pastGrace =
+      reason === 'lostConnection' &&
+      this.lost !== null &&
+      this.state !== null &&
+      this.state.status !== 'over' &&
+      this.serverNow() >= this.lost.graceEndsAt;
     this.closed = true;
     this.run++;
     const room = this.room;
@@ -1604,6 +1695,7 @@ export class RemoteGameHost implements GameHost {
       ...(this.friends && {
         friends: { code: this.friends.code, closed: this.friends.closed, refused: this.friends.refused },
       }),
+      ...(this.pastGrace && { pastGrace: true }),
     };
   }
 

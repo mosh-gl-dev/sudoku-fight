@@ -108,6 +108,7 @@
     },
     "code": "Codice errore: {{code}}",
     "retry": "Cerca di nuovo",
+    "backToGame": "Torna alla partita",
     "verify": "Verifica l’email",
     "practice": "Vai all’allenamento",
     "practiceNote": "L’allenamento in solitario o contro un bot funziona anche offline.",
@@ -124,11 +125,11 @@
     "retry": "Verifica di nuovo",
     "retrying": "Verifica della connessione…",
     "stillOffline": "Ancora nessuna connessione · tentativo {{count}}",
-    "rankedNote": "Disponibili quando sei online",
+    "rankedNote": "Solo online",
     "needsConnection": "Serve connessione",
     "needsConnectionLabel": "Serve una connessione a internet",
     "practiceNote": "Disponibile senza internet",
-    "availableOffline": "Funziona offline",
+    "availableOffline": "Anche offline",
     "back": "Sei di nuovo online. Le partite classificate sono disponibili."
   },
   "modes": {

@@ -625,7 +625,7 @@
           "hud.duel.meLabel": "{{name}}, {{score}} of {{target}} points"
         },
         "he": {
-          "hud.duel.meLabel": "{{name}}, {{score}} מתוך {{target}} נקודות"
+          "hud.duel.meLabel": "‏{{name}}, {{score}} מתוך {{target}} נקודות"
         }
       },
       "shows": "target"
@@ -636,7 +636,7 @@
           "hud.duel.botLabel": "{{name}}, bot {{n}}, {{score}} of {{target}} points"
         },
         "he": {
-          "hud.duel.botLabel": "{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות"
+          "hud.duel.botLabel": "‏{{name}}, בוט רמה {{n}}, {{score}} מתוך {{target}} נקודות"
         }
       },
       "shows": "target"
@@ -1000,9 +1000,9 @@
     "en levels:hud.puzzle.swappedPenalty 1": "Boxes <a> and <b> swapped. Plus 1 second",
     "he levels:hud.puzzle.swappedPenalty 1": "ריבוע <a> וריבוע <b> התחלפו. עוד שנייה אחת",
     "en levels:hud.duel.meLabel 1": "<name>, <score> of 1 point",
-    "he levels:hud.duel.meLabel 1": "<name>, <score> מתוך נקודה אחת",
+    "he levels:hud.duel.meLabel 1": "‏<name>, <score> מתוך נקודה אחת",
     "en levels:hud.duel.botLabel 1": "<name>, bot <n>, <score> of 1 point",
-    "he levels:hud.duel.botLabel 1": "<name>, בוט רמה <n>, <score> מתוך נקודה אחת",
+    "he levels:hud.duel.botLabel 1": "‏<name>, בוט רמה <n>, <score> מתוך נקודה אחת",
     "en levels:hud.spotError.timeLabel 1": "Time: 1 second of <limit>",
     "he levels:hud.spotError.timeLabel 1": "זמן: שנייה אחת מתוך <limit>",
     "en levels:hud.hunt.scoreLabel 1": "1 point",

@@ -11,13 +11,21 @@ import { elapse, FakeTable } from '../../../net/testing/fakeServer';
 import { useSettings } from '../../../state/settings';
 import { motion } from '../../../theme/motion';
 import { FALLBACK_ACTIONS_MS } from '../../FlowFallback';
+import { handedGoCover, handGoCover } from '../../match/GoCover';
+import { headerOf } from '../../match/matchModel';
 import { RESULTS_WATCHDOG_MS } from '../model';
 import { liveOnlineSession, onlineSession, OPP } from '../testing/online';
 
 /** The /game route: the store's practice or online game, or home; its end opens /results/[id]. */
 
 jest.mock('expo-router', () => ({
-  router: { replace: jest.fn(), dismissTo: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
+  router: {
+    replace: jest.fn(),
+    push: jest.fn(),
+    dismissTo: jest.fn(),
+    back: jest.fn(),
+    canGoBack: jest.fn(() => true),
+  },
   Stack: { Screen: () => null },
 }));
 jest.mock('../../../services/analytics', () => ({ track: jest.fn() }));
@@ -31,7 +39,7 @@ jest.mock('../../../services/feedback', () => ({
   cueCountUp: jest.fn(() => jest.fn()),
 }));
 const { router } = jest.requireMock<{
-  router: { replace: jest.Mock; dismissTo: jest.Mock; back: jest.Mock };
+  router: { replace: jest.Mock; push: jest.Mock; dismissTo: jest.Mock; back: jest.Mock };
 }>('expo-router');
 
 let session: PracticeSession | null = null;
@@ -93,10 +101,12 @@ it('plays the store’s practice; "סיום אימון" → "כן, לסיים" o
   await act(() => new Promise((resolve) => setTimeout(resolve, motion.duration.sheetIn + 50)));
   await fireEvent.press(screen.getByRole('button', { name: 'כן, לסיים' }));
   // Only once the dialog has left the screen (its onExited), never while it still slides away.
-  expect(router.replace).not.toHaveBeenCalledWith(expect.objectContaining({ pathname: '/results/[id]' }));
+  // Pushed over the game, never in its place (QA loop 7: app/game.tsx, dropWhenCovered).
+  expect(router.push).not.toHaveBeenCalledWith(expect.objectContaining({ pathname: '/results/[id]' }));
   await waitFor(() =>
-    expect(router.replace).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: session!.id } }),
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: session!.id } }),
   );
+  expect(router.replace).not.toHaveBeenCalledWith(expect.objectContaining({ pathname: '/results/[id]' }));
 });
 
 it('the practice’s game screen has a way home ("לבית" should its results not open): Home, the session let go', async () => {
@@ -120,7 +130,7 @@ it('the practice’s game screen has a way home ("לבית" should its results n
     await act(async () => {
       jest.advanceTimersByTime(100);
     });
-    expect(router.replace).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: session.id } });
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: session.id } });
     await act(async () => {
       jest.advanceTimersByTime(RESULTS_WATCHDOG_MS);
     });
@@ -166,14 +176,54 @@ describe('an online game', () => {
       await elapse(g.table, 100);
     });
     // The final board holds first (motion.md game.end), and the results open from a timer.
-    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(router.replace).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: 'online-1' } }),
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/results/[id]', params: { id: 'online-1' } }),
     );
-    expect(router.replace).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.replace).not.toHaveBeenCalled();
     await view.unmount();
     expect(useGameStore.getState().online).toBe(g.session);
     expect(g.session.getView().players.find((p) => p.id === OPP)?.status).toBe('surrendered');
+  });
+
+  it("a ranked match's GO!: the game screen opens on it, the game drawn under it, never an empty frame between (QA loop 3)", async () => {
+    const g = await liveOnlineSession();
+    useGameStore.setState({ online: g.session, session: null, view: null, lastUpdate: null });
+    handGoCover({
+      kind: 'countdown',
+      header: headerOf('normal-2p'),
+      seats: [],
+      step: 'go',
+      remainingMs: 0,
+    });
+    // Hold animation frames until the first frame is checked: under a loaded run a real frame could pass
+    // inside render() and mount the game before the assertion (flaky in the full verify).
+    const held: FrameRequestCallback[] = [];
+    const raf = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => held.push(cb));
+    try {
+      await render(<GameRoute />);
+      // The first frame is GO! as the match screen left it (the game is mounted a frame later, under it).
+      expect(
+        screen.getByTestId('go-cover-count-step-text', { includeHiddenElements: true }),
+      ).toHaveTextContent('GO!');
+      expect(screen.queryByTestId('game')).toBeNull();
+      expect(handedGoCover()).toBeNull();
+    } finally {
+      raf.mockRestore();
+    }
+    await act(async () => {
+      held.splice(0).forEach((cb) => cb(0));
+    });
+    await waitFor(() => expect(screen.getByTestId('game')).toBeOnTheScreen());
+  });
+
+  it('an online game opened any other way (a room by code): no GO! over it', async () => {
+    const g = await liveOnlineSession();
+    useGameStore.setState({ online: g.session, session: null, view: null, lastUpdate: null });
+    await render(<GameRoute />);
+    expect(screen.getByTestId('game')).toBeOnTheScreen();
+    expect(screen.queryByTestId('go-cover', { includeHiddenElements: true })).toBeNull();
   });
 
   it('"לבית" on a refusal leaves for Home; "נסה שוב" joins again', async () => {

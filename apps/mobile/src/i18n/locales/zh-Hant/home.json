@@ -57,6 +57,9 @@
     "title": "新對局",
     "footnote": "排位需要網路連線 · 練習隨時都能玩",
     "soon": "即將推出",
+    "needsConnection": {
+      "rankedAndFriends": "排位與好友對戰"
+    },
     "groups": {
       "ranked": {
         "title": "排位",

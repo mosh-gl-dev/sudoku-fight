@@ -22,10 +22,19 @@ import { useLiveAnnouncer } from '../game/useLiveAnnouncer';
  * is a separate step after the 1.0.3 lanes (levels-ui.md §11, owner UI-1).
  */
 
+/** How a stage's end came, for its result (play.tsx's LevelStage, LevelResultView's armAfterMs). */
+export interface StageOver {
+  /**
+   * It came by itself while "לצאת מהשלב?" was still asking (the clock ran out under the dialog; not its
+   * "יציאה"): the dialog closed under the player's finger.
+   */
+  underDialog: boolean;
+}
+
 export interface StageShellOptions {
   session: LevelSession;
-  /** The stage is over and its last picture held: its result. */
-  onOver: () => void;
+  /** The stage is over and its last picture held: its result (`over` when it came under the dialog). */
+  onOver: (over?: StageOver) => void;
   /** How long the result may take to replace the screen before the fallback shows. */
   resultsWatchdogMs?: number;
 }
@@ -127,26 +136,35 @@ export function useStageShell({
   // ---- the end: held, then onOver from a timer, never while the dialog is still on the screen ----
   const [confirmOpen, setConfirmOpen] = useState(false);
   const dialogUp = useRef(false);
+  /** The dialog asks and has no answer yet: open, neither cancelled nor confirmed. */
+  const asking = useRef(false);
   const whenDialogGone = useRef<(() => void) | null>(null);
   const ended = useRef(false);
   const [stuck, setStuck] = useState(false);
   /** onOver, watched: the result should replace this screen (and its timers) before the watchdog fires. */
-  const toResult = useCallback(() => {
-    safely('the result', onOver);
-    later(resultsWatchdogMs, () => {
-      crashReporter().recordError(
-        new Error('the stage result did not replace the board'),
-        'levels: results watchdog',
-      );
-      setStuck(true);
-    });
-  }, [later, onOver, resultsWatchdogMs]);
+  const toResult = useCallback(
+    (underDialog = false) => {
+      safely('the result', () => (underDialog ? onOver({ underDialog: true }) : onOver()));
+      later(resultsWatchdogMs, () => {
+        crashReporter().recordError(
+          new Error('the stage result did not replace the board'),
+          'levels: results watchdog',
+        );
+        setStuck(true);
+      });
+    },
+    [later, onOver, resultsWatchdogMs],
+  );
   const finish = useCallback(
     (holdMs: number) => {
       if (ended.current) return;
       ended.current = true;
+      // The end came by itself while the dialog was still asking: it closes, and the result is told (QA N1:
+      // a tap meant for its "יציאה" landed on the result's "למפה").
+      const underDialog = asking.current;
+      asking.current = false;
       setConfirmOpen(false);
-      const go = () => later(holdMs, toResult);
+      const go = () => later(holdMs, () => toResult(underDialog));
       if (dialogUp.current) whenDialogGone.current = go;
       else go();
     },
@@ -168,10 +186,15 @@ export function useStageShell({
   const openConfirm = useCallback(() => {
     if (ended.current) return;
     dialogUp.current = true;
+    asking.current = true;
     setConfirmOpen(true);
   }, []);
-  const closeConfirm = useCallback(() => setConfirmOpen(false), []);
+  const closeConfirm = useCallback(() => {
+    asking.current = false;
+    setConfirmOpen(false);
+  }, []);
   const confirmExit = useCallback(() => {
+    asking.current = false;
     setConfirmOpen(false);
     cue('surrender');
     safely('quit', () => session.quit());

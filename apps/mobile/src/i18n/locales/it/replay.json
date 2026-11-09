@@ -65,6 +65,7 @@
     "noLogic": "La risposta: {{cell}} → {{digit}}",
     "scoreLine": "I punti",
     "penaltyLine": "La penalità: quanto valeva il numero giusto",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Scelta annullata",
       "timeout": "Tempo scaduto",

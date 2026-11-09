@@ -1,5 +1,5 @@
 import { extractFriendCode, FRIEND_CODE_LENGTH } from '@sudoku-fight/protocol';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type NativeSyntheticEvent,
@@ -28,6 +28,12 @@ export interface CodeInputProps {
   readClipboard?: () => Promise<string | null>;
   /** The line under the boxes: why the last try failed. */
   error?: string | null;
+  /**
+   * While a new try runs: the last refusal (`error`) keeps its line's place under the boxes, unseen and unheard,
+   * and the boxes lose its red. Nothing below moves when the try starts, nor when its answer comes (QA: "הדבק"
+   * and the spinner jumped ~85 px up, and back down when the refusal returned).
+   */
+  holdError?: boolean;
   /** While joining: nothing can be typed. */
   disabled?: boolean;
   autoFocus?: boolean;
@@ -37,7 +43,11 @@ export interface CodeInputProps {
 /**
  * "הקלד את 6 הספרות שקיבלת" (friends-room.md §3.3): six boxes with the number pad, always left to right (like
  * the board and the keypad, in Hebrew too), three and three. A digit moves on to the next box; backspace in an
- * empty box goes back and clears the one before. Text with more than one digit, typed or pasted into any box
+ * empty box goes back and clears the one before. A digit typed after a box's own digit goes on into the next
+ * box (fast typing: the next key can reach a box before the focus has moved on), and none is written past the
+ * sixth box: once the code is whole, another digit changes nothing. Every key reads the boxes as the keys before
+ * it left them, not as the last render drew them, so a burst loses no digit and no backspace. Text with more
+ * than one digit, typed or pasted into any box
  * (a whole WhatsApp message, "בוא לשחק איתי… קוד החדר: 123456 https://…"), is read with the protocol's
  * extractFriendCode: the code fills every box. "הדבק" does the same from the clipboard, for whoever does not
  * know the long press. Each box is its own field for a screen reader ("ספרה 3 מתוך 6"), so the digits are
@@ -49,6 +59,7 @@ export function CodeInput({
   onComplete,
   readClipboard,
   error = null,
+  holdError = false,
   disabled = false,
   autoFocus = false,
   testID = 'code-input',
@@ -57,15 +68,24 @@ export function CodeInput({
   const inputs = useRef<(TextInput | null)[]>([]);
   const [focused, setFocused] = useState<number | null>(null);
   const [pasteMiss, setPasteMiss] = useState(false);
+  // The boxes as the last key left them: a burst of keys (or a held backspace) can come faster than the screen
+  // renders, and each key must build on the one before it, not on the boxes of the last render (QA: "12345"
+  // typed fast once lost a digit). The screen's own changes (a refusal that clears them) come in through `digits`.
+  const latest = useRef(digits);
+  useLayoutEffect(() => {
+    latest.current = digits;
+  }, [digits]);
 
   const focus = (index: number) => inputs.current[index]?.focus();
 
   const set = (next: CodeDigits, focusAt: number | null) => {
+    latest.current = next;
     setPasteMiss(false);
     onChange(next);
     const code = codeOf(next);
     if (code !== null) {
-      inputs.current[focusAt ?? FRIEND_CODE_LENGTH - 1]?.blur();
+      // The keyboard goes, from whichever box has it (a burst can complete the code from an earlier box).
+      for (const input of inputs.current) input?.blur();
       onComplete?.(code);
     } else if (focusAt !== null) focus(focusAt);
   };
@@ -77,23 +97,34 @@ export function CodeInput({
       set(boxesOf(whole), null);
       return;
     }
+    const boxes = latest.current;
     let fresh = digitsOf(typed);
-    const old = digits[index] ?? '';
-    // A digit typed beside the one the box had ("35" over "3"): the new one wins.
-    if (old && fresh.length > 1 && fresh.includes(old)) fresh = fresh.replace(old, '');
+    const old = boxes[index] ?? '';
+    // Digits typed beside the one the box had: after it ("35" over "3", the caret after the digit, as fast
+    // typing leaves it), it stays and they go on into the next boxes, never past the sixth; before it ("53"),
+    // the new one wins.
+    const after = old !== '' && fresh.length > 1 && fresh.startsWith(old);
+    // A whole code takes no more digits: a seventh never replaces one of the six (QA: the refusal then named a
+    // code the player never typed). A digit chosen over another (its box tapped, the digit selected) still does.
+    if (after && codeOf(boxes) !== null) return;
+    if (old && fresh.length > 1 && !after && fresh.includes(old)) fresh = fresh.replace(old, '');
     if (fresh === '') {
-      const cleared = [...digits];
+      const cleared = [...boxes];
       cleared[index] = '';
       set(cleared, index);
       return;
     }
-    const { boxes, focus: at } = typeInto(digits, index, fresh);
-    set(boxes, at);
+    const { boxes: next, focus: at } = typeInto(boxes, index, fresh);
+    // Typed after the sixth box's digit and so written nowhere: nothing changes (a digit typed over the same
+    // digit still moves on, and completes the code again).
+    if (after && next.every((d, i) => d === boxes[i])) return;
+    set(next, at);
   };
 
   const keyAt = (index: number, e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key !== 'Backspace' || digits[index] || index === 0) return;
-    const back = [...digits];
+    const boxes = latest.current;
+    if (e.nativeEvent.key !== 'Backspace' || boxes[index] || index === 0) return;
+    const back = [...boxes];
     back[index - 1] = '';
     set(back, index - 1);
   };
@@ -113,6 +144,9 @@ export function CodeInput({
   };
 
   const shownError = pasteMiss ? t('join.pasteNone') : error;
+  // The refusal under a new try (holdError): in its place, but neither seen nor heard, and the boxes not red.
+  const held = holdError && !pasteMiss && !!error;
+  const red = !!shownError && !held;
   return (
     <View style={styles.root} testID={testID}>
       <View style={styles.boxes} accessibilityLabel={t('join.codeLabel')} testID={`${testID}-boxes`}>
@@ -141,14 +175,26 @@ export function CodeInput({
               styles.box,
               i === HALF && styles.secondHalf,
               focused === i && styles.boxFocused,
-              shownError ? styles.boxError : null,
+              red ? styles.boxError : null,
               disabled && styles.disabled,
             ]}
             testID={`${testID}-${i}`}
           />
         ))}
       </View>
-      <FieldMessage error={shownError} testID={testID} />
+      {shownError ? (
+        // Keyed by its state: when the answer comes the line mounts anew, so a screen reader says it again,
+        // as when it was cleared at the start of the try.
+        <View
+          key={held ? 'held' : 'shown'}
+          style={held ? styles.held : null}
+          accessibilityElementsHidden={held}
+          importantForAccessibility={held ? 'no-hide-descendants' : 'auto'}
+          testID={`${testID}-message-slot`}
+        >
+          <FieldMessage error={shownError} testID={testID} />
+        </View>
+      ) : null}
       {readClipboard ? (
         <View style={styles.pasteRow}>
           <Button
@@ -192,6 +238,7 @@ const styles = StyleSheet.create({
   secondHalf: { marginStart: space[6] },
   boxFocused: { borderColor: color.input.borderFocus, borderWidth: tokens.border.focus },
   boxError: { borderColor: color.input.borderError },
+  held: { opacity: 0 },
   disabled: { opacity: tokens.opacity.disabled },
   pasteRow: { flexDirection: 'row', alignItems: 'center', gap: space[6] },
   pasteHint: { ...text('caption'), color: color.textMuted, flex: 1 },

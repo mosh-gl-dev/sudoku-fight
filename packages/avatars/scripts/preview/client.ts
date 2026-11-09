@@ -9,7 +9,7 @@
 
 import { gimmickCss } from '../../src/gimmick';
 import { faceChanges, motionCss, MOTIONS, resolveMotion } from '../../src/motion';
-import { CANVAS, renderAvatar, renderFace, viewBoxOf } from '../../src/render';
+import { CANVAS, renderAvatar, renderExtras, renderFace, viewBoxOf } from '../../src/render';
 import { esc } from '../../src/svg';
 import {
   AVATAR_KINDS,
@@ -172,12 +172,12 @@ function setStageFace(expression: Expression): void {
   if (!def) return;
   for (const v of stageViews) {
     const face = v.svg.querySelector('.sfa-face');
+    const extras = v.svg.querySelector('.sfa-extras');
     const box = viewBoxOf(def, v.crop);
-    if (face)
-      face.innerHTML = renderFace(def, expression, {
-        size: (v.size * CANVAS) / box.size,
-        idPrefix: v.prefix,
-      });
+    const size = (v.size * CANVAS) / box.size;
+    if (face) face.innerHTML = renderFace(def, expression, { size, idPrefix: v.prefix });
+    // the extras have their own group, over the front layers (render.ts)
+    if (extras) extras.innerHTML = renderExtras(def, expression, { size });
     v.svg.dataset.expression = expression;
   }
 }

@@ -1,10 +1,12 @@
 import {
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   HISTORY_ERROR_CODES,
   HISTORY_PATHS,
   type HistoryErrorCode,
   type HistoryPage,
-  isHistoryPage,
-  isReplayAnswer,
+  readHistoryPage,
+  readReplayAnswer,
   type ReplayAnswer,
   replayPath,
 } from '@sudoku-fight/protocol';
@@ -101,7 +103,12 @@ export function createHistoryApi(deps: HistoryApiDeps): HistoryApi {
       }, deps.timeoutMs);
       const init: FetchInit = {
         method: 'GET',
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+          // the avatars this app knows: the server sends an older app none for a newer one
+          [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG),
+        },
         signal: controller.signal,
       };
       try {
@@ -126,14 +133,15 @@ export function createHistoryApi(deps: HistoryApiDeps): HistoryApi {
         cursor === null
           ? HISTORY_PATHS.myGames
           : `${HISTORY_PATHS.myGames}?cursor=${encodeURIComponent(cursor)}`;
-      const data = await get(path);
-      if (!isHistoryPage(data)) throw new HistoryApiError('unexpected');
-      return data;
+      // a seat's avatar this app does not know shows none, instead of refusing the page
+      const page = readHistoryPage(await get(path));
+      if (page === null) throw new HistoryApiError('unexpected');
+      return page;
     },
     async replay(gameId) {
-      const data = await get(replayPath(gameId));
-      if (!isReplayAnswer(data)) throw new HistoryApiError('unexpected');
-      return data;
+      const answer = readReplayAnswer(await get(replayPath(gameId)));
+      if (answer === null) throw new HistoryApiError('unexpected');
+      return answer;
     },
   };
 }

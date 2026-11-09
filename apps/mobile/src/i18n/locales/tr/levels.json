@@ -301,6 +301,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "kapı {{need}} istiyor",
     "chapterOpen": "kapı açık",
+    "chapterNeedSentence": "Kapı {{need}} istiyor",
+    "chapterOpenSentence": "Kapı açık",
     "chapterGate": "· {{gate}}",
     "chapterLine_one": "Bu bölüm: {{max}} yıldızdan 1. {{gate}}",
     "chapterLine_other": "Bu bölüm: {{max}} yıldızdan {{stars}}. {{gate}}",
@@ -347,6 +349,8 @@
     "button": "Aşamadan çık",
     "title": "Aşamadan çıkılsın mı?",
     "body": "0 yıldız alırsın ve sonraki aşama açılır.",
+    "bodyLocked": "0 yıldız alırsın ve sonraki aşama kilitli kalır.",
+    "bodyLast": "0 yıldız alırsın.",
     "confirm": "Çık",
     "cancel": "Oynamaya devam et"
   },

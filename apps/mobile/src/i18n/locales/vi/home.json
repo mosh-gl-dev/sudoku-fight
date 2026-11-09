@@ -57,10 +57,13 @@
     "title": "Trận mới",
     "footnote": "Xếp hạng cần kết nối Internet · Luyện tập luôn khả dụng",
     "soon": "Sắp có",
+    "needsConnection": {
+      "rankedAndFriends": "Xếp hạng và bạn bè"
+    },
     "groups": {
       "ranked": {
         "title": "Xếp hạng",
-        "note": "Đối thủ thật, theo thời gian thực"
+        "note": "Đối thủ thật, trực tiếp"
       },
       "friends": {
         "title": "Với bạn bè",
@@ -69,13 +72,13 @@
       },
       "practice": {
         "title": "Luyện tập",
-        "note": "Không áp lực, không xếp hạng"
+        "note": "Thư giãn, không xếp hạng"
       }
     },
     "chips": {
       "rated": "Có xếp hạng",
       "unrated": "Không xếp hạng",
-      "offline": "Không cần mạng"
+      "offline": "Không mạng"
     },
     "ranked": {
       "name": "Xếp hạng"
@@ -113,7 +116,7 @@
       "tagline": "Màn ngắn · tối đa 3 sao",
       "taglineNew_other": "{{total}} màn ngắn · 0–3 sao",
       "chip": "Màn {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Không mạng",
       "chipLabel_other": "Màn {{stage}} · {{count}} sao",
       "label": "Luyện tập theo màn"
     },

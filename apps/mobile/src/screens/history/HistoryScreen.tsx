@@ -6,8 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { AvatarIdOrNone } from '../../avatars';
 import { Icon } from '../../components/Icon';
 import { BottomNav, Button, type NavTab, SkeletonGroup, SkeletonRows, StateView } from '../../components/ui';
+import { Enter } from '../../components/ui/Enter';
+import { afterFrames, framesPassed, SWAP_FRAMES } from '../../components/ui/retire';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
+import { opaqueOver } from '../../theme/blend';
 import { HistoryCard } from './HistoryCard';
 import { type HistoryDeps, HistoryLoader, type HistorySnapshot } from './historyLoader';
 import { HISTORY_FILTERS, type HistoryEntry, type HistoryFilter, PAGE_SIZE } from './historyModel';
@@ -64,14 +67,27 @@ export function HistoryScreen({
   const [busy, setBusy] = useState(false);
   const request = useRef(0);
 
-  /** The latest request wins: an older answer (another filter) never replaces a newer one. */
-  const run = (task: () => Promise<HistorySnapshot>) => {
+  /**
+   * The latest request wins: an older answer (another filter) never replaces a newer one.
+   *
+   * `swapFrom`: what the screen showed when the request was made. An answer that turns cards into a state (the
+   * failure, the empty list) or a state into cards first shows the skeleton, in a commit of its own, and itself
+   * SWAP_FRAMES later (see `pick` for why).
+   */
+  const run = (task: () => Promise<HistorySnapshot>, swapFrom?: HistorySnapshot | null) => {
     const id = ++request.current;
     setBusy(true);
     void task().then((next) => {
       if (id !== request.current) return;
-      setSnap(next);
-      setBusy(false);
+      const show = () => {
+        setSnap(next);
+        setBusy(false);
+      };
+      if (!swapFrom || hasCards(swapFrom) === hasCards(next)) return show();
+      setSnap(null);
+      afterFrames(SWAP_FRAMES, () => {
+        if (id === request.current) show();
+      });
     });
   };
 
@@ -83,10 +99,17 @@ export function HistoryScreen({
     });
   }, [loader]);
 
+  /**
+   * Another filter: its skeleton at once (the old cards go), and its cards SWAP_FRAMES later at the earliest. The
+   * loader often has them already (both sources read), and in the same frame as the old cards' deletion their
+   * avatars' new shapes each failed on every old card's press and entrance, which Reanimated still held on Android
+   * (their first ~2 s): the History's freeze again (components/ui/retire.ts; QA run #3, T3-HISTORY-FREEZE).
+   */
   const pick = (next: HistoryFilter) => {
     if (next === filter) return;
     setFilter(next);
-    run(() => loader.show(next));
+    const gap = framesPassed(SWAP_FRAMES);
+    run(() => Promise.all([loader.show(next), gap]).then(([page]) => page));
   };
 
   const shown = snap?.filter === filter ? snap : null;
@@ -95,7 +118,8 @@ export function HistoryScreen({
   };
 
   const failure = shown ? failureOf(shown) : null;
-  const reload = () => run(() => loader.reload());
+  // "נסה שוב": the failure's state (its button just pressed) never goes in the commit that draws the cards.
+  const reload = () => run(() => loader.reload(), shown);
 
   const notes: { key: string; text: string; retry?: boolean }[] = [];
   if (shown && filter !== 'practice') {
@@ -213,14 +237,17 @@ export function HistoryScreen({
       <FlatList
         data={shown?.entries ?? []}
         keyExtractor={(e) => `${e.source}:${e.id}`}
-        renderItem={({ item }) => (
-          <HistoryCard
-            entry={item}
-            myAvatar={myAvatar}
-            now={at}
-            onOpen={onOpen}
-            onOpenPlayer={onOpenPlayer}
-          />
+        renderItem={({ item, index }) => (
+          // list.enter (motion.md §4.9): the first rows rise in as the list (or a filter's) mounts.
+          <Enter index={index}>
+            <HistoryCard
+              entry={item}
+              myAvatar={myAvatar}
+              now={at}
+              onOpen={onOpen}
+              onOpenPlayer={onOpenPlayer}
+            />
+          </Enter>
         )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
@@ -249,6 +276,9 @@ export function HistoryScreen({
 /** Cards in the loading skeleton: what fills a phone's screen under the filters. */
 const SKELETON_ROWS = 6;
 
+/** Whether a page shows cards (else a state: the failure, or the empty list). */
+const hasCards = (snap: HistorySnapshot) => snap.entries.length > 0;
+
 /**
  * Why a filter shows nothing because of a failure, not because there is nothing: the server's games could not
  * be read (offline, or its error) and the phone has none to show for this filter; or the phone's database
@@ -263,7 +293,7 @@ function failureOf(snap: HistorySnapshot): 'offline' | 'error' | 'practice' | nu
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: {
     paddingHorizontal: tokens.layout.gutterGame,
     paddingTop: space[8],
@@ -282,7 +312,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     borderWidth: tokens.border.hairline,
     borderColor: color.border,
-    backgroundColor: color.accentSubtle,
+    // On the screen, in front of the wandering digits (D126): the gold tint laid flat, opaque (B12).
+    backgroundColor: opaqueOver(color.accentSubtle),
   },
   accent: { color: color.accent },
   filters: { flexDirection: 'row', gap: space[4] },

@@ -1,16 +1,18 @@
 import '../src/services/hermesPolyfills';
 
-import { type ErrorBoundaryProps, type NativeStackNavigationOptions, Stack } from 'expo-router';
+import { type ErrorBoundaryProps, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { I18nManager, Platform, View } from 'react-native';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useAuthGate } from '../src/auth';
 import { InviteLinkPrompt } from '../src/auth/InviteLinkPrompt';
+import { AmbientLayer } from '../src/components/ambient/AmbientLayer';
 import { ToastViewport } from '../src/components/ui';
 import { displayConfig } from '../src/config/display';
+import { useFlowStack } from '../src/game/flowStack';
 import { openPracticeStorage } from '../src/game/storage';
 import i18n from '../src/i18n';
 import { syncLanguageWithSystem, useLanguageLifecycle } from '../src/i18n/languageSync';
@@ -18,6 +20,7 @@ import { installPseudoLanguages } from '../src/i18n/pseudoLanguages';
 import { startProgress } from '../src/progress';
 import { SplashOverlay } from '../src/screens/account/SplashScreen';
 import { ErrorScreen } from '../src/screens/ErrorScreen';
+import { gameRouteTransition } from '../src/screens/match/goHandoff';
 import { track } from '../src/services/analytics';
 import { useKeepScreenOn } from '../src/services/keepAwake';
 import { logFirstScreen, useAfterFirstScreen } from '../src/services/startup';
@@ -25,7 +28,9 @@ import { startTelemetry } from '../src/services/telemetry';
 import { useScreenViews } from '../src/services/telemetry/useScreenViews';
 import { color } from '../src/theme';
 import { useAppFonts } from '../src/theme/fonts';
-import { motion, useReduceMotion } from '../src/theme/motion';
+import { useReduceMotion } from '../src/theme/motion';
+import { MotionPolicy } from '../src/theme/MotionPolicy';
+import { NAVIGATION_THEME, SCREEN_CONTENT_STYLE, transitions } from '../src/theme/transitions';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 // Development and staging builds: the pseudo languages en-XA and ar-XB (plan 0יג); elsewhere a saved one goes.
@@ -39,6 +44,8 @@ export default function RootLayout() {
   const reduceMotion = useReduceMotion();
   // Accounts (stage 8): who is signed in, and the screens their status allows (login, registration, Home).
   const { splash } = useAuthGate();
+  // A recreated activity's root on a live flow gets the screens under it back (QA cancel-after-recreate…).
+  useFlowStack();
 
   // Spec §22 (open in under 2 s): the work the first screen doesn't need starts once it is up (docs/PERF.md).
   useAfterFirstScreen(fontsReady && !splash, startBackgroundWork);
@@ -61,37 +68,47 @@ export default function RootLayout() {
     if (fontsReady) void SplashScreen.hideAsync().catch(() => undefined);
   }, [fontsReady]);
 
-  if (!fontsReady) return null;
+  // The app's Reduced Motion decision for every animation, from the first render on (same place in both returns,
+  // so it never remounts).
+  if (!fontsReady) return <MotionPolicy />;
   const moves = transitions(reduceMotion);
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: color.bg }}>
-      <StatusBar style="light" />
-      {/* Under the Splash, the app is hidden from screen readers until it is the right screen. */}
-      <View
-        style={{ flex: 1 }}
-        accessibilityElementsHidden={splash}
-        importantForAccessibility={splash ? 'no-hide-descendants' : 'auto'}
-      >
-        {/* Screen transitions are animations too: with Reduced Motion they fade (spec §22, motion.md §4.9). */}
-        <Stack
-          screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg }, ...moves.menu }}
+    <>
+      <MotionPolicy />
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: color.bg }}>
+        <StatusBar style="light" />
+        {/* D126 (Moshe 31.10.2026, "בכל מקום שבו יש רקע"): the wandering digits, once, behind every screen. */}
+        <AmbientLayer covered={splash} />
+        {/* Under the Splash, the app is hidden from screen readers until it is the right screen. */}
+        <View
+          style={{ flex: 1 }}
+          accessibilityElementsHidden={splash}
+          importantForAccessibility={splash ? 'no-hide-descendants' : 'auto'}
         >
-          <Stack.Screen name="game" options={moves.flow} />
-          <Stack.Screen name="results/[id]" options={moves.flow} />
-          {/* Staged practice (1.0.2): a stage, its "מוכן?" and its result are one flow; no back swipe mid-stage. */}
-          <Stack.Screen name="levels/play" options={{ ...moves.flow, gestureEnabled: false }} />
-          <Stack.Screen name="leaderboard" options={moves.tab} />
-          <Stack.Screen name="history" options={moves.tab} />
-          <Stack.Screen name="achievements" options={moves.tab} />
-        </Stack>
-      </View>
-      {/* Spec §4.2: the Splash while the sign-in loads (and its "try again" when the profile can't). */}
-      <SplashOverlay visible={splash} />
-      {/* 1.0.4 (friends-room.md §6.6): a room link while the app runs, in or asked first; a waiting invite. */}
-      <InviteLinkPrompt />
-      {/* The one toast viewport of the app (components.md §15.1): screens call useToast().show(). */}
-      <ToastViewport />
-    </GestureHandlerRootView>
+          {/* The screens are transparent over the digits (D126), so every change cross-fades (motion.md §4.9);
+              screen transitions are animations too: with Reduced Motion they are shorter fades (spec §22). The
+              navigator's own background is transparent too (iOS paints it under the screens). */}
+          <ThemeProvider value={NAVIGATION_THEME}>
+            <Stack screenOptions={{ headerShown: false, contentStyle: SCREEN_CONTENT_STYLE, ...moves.menu }}>
+              {/* Over a ranked match's GO! (handed to the game's GoCover), the game comes in at once (goHandoff.ts). */}
+              <Stack.Screen name="game" options={({ route }) => gameRouteTransition(moves.flow, route.key)} />
+              <Stack.Screen name="results/[id]" options={moves.flow} />
+              {/* Staged practice (1.0.2): a stage, its "מוכן?" and its result are one flow; no back swipe mid-stage. */}
+              <Stack.Screen name="levels/play" options={{ ...moves.flow, gestureEnabled: false }} />
+              <Stack.Screen name="leaderboard" options={moves.tab} />
+              <Stack.Screen name="history" options={moves.tab} />
+              <Stack.Screen name="achievements" options={moves.tab} />
+            </Stack>
+          </ThemeProvider>
+        </View>
+        {/* Spec §4.2: the Splash while the sign-in loads (and its "try again" when the profile can't). */}
+        <SplashOverlay visible={splash} />
+        {/* 1.0.4 (friends-room.md §6.6): a room link while the app runs, in or asked first; a waiting invite. */}
+        <InviteLinkPrompt />
+        {/* The one toast viewport of the app (components.md §15.1): screens call useToast().show(). */}
+        <ToastViewport />
+      </GestureHandlerRootView>
+    </>
   );
 }
 
@@ -118,26 +135,4 @@ function startBackgroundWork(): () => void {
 /** A render error anywhere: recorded in Crashlytics, with a way to try again (stage 8). */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return <ErrorScreen error={error} retry={retry} />;
-}
-
-type Transition = Pick<NativeStackNavigationOptions, 'animation' | 'animationDuration'>;
-
-/**
- * motion.md §4.9. Menus (`stack.push`): the native slide, forward from the left in Hebrew; Android is told so,
- * iOS mirrors its push by itself. A game's flow, game → results (`flow.fade`): a 240 ms cross-fade. The bottom
- * navigation's tabs (`tabs`): a 140 ms cross-fade. Reduced Motion: 200 ms fades, and the tabs switch at once.
- * (The durations are iOS's; Android fades at its own pace.)
- */
-function transitions(reduce: boolean): Record<'menu' | 'flow' | 'tab', Transition> {
-  const d = motion.duration;
-  if (reduce) {
-    const fade: Transition = { animation: 'fade', animationDuration: d.reducedFade };
-    return { menu: fade, flow: fade, tab: { animation: 'none' } };
-  }
-  const slide = I18nManager.isRTL ? 'slide_from_left' : 'slide_from_right';
-  return {
-    menu: { animation: Platform.OS === 'android' ? slide : 'default' },
-    flow: { animation: 'fade', animationDuration: d.stateChange },
-    tab: { animation: 'fade', animationDuration: d.tapFeedbackMax },
-  };
 }

@@ -27,6 +27,7 @@ import {
 } from '../../auth/password';
 import { Icon, type IconName } from '../../components/Icon';
 import { SeatGlyph } from '../../components/player';
+import { Enter } from '../../components/ui/Enter';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
@@ -340,9 +341,10 @@ const STEP_BAR_WIDTH = space[12];
 const CHECK_BOX = space[11];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  // Transparent: the wandering digits behind every screen show through (D126, app/_layout.tsx).
+  screen: { flex: 1 },
   content: { paddingHorizontal: GUTTER.screen, paddingBottom: space[12], gap: space[9] },
-  footer: { paddingHorizontal: GUTTER.screen, paddingTop: space[6], backgroundColor: color.bg },
+  footer: { paddingHorizontal: GUTTER.screen, paddingTop: space[6] },
   title: { ...text('screenTitle'), color: color.text, textAlign: 'center' },
   accent: { color: color.accent },
   devBadge: {
@@ -438,12 +440,27 @@ const styles = StyleSheet.create({
   linkText: { ...text('buttonSm') },
 });
 
+/** The Splash's entrance (MOT-3): the seats pop in one by one, then the wordmark rises, then the name. */
+export const BRAND_ENTRANCE = { seatStagger: 80, wordmarkAt: 160, subAt: 280 } as const;
+
 /**
  * The wordmark (Dir-C-Home's "SUDOKU FIGHT", the Hebrew name under it) and the four seat shapes: the Splash.
  * `compact`: the wordmark alone, as Login's board has it over its arena. In English the name under the
  * wordmark would only repeat it, so it shows in Hebrew only (as on Home and Home-EN).
+ *
+ * `entrance` (the Splash): the four seats pop in, 80 ms apart, the wordmark rises and the name fades in after
+ * them (BRAND_ENTRANCE). It plays while the sign-in loads, so it never holds the app back; with Reduced Motion
+ * everything is there at once.
  */
-export function Brand({ compact = false, testID }: { compact?: boolean; testID?: string }) {
+export function Brand({
+  compact = false,
+  entrance = false,
+  testID,
+}: {
+  compact?: boolean;
+  entrance?: boolean;
+  testID?: string;
+}) {
   const { t, i18n } = useTranslation('home');
   return (
     <View
@@ -456,15 +473,30 @@ export function Brand({ compact = false, testID }: { compact?: boolean; testID?:
       {compact ? null : (
         <View style={brand.glyphs}>
           {[0, 1, 2, 3].map((i) => (
-            <SeatGlyph key={i} colorIndex={i} size={space[7]} />
+            <Enter
+              key={i}
+              kind="pop"
+              index={i}
+              stagger={BRAND_ENTRANCE.seatStagger}
+              enabled={entrance}
+              testID={testID && `${testID}-seat-${i}`}
+            >
+              <SeatGlyph colorIndex={i} size={space[7]} />
+            </Enter>
           ))}
         </View>
       )}
-      <Text style={brand.wordmark} numberOfLines={1}>
-        <Text style={brand.start}>{t('brand.wordStart')}</Text>{' '}
-        <Text style={brand.end}>{t('brand.wordEnd')}</Text>
-      </Text>
-      {compact || i18n.dir() !== 'rtl' ? null : <Text style={brand.sub}>{t('brand.sub')}</Text>}
+      <Enter enabled={entrance} delayMs={BRAND_ENTRANCE.wordmarkAt} testID={testID && `${testID}-wordmark`}>
+        <Text style={brand.wordmark} numberOfLines={1}>
+          <Text style={brand.start}>{t('brand.wordStart')}</Text>{' '}
+          <Text style={brand.end}>{t('brand.wordEnd')}</Text>
+        </Text>
+      </Enter>
+      {compact || i18n.dir() !== 'rtl' ? null : (
+        <Enter kind="fade" enabled={entrance} delayMs={BRAND_ENTRANCE.subAt}>
+          <Text style={brand.sub}>{t('brand.sub')}</Text>
+        </Enter>
+      )}
     </View>
   );
 }

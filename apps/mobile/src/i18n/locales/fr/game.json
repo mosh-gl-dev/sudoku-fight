@@ -138,10 +138,12 @@
     "error": {
       "title": "Erreur de connexion",
       "offlineTitle": "Pas de connexion Internet",
+      "expiredTitle": "Tu n’as pas pu revenir à temps",
       "body": {
         "offline": "Ton téléphone n’a pas de réseau pour l’instant. Connecte-toi à Internet et réessaie.",
         "unreachable": "Impossible de joindre le serveur de jeu. Vérifie ta connexion et réessaie.",
         "lost": "La connexion au serveur de jeu a été coupée, et nous n’avons pas pu la rétablir.",
+        "expired": "La connexion n’est pas revenue à temps : la partie compte comme un abandon.",
         "refused": "Le serveur ne nous a pas laissés entrer dans le salon."
       },
       "refusal": {
@@ -177,7 +179,9 @@
       "confirm": "Oui, abandonner",
       "cancel": "Annuler",
       "footnote": "La partie continue en arrière-plan",
-      "dialog": "Confirmer l’abandon"
+      "dialog": "Confirmer l’abandon",
+      "notSent": "Tu n’as pas abandonné, et la partie continue. Tu peux réessayer",
+      "notSentOffline": "Pas de connexion au serveur, donc tu n’as pas abandonné. Tu pourras réessayer quand elle sera revenue"
     },
     "lobby": {
       "title": "Salon privé",
@@ -431,9 +435,35 @@
       "label_one": "Coup de la partie : {{points}} point, {{digit}} en {{cell}}",
       "label_many": "Coup de la partie : {{points}} de points, {{digit}} en {{cell}}",
       "label_other": "Coup de la partie : {{points}} points, {{digit}} en {{cell}}",
-      "formula": "Calcul des points",
-      "formulaLabel": "Calcul des points : {{line}}",
-      "none": "Aucun coup correct dans cet entraînement"
+      "before": "Cases remplies avant le coup",
+      "count": {
+        "row": "dans la ligne",
+        "col": "dans la colonne",
+        "box": "dans le carré",
+        "num": "chiffres {{digit}} sur la grille"
+      },
+      "filled": {
+        "row_one": "{{count}} dans la ligne",
+        "row_many": "{{count}} dans la ligne",
+        "row_other": "{{count}} dans la ligne",
+        "col_one": "{{count}} dans la colonne",
+        "col_many": "{{count}} dans la colonne",
+        "col_other": "{{count}} dans la colonne",
+        "box_one": "{{count}} dans le carré",
+        "box_many": "{{count}} dans le carré",
+        "box_other": "{{count}} dans le carré",
+        "num_one": "le {{digit}} présent {{count}} fois",
+        "num_many": "le {{digit}} présent {{count}} de fois",
+        "num_other": "le {{digit}} présent {{count}} fois"
+      },
+      "countName": {
+        "row": "la ligne",
+        "col": "la colonne",
+        "box": "le carré",
+        "num": "les {{digit}}"
+      },
+      "why": "Plus c’est vide autour de la case, plus le coup vaut cher. Les deux décomptes les plus élevés fixent les points : {{highest}} à poids plein, {{next}} à demi-poids.",
+      "none": "Tu n’as fait aucun coup correct dans cette partie"
     },
     "stats": {
       "time": "Durée",
@@ -465,6 +495,13 @@
     "actions": {
       "home": "Accueil",
       "newGame": "Nouvelle partie"
+    },
+    "again": {
+      "solo": "Lance tout de suite un autre entraînement solo, {{type}}",
+      "bot": "Lance tout de suite une autre partie contre {{bot}}, {{type}}",
+      "botAny": "Lance tout de suite une autre partie contre le bot, {{type}}",
+      "ranked": "Une autre partie classée, {{type}}",
+      "friends": "Retour au jeu entre amis"
     },
     "loading": "Chargement du résultat…",
     "missing": "Impossible de trouver cet entraînement",

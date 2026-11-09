@@ -1,17 +1,21 @@
 import { type CellIndex, cellName } from '@sudoku-fight/engine';
+import type { LobbyPlayer } from '@sudoku-fight/protocol';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { BackHandler } from 'react-native';
 
 import * as authStore from '../../../auth/authStore';
+import { avatarIdsIn } from '../../../avatars/testing/avatarTesting';
 import { ltr } from '../../../components/player';
 import { useToast } from '../../../components/ui';
 import { answerIn, emptyCellsOf, PUZZLE } from '../../../game/testing/practice';
 import { OnlineSession } from '../../../game/onlineSession';
 import i18n from '../../../i18n';
-import { FakeTable } from '../../../net/testing/fakeServer';
+import { elapse, FakeTable } from '../../../net/testing/fakeServer';
 import { useSettings } from '../../../state/settings';
+import { color } from '../../../theme';
 import { motion } from '../../../theme/motion';
 import { hidden, type Setup, setUp } from '../connection/testing/setup';
+import { TIME_UP_HOLD_MS } from '../connection/useTimeUpHold';
 import { ONLINE_END_HOLD_MS, RESULTS_WATCHDOG_MS } from '../model';
 import { OnlineGame } from '../online/OnlineGame';
 import {
@@ -155,7 +159,7 @@ describe('before the game', () => {
       expect(
         screen.getByText('החשבון שלך מושעה, ולכן אין משחקים מדורגים כרגע. אפשר עדיין להתאמן לבד או מול בוט.'),
       ).toBeOnTheScreen();
-      expect(screen.getByText(/suspended-525/)).toBeOnTheScreen();
+      expect(screen.getByText(/ERR_SUSPENDED · 525/)).toBeOnTheScreen();
       expect(refresh).toHaveBeenCalledTimes(1);
     } finally {
       refresh.mockRestore();
@@ -170,7 +174,7 @@ describe('before the game', () => {
     await pass(table, 50);
     expect(screen.getByTestId('connection-error')).toBeOnTheScreen();
     expect(screen.getByText('אין חדר עם הקוד הזה. בדוק את הקוד ונסה שוב.')).toBeOnTheScreen();
-    expect(screen.getByText(/notFound-522/)).toBeOnTheScreen();
+    expect(screen.getByText(/ERR_NOT_FOUND · 522/)).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'נסה שוב' }));
     expect(h.onRetry).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', { name: /עבור לאימון/ }));
@@ -309,8 +313,20 @@ describe('in the game', () => {
     await act(async () => {
       g.table.game!.apply({ type: 'disconnect', playerId: OPP });
     });
-    await pass(g.table, 2500);
+    await pass(g.table, 1900);
+    expect(screen.getByTestId('opponent-reconnecting-card-reconnecting', hidden)).toHaveTextContent(
+      'Reconnecting... 1',
+    );
+    // The server's verdict comes as the ring shows 1: the ring ends at 0, "הזמן נגמר · בודקים מול השרת…" a
+    // moment (QA APK 18, STAGE7 test 3), then the dialog.
+    await pass(g.table, 200);
     expect(g.session.getView().result?.reason).toBe('lastPlayerStanding');
+    expect(screen.getByTestId('opponent-reconnecting-card-reconnecting', hidden)).toHaveTextContent(
+      'Reconnecting... 0',
+    );
+    expect(screen.getByTestId('opponent-reconnecting-win', hidden)).toHaveTextContent('בודקים מול השרת…');
+    expect(screen.queryByTestId('opponent-left', hidden)).toBeNull();
+    await pass(g.table, TIME_UP_HOLD_MS + 300);
     expect(screen.getByTestId('opponent-left')).toBeOnTheScreen();
     expect(screen.getByTestId('opponent-left-win')).toHaveTextContent('ניצחת בנטישה');
     await pass(g.table, 2000);
@@ -329,11 +345,33 @@ describe('in the game', () => {
     await act(async () => {
       g.table.game!.apply({ type: 'disconnect', playerId: OPP });
     });
-    await pass(g.table, 2500);
+    await pass(g.table, 2500 + TIME_UP_HOLD_MS);
     const flag = screen.getByTestId('opponent-left-flag', hidden);
     expect(within(flag).getByText('🇩🇪', hidden)).toBeTruthy();
     // Decorative: the title says who left.
     expect(flag).toHaveProp('accessibilityElementsHidden', true);
+  });
+
+  it('a room whose lobby gave avatars (a friends room): the opponent’s own on the card and the lock (QA B42)', async () => {
+    game = onlineSession();
+    await game.session.ready;
+    const seats: LobbyPlayer[] = [
+      { id: ME, name: 'Moshe', avatarId: 'av00', country: 'IL' },
+      { id: OPP, name: 'NinaVolt', avatarId: 'pirate', country: 'DE' },
+    ];
+    game.table.lobby(seats);
+    game.table.startGame();
+    await elapse(game.table, 300);
+    await show(game.session);
+    const card = screen.getByTestId('card-opponent');
+    expect(avatarIdsIn(card)).toEqual(['pirate']);
+    expect(within(card).getByTestId('flag-DE', hidden)).toBeTruthy();
+    await act(async () => {
+      game!.table.game!.apply({ type: 'select', playerId: OPP, cell: c0 });
+    });
+    await pass(game.table, 100);
+    const cell = cellButton(c0);
+    expect(avatarIdsIn(within(cell).getByTestId('cell-avatar', hidden))).toEqual(['pirate']);
   });
 
   it('surrender (spec §6.6): "ביטול" is the safe choice; "כן, להיכנע" loses at once', async () => {
@@ -386,19 +424,77 @@ describe('in the game', () => {
     expect(g.table.room.actions.some((a) => a.type === 'surrender')).toBe(false);
   });
 
+  it('a dialog the freeze closed says so: not a silent close that looks like a lost tap (QA loop 2)', async () => {
+    useToast.getState().clear();
+    const g = await live();
+    await fireEvent.press(screen.getByRole('button', { name: 'כניעה' }));
+    await act(async () => {
+      g.table.game!.apply({ type: 'disconnect', playerId: OPP });
+    });
+    await pass(g.table, 400);
+    expect(screen.queryByTestId('ranked-surrender')).toBeNull();
+    expect(useToast.getState().current).toMatchObject({
+      variant: 'warning',
+      message: 'לא נכנעת, והמשחק ממשיך. אפשר לנסות שוב',
+    });
+    expect(breadcrumbs()).toContain('game: end dialog closed by the connection (opponentReconnecting)');
+  });
+
+  it('a surrender the server refuses: "לא נכנעת" on a toast, and the game goes on (QA loop 2)', async () => {
+    useToast.getState().clear();
+    const g = await live();
+    // "ביטול" first: the cancel leaves its breadcrumb.
+    await fireEvent.press(screen.getByRole('button', { name: 'כניעה' }));
+    await fireEvent.press(
+      within(screen.getByTestId('ranked-surrender')).getByRole('button', { name: 'ביטול' }),
+    );
+    expect(breadcrumbs()).toContain('game: end dialog cancelled');
+    g.table.answer = false;
+    await fireEvent.press(screen.getByRole('button', { name: 'כניעה' }));
+    await fireEvent.press(
+      within(screen.getByTestId('ranked-surrender')).getByRole('button', { name: 'כן, להיכנע' }),
+    );
+    const sent = g.table.room.actions.at(-1)!;
+    expect(sent).toMatchObject({ type: 'surrender' });
+    await pass(g.table, 100);
+    expect(useToast.getState().current).toBeNull();
+    await act(async () => {
+      g.table.toMe({ type: 'rejected', clientSeq: sent.clientSeq, reason: 'badAction' });
+    });
+    await pass(g.table, 50);
+    expect(g.session.getView().status).toBe('running');
+    expect(useToast.getState().current).toMatchObject({
+      variant: 'warning',
+      message: 'לא נכנעת, והמשחק ממשיך. אפשר לנסות שוב',
+    });
+    expect(breadcrumbs()).toContain('game: surrender refused (badAction)');
+  });
+
   it('the connection can’t come back in time: the error screen, "נסה שוב", and back goes home', async () => {
     const g = await live({
       rules: { graceMs: 1000, softGraceMs: 0 },
-      options: { serverNoticeMs: 0, reconnectSlackMs: 0 },
+      options: { serverNoticeMs: 0, reconnectSlackMs: 0, afterGraceRetryMs: 2000 },
     });
     g.table.offline = true;
     await act(async () => {
       g.table.cutMe();
     });
     await pass(g.table, 2500);
+    // Past the abandonment time it still tries, for the finished game's result (connection-lost-no-recovery):
+    // "הזמן נגמר · בודקים מול השרת…" meanwhile, then, with no network all along, it says why in Hebrew.
+    expect(g.session.online.status).toBe('reconnecting');
+    expect(screen.getByTestId('self-reconnecting-timer-title', hidden)).toHaveTextContent('הזמן נגמר');
+    await pass(g.table, 2000);
     expect(g.session.online).toMatchObject({ status: 'closed', closeReason: 'lostConnection' });
     expect(screen.getByTestId('connection-error')).toBeOnTheScreen();
-    expect(screen.getByText('החיבור לשרת המשחק אבד ולא הצלחנו לחזור אליו.')).toBeOnTheScreen();
+    // Over the live game, the error paints the ground: the board never shows through its text (D126).
+    expect(screen.getByTestId('connection-error-cover')).toHaveStyle({ backgroundColor: color.bg });
+    expect(screen.getByRole('header')).toHaveTextContent('לא חזרת למשחק בזמן');
+    expect(screen.getByText('החיבור לא חזר בזמן, ולכן המשחק נחשב נטישה.')).toBeOnTheScreen();
+    // The support code is plainly a code, left to right, never the English word "network".
+    expect(screen.getByTestId('connection-error-code')).toHaveTextContent(ltr('ERR_NETWORK'), {
+      exact: true,
+    });
     await fireEvent.press(screen.getByRole('button', { name: 'נסה שוב' }));
     expect(g.onRetry).toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: 'לבית' }));
@@ -497,6 +593,21 @@ describe('a lost connection: the soft phase first (D42)', () => {
     // A return inside the soft phase: no "back" banner either.
     expect(screen.queryByTestId('self-reconnecting-banner')).toBeNull();
     expect(screen.queryByTestId('presence-unstable', hidden)).toBeNull();
+  });
+
+  it('my connection drops with the surrender dialog open: it closes, and says why (QA loop 2)', async () => {
+    const g = await live();
+    await fireEvent.press(screen.getByRole('button', { name: 'כניעה' }));
+    expect(screen.getByTestId('ranked-surrender')).toBeOnTheScreen();
+    await dropMine(g);
+    expect(screen.queryByTestId('ranked-surrender')).toBeNull();
+    expect(useToast.getState().current).toMatchObject({
+      variant: 'warning',
+      icon: 'wifiOff',
+      message: 'אין חיבור לשרת, ולכן לא נכנעת. אפשר לנסות שוב כשהחיבור יחזור',
+    });
+    expect(breadcrumbs()).toContain('game: end dialog closed by the connection (selfOffline)');
+    expect(g.table.room.actions.some((a) => a.type === 'surrender')).toBe(false);
   });
 
   it('the opponent took my cell meanwhile: it shakes, a short warning, and no penalty', async () => {

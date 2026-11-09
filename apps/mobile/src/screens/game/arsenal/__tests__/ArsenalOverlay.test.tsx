@@ -10,10 +10,11 @@ import {
 } from '@sudoku-fight/engine';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { cardModel, PlayerCard } from '../../../../components/player';
+import { PHONE, setWindow } from '../../../../components/ui/testing/layout';
 import { useToast } from '../../../../components/ui';
 import { answerIn, wrongIn } from '../../../../game/testing/practice';
 import i18n from '../../../../i18n';
@@ -22,6 +23,7 @@ import type { Rect } from '../../geometry';
 import { BOT, type Duel, duel, ME } from '../../testing/duel';
 import { ArsenalOverlay } from '../ArsenalOverlay';
 import { ARSENAL_CONFIG } from '../config';
+import { arsenalMetrics, arsenalMetricsFor } from '../metrics';
 import { type Measurable, useArsenal } from '../useArsenal';
 import { isolate } from '../wording';
 
@@ -171,6 +173,34 @@ describe('the interference picker (spec §7.3, components.md §13) [D45]', () =>
     expect(screen.queryByTestId('target-frame')).not.toBeOnTheScreen();
   });
 
+  it('B45: the price row’s halves share it; their words wrap and shrink inside their half, never over the other', async () => {
+    // At the design's text size (Jest's window has a system text of 2).
+    const back = setWindow(PHONE);
+    const { g } = await show();
+    await earn(g);
+    await openFromButton();
+    const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style);
+    // Both halves give way when the row is too narrow for them (Thai's "· ครั้งถัดไป: 4" beside "คะแนนของคุณ").
+    expect(flat('arsenal-after')).toMatchObject({ flexShrink: 1, minWidth: 0 });
+    expect(StyleSheet.flatten(screen.getByTestId('arsenal-cost').props.style).justifyContent).toBe(
+      'space-between',
+    );
+    for (const words of ['arsenal-next', 'arsenal-score-label']) {
+      expect(flat(words)).toMatchObject({ flexShrink: 1 });
+      expect(screen.getByTestId(words).props).toMatchObject({
+        numberOfLines: 2,
+        adjustsFontSizeToFit: true,
+        minimumFontScale: 0.75,
+      });
+    }
+    // The numbers keep their size.
+    expect(flat('arsenal-price').flexShrink).toBeUndefined();
+    // At the design's text size: one line of 48, the words as the language writes them.
+    expect(flat('arsenal-cost')).toMatchObject({ flexDirection: 'row', height: 48 });
+    expect(screen.getByTestId('arsenal-next').props.children).not.toMatch(/ /);
+    await back();
+  });
+
   it('"הפרעה" opens it aimed at that card: the target framed, the price, every kind with its price', async () => {
     const { g } = await show();
     await earn(g);
@@ -183,7 +213,7 @@ describe('the interference picker (spec §7.3, components.md §13) [D45]', () =>
     // The card it was opened from is the target, framed with "יעד"; its button reads "close".
     // (Behind the modal sheet, so screen readers and these queries skip them.)
     const frame = screen.getByTestId('target-frame', hidden);
-    expect(within(frame).getByText('יעד', hidden)).toBeOnTheScreen();
+    expect(within(frame).getByTestId('target-chip-label', hidden)).toHaveTextContent('יעד');
     expect(screen.getByTestId('card-opponent-summary', hidden)).toHaveProp('accessibilityHint', 'יעד ההפרעה');
     expect(screen.getByLabelText('סגירת חלון ההפרעות', hidden)).toBeOnTheScreen();
     // The price, the next one, my score before and after (D10).
@@ -434,6 +464,17 @@ describe('3–4 players: the route in the header (original §17)', () => {
     expect(screen.getByTestId('arsenal-target')).toBeOnTheScreen();
     expect(screen.queryByTestId('arsenal-route')).not.toBeOnTheScreen();
   });
+
+  it('2 players: the target line has their shape too, never colour alone (QA loop 4)', async () => {
+    const { g } = await show();
+    await earn(g);
+    await openFromButton();
+    const line = screen.getByTestId('arsenal-target');
+    // "יעד: [avatar ▲] Mr. Hoot 🇩🇪": their seat (P2) shape, as on their card; said once, by name.
+    expect(within(line).getByTestId('glyph-triangle', hidden)).toBeOnTheScreen();
+    expect(within(line).queryByTestId('glyph-circle', hidden)).not.toBeOnTheScreen();
+    expect(line).toHaveAccessibleName(`יעד: ${isolate(NAME)}`);
+  });
 });
 
 describe('reduced motion (spec §22)', () => {
@@ -453,5 +494,49 @@ describe('reduced motion (spec §22)', () => {
     expect(screen.queryByTestId('arsenal-ripple', hidden)).not.toBeOnTheScreen();
     await step(400);
     expect(screen.queryByTestId('arsenal-sheet')).not.toBeOnTheScreen();
+  });
+});
+
+describe('at a large system text size (QA fixcheck of APK 15: English, 360 dp, 1.3)', () => {
+  const SCALE = 1.3;
+  beforeEach(() => {
+    const real = Dimensions.get('window');
+    jest
+      .spyOn(Dimensions, 'get')
+      .mockImplementation(() => ({ ...real, width: 360, height: 780, fontScale: SCALE }));
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('the names, the info and the price words grow, with room for their lines; "Next" keeps its number', async () => {
+    await i18n.changeLanguage('en');
+    const { g } = await show();
+    await earn(g);
+    await openFromButton();
+    const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style);
+    const grown = arsenalMetricsFor(undefined, SCALE);
+    for (const kind of ['scramble', 'keypad'] as const) {
+      // Two lines of 13 at 1.3 (React Native grows their lineHeight too), not two design lines under the chip.
+      const lineHeight = arsenalMetrics.button.nameStyle.lineHeight!;
+      expect(flat(`arsenal-kind-${kind}-name`).height).toBeGreaterThanOrEqual(2 * lineHeight * SCALE);
+      const name = within(screen.getByTestId(`arsenal-kind-${kind}-name`)).getByText(/Scrambled/);
+      expect(name.props).toMatchObject({ numberOfLines: 2, maxFontSizeMultiplier: SCALE });
+      // iOS's floor. Android ignores minimumFontScale: there the floor is that every name fits two lines at the
+      // design's size (pickerFits.test.ts), so its shrink-to-fit search stops at or above it.
+      expect(name.props.minimumFontScale).toBeCloseTo(1 / SCALE);
+      expect(flat(`arsenal-kind-${kind}`).minHeight).toBe(grown.button.height);
+    }
+    // The info line takes a second line rather than ending in "…".
+    expect(screen.getByTestId('arsenal-info').props).toMatchObject({
+      numberOfLines: 2,
+      maxFontSizeMultiplier: SCALE,
+    });
+    // The price row's halves on two lines, so "· Next: 4" has the row's width, in one piece: never "Next:" over
+    // "4", nor "·" alone (it fits that line at the design's size in every language: pickerFits.test.ts).
+    const nbsp = String.fromCharCode(0xa0);
+    expect(screen.getByTestId('arsenal-next').props.children).toBe(`·${nbsp}Next:${nbsp}4`);
+    expect(screen.getByTestId('arsenal-next').props.minimumFontScale).toBeCloseTo(1 / SCALE);
+    expect(flat('arsenal-cost')).toMatchObject({ flexDirection: 'column', height: grown.price.height });
+    expect(grown.price.height).toBeGreaterThan(48);
+    expect(flat('arsenal-after').alignSelf).toBe('flex-end');
   });
 });

@@ -1,7 +1,6 @@
 import {
   cellName,
   evolve,
-  formatScoreLine,
   type GameEvent,
   type GameState,
   missedPoints,
@@ -63,7 +62,9 @@ function expectCorrectMovesExplained(replay: Replay, lang: 'he' | 'en' = 'he') {
     const text = stripIsolates(mine.text!);
     expect(text).toContain(cellName(s.cell!));
     expect(text).toContain(String(right));
-    expect(mine.scoreLine).toBe(formatScoreLine(s.breakdown!));
+    // Its calculation is the engine's breakdown, for the screen to write in its language (no "points = …").
+    expect(mine.score).toEqual(s.breakdown);
+    expect(mine.score!.points).toBe(s.points);
   }
 }
 
@@ -115,7 +116,7 @@ describe('a solo practice', () => {
     expect(mine.answer).not.toBe(mine.played);
     expect(mine.wrongText).toMatch(new RegExp(`^${wrong.digit} `));
     expect(stripIsolates(mine.text!)).toContain(cellName(wrong.cell!));
-    expect(mine.scoreLine).toBeNull();
+    expect(mine.score).toBeNull();
   });
 
   it('explains the penalty: what the right digit would have scored there, with the same formula (§6.5, §13.2)', () => {
@@ -126,12 +127,11 @@ describe('a solo practice', () => {
     const before = replay.states[wrong.main! - 1]!.grid;
     const missed = missedPoints(before, wrong.cell!, mine.answer!);
     expect(mine.penalty).toBe(missed.points);
-    expect(mine.penaltyLine).toBe(formatScoreLine(missed));
-    expect(mine.penaltyLine).toMatch(/^points = 9 − \d \+ \(9 − \d\) \/ 2 = [\d.]+$/);
+    expect(mine.penaltyScore).toEqual(missed);
     expect(replay.penaltiesAreMissedPoints).toBe(true);
     // Only a wrong move has one.
     const correct = replay.steps.find((s) => s.kind === 'correct')!;
-    expect(stepView(replay, correct.index, 'he').explanations[0]!.penaltyLine).toBeNull();
+    expect(stepView(replay, correct.index, 'he').explanations[0]!.penaltyScore).toBeNull();
   });
 
   it('a game played before the rule (the 1, 2, 4, 8 ladder) shows no penalty line on any wrong move', () => {
@@ -144,7 +144,7 @@ describe('a solo practice', () => {
       r.steps
         .filter((s) => s.kind === 'wrong')
         .map((s) => stepView(r, s.index, 'he').explanations[0]!)
-        .map((x) => ({ status: x.status, penalty: x.penalty, line: x.penaltyLine }));
+        .map((x) => ({ status: x.status, penalty: x.penalty, line: x.penaltyScore }));
     expect(fresh.penaltiesAreMissedPoints).toBe(true);
     expect(lines(fresh).every((x) => x.line !== null)).toBe(true);
 

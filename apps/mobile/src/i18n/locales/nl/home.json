@@ -60,10 +60,13 @@
     "title": "Nieuw spel",
     "footnote": "Ranked vereist een internetverbinding · Oefenen kan altijd",
     "soon": "Binnenkort",
+    "needsConnection": {
+      "rankedAndFriends": "Ranked en met vrienden"
+    },
     "groups": {
       "ranked": {
         "title": "Ranked spelen",
-        "note": "Echte tegenstanders, in realtime"
+        "note": "Tegelijk tegen echte spelers"
       },
       "friends": {
         "title": "Met vrienden",
@@ -117,7 +120,7 @@
       "taglineNew_one": "{{total}} korte etappe · 0–3 sterren",
       "taglineNew_other": "{{total}} korte etappes · 0–3 sterren",
       "chip": "Etappe {{stage}} ·",
-      "offline": "Offline",
+      "offline": "Ook offline",
       "chipLabel_one": "Etappe {{stage}} · {{count}} ster",
       "chipLabel_other": "Etappe {{stage}} · {{count}} sterren",
       "label": "Oefenen in etappes"

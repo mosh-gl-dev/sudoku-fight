@@ -1,5 +1,5 @@
 import { ManualClock, ManualScheduler } from '@sudoku-fight/engine';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import ResultsRoute from '../../../../app/results/[id]';
 import { refreshMe, useAuth } from '../../../auth/authStore';
@@ -34,13 +34,15 @@ jest.mock('../../../auth/authStore', () => ({
 }));
 
 const { router, useLocalSearchParams } = jest.requireMock<{
-  router: { replace: jest.Mock; dismissTo: jest.Mock };
+  router: { replace: jest.Mock; dismissTo: jest.Mock; push: jest.Mock };
   useLocalSearchParams: jest.Mock;
 }>('expo-router');
 
 const settle = () =>
   act(async () => {
     await new Promise((r) => setImmediate(r));
+    // The route hands the results over two frames later (app/results/[id].tsx); a frame is a 0 ms timer here.
+    for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 beforeEach(async () => {
@@ -92,8 +94,12 @@ it('"משחק חדש" after a ranked game searches the same queue, and the ratin
   await settle();
   expect(screen.getByRole('header', { name: 'הפסד' })).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'משחק חדש' }));
+  // A frame or two later: the spinner's commit goes first, the match screen in a commit of its own (K1).
+  // Over the results, which leave the history once covered (QA loop 6: app/results/[id].tsx, dropWhenCovered).
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/match'));
   expect(refreshMe).toHaveBeenCalledTimes(1);
-  expect(router.replace).toHaveBeenCalledWith('/match');
+  expect(router.push).toHaveBeenCalledWith('/match');
+  expect(router.replace).not.toHaveBeenCalledWith('/match');
   expect(useGameStore.getState().match?.queueKey).toBe('fast-2p');
   expect(useGameStore.getState().online).toBeNull();
   expect(session.online.status).toBe('closed');

@@ -1,0 +1,105 @@
+{
+ "checks": [
+  {
+   "id": "apk10-sounds-first-ranked",
+   "result": "partial",
+   "detail": "Media volume on phone 3 was 0 (not changed), so this was checked by 'dumpsys audio' event:started for uid 10044 only. Cold run 1, in the first ranked game after force-stop: matchFound 21:38:01.92, beats 03.31/04.21/05.21, GO 06.09, so 5 starts. Cold run 2: 21:51:38.80, beats 39.98/40.95/41.96, GO 42.90, so 5 starts. Warm game: 5 starts plus the 'משחק חדש' tap. The 'מצא יריב' tap logs a ui_tap start. The first correct digit in the cold game logged 'correct' (vol 0.8) 0.31 s after the tap. NOT fixed: the very first 'שחק' tap after a cold start logged no start in 2 of 2 cold runs. Its ui_tap player was made by the Home warm-up (ExoPlayer Init 21:37:13.9 / 21:51:07.6), and the tap came at 21:37:27.1 / 21:51:13.9. The first cell_select of the cold game (cell tap 21:51:55.46) also logged no start: piid 17471 was 'stopped / releasing' with no new player started."
+  },
+  {
+   "id": "apk10-search-to-vs-no-empty-frame",
+   "result": "pass",
+   "detail": "Checked by screenrecord with real-frame stats (ffmpeg YMAX of the middle band) and 50 ms sheets, in 4 games with motion off and 1 with reduced motion on. There was no empty dark frame between the radar and the VS. The search fades out under the VS for about 3 frames at 50 ms, with 'ביטול חיפוש' fading. With reduced motion there is the same overlap with a plain fade. Not checked: tapping where 'ביטול חיפוש' was, TalkBack, and the fall-through."
+  },
+  {
+   "id": "apk10-go-to-board-no-empty-frame",
+   "result": "fail",
+   "detail": "Motion off, 4 games, every recorded frame checked. In 3 of 4 games there is an empty run at the switch from the count's GO! to the game's cover GO!, about 0.55 s after GO! first shows: rec1 26.639–26.718 s (5 frames with only the ambient background, no header, strip or ghost board), rec2 29.84–29.95, rec3 22.39–22.49 (7 frames). After it the cover (strip, ghost board and GO!) fades in from 0 over about 80 ms. The 4th game (cold run 2) only dips (YMAX 197), with no empty frame. With reduced motion on, there is no empty frame. The GO!→board crossfade itself has no gap, but it is short: about 100 ms (27.417→~27.52) against the ~240 ms in the spec. GO! first frame → first board frame was 1.34 s (rec1), and with reduced motion ~1.0 s. Not checked: tap during the fade, Back after GO!, TalkBack."
+  },
+  {
+   "id": "apk10-2p-header-360dp",
+   "result": "partial",
+   "detail": "wm density 540, font 1.0, Hebrew, ranked against the stealth bot. card-opponent [54,114][527,654] (x=54 px, about 16 dp), card-me [554,114][1026,654], so the gap is 27 px (about 8 dp). The opponent's avatar is whole. Score '0' and 'חושב…' are whole. The 'יעד' chip shows in full on 3 open/close cycles. In English 'Target' and in Italian 'Bersaglio' are also in full. The 3x2 grid has no scroll. The target line reads 'יעד: [avatar in orange ring] ▲ name flag', and in English 'Target: [avatar] ▲ name flag'. Problems: in English my card's 'No mistakes' wraps mid-word as 'No mi / stakes'. The 'Interfere' / 'Disturba' label is shrunk to tiny text. The VS badge sits over the opponent's flag. The lower half of the 'יעד' chip (below the yellow frame) is dimmed by the scrim, at both zooms. At normal zoom (450) the chip and cards look as before; I did not measure the 159 dp. Density was reset afterwards (Physical 450, no override)."
+  },
+  {
+   "id": "apk10-bg-15s-no-return-countdown",
+   "result": "pass",
+   "detail": "I repeated it twice: Home, 15.0–15.4 s, back from Recents, with screenrecord. On return the game frame shows for about 0.6 s, then only the banner 'החיבור שלך אבד · מתחבר מחדש…' (ניסיון 1) and the middle card 'מסנכרן…' / 'המשחק נשמר בשרת וממשיך מאותה נקודה'. There was no 'הלוח נעול עד שתחזור' and no 'יש לך עוד N שניות לחזור'. Then 'חזרת למשחק · מסנכרן…', the bottom card 'חזרת בזמן · הטיימרים ממשיכים מאותה שנייה', and 'חזרת למשחק · הכל סונכרן · המשחק ממשיך'. Play went on. Control 1: airplane mode for 13 s with the app in front. After about 12 s, 'הלוח נעול עד שתחזור' and 'יש לך עוד 15 שניות לחזור' appeared and counted down, then 'חזרת למשחק'. Airplane mode is off again and Wi‑Fi is on. Control 2 (Home plus airplane mode for 20 s) was not run."
+  },
+  {
+   "id": "apk10-licences-ltr-hebrew",
+   "result": "pass",
+   "detail": "Hebrew UI: Settings → רישיונות. The 'SIL Open Font License 1.1' toggle text is on the left with its chevron on the right, and the chevron flips. The PREAMBLE text is left-aligned LTR. Rubik and Teko and their Copyright lines are on the left. '@babel/code-frame' is on the left with '7.29.7' to its right. The MIT and Copyright lines are on the left. Under 'נוסחי הרישיונות', MIT opens 'MIT License / Permission is hereby granted…' left-aligned and closes again. The Hebrew headings are on the right. TalkBack was not checked. Cosmetic: the licence texts keep their original 80-column hard line breaks, so the lines are ragged at phone width."
+  }
+ ],
+ "marked": [
+  {
+   "taskId": "account-settings-licenses-expand",
+   "result": "pass",
+   "summary": "הנוסח של OFL ושל MIT נפתח ונסגר והחץ מתהפך. כל הטקסט האנגלי (שמות, גרסאות, Copyright) מיושר לשמאל, והכותרות העבריות מימין."
+  },
+  {
+   "taskId": "stealth-play-bg-long",
+   "result": "pass",
+   "summary": "פעמיים 15 שניות ברקע: רק 'מתחבר מחדש' ו'מסנכרן…', בלי 'יש לך עוד N שניות'. אחר כך 'חזרת למשחק · הכל סונכרן · המשחק ממשיך', והבוט ממשיך. בבקרה עם מצב טיסה הספירה כן מופיעה."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "result": "partial",
+   "summary": "בהפחתת תנועה 3, 2, 1 מתחלפות בדהייה, בלי טבעת ובלי ספרה חסרה. אבל הלוח מופיע כשנייה אחרי GO! ולא כ־0.4 שנייה (באג ידוע K2)."
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "result": "pass",
+   "summary": "חלון בתחתית מעל שכבה כהה. בראשו 'בחר הפרעה', ומתחת 'יעד:' עם אווטר בטבעת כתומה, ▲, שם ודגל. בדקתי מול הבוט, לא בחדר חברים."
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "result": "pass",
+   "summary": "בצפיפות 540 עם ניווט בשלושה לחצנים: רשת 3×2 בלי גלילה בעברית, באנגלית ובאיטלקית. שום דבר לא חתוך, והתג 'יעד' מוצג במלואו."
+  },
+  {
+   "taskId": "pregame-found-sound",
+   "result": "untested",
+   "summary": "נשאר למשה, כי עוצמת המדיה הייתה 0. ב־dumpsys נספרו 5 התחלות בכל משחק ראשון ובמשחק חם. ההקשה הראשונה על 'שחק' אחרי הפעלה קרה לא רשמה צליל."
+  }
+ ],
+ "appBugs": [
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "title": "An empty frame of about 0.1 s between the count's GO! and the GO! cover (motion off)",
+   "severity": "minor",
+   "what": "טלפון 3 SM-A165F, ‏1.1.0 (08.11 06:46, loop-4 fixes), בעברית, הפחתת תנועה כבויה. השלבים: 'שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב' מול הבוט הסמוי, עם screenrecord ובדיקה של כל פריים. בערך 0.55 שנייה אחרי שה־GO! של הספירה מופיע, יש רצף של 5 עד 7 פריימים (80 עד 110ms) שבהם רואים רק את הרקע: אין כותרת, אין שורת שחקנים, אין לוח רפאים ואין GO!. אחרי זה הכיסוי (GO!, השורה והלוח) נדלק בדהייה מ־0 במשך כ־80ms. זה קרה ב־3 מתוך 4 משחקים: rec1 בין 26.639 ל־26.718 שנ', ‏rec2 בין 29.84 ל־29.95, ו־rec3 בין 22.39 ל־22.49. ברביעי הייתה רק עמעום, בלי פריים ריק. בהפחתת תנועה זה לא קורה. הצפוי לפי deviceCheck 2a: ה־GO! של הכיסוי יושב בדיוק במקום של ה־GO! מהספירה, בלי קפיצה ובלי פריים ריק. בנוסף, המעבר מ־GO! ללוח עצמו קצר: כ־100ms ולא כ־240ms. GO!→לוח לקח 1.34 שנ'. צילומים: qa-shots/RF8Y30L038L-go-gap-rec1.png ו־RF8Y30L038L-go-gap-rec3.png."
+  },
+  {
+   "taskId": "pregame-found-sound",
+   "title": "The first ui_tap after a cold start ('שחק') and the first cell_select in the first game are still silent",
+   "severity": "minor",
+   "what": "טלפון 3, ‏apk10. השלבים: force-stop, הפעלה, הגדרות, חזרה, 'שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. ב־dumpsys audio (PlaybackActivityMonitor, ‏uid 10044) ההקשה על 'שחק' (ViewPostIme ב־21:37:27.125, וב־21:51:13.939) לא רושמת event:started, ב־2 מתוך 2 הפעלות קרות. הנגן של ui_tap נוצר ב־warm-up של הבית (ExoPlayerImpl Init ב־21:37:13.9 וב־21:51:07.6). ההקשה הבאה על כפתור ראשי ('מצא יריב') כן מנגנת. במשחק הראשון אחרי הפעלה קרה, גם בחירת המשבצת הראשונה (cell_select, ‏vol 0.5, הקשה ב־21:51:55.46) לא מנגנת: piid 17471 עובר ל־'stopped / releasing player', ואין אחריו new player או started. מה כן עבד: 5 צלילי ההתחלה (matchFound, שלוש פעימות ו־GO) והצליל correct בספרה הראשונה. נראה שהתיקון FIRST_PLAY_AT_S לא מכסה את הנגנים שנוצרו ב־warmModes (primaryPress) וב־preload של המשחק (cell_select)."
+  },
+  {
+   "taskId": "interference-picker-grid-small",
+   "title": "2P header at 360dp in English: 'No mistakes' breaks mid-word, 'Interfere' shrinks to tiny text, and VS covers the flag",
+   "severity": "minor",
+   "what": "טלפון 3: ‏wm density 540 (360dp), גופן 1.0, האפליקציה באנגלית (cmd locale set-app-locales en), משחק מדורג 2P מול הבוט. בכרטיס שלי השורה 'No mistakes' נשברת באמצע מילה: 'No mi' ואז 'stakes'. התווית 'Interfere' בכפתור ההפרעה קטנה מאוד (מתכווצת), ובאיטלקית גם 'Disturba', ו־'Prossimo:' במחיר. תג ה־VS מכסה את הדגל של היריב. זה קורה בכל השפות, וגם בצפיפות הרגילה זה כמעט נוגע. גם בכרטיס השחקן באיטלקית יש שבירות באמצע מילה ('Sconfitt' ואז 'e'). צילומים: qa-shots/RF8Y30L038L-d540-en-header.png, ‏RF8Y30L038L-d540-en-header-crop.png ו־RF8Y30L038L-d540-it-picker.png."
+  },
+  {
+   "taskId": "interference-picker-opens",
+   "title": "The 'יעד' chip on the opponent's frame is half covered by the scrim",
+   "severity": "minor",
+   "what": "טלפון 3, ‏apk10, בצפיפות 450 וגם ב־540, בעברית, באנגלית ובאיטלקית. כשחלון ההפרעות פתוח, החצי העליון של התג 'יעד' (בתוך המסגרת הצהובה) בהיר, והחצי התחתון (מתחת לקו המסגרת) מוחשך על ידי השכבה הכהה. התג נראה חתוך לשני גוונים. הטקסט עצמו מלא. צילומים: qa-shots/RF8Y30L038L-d540-picker1.png ו־RF8Y30L038L-d450-picker.png."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "title": "Empty frames between Results ('משחק חדש') and the search screen",
+   "severity": "minor",
+   "what": "טלפון 3, ‏apk10, הפחתת תנועה כבויה. במסך התוצאות של משחק מדורג מקישים 'משחק חדש'. ב־screenrecord יש 7 עד 8 פריימים (כ־80 עד 90ms) שבהם רואים רק את הרקע, בין מסך התוצאות למסך 'מחפש יריב…'. אחרי זה החיפוש נדלק בדהייה. זה קרה ב־rec2 ב־4.77 שנ' וב־rec3 ב־1.44 שנ'. צילום: qa-shots/RF8Y30L038L-results-search-gap.png."
+  },
+  {
+   "taskId": "account-settings-licenses-expand",
+   "title": "Licence texts keep 80-column hard line breaks, so lines are ragged on a phone",
+   "severity": "minor",
+   "what": "הגדרות ← רישיונות ← SIL Open Font License 1.1 / MIT. הטקסט מיושר נכון לשמאל, אבל שבירות השורה המקוריות נשמרות, ובגלל שהטקסט גם נשבר לפי רוחב המסך יוצאות שורות של מילה אחת. למשל: 'person obtaining' ואז 'a copy of this software and associated', ו־'(the' ואז '\"Software\"), to deal…'. צילומים: qa-shots/RF8Y30L038L-account-settings-licenses-expand-2.png ו־‎-3.png."
+  }
+ ],
+ "phoneState": "RF8Y30L038L (טלפון 3, אחוותא) has apk10 '1.1.0 (08.11 06:46, loop-4 fixes)' installed, which already matched latest-build.json, so nothing was installed. adb.ts reset is done: font 1, animations 1, airplane mode off, Wi‑Fi on. wm density was reset (Physical 450, no override). The app locale is he. In-app reduced motion is back to 'כבויה', and sound is on. Media volume was 0 before I started and I did not change it. The app was relaunched and is on Home. The /sdcard/qa-*.mp4 recordings were deleted. During the run I played about 11 ranked fast games against the stealth bot, all lost, so the fast rating dropped from 1185 to about 1050. Phone 3 went offline and then 'unauthorized' for about 40 s at 21:29, then reconnected by itself. I never passed phone 1's serial. Tools: ffmpeg was installed into the session scratchpad (pylib/imageio_ffmpeg) to analyse the recordings."
+}

@@ -68,7 +68,8 @@
       "timeout": "Il server non ha risposto in tempo. Riprova.",
       "signedOut": "Non hai effettuato l’accesso. Accedi di nuovo.",
       "unexpected": "Il server ha inviato una risposta inattesa. Riprova, o aggiorna l’app."
-    }
+    },
+    "avatarUnavailable": "Questo avatar non è ancora disponibile sul server. Scegline un altro."
   },
   "splash": {
     "tagline": "Una griglia. Tutti risolvono. Vince uno solo.",
@@ -251,6 +252,9 @@
     "deleteGoogleBody": "Per eliminare l’account, scegli di nuovo l’account Google {{email}}.",
     "deleteGoogleSubmit": "Conferma con Google ed elimina",
     "deleteGoogleAgain": "Per eliminare l’account serve una nuova conferma. Riprova e scegli il tuo account Google.",
-    "deleteWithPassword": "Conferma invece con la password"
+    "deleteWithPassword": "Conferma invece con la password",
+    "deleteGoogleOffTitle": "Serve l’accesso con Google",
+    "deleteGoogleOffBody": "Questo account accede con Google, quindi per eliminarlo serve una conferma con Google. Questa versione dell’app non ha l’accesso con Google, quindi qui l’account non si può eliminare. Puoi eliminarlo nell’app dello store (Google Play).",
+    "deleteGoogleOffOk": "Ho capito"
   }
 }

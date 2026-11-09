@@ -275,6 +275,8 @@
     "chapterStars": "{{stars}}/{{max}}",
     "chapterNeed": "関門に必要なのは{{need}}個",
     "chapterOpen": "関門は開放済み",
+    "chapterNeedSentence": "関門に必要なのは{{need}}個",
+    "chapterOpenSentence": "関門は開放済み",
     "chapterGate": "· {{gate}}",
     "chapterLine_other": "この章：星{{max}}個中{{stars}}個。{{gate}}",
     "mistakes_other": "ミス{{count}}回",
@@ -315,6 +317,8 @@
     "button": "ステージを抜ける",
     "title": "ステージを抜けますか？",
     "body": "星は0個になり、次のステージが開放されます。",
+    "bodyLocked": "星は0個になり、次のステージはまだ開放されません。",
+    "bodyLast": "星は0個になります。",
     "confirm": "抜ける",
     "cancel": "プレイを続ける"
   },

@@ -4,10 +4,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
+import { Spinner } from '../../components/ui/Spinner';
 import { Text } from '../../components/ui/Text';
 import { FRIENDS_UI, type FriendsUiSettings } from '../../config/friends';
 import { cue } from '../../services/feedback';
-import { color, space, text, tokens } from '../../theme';
+import { color, size, space, text, tokens } from '../../theme';
 import { ScreenHeader } from '../home/parts';
 import { CodeInput } from './CodeInput';
 import {
@@ -57,15 +58,17 @@ export function JoinCodeScreen({
   const join = (code: string) => {
     if (busy.current) return;
     busy.current = true;
+    // The last refusal stays, held in its place under the boxes while the try runs (CodeInput holdError), and
+    // the answer replaces it: nothing below moves up when "הצטרף" is pressed, nor down when a refusal comes.
     setJoining(true);
-    setError(null);
     cue('primaryPress');
     void onJoin(code)
       .catch((): JoinOutcome => ({ ok: false, failure: 'internal' }))
       .then((outcome) => {
         busy.current = false;
         setJoining(false);
-        if (!outcome.ok) {
+        if (outcome.ok) setError(null);
+        else {
           cue('formError');
           setError(failureText(t, outcome.failure, { code, retryAfterSec: outcome.retryAfterSec }));
         }
@@ -85,23 +88,36 @@ export function JoinCodeScreen({
           digits={digits}
           onChange={(next) => {
             setDigits(next);
-            if (error) setError(null);
+            // A change that starts a try by itself (the sixth digit, a paste) keeps the refusal for the try to
+            // hold; any other change clears it.
+            if (error && !(settings.autoJoin && codeOf(next) !== null)) setError(null);
           }}
           onComplete={settings.autoJoin ? join : undefined}
           readClipboard={readClipboard}
           error={error}
+          holdError={joining}
           disabled={joining}
           autoFocus={!initialCode}
           testID="friends-code-input"
         />
         <View style={styles.actions}>
-          <Button
-            label={joining ? t('join.joining') : t('join.submit')}
-            onPress={code ? () => join(code) : undefined}
-            disabled={code === null}
-            loading={joining}
-            testID="friends-join-submit"
-          />
+          {joining ? (
+            // Friends-Join's joining state: "מצטרף לחדר…" with a spinner, in the button's place (a loading
+            // button shows its spinner alone).
+            <View style={styles.joining} accessibilityLiveRegion="polite" testID="friends-joining">
+              <Spinner color={color.accent} size={size.icon.inline} />
+              <Text style={styles.joiningText}>{t('join.joining')}</Text>
+            </View>
+          ) : (
+            <Button
+              label={t('join.submit')}
+              // join() plays the press itself: the sixth digit also submits, with no button press.
+              cue={null}
+              onPress={code ? () => join(code) : undefined}
+              disabled={code === null}
+              testID="friends-join-submit"
+            />
+          )}
         </View>
       </ScrollView>
     </View>
@@ -109,9 +125,18 @@ export function JoinCodeScreen({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: tokens.layout.gutterGame },
   content: { paddingHorizontal: tokens.layout.gutterGame, paddingTop: space[8], gap: space[9] },
   prompt: { ...text('rowTitle'), color: color.text, textAlign: 'center' },
   actions: { gap: space[4] },
+  /** As tall as the button it stands in for: nothing below moves. */
+  joining: {
+    minHeight: size.buttonMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[4],
+  },
+  joiningText: { ...text('rowTitle'), color: color.text },
 });

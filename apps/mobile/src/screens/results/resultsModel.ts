@@ -1,9 +1,9 @@
 import {
   type AwardKind,
+  type BotLevelId,
   cellName,
   type Digit,
   evolve,
-  formatScoreLine,
   type GameEvent,
   type GameMode,
   type GameResult,
@@ -11,6 +11,7 @@ import {
   type GameType,
   type LeaveGuardReason,
   loggedMs,
+  type MoveScore,
   type PlayerId,
   type PlayerInfo,
   type PlayerStats,
@@ -18,12 +19,15 @@ import {
   type RatingChange,
   statsFor,
 } from '@sudoku-fight/engine';
+import type { QueuePlayerCount } from '@sudoku-fight/protocol';
 
-import { type AvatarIdOrNone, NO_AVATAR_ID, normalizeAvatarId } from '../../avatars';
+import { type AvatarIdOrNone, type EndCue, NO_AVATAR_ID, normalizeAvatarId } from '../../avatars';
 import { colorIndexFor } from '../../components/player';
 import type { PracticeGame, PracticeRepo } from '../../game/practiceRepo';
 import type { PracticeSession } from '../../game/session';
-import { playerIdentity } from '../game/identity';
+import type { LastPlay } from '../../state/profile';
+import { botLevelOf, playerIdentity } from '../game/identity';
+import { DEFAULT_RANKED_PLAYERS, isOpenPlayerCount } from '../home/homeModel';
 
 /**
  * The basic results of a game (spec §12): a practice alone or against a bot, or a ranked game on the server
@@ -47,13 +51,34 @@ export type RankedEnd = 'surrendered' | 'abandoned' | 'opponentSurrendered' | 'o
 
 export type GameEnd = PracticeEnd | RankedEnd;
 
+/**
+ * The four counts a correct move is scored by (spec §6.4), on the board before it: the filled cells in the
+ * cell's row, column and box, and how many times its digit is already on the board.
+ */
+export type ScoreCount = 'row' | 'col' | 'box' | 'num';
+
+/** The counts in the order the results show them. */
+export const SCORE_COUNTS: readonly ScoreCount[] = ['row', 'col', 'box', 'num'];
+
+/** One of the two counts that set a move's score, and its value. */
+export interface DecidingCount {
+  count: ScoreCount;
+  value: number;
+}
+
 export interface BestMoveModel {
   /** "C3". */
   cell: string;
   digit: Digit;
   points: number;
-  /** The engine's calculation: "points = 9 − 4 + (9 − 2) / 2 = 8.5" (spec §6.4, §13.2). */
-  line: string;
+  /** How full it was around the cell before the move: the engine's breakdown (spec §6.4). */
+  counts: Readonly<Record<ScoreCount, number>>;
+  /**
+   * The two counts that set the score, as the engine picked them [D13]: the highest (its X) weighs in full,
+   * the next (its Y) by half. Which of four equal counts is named is only the screen's choice: the first.
+   */
+  highest: DecidingCount;
+  next: DecidingCount;
 }
 
 /** My place against the others (spec §6.7): first alone, first with someone, or behind. */
@@ -184,6 +209,22 @@ export interface ResultsModel {
   friends?: true;
 }
 
+/**
+ * The engine's breakdown of a move as the results explain it (spec §6.4): its four counts, and which two of them
+ * hold its X and Y. Nothing is worked out here: X and Y are the engine's, only matched to the counts they came from.
+ */
+export function scoreCountsOf(breakdown: MoveScore): Pick<BestMoveModel, 'counts' | 'highest' | 'next'> {
+  const counts = { row: breakdown.row, col: breakdown.col, box: breakdown.box, num: breakdown.num };
+  const highest = SCORE_COUNTS.find((c) => counts[c] === breakdown.X) ?? SCORE_COUNTS[0]!;
+  const others = SCORE_COUNTS.filter((c) => c !== highest);
+  const next = others.find((c) => counts[c] === breakdown.Y) ?? others[0]!;
+  return {
+    counts,
+    highest: { count: highest, value: breakdown.X },
+    next: { count: next, value: breakdown.Y },
+  };
+}
+
 function bestMoveOf(stats: PlayerStats | undefined): BestMoveModel | null {
   const best = stats?.bestMove;
   if (!best) return null;
@@ -191,7 +232,7 @@ function bestMoveOf(stats: PlayerStats | undefined): BestMoveModel | null {
     cell: cellName(best.cell),
     digit: best.digit,
     points: best.points,
-    line: formatScoreLine(best.breakdown),
+    ...scoreCountsOf(best.breakdown),
   };
 }
 
@@ -494,6 +535,91 @@ export function sessionResultsModel(session: ResultsSession): ResultsModel | nul
     saved: false,
     ...(session.isFriends === true && { friends: true as const }),
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// The hero and "משחק חדש"
+
+/**
+ * How the game ended for me, as my avatar takes it (the hero over the title, avatars/reactions.ts): a solo
+ * practice is a win when its board was completed (endCueOf); with opponents, first alone is a win, first with
+ * others a draw, behind (or out: I surrendered or stayed away) a loss. Null: nothing to react to (a practice
+ * ended early, or a game that did not finish in places).
+ */
+export function myEndCue(model: Pick<ResultsModel, 'players' | 'outcome' | 'end'>): EndCue | null {
+  if (model.players === 1) return model.end === 'completed' ? 'win' : null;
+  if (model.end === 'surrendered' || model.end === 'abandoned') return 'lose';
+  if (model.outcome === 'win') return 'win';
+  if (model.outcome === 'tie') return 'draw';
+  if (model.outcome === 'loss') return 'lose';
+  return null;
+}
+
+/** What "משחק חדש" repeats (UX-2): this game's kind, read off its results. */
+export interface PlayAgain {
+  mode: GameMode;
+  gameType: GameType;
+  /** Against a bot: its level (the bot's id, `bot-3`); null for any other game. */
+  botLevel: BotLevelId | null;
+  /** The bot's name, for the button's hint; null without a bot. */
+  botName: string | null;
+  /** How many seats the game had (1 for a solo practice). */
+  players: number;
+  /** A friends room's game [D81a]. */
+  friends: boolean;
+}
+
+export function playAgainOf(model: ResultsModel): PlayAgain {
+  const bot = model.mode === 'bot' ? model.opponents.find((o) => o.isBot) : undefined;
+  return {
+    mode: model.mode,
+    gameType: model.gameType,
+    botLevel: bot ? botLevelOf(bot.playerId) : null,
+    botName: bot?.name ?? null,
+    players: model.players,
+    friends: model.friends === true,
+  };
+}
+
+/** What the route knows of the online game that just ended, for "משחק חדש". */
+export interface NewGameContext {
+  /** The matchmaking queue the game came from; null for a room entered by its code. */
+  queueKey: string | null;
+  /** A friends room's game: whether I was its host. */
+  friendsHost: boolean;
+}
+
+/**
+ * Where "משחק חדש" goes (UX-2): one tap to the same kind of game, in every mode.
+ * - `practice`: alone, or against the same bot (its level), starting at once (home's startAndOpen).
+ * - `ranked`: a new search in the same queue (the same type and number of players).
+ * - `friends`: back to playing with friends (friends-room.md §4.2): the host opens a new room, a guest goes to
+ *   "הצטרף עם קוד" for the next one. A rematch in the same room (D89) needs the server's `rematch`, later.
+ * - `rooms`: an online game by code outside matchmaking (a development room): the rooms screen.
+ */
+export type NewGameTarget =
+  | { kind: 'practice'; play: LastPlay }
+  | { kind: 'ranked'; gameType: GameType; players: QueuePlayerCount }
+  | { kind: 'friends'; host: boolean }
+  | { kind: 'rooms' };
+
+export function newGameTarget(again: PlayAgain, online: NewGameContext | null): NewGameTarget {
+  const { gameType } = again;
+  if (again.friends) return { kind: 'friends', host: online?.friendsHost === true };
+  if (again.mode === 'ranked') {
+    if (!online?.queueKey) return { kind: 'rooms' };
+    const players = isOpenPlayerCount(again.players) ? again.players : DEFAULT_RANKED_PLAYERS;
+    return { kind: 'ranked', gameType, players };
+  }
+  if (again.mode === 'bot')
+    return {
+      kind: 'practice',
+      play:
+        again.botLevel === null
+          ? { mode: 'bot', gameType }
+          : { mode: 'bot', gameType, botLevel: again.botLevel },
+    };
+  return { kind: 'practice', play: { mode: again.mode, gameType } };
 }
 
 // ---------------------------------------------------------------------------------------------------------

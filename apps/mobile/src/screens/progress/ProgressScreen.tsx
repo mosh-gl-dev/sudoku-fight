@@ -1,4 +1,5 @@
 import type { MyProgress } from '@sudoku-fight/protocol';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { AvatarIdOrNone } from '../../avatars';
 import { Icon } from '../../components/Icon';
 import { Avatar, leagueProgress, ltr } from '../../components/player';
+import { type Probe, useProbeWidths, WidthProbes, widthsOf } from '../../components/player/statusFit';
 import {
   BottomNav,
   type NavTab,
@@ -14,6 +16,7 @@ import {
   SkeletonGroup,
   StateView,
 } from '../../components/ui';
+import { Enter } from '../../components/ui/Enter';
 import { Text } from '../../components/ui/Text';
 import type { ProgressStatus } from '../../progress/progressStore';
 import { color, radius, size, space, text, tokens } from '../../theme';
@@ -96,10 +99,15 @@ export function ProgressScreen({
           </View>
         ) : null}
 
+        {/* list.enter (motion.md §4.9): the screen's parts rise in, one after the other, as it opens. */}
         {progress ? (
           <>
-            <LevelPanel progress={progress} />
-            <LeaguePanel progress={progress} />
+            <Enter index={0}>
+              <LevelPanel progress={progress} />
+            </Enter>
+            <Enter index={1}>
+              <LeaguePanel progress={progress} />
+            </Enter>
           </>
         ) : status === 'loading' || status === 'idle' ? (
           // Loading.dc.html: the level and league panels hold their place while they load.
@@ -121,35 +129,45 @@ export function ProgressScreen({
           />
         )}
 
-        <SectionLabel title={t('progress.howTitle')} />
-        <Panel testID="progress-xp-rules">
-          {xpRules().map((rule) => (
-            <View key={rule.key} style={styles.rule}>
-              <Text style={[text('body'), styles.strong, styles.grow]}>{t(`progress.how.${rule.key}`)}</Text>
-              <Text style={[text('label'), styles.gold]}>{ltr(t('progress.xpPlus', { xp: rule.xp }))}</Text>
-            </View>
-          ))}
-        </Panel>
+        <Enter index={2}>
+          <SectionLabel title={t('progress.howTitle')} />
+        </Enter>
+        <Enter index={3}>
+          <Panel testID="progress-xp-rules">
+            {xpRules().map((rule) => (
+              <View key={rule.key} style={styles.rule}>
+                <Text style={[text('body'), styles.strong, styles.grow]}>
+                  {t(`progress.how.${rule.key}`)}
+                </Text>
+                <Text style={[text('label'), styles.gold]}>{ltr(t('progress.xpPlus', { xp: rule.xp }))}</Text>
+              </View>
+            ))}
+          </Panel>
+        </Enter>
 
-        <SectionLabel title={t('achievements.title')} />
-        <View style={styles.soon} testID="progress-achievements">
+        <Enter index={4}>
+          <SectionLabel title={t('achievements.title')} />
+        </Enter>
+        <Enter index={5} style={styles.soon} testID="progress-achievements">
           <View style={styles.soonIcon}>
             <Icon name="trophy" size={size.icon.nav} color={color.textMuted} />
           </View>
           <Chip label={t('achievements.soon')} />
           <Text style={[text('bodyLong'), styles.muted, styles.centered]}>{t('achievements.soonBody')}</Text>
-        </View>
+        </Enter>
 
-        <RowButton
-          icon="bolt"
-          title={t('interferences.entry')}
-          subtitle={t('interferences.entryNote', {
-            open: collection.open.length,
-            locked: collection.locked.length,
-          })}
-          onPress={onOpenInterferences}
-          testID="progress-interferences"
-        />
+        <Enter index={6}>
+          <RowButton
+            icon="bolt"
+            title={t('interferences.entry')}
+            subtitle={t('interferences.entryNote', {
+              open: collection.open.length,
+              locked: collection.locked.length,
+            })}
+            onPress={onOpenInterferences}
+            testID="progress-interferences"
+          />
+        </Enter>
       </ScrollView>
       <BottomNav active="achievements" onSelect={onTab} testID="nav" />
     </View>
@@ -197,6 +215,19 @@ function LevelPanel({ progress: p }: { progress: MyProgress }) {
 function LeaguePanel({ progress: p }: { progress: MyProgress }) {
   const { t } = useTranslation('progress');
   const ladder = leagueLadder(p.league);
+  // The leagues' names measured at full size, and the ladder's width (QA loop 7, 360 dp at font 1.3: "Bronz…",
+  // "Diam…", "Lege…"): when a name does not fit a step of one row, the steps go in two rows.
+  const [ladderWidth, setLadderWidth] = useState<number | null>(null);
+  const [widths, report] = useProbeWidths();
+  const probes: Probe[] = ladder.map((s) => ({
+    id: `league-${s.league}`,
+    text: t(`player:league.${s.league}`),
+    style: text('micro'),
+  }));
+  const measured = widthsOf(probes, widths);
+  const perRow =
+    ladderWidth !== null && measured !== null ? ladderPerRow(ladderWidth, measured) : ladder.length;
+  const stepWidth = ladderWidth !== null && perRow < ladder.length ? shareOf(ladderWidth, perRow) : null;
   const step = p.leagueRating === null ? null : leagueProgress(p.leagueRating);
   const line =
     p.league === null || step === null
@@ -226,11 +257,22 @@ function LeaguePanel({ progress: p }: { progress: MyProgress }) {
         {step && p.league ? (
           <ProgressBar share={step.share} fill={color.league[p.league]} testID="progress-league-bar" />
         ) : null}
-        <View style={styles.ladder} accessibilityRole="list" accessibilityLabel={t('league.ladder')}>
+        <View
+          style={[styles.ladder, stepWidth !== null && styles.ladderWrap]}
+          accessibilityRole="list"
+          accessibilityLabel={t('league.ladder')}
+          onLayout={(e) => setLadderWidth(e.nativeEvent.layout.width)}
+          testID="progress-league-ladder"
+        >
+          <WidthProbes probes={probes} onWidth={report} />
           {ladder.map((s) => (
             <View
               key={s.league}
-              style={[styles.ladderStep, s.current && { borderColor: color.league[s.league] }]}
+              style={[
+                styles.ladderStep,
+                stepWidth !== null && { flex: 0, width: stepWidth },
+                s.current && { borderColor: color.league[s.league] },
+              ]}
               accessible
               accessibilityLabel={t('league.step', {
                 league: t(`player:league.${s.league}`),
@@ -258,10 +300,27 @@ function LeaguePanel({ progress: p }: { progress: MyProgress }) {
 }
 
 const BADGE = size.touch * 2;
+const LADDER_GAP = space[2];
+
+/** A step's width when `perRow` steps share a ladder `width` wide. */
+const shareOf = (width: number, perRow: number): number => (width - LADDER_GAP * (perRow - 1)) / perRow;
+
+/**
+ * How many of the ladder's steps go in a row: all of them while every league's name (`names`, measured at full size)
+ * fits a step; else half of them (two rows), else two.
+ */
+export function ladderPerRow(width: number, names: readonly number[]): number {
+  const widest = Math.max(0, ...names);
+  const n = names.length;
+  for (const perRow of [n, Math.ceil(n / 2), 2]) {
+    if (widest <= shareOf(width, perRow)) return perRow;
+  }
+  return 2;
+}
 const DOT = space[6];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   content: {
     paddingHorizontal: tokens.layout.gutterGame,
     paddingTop: space[8],
@@ -290,7 +349,8 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface2,
   },
   rule: { flexDirection: 'row', alignItems: 'center', gap: space[4], minHeight: size.touch },
-  ladder: { flexDirection: 'row', gap: space[2] },
+  ladder: { flexDirection: 'row', gap: LADDER_GAP },
+  ladderWrap: { flexWrap: 'wrap' },
   ladderStep: {
     flex: 1,
     minWidth: 0,

@@ -5,10 +5,11 @@ import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { color, size, tokens } from '../../../theme';
+import { opaqueOver } from '../../../theme/blend';
 import { boardModel, type KeypadModel, type KeyState } from '../boardModel';
 import { CancelSelection } from '../CancelSelection';
 import { demoBoard, DemoGame } from '../demo';
-import { fingersOnKeys, Keypad, type KeypadGuard, type TouchId } from '../Keypad';
+import { fingersOnKeys, KEY_LIP, Keypad, type KeypadGuard, type TouchId } from '../Keypad';
 
 type Styled = { props: { style?: unknown } };
 const styleOf = (el: Styled) =>
@@ -75,13 +76,88 @@ describe('Keypad', () => {
     }
   });
 
+  it('BRD-9: a key stands on a 3 dp lip (P1’s while armed, grey while idle) and a press lands flush on it', async () => {
+    // The press goes exactly as deep as the lip, and the row keeps its 60 dp (the face is the rest).
+    expect(KEY_LIP).toBe(tokens.elevation.keyPressed.translateY);
+    const states: KeyState[] = [...ARMED];
+    states[5] = 'complete';
+    states[4] = 'tried';
+    await render(<Keypad model={keypad(states)} onDigit={jest.fn()} />);
+    expect(styleOf(screen.getByTestId('key-1-lip'))).toMatchObject({
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: KEY_LIP,
+      bottom: 0,
+      borderRadius: tokens.radius.key,
+      // Opaque (B15): P1 at 35 % as it looks over the ground, so no wandering digit shows through the lip.
+      backgroundColor: opaqueOver(color.keypad.keyLipArmed, color.bg),
+    });
+    expect(styleOf(faceOf(1)).marginBottom).toBe(KEY_LIP);
+    expect(styleOf(screen.getByTestId('keypad')).height).toBe(size.keypadKey);
+    // Keys that can't be pressed stand flat.
+    expect(screen.queryByTestId('key-6-lip')).not.toBeOnTheScreen();
+    expect(screen.queryByTestId('key-5-lip')).not.toBeOnTheScreen();
+    await render(<Keypad model={keypad(Array(9).fill('idle'), false)} onDigit={jest.fn()} />);
+    expect(styleOf(screen.getByTestId('key-1-lip')).backgroundColor).toBe(color.keypad.keyLip);
+    // The idle key's veil covers its lip too: the face and the lip dim as one, opaque.
+    expect(styleOf(screen.getByTestId('key-1-veil'))).toMatchObject({ top: 0, bottom: 0 });
+  });
+
+  it('B15, B50: the keys dim without turning see-through; a veil of the ground does what the opacity did', async () => {
+    const opaque = (testID: string) => {
+      const s = styleOf(screen.getByTestId(testID));
+      expect({ testID, opacity: s.opacity ?? 1 }).toEqual({ testID, opacity: 1 });
+    };
+    const veil = (digit: number) => screen.getByTestId(`key-${digit}-veil`);
+    const states: KeyState[] = [...ARMED];
+    states[5] = 'complete';
+    states[4] = 'tried';
+    await render(<Keypad model={keypad(states)} onDigit={jest.fn()} />);
+    // Nothing on the keys' way to the screen is translucent: the row, the keys' places, their faces.
+    opaque('keypad');
+    expect(screen.getByTestId('keypad')).not.toHaveProp('needsOffscreenAlphaCompositing');
+    for (const digit of [1, 5, 6]) {
+      opaque(`key-${digit}-place`);
+      expect({ digit, opacity: styleOf(faceOf(digit)).opacity ?? 1 }).toEqual({ digit, opacity: 1 });
+    }
+    // The veil: the ground's colour, the key's shape, never touchable; clear on an armed key.
+    expect(styleOf(veil(1))).toMatchObject({
+      position: 'absolute',
+      borderRadius: tokens.radius.key,
+      backgroundColor: color.bg,
+    });
+    expect(veil(1)).toHaveProp('pointerEvents', 'none');
+    expect(veil(1)).toHaveAnimatedStyle({ opacity: 0 });
+    // A complete key shows .3 of itself, a tried one .55 (components.md §12.1); they have no lip, so the veil
+    // covers the face alone.
+    expect(veil(6)).toHaveAnimatedStyle({ opacity: 1 - tokens.opacity.keyExhausted });
+    expect(veil(5)).toHaveAnimatedStyle({ opacity: 1 - tokens.opacity.keypadIdle });
+    expect(styleOf(veil(6)).bottom).toBe(KEY_LIP);
+
+    // The idle row: every key at .55 of itself, a complete one at .3 of that.
+    jest.useFakeTimers();
+    try {
+      const idle: KeyState[] = Array(9).fill('idle');
+      idle[5] = 'complete';
+      await screen.rerender(<Keypad model={keypad(idle, false)} onDigit={jest.fn()} />);
+      await act(async () => void jest.advanceTimersByTime(tokens.motion.duration.stateChange + 50));
+      expect(veil(1)).toHaveAnimatedStyle({ opacity: 1 - tokens.opacity.keypadIdle });
+      const both = 1 - tokens.opacity.keyExhausted * tokens.opacity.keypadIdle;
+      expect(veil(6)).toHaveAnimatedStyle({ opacity: both });
+      opaque('keypad');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('idle (no lock): the row dims, keys read as disabled, and a tap nudges instead of placing', async () => {
     const onDigit = jest.fn();
     const onIdlePress = jest.fn();
     await render(
       <Keypad model={keypad(Array(9).fill('idle'), false)} onDigit={onDigit} onIdlePress={onIdlePress} />,
     );
-    expect(screen.getByTestId('keypad')).toHaveAnimatedStyle({ opacity: tokens.opacity.keypadIdle });
+    expect(screen.getByTestId('key-5-veil')).toHaveAnimatedStyle({ opacity: 1 - tokens.opacity.keypadIdle });
     const key = screen.getByRole('button', { name: 'ספרה 5, נשארו 5, קודם בוחרים משבצת' });
     expect(key.props.accessibilityState).toMatchObject({ disabled: true });
     expect(styleOf(faceOf(5)).borderColor).toBe(color.keypad.keyBorderIdle);
@@ -106,7 +182,9 @@ describe('Keypad', () => {
     const key = screen.getByRole('button', { name: 'ספרה 6, נשארו 0' });
     expect(key).toBeDisabled();
     expect(key).toHaveTextContent('60');
-    expect(styleOf(faceOf(6)).opacity).toBe(tokens.opacity.keyExhausted);
+    expect(screen.getByTestId('key-6-veil')).toHaveAnimatedStyle({
+      opacity: 1 - tokens.opacity.keyExhausted,
+    });
     await fireEvent.press(key);
     expect(onDigit).not.toHaveBeenCalled();
   });
@@ -118,7 +196,7 @@ describe('Keypad', () => {
     await render(<Keypad model={keypad(states)} onDigit={onDigit} />);
     const key = screen.getByRole('button', { name: 'ספרה 5 · כבר נוסתה במשבצת הזו' });
     expect(key).toBeDisabled();
-    expect(styleOf(faceOf(5)).opacity).toBe(tokens.opacity.keypadIdle);
+    expect(screen.getByTestId('key-5-veil')).toHaveAnimatedStyle({ opacity: 1 - tokens.opacity.keypadIdle });
     expect(styleOf(screen.getByTestId('key-5-digit'))).toMatchObject({
       color: color.danger,
       textDecorationLine: 'line-through',
@@ -345,7 +423,7 @@ describe('Keypad: "מקלדת מתערבלת", the keys out of order [D47]', () 
   });
 
   it('with the phone’s own Reduce Motion on: the keys still move only while faded out, never in sight', async () => {
-    // The app's setting defaults to 'system', so this is the usual case of the reduced variant.
+    // The app's setting "כמו במכשיר" ('system') with the phone's Reduce Motion on: the reduced variant.
     // (ReducedMotionConfig warns that it overrides the system setting: that is the point here.)
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {

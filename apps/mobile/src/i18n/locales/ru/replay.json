@@ -65,6 +65,7 @@
     "noLogic": "Ответ: {{cell}} → {{digit}}",
     "scoreLine": "Расчёт очков",
     "penaltyLine": "Штраф: сколько стоила верная цифра",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Выбор отменён",
       "timeout": "Время вышло",

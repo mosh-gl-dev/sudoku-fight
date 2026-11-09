@@ -4,7 +4,9 @@ import { AccessibilityInfo, Platform, type StyleProp, StyleSheet, View, type Vie
 
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { Icon, type IconName } from '../Icon';
+import { ltr } from '../player/format';
 import { Button, type ButtonVariant } from './Button';
+import { supportCodeLabel } from './stateModel';
 
 import { Text } from './Text';
 /**
@@ -107,13 +109,23 @@ export function StateView({
   );
 }
 
-/** The support code chip (Connection-Error): a red dot and the code, left to right in both languages. */
+/**
+ * The support code chip (Connection-Error): a red dot and the code, left to right in both languages: plainly a
+ * code ('network' → "ERR_NETWORK", supportCodeLabel) in an LTR isolate, so "ERR_X · 503" keeps its order in
+ * Hebrew too (writingDirection is ignored on Android) (connection-error-english-chip).
+ */
 export function SupportCode({ code, testID }: { code: string; testID?: string }) {
   const { t } = useTranslation('ui');
+  const label = ltr(supportCodeLabel(code));
   return (
-    <View style={styles.code} accessible accessibilityLabel={t('state.code', { code })} testID={testID}>
+    <View
+      style={styles.code}
+      accessible
+      accessibilityLabel={t('state.code', { code: label })}
+      testID={testID}
+    >
       <View style={styles.codeDot} />
-      <Text style={styles.codeText}>{code}</Text>
+      <Text style={styles.codeText}>{label}</Text>
     </View>
   );
 }

@@ -12,6 +12,8 @@ import {
 import {
   ACCOUNT_PATHS,
   type AdminGameDetail,
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_HEADER,
   HISTORY_PATHS,
   type HistoryError,
   type HistoryGame,
@@ -230,6 +232,30 @@ describe('GET /v1/me/games (spec §14.1)', () => {
     const replayed = await get<ReplayAnswer>(replayPath('g1'), 'ben');
     expect(isReplayAnswer(replayed.body)).toBe(true);
     expect(replayed.body.game.players[0]!.avatarId).toBe('owl');
+  });
+
+  it('sends an app before the pirates (no avatar catalog) none for a pirate, so it still reads the page', async () => {
+    await playedGame();
+    await t.db.update(users).set({ avatarId: 'pirates-7-invested' }).where(eq(users.id, 'ben'));
+    const seats = (body: HistoryPage) => body.games[0]!.players.map((p) => [p.userId, p.avatarId]);
+    // an app of 1.1.0 sends no catalog: ben's pirate goes to it as "no avatar", ana's avatar as it is
+    const old = await get<HistoryPage>(HISTORY_PATHS.myGames, 'ana');
+    expect(isHistoryPage(old.body)).toBe(true);
+    expect(seats(old.body)).toEqual([
+      ['ana', 'lava-lamp'],
+      ['ben', null],
+    ]);
+    const oldReplay = await get<ReplayAnswer>(replayPath('g1'), 'ana');
+    expect(oldReplay.body.game.players[1]!.avatarId).toBeNull();
+    // an app of this catalog sees the pirate
+    const headers = { [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG) };
+    const now = await get<HistoryPage>(HISTORY_PATHS.myGames, 'ana', { headers });
+    expect(seats(now.body)).toEqual([
+      ['ana', 'lava-lamp'],
+      ['ben', 'pirates-7-invested'],
+    ]);
+    const replayed = await get<ReplayAnswer>(replayPath('g1'), 'ana', { headers });
+    expect(replayed.body.game.players[1]!.avatarId).toBe('pirates-7-invested');
   });
 
   it('pages 20 at a time, newest first, without gaps or repeats (equal start times by id)', async () => {

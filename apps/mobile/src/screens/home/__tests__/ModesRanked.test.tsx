@@ -307,7 +307,7 @@ describe('a suspended account (spec §3.5)', () => {
 });
 
 describe('no connection before a game (spec §16.1)', () => {
-  it('dims the ranked cards, shows the banner, offers practice and another check, and comes back online', async () => {
+  it('puts the practices first, folds ranked into one line, offers practice and another check, and comes back online', async () => {
     let online = false;
     let checks = 0;
     setHealthCheck(async () => {
@@ -319,18 +319,23 @@ describe('no connection before a game (spec §16.1)', () => {
     expect(screen.getByTestId('offline-banner')).toHaveAccessibleName(
       'אין חיבור לאינטרנט. משחקים מדורגים לא זמינים',
     );
-    const ranked = screen.getByTestId('mode-ranked2');
-    expect(ranked).toHaveProp('accessibilityState', { disabled: true });
-    expect(ranked).toHaveProp(
-      'accessibilityLabel',
-      'מדורג · 2 שחקנים, אחד על אחד · אותו לוח, דורש חיבור לאינטרנט',
+    // Device check of 30.10.2026: no wall of dimmed cards. What can be played comes first, and every ranked
+    // table (2, 3 and 4 players) and the friends room are folded into one line under it: "מדורג ועם חברים ———
+    // זמין כשיש חיבור".
+    for (const k of ['ranked2', 'ranked3', 'ranked4']) expect(screen.queryByTestId(`mode-${k}`)).toBeNull();
+    expect(screen.queryByTestId('modes-group-ranked')).toBeNull();
+    const scroll = screen.getByTestId('modes-scroll');
+    expect(
+      within(scroll).getAllByTestId(/^(offline-banner|modes-group-practice|modes-needs-connection)$/),
+    ).toEqual(
+      ['offline-banner', 'modes-group-practice', 'modes-needs-connection'].map((id) =>
+        within(scroll).getByTestId(id),
+      ),
     );
-    expect(screen.getByTestId('offline-ranked2')).toHaveTextContent('דורש חיבור');
-    // Every ranked table needs the connection, 3 and 4 players too (stage 10).
-    for (const k of ['ranked3', 'ranked4']) {
-      expect(screen.getByTestId(`mode-${k}`)).toHaveProp('accessibilityState', { disabled: true });
-      expect(screen.getByTestId(`offline-${k}`)).toHaveTextContent('דורש חיבור');
-    }
+    const line = screen.getByTestId('modes-needs-connection');
+    expect(within(line).getByRole('header', { name: 'מדורג ועם חברים' })).toBeOnTheScreen();
+    expect(within(line).getByText('זמין כשיש חיבור')).toBeOnTheScreen();
+    expect(within(line).getByTestId('icon-lock', { includeHiddenElements: true })).toBeTruthy();
     // A room needs the connection too: the friends footer gives the bottom to "עבור לאימון" and "בדוק שוב"
     // [D100] (the banner says why).
     expect(screen.queryByTestId('modes-group-friends')).toBeNull();
@@ -352,11 +357,15 @@ describe('no connection before a game (spec §16.1)', () => {
     expect(screen.getByTestId('still-offline')).toHaveTextContent('עדיין אין חיבור · ניסיון 2');
     expect(checks).toBe(2);
 
-    // Back online: the ranked cards come back.
+    // Back online: the ranked cards come back, on top, and the line goes.
     online = true;
     await fireEvent.press(screen.getByRole('button', { name: 'בדוק שוב' }));
     await waitFor(() => expect(screen.queryByTestId('offline-banner')).not.toBeOnTheScreen());
     expect(screen.getByTestId('mode-ranked2')).toHaveProp('accessibilityState', { disabled: false });
+    expect(screen.queryByTestId('modes-needs-connection')).toBeNull();
+    expect(
+      within(screen.getByTestId('modes-scroll')).getAllByTestId(/^modes-group-(ranked|practice)$/),
+    ).toEqual([screen.getByTestId('modes-group-ranked'), screen.getByTestId('modes-group-practice')]);
     // The friends footer is back, in the offline bottom's place.
     expect(screen.queryByTestId('offline-actions')).toBeNull();
     expect(screen.getByTestId('modes-friends-create')).toHaveProp(
@@ -371,20 +380,19 @@ describe('no connection before a game (spec §16.1)', () => {
     expect(app.pathname()).toBe('/modes');
   });
 
-  it('the setting \'list\': "עם חברים" stays in the list, dimmed, with the ranked group’s note (1.0.4)', async () => {
+  it('the setting \'list\': offline, "עם חברים" folds into the ranked line, and comes back online', async () => {
     FRIENDS_UI.modesPlacement = 'list';
     let online = false;
     setHealthCheck(async () => online);
     try {
       await renderApp('/modes', routes);
       await screen.findByTestId('offline-banner');
-      for (const id of ['modes-friends-create', 'modes-friends-join'])
-        expect(screen.getByTestId(id)).toHaveProp('accessibilityState', { disabled: true });
-      expect(screen.getByTestId('modes-friends-create')).toHaveProp(
-        'accessibilityLabel',
-        'צור חדר, דורש חיבור לאינטרנט',
-      );
-      expect(screen.getAllByText('זמין כשיש חיבור')).toHaveLength(2);
+      // Offline the room folds into the same line as the ranked tables (device check, 30.10.2026).
+      for (const id of ['modes-friends-create', 'modes-friends-join', 'modes-group-friends'])
+        expect(screen.queryByTestId(id)).toBeNull();
+      const line = screen.getByTestId('modes-needs-connection');
+      expect(within(line).getByRole('header', { name: 'מדורג ועם חברים' })).toBeOnTheScreen();
+      expect(screen.getAllByText('זמין כשיש חיבור')).toHaveLength(1);
       expect(screen.getByTestId('offline-actions')).toBeOnTheScreen();
 
       online = true;
@@ -438,10 +446,13 @@ describe('no connection before a game (spec §16.1)', () => {
     expect(screen.getByTestId('offline-banner')).toHaveAccessibleName(
       "No internet connection. Ranked games aren't available",
     );
-    // The ranked group's note; the friends footer is not there (the offline bottom is) [D100].
+    // The one line of what needs the connection; the friends footer is not there (the offline bottom is) [D100].
     expect(screen.getAllByText('Available when online')).toHaveLength(1);
     expect(screen.queryByTestId('modes-group-friends')).toBeNull();
-    expect(screen.getByTestId('offline-ranked2')).toHaveTextContent('Needs connection');
+    expect(
+      within(screen.getByTestId('modes-needs-connection')).getByRole('header', { name: 'Ranked & friends' }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('Available without internet')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Go to practice' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeOnTheScreen();
   });

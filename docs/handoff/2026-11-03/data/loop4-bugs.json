@@ -1,0 +1,50 @@
+[
+ {
+  "taskId": "pregame-found-countdown-reduced",
+  "title": "First ranked game after launch: the matchFound chime, the '3' beat and the GO sound don't play",
+  "severity": "major",
+  "what": "Build apk9 1.1.0 (08.11 03:55, loop-3 fixes), SM-A165F, Hebrew, sound on (default), reduced motion off, both טלפון 1 and טלפון 3. Steps: force-stop the app, launch it, Settings, back, 'שחק' → '2 שחקנים' → wait 3 s on 'סוג משחק' → 'מהיר' → 'מצא יריב' on both phones at the same moment, and play through the VS and the 3·2·1·GO count. Evidence from 'adb shell dumpsys audio' (PlaybackActivityMonitor events, 'player piid:X event:started' for the app's uid): in both cold runs (03:30 and 03:52), on both phones, only 3 starts appear after the search tap: the tap sound, then 2 identical sounds 1.0 s apart (5733 frames at 22050 Hz each, so countdown beats). The warm-up players made at launch for matchFound and go (e.g. piid 5543 and 5559 on טלפון 3) never start. In the next game without a relaunch (g2 03:38, g7 03:57), 5 sounds start as expected: matchFound (~1.4 s after the tap), 3 beats ~1 s apart, and GO ~1 s after the last beat. Likely linked to the new warm-up (warmGame.ts / warmGameLater on 'סוג משחק' and in the search): in the first game, a cue whose player was pre-built (or is being built) by the warm-up seems to be dropped instead of played. Videos and logs: scratchpad rec/RF8Y*-g1.mp4, g6.mp4."
+ },
+ {
+  "taskId": "pregame-found-countdown-reduced",
+  "title": "Empty dark screen for ~250 ms between GO! and the board",
+  "severity": "minor",
+  "what": "apk9, טלפון 3 (SM-A165F), ranked 2P 'מהיר' against טלפון 1, reduced motion off, second game after launch (g2, 03:38). In the 50 ms screenrecord frames, GO! is fully shown until 7700 ms. Frames 7750–7950 show only the ambient background with no GO!, no header and no board. The header appears at 7950 and the board fades in at 8000–8150. In the other 11 recordings the gap is 0–100 ms (one or two frames). Similar single empty frame (50 ms) between the search radar and the VS in cold g6 on טלפון 1 (2800 ms). Video: scratchpad rec/RF8Y30L038L-g2.mp4."
+ },
+ {
+  "taskId": "stealth-play-bg-long",
+  "title": "אחרי רקע של 15 שניות מוצג לרגע 'החיבור שלך אבד' ו'יש לך עוד 10 שניות לחזור', אף שהמשתמש כבר חזר",
+  "what": "טלפון 1 SM-A165F, ‏Android 16, עברית, 1.1.0 (08.11 03:55, loop-3 fixes, Google on), שרת staging. צעדים: משחק מדורג מהיר מול הבוט הסמוי ← כפתור הבית ← 15 שניות ← חזרה מהאפליקציות האחרונות. בצילום הראשון אחרי החזרה (כשנייה) מופיעים יחד: באנר 'החיבור שלך אבד · מתחבר מחדש… · ניסיון 1', שכבה 'הלוח נעול עד שתחזור' (לוח/ניקוד/נעילות/טייימרים) ובתחתית 'יש לך עוד 10 שניות לחזור · לפני שהמשחק ייחשב כנטישה'. רק אחר כך מופיע 'חזרת למשחק · הכל סונכרן · המשחק ממשיך'. קרה בשני ניסיונות (02:08:32 ו־02:48:42). המשתמש כבר בתוך האפליקציה, כך ש'יש לך עוד 10 שניות לחזור' מטעה; עדיף להציג מיד 'מתחבר מחדש' בלי ספירת הנטישה. צילומים: RF8Y60PP2XZ-stealth-play-bg-long-2.png ו־RF8Y60PP2XZ-bip-1.png בתיקייה qa-shots.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "interference-picker-opens",
+  "title": "בחלון ההפרעות, בשורת 'יעד:' במשחק של 2 שחקנים, אין את הצורה של היריב",
+  "what": "טלפון 1, SM-A165F, ‏1.1.0 (08.11 03:55, loop-3 fixes, Google on), עברית. צעדים: משחק מדורג 2 שחקנים, מהיר, מול עמית_23 (בוט סמוי). פותרים עד שיש 2 נקודות לפחות, ומקישים 'הפרעה' בכרטיס היריב. בשורת היעד מופיעים 'יעד:', האווטאר במסגרת כתומה, 'עמית_23' ודגל, אבל בלי הסימן ▲ שמופיע לפני השם בכרטיס היריב במשחק. הקטלוג מצפה גם לצורה (● ▲ ■ ◆), ו־CLAUDE.md קובע שלכל שחקן יש צורה. לפי הקוד זה כך בכוונה: TargetLine ב־apps/mobile/src/screens/game/arsenal/ArsenalOverlay.tsx מציג אווטאר, שם ודגל, וצורות יש רק במסלול של 3–4 שחקנים. צריך להחליט אם להוסיף את הצורה או לתקן את הקטלוג. צילום: qa-shots/RF8Y60PP2XZ-interference-ranked-3.png",
+  "severity": "minor"
+ },
+ {
+  "taskId": "account-settings-licenses-expand",
+  "title": "מסך הרישיונות: הטקסט האנגלי מיושר לימין בממשק העברי",
+  "what": "Build: טלפון 3 SM-A165F, Android 16, 1.1.0 (07.11 23:45, loop-2 fixes), ממשק בעברית. צעדים: בית, 'הגדרות', 'רישיונות', לוחצים על 'SIL Open Font License 1.1' שתחת 'גופנים'. אחר כך גוללים לסוף ולוחצים 'MIT' תחת 'נוסחי הרישיונות'. צפוי: הטקסט האנגלי מיושר לשמאל ונקרא משמאל לימין. בפועל: הנוסח המלא של OFL ושל MIT מיושר לימין, וכל שורה צמודה לקצה הימני (למשל 'PREAMBLE', 'MIT License', 'Permission is hereby granted...'). גם בשורות החבילות: '@babel/code-frame' צמוד לימין והגרסה '7.29.7' משמאלו, כלומר סדר השורה מימין לשמאל, ו־'MIT' ו־'Copyright (c) 2014-present...' מיושרים לימין. כך גם Rubik ו־Teko ושורות זכויות היוצרים שלהם. הסיבה כנראה בקובץ apps/mobile/src/screens/legal/LicensesScreen.tsx: הסגנון LTR = { writingDirection: 'ltr', textAlign: 'left' } לא עובד, כי באנדרואיד עם RTL הערך textAlign:'left' מתהפך לימין ו־writingDirection לא נתמך. גם rowTop עם flexDirection:'row' מתהפך. פתיחה וסגירה של הרישיונות עצמן עובדות. צילומי מסך: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y30L038L-account-settings-licenses-expand-1.png ו־-2.png",
+  "severity": "minor"
+ },
+ {
+  "taskId": "interference-picker-grid-small",
+  "title": "מסך 360dp: כרטיס היריב במשחק של 2 שחקנים חורג משמאל למסך",
+  "what": "טלפון 1 SM-A165F עם build ‏1.1.0 (08.11 03:55, loop-3 fixes), בעברית וגודל גופן 1.0. בהגדרות ← תצוגה ← הגדלת מסך בוחרים בגודל הכי גדול (density 540, כלומר 360×780dp, הגודל של Galaxy S22). מפעילים את האפליקציה מחדש (cold start), ופותחים חדר חברים או משחק מדורג של 2 שחקנים. מה רואים: כרטיס היריב בראש מסך המשחק נחתך בקצה השמאלי. card-opponent בגבולות [0,114][489,654], ו־card-opponent-avatar ב־[0,114][101,262], אז חצי מהאווטר בחוץ. גם הניקוד '0' (‏[0,296][53,485]) חתוך, וגם 'חושב…'. כרטיס 'אני' ברוחב 537px (‏489–1026), ולכן כרטיס היריב צריך היה להתחיל ב־‎−48. כשפותחים את חלון ההפרעות, תג 'יעד' שמתחת למסגרת הכרטיס מוצג רק כ'…'. בגודל התצוגה הרגיל (384dp) זה לא קורה. צילומים: qa-shots/RF8Y60PP2XZ-interference-picker-grid-small-1.png ו־-4.png.",
+  "severity": "major"
+ },
+ {
+  "taskId": "interference-picker-opens",
+  "title": "בחלון ההפרעות ב־2 שחקנים חסרה הצורה של היריב בשורת היעד",
+  "what": "שני טלפונים, חדר חברים, משחק של 2 שחקנים. צוברים 2 נקודות ומקישים 'הפרעה' בכרטיס היריב. שורת היעד היא 'יעד: [אווטר] אחוותא 🇮🇱', בלי ▲, למרות שבכרטיס היריב מופיע ▲ ליד השם. אותו דבר בטלפון 3 ('יעד: [אווטר] אורי 🇮🇱'). בקוד, TargetLine ב־apps/mobile/src/screens/game/arsenal/ArsenalOverlay.tsx מציג רק אווטר, שם ודגל, והצורות מופיעות רק במסלול של 3–4 שחקנים. זה נראה בכוונה, אבל הקטלוג וכלל CLAUDE.md ('לכל שחקן יש גם צורה') מצפים לצורה. צריך החלטה של משה.",
+  "severity": "minor"
+ },
+ {
+  "taskId": "interference-picker-grid-small",
+  "title": "הפעלה מחדש אחרי משחק בחדר חברים: 'משהו השתבש בשרת', ואחרי 'נסה שוב' מופיע 'החדר נסגר.'",
+  "what": "טלפון 1: משחק בחדר חברים מול טלפון 3 נגמר בכניעה (טלפון 3 היה על מסך התוצאות). בטלפון 1 עשיתי force-stop (adb.ts stop) ואז launch. האפליקציה עלתה ישר ל'חדר עם חברים' עם 'משהו השתבש בשרת. נסה שוב בעוד רגע.'. בלוגקאט: 'Room connection was closed unexpectedly (4002)'. הקשה על 'נסה שוב' הציגה 'החדר נסגר.'. ההודעה הראשונה מטעה, כי החדר פשוט נסגר. לא בדקתי לעומק, ולא בטוח שהכניעה נקלטה לפני ה־stop. בהפעלה מחדש אחרי זה עלה הבית כרגיל.",
+  "severity": "minor"
+ }
+]

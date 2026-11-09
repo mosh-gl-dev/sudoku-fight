@@ -30,14 +30,20 @@
       "box": "Box {{label}} is only missing {{digit}}."
     },
     "missing": {
-      "row": "Row {{label}} is missing {{digits}}.",
-      "col": "Column {{label}} is missing {{digits}}.",
-      "box": "Box {{label}} is missing {{digits}}."
+      "row_one": "Row {{label}} is missing {{digits}}.",
+      "row_other": "Row {{label}} is missing {{digits}}.",
+      "col_one": "Column {{label}} is missing {{digits}}.",
+      "col_other": "Column {{label}} is missing {{digits}}.",
+      "box_one": "Box {{label}} is missing {{digits}}.",
+      "box_other": "Box {{label}} is missing {{digits}}."
     },
     "seen": {
-      "row": "Row {{label}} already has {{digits}}.",
-      "col": "Column {{label}} already has {{digits}}.",
-      "box": "Box {{label}} already has {{digits}}."
+      "row_one": "Row {{label}} already has {{digits}}.",
+      "row_other": "Row {{label}} already has {{digits}}.",
+      "col_one": "Column {{label}} already has {{digits}}.",
+      "col_other": "Column {{label}} already has {{digits}}.",
+      "box_one": "Box {{label}} already has {{digits}}.",
+      "box_other": "Box {{label}} already has {{digits}}."
     },
     "eliminated": "{{digit}} was ruled out of {{cell}} in step {{step}}.",
     "only": "So only {{digit}}."
@@ -56,9 +62,9 @@
     "clause": {
       "step": "{{cell}} lost the {{digit}} in step {{step}}",
       "unit": {
-        "row": "{{cell}} sees a {{digit}} in row {{label}}",
-        "col": "{{cell}} sees a {{digit}} in column {{label}}",
-        "box": "{{cell}} sees a {{digit}} in box {{label}}"
+        "row": "{{cell}} sees the {{digit}} in row {{label}}",
+        "col": "{{cell}} sees the {{digit}} in column {{label}}",
+        "box": "{{cell}} sees the {{digit}} in box {{label}}"
       }
     }
   },
@@ -97,9 +103,9 @@
   "block": {
     "step": "{{cell}} can't hold {{digit}}: it was ruled out in step {{step}}",
     "unit": {
-      "row": "{{cell}} can't hold {{digit}}: row {{label}} has a {{digit}}",
-      "col": "{{cell}} can't hold {{digit}}: column {{label}} has a {{digit}}",
-      "box": "{{cell}} can't hold {{digit}}: box {{label}} has a {{digit}}"
+      "row": "{{cell}} can't hold {{digit}}: row {{label}} already has one",
+      "col": "{{cell}} can't hold {{digit}}: column {{label}} already has one",
+      "box": "{{cell}} can't hold {{digit}}: box {{label}} already has one"
     }
   },
   "notYet": {

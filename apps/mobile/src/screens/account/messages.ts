@@ -9,8 +9,14 @@ import { spaceSentences } from '../../i18n/compose';
  * What to tell the player about a failed account action, in the app's language: the sign-in's errors
  * (errors.auth.*: wrong password, unknown user, too many attempts, no connection…) and the server's
  * (errors.api.*: name taken, rename too soon, server unreachable…).
+ *
+ * An avatar the server refuses (badRequest on avatarId) is one this app has and the server does not know yet: a
+ * new character shipped in the app before the server that checks it (the pirates on staging, 31.10.2026). The
+ * player is told to choose another, not "try again", which would fail the same way.
  */
 export function errorMessage(t: TFunction, error: unknown): string {
+  if (isAccountApiError(error) && error.code === 'badRequest' && error.body?.field === 'avatarId')
+    return t('account:errors.avatarUnavailable');
   if (isAccountApiError(error)) return t('account:errors.api.' + error.code);
   return t('account:errors.auth.' + toAuthError(error).code);
 }

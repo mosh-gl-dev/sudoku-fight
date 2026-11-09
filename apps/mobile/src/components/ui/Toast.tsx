@@ -40,6 +40,11 @@ export interface ToastProps {
   holdMs?: number | null;
   /** The clock for the auto-hide. Default: the real one. */
   timer?: ToastTimer;
+  /**
+   * The most lines the message takes (toastStore `maxLines`). Only for a message whose tail is a name (names may
+   * shorten); none: every line the words need.
+   */
+  maxLines?: number;
   /** Set by the owner to make the toast leave now (e.g. the connection came back). */
   hidden?: boolean;
   /** Called once the toast has finished leaving. */
@@ -48,7 +53,8 @@ export interface ToastProps {
 }
 
 /**
- * One toast (components.md §15.1): 40 high, a semantic border and icon circle, one line of text. Not tappable.
+ * One toast (components.md §15.1): 40 high, a semantic border and icon circle, one line of text (more, and taller,
+ * when the words need them: never "…"). Not tappable.
  * Enters 12 dp from above with a fade (240 ms), leaves with a fade (240 ms). Reduced motion: fades only.
  */
 export function Toast({
@@ -57,6 +63,7 @@ export function Toast({
   countdown,
   icon,
   holdMs,
+  maxLines,
   timer = realToastTimer,
   hidden = false,
   onHide,
@@ -116,7 +123,11 @@ export function Toast({
       <View style={[styles.iconCircle, { backgroundColor: look.iconBg }]}>
         <Icon name={icon ?? look.icon} size={space[7]} color={look.iconColor} />
       </View>
-      <Text style={styles.message} numberOfLines={1}>
+      <Text
+        style={styles.message}
+        numberOfLines={maxLines}
+        testID={testID ? `${testID}-message` : 'toast-message'}
+      >
         {message}
       </Text>
       {countdown === undefined ? null : (
@@ -134,17 +145,17 @@ export interface ToastViewportProps {
 }
 
 /**
- * Shows the store's current toast at the top, under the safe area plus 8, 16 from each side. It sits over the
- * card area and never over the board. Mount it once, above the screens.
+ * Shows the store's current toast at the top, under the safe area plus 8 (or at its own `top`), 16 from each
+ * side. It sits over the card area and never over the board. Mount it once, above the screens.
  */
 export function ToastViewport({ timer }: ToastViewportProps) {
   const current = useToast((s) => s.current);
   const remove = useToast((s) => s.remove);
   const { top } = useSafeAreaInsets();
   if (!current) return null;
-  const { id, hiding, ...content } = current;
+  const { id, hiding, top: at, ...content } = current;
   return (
-    <View style={[styles.viewport, { top: top + space[4] }]}>
+    <View style={[styles.viewport, { top: at ?? top + space[4] }]}>
       <Toast key={id} {...content} hidden={hiding} timer={timer} onHide={() => remove(id)} />
     </View>
   );
@@ -157,11 +168,16 @@ const styles = StyleSheet.create({
     right: space[8],
     pointerEvents: 'box-none',
   },
+  // 40 high for one line (components.md §15.1); a message wider than the toast takes more lines, broken between
+  // words, and the box grows with it, never "…" (QA loop 9, 360 dp: "Not enough points for the next i…" hid the
+  // cost). The icon and the countdown stay centred on its height. The sender's chip under the cards keeps to two
+  // lines (maxLines): at font 1.3 that is 2 × 23.4 + 12 + 2 ≈ 61, and the board starts 76 under the chip's top.
   box: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[5],
-    height: size.toast,
+    minHeight: size.toast,
+    paddingVertical: space[3],
     paddingHorizontal: space[6],
     borderRadius: radius.button,
     borderWidth: tokens.border.hairline,
@@ -176,6 +192,9 @@ const styles = StyleSheet.create({
   },
   message: {
     ...text('buttonSm'),
+    // buttonSm's line is its size (14/14), for one line in a button; lines that may wrap get the body's (18), which
+    // holds Rubik's whole height, so neither a descender nor the next line is cut.
+    lineHeight: Math.max(text('buttonSm').lineHeight ?? 0, text('body').lineHeight ?? 0),
     flex: 1,
     color: color.toast.text,
   },

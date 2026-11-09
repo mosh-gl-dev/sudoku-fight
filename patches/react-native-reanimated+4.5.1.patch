@@ -1,0 +1,102 @@
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt
+index 48e3771..662ebb4 100644
+--- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt
+@@ -30,6 +30,11 @@ import com.swmansion.reanimated.sensor.ReanimatedSensorType
+ import java.lang.ref.WeakReference
+ import java.util.concurrent.atomic.AtomicBoolean
+ 
++// [sudoku-fight patch: rate-limited synchronouslyUpdateUIProps log] (logSyncUpdateFailure)
++private const val SYNC_UPDATE_LOG_TAG = "Reanimated"
++private const val SYNC_UPDATE_LOG_LIMIT = 5
++private const val SYNC_UPDATE_LOG_WINDOW_MS = 1000L
++
+ @Suppress("KotlinJniMissingFunction")
+ @OptIn(FrameworkAPI::class)
+ open class NativeProxy {
+@@ -255,7 +260,7 @@ open class NativeProxy {
+                 try {
+                     updatePropsSynchronouslyMethod.invoke(mountingManager, viewTag, props)
+                 } catch (e: Exception) {
+-                    Log.w("Reanimated", "synchronouslyUpdateUIProps failed for tag $viewTag", e)
++                    logSyncUpdateFailure(viewTag, e)
+                 }
+             } else {
+                 mFabricUIManager.synchronouslyUpdateViewOnUIThread(viewTag, props)
+@@ -263,6 +268,54 @@ open class NativeProxy {
+         }
+     }
+ 
++    // [sudoku-fight patch: rate-limited synchronouslyUpdateUIProps log] Each failure was logged with Log.w and
++    // its full stack (about 80 lines). Thousands in a row (a view deleted while new views draw) kept the UI
++    // thread in printStackTrace for seconds: an ANR. Now one line without a stack, at most
++    // SYNC_UPDATE_LOG_LIMIT a second, and one line with the count of the rest when that second ends.
++    // Why: docs/PERF.md (B14) in Sudoku Fight.
++    private var syncUpdateLogWindowStart = 0L
++    private var syncUpdateLogged = 0
++    private var syncUpdateNotLogged = 0
++    private var syncUpdateCountPosted = false
++
++    @Synchronized
++    private fun logSyncUpdateFailure(
++        viewTag: Int,
++        e: Exception,
++    ) {
++        val now = SystemClock.uptimeMillis()
++        if (now - syncUpdateLogWindowStart >= SYNC_UPDATE_LOG_WINDOW_MS) {
++            logSyncUpdateNotLogged()
++            syncUpdateLogWindowStart = now
++            syncUpdateLogged = 0
++        }
++        if (syncUpdateLogged < SYNC_UPDATE_LOG_LIMIT) {
++            syncUpdateLogged++
++            val cause = (e as? java.lang.reflect.InvocationTargetException)?.targetException ?: e
++            val message = cause.message?.take(160)
++            Log.w(SYNC_UPDATE_LOG_TAG, "synchronouslyUpdateUIProps failed for tag $viewTag: ${cause.javaClass.simpleName}: $message")
++            return
++        }
++        syncUpdateNotLogged++
++        if (!syncUpdateCountPosted) {
++            syncUpdateCountPosted = true
++            val delay = (syncUpdateLogWindowStart + SYNC_UPDATE_LOG_WINDOW_MS - now).coerceAtLeast(0L)
++            UiThreadUtil.runOnUiThread(Runnable { logSyncUpdateNotLogged() }, delay)
++        }
++    }
++
++    @Synchronized
++    private fun logSyncUpdateNotLogged() {
++        syncUpdateCountPosted = false
++        if (syncUpdateNotLogged == 0) return
++        Log.w(
++            SYNC_UPDATE_LOG_TAG,
++            "synchronouslyUpdateUIProps failed $syncUpdateNotLogged more times (not logged: at most " +
++                "$SYNC_UPDATE_LOG_LIMIT lines per $SYNC_UPDATE_LOG_WINDOW_MS ms)",
++        )
++        syncUpdateNotLogged = 0
++    }
++
+     @DoNotStrip
+     fun setGestureState(
+         handlerTag: Int,
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.kt b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.kt
+index 67a85b8..4233ca2 100644
+--- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.kt
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/NodesManager.kt
+@@ -205,6 +205,17 @@ class NodesManager(
+             // Events can be dispatched from any thread so we have to make sure handleEvent is run from
+             // the UI thread.
+             if (UiThreadUtil.isOnUiThread()) {
++                // [sudoku-fight patch: onEventDispatch early-out] No worklet waits for this event (e.g.
++                // react-native-svg's topSvgLayout for every shape drawn the first time, react-native-screens'
++                // topTransitionProgress every frame of a screen change): nothing to handle, and flushing for it
++                // re-applies the last props of every view a worklet moved in the last 2 s, in the middle of
++                // the draw. The same check as the branch below and as ReanimatedModuleProxy::handleRawEvent
++                // (iOS). EventHandler.receiveEvent resolves the name the same way, so a handler registered for
++                // this view (useEvent, useAnimatedScrollHandler, gesture-handler: all per view tag) still gets
++                // the event. Pending updates still flush on the next frame or in maybeFlushUIUpdatesQueue.
++                // Why: docs/PERF.md (B14) in Sudoku Fight.
++                val eventName = mCustomEventNamesResolver.resolveCustomEventName(event.eventName) ?: return
++                if (mNativeProxy?.isAnyHandlerWaitingForEvent(eventName, event.viewTag) != true) return
+                 // Ensure draw-pass tracking is attached before event handling; the backend reads
+                 // isInDrawPass during receiveEvent.
+                 mDrawPassDetector.initialize()

@@ -358,17 +358,22 @@ export function leadModel(view: GameView, mySeat: number | null): LeadModel {
   }));
 
   const leaders = view.players.filter((p) => p.isLeader);
-  let leader: LeadModel['leader'] = null;
   const top = leaders.length === 1 ? leaders[0] : undefined;
-  if (top) {
-    const others = view.players.filter((p) => p.id !== top.id);
-    const rivals = others.some((p) => p.status === 'active')
-      ? others.filter((p) => p.status === 'active')
-      : others;
-    const gap = rivals.length ? top.score - Math.max(...rivals.map((p) => p.score)) : 0;
-    if (gap > 0) {
-      leader = { playerId: top.id, colorIndex: colorIndexFor(top.seat, mySeat, seats), name: top.name, gap };
-    }
+  const others = top ? view.players.filter((p) => p.id !== top.id) : [];
+  const leaderOf = (p: GameView['players'][number], gap: number): LeadModel['leader'] =>
+    gap > 0 ? { playerId: p.id, colorIndex: colorIndexFor(p.seat, mySeat, seats), name: p.name, gap } : null;
+  let leader: LeadModel['leader'] = null;
+  const stillIn = view.players.filter((p) => p.status === 'active').length;
+  if (stillIn > 1) {
+    // The best placed player still in the game, by its margin over the others still in it ([D36]); two or more
+    // of them tied at the top (no single engine leader) is a tie, whatever a player who left had scored.
+    const rivals = others.filter((p) => p.status === 'active');
+    if (top && rivals.length > 0) leader = leaderOf(top, top.score - Math.max(...rivals.map((p) => p.score)));
+  } else if (view.players.length > 1) {
+    // Nobody else is still in (an abandon win, QA loop 8): the bar tells the scores as they are, so the tag (and
+    // its label) is the higher score's margin; "שוויון" only when the scores are equal, never 14 against 20.5.
+    const byScore = [...view.players].sort((a, b) => b.score - a.score);
+    leader = leaderOf(byScore[0]!, byScore[0]!.score - byScore[1]!.score);
   }
   return { segments, splitShare: segments[0]?.share ?? 0.5, leader };
 }

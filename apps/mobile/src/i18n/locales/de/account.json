@@ -68,7 +68,8 @@
       "timeout": "Der Server hat nicht rechtzeitig geantwortet. Versuch es noch mal.",
       "signedOut": "Du bist nicht angemeldet. Melde dich noch mal an.",
       "unexpected": "Der Server hat eine unerwartete Antwort geschickt. Versuch es noch mal oder aktualisiere die App."
-    }
+    },
+    "avatarUnavailable": "Dieser Avatar ist auf dem Server noch nicht verfügbar. Wähle einen anderen."
   },
   "splash": {
     "tagline": "Ein Spielfeld. Alle lösen. Nur einer gewinnt.",
@@ -250,6 +251,9 @@
     "deleteGoogleBody": "Um das Konto zu löschen, wähle noch mal das Google-Konto {{email}}.",
     "deleteGoogleSubmit": "Mit Google bestätigen und löschen",
     "deleteGoogleAgain": "Zum Löschen des Kontos ist eine neue Bestätigung nötig. Versuch es noch mal und wähle dein Google-Konto.",
-    "deleteWithPassword": "Stattdessen mit Passwort bestätigen"
+    "deleteWithPassword": "Stattdessen mit Passwort bestätigen",
+    "deleteGoogleOffTitle": "Google-Anmeldung nötig",
+    "deleteGoogleOffBody": "Dieses Konto meldet sich mit Google an, deshalb muss das Löschen mit Google bestätigt werden. Diese Version der App hat keine Google-Anmeldung, deshalb lässt sich das Konto hier nicht löschen. Du kannst es in der App aus dem Store (Google Play) löschen.",
+    "deleteGoogleOffOk": "Verstanden"
   }
 }

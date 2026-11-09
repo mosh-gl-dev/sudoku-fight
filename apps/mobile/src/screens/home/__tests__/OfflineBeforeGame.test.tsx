@@ -1,5 +1,6 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
+import { router, Stack } from 'expo-router';
 import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 
 import { useAuth } from '../../../auth/authStore';
@@ -9,7 +10,7 @@ import { openPracticeRepo } from '../../../game/practiceRepo';
 import { practiceStorageOrNull } from '../../../game/storage';
 import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
-import { setHealthCheck, useConnectivity } from '../../../net/connectivity';
+import { CONNECTIVITY, setHealthCheck, useConnectivity } from '../../../net/connectivity';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
 import { renderApp } from '../testing/homeTesting';
@@ -104,7 +105,7 @@ describe('a ranked game’s type screen offline (spec §16.1)', () => {
     });
     expect(net.checks).toBe(1);
     await act(async () => {
-      jest.advanceTimersByTime(10_000);
+      jest.advanceTimersByTime(CONNECTIVITY.recheckMs);
     });
     expect(net.checks).toBe(2);
   });
@@ -183,5 +184,35 @@ describe('Home offline (spec §16.1)', () => {
       "No internet connection. Ranked games aren't available",
     );
     expect(screen.getByTestId('play-again')).toHaveTextContent(/Needs connection/);
+  });
+
+  it('QA levels-xp-offline (loop 5): Home back in view checks the connection again, and sees it come back', async () => {
+    jest.useFakeTimers();
+    const net = server();
+    net.online = true;
+    // A stack, as in the app: Home stays mounted under History.
+    await renderApp('/', { _layout: () => <Stack screenOptions={{ headerShown: false }} /> });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useConnectivity.getState().status).toBe('online');
+    const before = net.checks;
+    // Flight mode on, then History and back: Home (mounted all along) checks again, and knows it is offline.
+    net.online = false;
+    await act(async () => router.push('/history'));
+    await act(async () => router.back());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(net.checks).toBeGreaterThan(before);
+    expect(useConnectivity.getState().status).toBe('offline');
+    expect(screen.getByTestId('home-offline')).toBeOnTheScreen();
+    // Flight mode off, Home stays open: its background check sees it within CONNECTIVITY.recheckMs (5 s).
+    net.online = true;
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect(useConnectivity.getState().status).toBe('online');
+    expect(screen.queryByTestId('home-offline')).toBeNull();
   });
 });

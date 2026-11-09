@@ -7,19 +7,20 @@ import {
   levelEngineOf,
 } from '@sudoku-fight/engine';
 import type { LevelTutorialKind } from '@sudoku-fight/protocol';
-import { type Href, router, Stack, useLocalSearchParams } from 'expo-router';
+import { type Href, router, Stack, useLocalSearchParams, useRoute } from 'expo-router';
 import {
   type ComponentType,
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, StyleSheet, View } from 'react-native';
 
 import { ResumeCountdown } from '../../src/components/board/ResumeCountdown';
 import { LEVEL_UI } from '../../src/config/levels';
@@ -34,13 +35,13 @@ import {
 } from '../../src/levels/levelSession';
 import { levelById } from '../../src/levels/levelsData';
 import { useLevelsProgress, useOpenedChapters } from '../../src/levels/levelsStore';
+import { forgetShownResult, noteShownResult, shownResultOf } from '../../src/levels/shownResult';
 import { crashReporter } from '../../src/services/crashlytics';
-import { color } from '../../src/theme';
 import { FlowFallback } from '../../src/screens/FlowFallback';
 import { GameScreen } from '../../src/screens/game/GameScreen';
 import { HowToPlay, tutorialFor, useTutorials } from '../../src/screens/levels/HowToPlay';
 import { renderTutorialPanel } from '../../src/screens/levels/HowToPlayPanels';
-import { levelChrome, levelPlayedOf } from '../../src/screens/levels/levelChrome';
+import { levelChrome, levelPlayedOf, useExitBody } from '../../src/screens/levels/levelChrome';
 import { PuzzleLevelScreen } from '../../src/screens/levels/PuzzleLevelScreen';
 import { TapLevelScreen } from '../../src/screens/levels/TapLevelScreen';
 import {
@@ -50,6 +51,7 @@ import {
 } from '../../src/screens/levels/LevelResultView';
 import { everyChapter, nextAfterAttempt, withAttempt } from '../../src/screens/levels/mapModel';
 import { ReadyView } from '../../src/screens/levels/ReadyView';
+import type { StageOver } from '../../src/screens/levels/useStageShell';
 
 /**
  * /levels/play?id=L037&quick=1: one stage, in phases of this one route (components.md §19.8–§19.10): "איך
@@ -57,7 +59,8 @@ import { ReadyView } from '../../src/screens/levels/ReadyView';
  * stage itself, and its result, a state of the same screen (no navigation at a stage's end: the black screen of
  * 1.0.0 came with those). The result's "לשלב הבא" starts the next stage right here (the quick entry, D56;
  * LEVEL_UI.quickEntry off: back to the map with it chosen), "שוב" plays this one again (the session plays an
- * equivalent board from the second attempt, D63), "למפה" goes back to the map.
+ * equivalent board from the second attempt, D63), "למפה" goes back to the map. A recreated activity (display or
+ * font size) brings the result back as it was, with nothing started again (levels/shownResult.ts).
  *
  * The `playing` phase is the stage screens' (the tap kinds' screen, the puzzle's, the game screen with a stage's
  * chrome): they fill `Playing` (LevelPlayingProps), report the end once with what the result shows
@@ -75,8 +78,11 @@ export interface LevelPlayingProps {
   level: AppLevel;
   /** Started from a result's "לשלב הבא" (level_start's `quick`). */
   quick: boolean;
-  /** The stage ended (any end, the X confirmed included), once: the result shows in this route. */
-  onFinished: (played: LevelPlayed) => void;
+  /**
+   * The stage ended (any end, the X confirmed included), once: the result shows in this route. `over`: the end
+   * came by itself under "לצאת מהשלב?" (the result then guards its buttons a moment, LEVEL_UI.resultGuardMs).
+   */
+  onFinished: (played: LevelPlayed, over?: StageOver) => void;
   /**
    * [D76] The attempt's number as the run read it before "מוכן?" (never rejects): the session plays this one, so
    * it always agrees with what "מוכן?" showed. Left out: the session reads it itself.
@@ -163,19 +169,30 @@ export function LevelStage({
 
   // The stage's end, once stored: the result.
   const lang = i18n.language;
-  const onOver = useCallback(() => {
-    if (!session) return;
-    void session.result.then((r) => onFinished(levelPlayedOf(session, r, lang)));
-  }, [session, lang, onFinished]);
+  const onOver = useCallback(
+    (over?: StageOver) => {
+      if (!session) return;
+      void session.result.then((r) => onFinished(levelPlayedOf(session, r, lang), over));
+    },
+    [session, lang, onFinished],
+  );
 
   const covered = pause.kind === 'none' ? null : pause;
   const cover = useMemo(() => <ResumeCountdown state={covered} />, [covered]);
+  // "לצאת מהשלב?" says what the quit would really do (B39): the next stage opens, or a boss's gate keeps it shut.
+  const exitBody = useExitBody(level, session?.rules ?? LEVEL_RULES, t);
   const chrome = useMemo(
     () =>
       session
-        ? levelChrome(session.played, t, { onOver, cover, covered: covered !== null, rules: session.rules })
+        ? levelChrome(session.played, t, {
+            onOver,
+            cover,
+            covered: covered !== null,
+            rules: session.rules,
+            exitBody,
+          })
         : null,
-    [session, t, onOver, cover, covered],
+    [session, t, onOver, cover, covered, exitBody],
   );
 
   if (failed) return <FlowFallback reason={`levels/play: ${level.id} did not start`} onHome={onLeave} />;
@@ -198,21 +215,33 @@ export function LevelStage({
   if (!chrome) return <FlowFallback reason={`levels/play: no screen for ${level.kind}`} onHome={onLeave} />;
   // "לבית" of the game screen's fallbacks (the results watchdog, no seat) leaves the stage, to the map.
   return (
-    <GameScreen session={session} onEnded={onOver} onHome={onLeave} level={chrome} testID="level-game" />
+    <GameScreen
+      session={session}
+      // Never called with a stage's chrome (its onOver is): the game's results route is not a stage's.
+      onEnded={() => onOver()}
+      onHome={onLeave}
+      level={chrome}
+      testID="level-game"
+    />
   );
 }
 
-/** [D65] The app is in the foreground (any other AppState freezes the stage, "מוכן?" included). */
+/**
+ * [D65] The app is in the foreground (any other AppState freezes the stage, "מוכן?" included). Read through
+ * useSyncExternalStore, which reads the state again once it listens: a run mounts anew with every "לשלב הבא" and
+ * "שוב", and the app leaving between its first render and its listener still stops "מוכן?" (B28).
+ */
 function useAppActive(): boolean {
-  const [active, setActive] = useState(
-    () => AppState.currentState !== 'background' && AppState.currentState !== 'inactive',
-  );
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => setActive(state === 'active'));
-    return () => sub.remove();
-  }, []);
-  return active;
+  return useSyncExternalStore(onAppStateChange, appActiveNow, () => true);
 }
+
+function onAppStateChange(changed: () => void): () => void {
+  const sub = AppState.addEventListener('change', changed);
+  return () => sub.remove();
+}
+
+const appActiveNow = (): boolean =>
+  AppState.currentState !== 'background' && AppState.currentState !== 'inactive';
 
 export interface LevelPlayFlowProps {
   Playing: ComponentType<LevelPlayingProps>;
@@ -282,6 +311,7 @@ export function LevelPlayFlow({
   attemptOf = levelAttemptOf,
 }: LevelPlayFlowProps) {
   const params = useLocalSearchParams<{ id?: string; quick?: string }>();
+  const routeKey = useRoute().key;
   const [run, setRun] = useState<Run>(() => ({ id: params.id ?? '', quick: params.quick === '1', n: 0 }));
   const [leaving, setLeaving] = useState(false);
   const [stuck, setStuck] = useState(false);
@@ -318,6 +348,9 @@ export function LevelPlayFlow({
         key={`${run.id}:${run.n}`}
         level={level}
         quick={run.quick}
+        routeKey={routeKey}
+        // A recreated activity's new root (game/flowStack.ts): the result this route showed, again.
+        shown={run.n === 0 ? shownResultOf(routeKey, run.id) : null}
         Playing={Playing}
         renderTutorialPanel={renderTutorialPanel}
         attemptOf={attemptOf}
@@ -346,11 +379,17 @@ type Phase =
   | { kind: 'tutorial'; tutorial: LevelTutorialKind }
   | { kind: 'ready' }
   | { kind: 'playing' }
-  | { kind: 'result'; played: LevelPlayed };
+  | { kind: 'result'; played: LevelPlayed; underDialog: boolean }
+  /** Android back before the stage was on (QA levels-exit): the run is over, on its way to the map. */
+  | { kind: 'left' };
 
 interface StageRunProps {
   level: AppLevel;
   quick: boolean;
+  /** The route's key: its result is kept by it while up (levels/shownResult.ts). */
+  routeKey: string;
+  /** A result this route showed before a recreated activity: the run opens on it, and nothing starts. */
+  shown: LevelPlayed | null;
   Playing: ComponentType<LevelPlayingProps>;
   renderTutorialPanel?: LevelPlayFlowProps['renderTutorialPanel'];
   attemptOf: (levelId: string, rev: number) => Promise<number>;
@@ -363,14 +402,30 @@ interface StageRunProps {
 function StageRun({
   level,
   quick,
+  routeKey,
+  shown,
   Playing,
   renderTutorialPanel,
   attemptOf,
-  onNext,
-  onAgain,
-  onMap,
+  onNext: nextStage,
+  onAgain: again,
+  onMap: toTheMap,
 }: StageRunProps) {
+  // Leaving the result forgets it: a later recreation brings back where the player went, not the result.
+  const onNext = (id: string) => {
+    forgetShownResult(routeKey);
+    nextStage(id);
+  };
+  const onAgain = () => {
+    forgetShownResult(routeKey);
+    again();
+  };
+  const onMap = () => {
+    forgetShownResult(routeKey);
+    toTheMap();
+  };
   const [phase, setPhase] = useState<Phase>(() => {
+    if (shown) return { kind: 'result', played: shown, underDialog: false };
     const tutorial = tutorialFor(level, useTutorials.getState().seen);
     return tutorial ? { kind: 'tutorial', tutorial } : { kind: 'ready' };
   });
@@ -395,6 +450,37 @@ function StageRun({
   // [D65] "מוכן?"'s 2 s stand still while the app is away (LEVEL_UI.backgroundPause).
   const active = useAppActive();
 
+  // Android back before a stage screen has it ("איך משחקים", "מוכן?", a boss's opening, the stage still
+  // starting): nothing has begun, so nothing is asked and nothing counts. The run stops right here (no wait
+  // goes on to start the stage), then the map. QA levels-exit (apk7): the navigator's own back went to the map
+  // with the run going on unseen, and the stage played itself out behind the map. Until the route is gone, back
+  // stays taken (no second pop under the leaving one). A stage screen registers its
+  // own back later ("לצאת מהשלב?"), so it is heard first. Back on the result is "למפה" (the same onMap): no
+  // way out of this route rests on the navigator's own pop, the one QA saw leave a run alive.
+  const back = useRef<() => boolean>(() => false);
+  const resultLeft = useRef(false);
+  useLayoutEffect(() => {
+    back.current = () => {
+      if (phase.kind === 'result') {
+        if (!resultLeft.current) {
+          resultLeft.current = true;
+          onMap();
+        }
+        return true;
+      }
+      if (phase.kind !== 'left') {
+        setPhase({ kind: 'left' });
+        onMap();
+      }
+      return true;
+    };
+  });
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => back.current());
+    return () => sub.remove();
+  }, []);
+
+  if (phase.kind === 'left') return <View style={styles.starting} testID="level-left" />;
   if (phase.kind === 'tutorial') {
     return (
       <HowToPlay
@@ -420,10 +506,11 @@ function StageRun({
         level={level}
         quick={quick}
         attempt={attemptRead}
-        onFinished={(played) => {
+        onFinished={(played, over) => {
           if (finishedOnce.current) return;
           finishedOnce.current = true;
-          setPhase({ kind: 'result', played });
+          noteShownResult(routeKey, level.id, played);
+          setPhase({ kind: 'result', played, underDialog: over?.underDialog === true });
         }}
         onLeave={onMap}
       />
@@ -444,6 +531,8 @@ function StageRun({
       onNext={() => next && onNext(next)}
       onAgain={onAgain}
       onMap={onMap}
+      // The stage ended by itself under "לצאת מהשלב?": a tap meant for its "יציאה" must not press "למפה".
+      armAfterMs={phase.underDialog ? LEVEL_UI.resultGuardMs : 0}
     />
   );
 }
@@ -451,7 +540,8 @@ function StageRun({
 const NO_RECORDS = {};
 
 const styles = StyleSheet.create({
-  starting: { flex: 1, backgroundColor: color.bg },
+  // No ground of its own: the wandering digits behind the app (D126) show through.
+  starting: { flex: 1 },
 });
 
 /** The result's chapter line: what levels.db gave back (the gate after this attempt), else none. */

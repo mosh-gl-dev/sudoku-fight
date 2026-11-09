@@ -1,7 +1,7 @@
 import type { Clock } from '@sudoku-fight/engine';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 import type { CellModel } from '../../../components/board';
 import { boardGeometry, cellRect, px } from '../../../components/board/geometry';
@@ -14,7 +14,7 @@ import {
   type ScrambleCell,
   scrambleDraws,
   scramblePlan,
-  useHitClock,
+  useLayerHitClock,
 } from '../../../components/interference';
 import { color, tokens } from '../../../theme';
 import { useReduceMotion } from '../../../theme/motion';
@@ -32,6 +32,8 @@ export interface BoardHitLayerProps {
   width: number;
   /** Defaults to the player's setting (useReduceMotion). */
   reduceMotion?: boolean;
+  /** The screen's one clock for the hit (useHitClock), shared with the overlay, the banner and the tilt. */
+  elapsed?: SharedValue<number>;
   testID?: string;
 }
 
@@ -92,12 +94,13 @@ export function BoardHitLayer({
   cells,
   width,
   reduceMotion,
+  elapsed: shared,
   testID = 'board-hit',
 }: BoardHitLayerProps) {
   const reducedSetting = useReduceMotion();
   const reduce = reduceMotion ?? reducedSetting;
   const shown = isHitOn(hit, now) ? hit : null;
-  const elapsed = useHitClock(shown, clock);
+  const elapsed = useLayerHitClock(shown, clock, shared);
   const totalMs = shown?.totalMs ?? 0;
   const fadeIn = reduce ? HIT_DIM.fadeInReducedMs : HIT_DIM.fadeInMs;
   const dimStyle = useAnimatedStyle(() => ({

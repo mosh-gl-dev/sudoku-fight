@@ -36,6 +36,14 @@ export interface SearchViewProps {
   onCancel: () => void;
   /** "שחק מול בוט בינתיים", under the "nobody else is searching" notice: out of the queue, into a bot game. */
   onBot: () => void;
+  /**
+   * Comes in with the screen itself (the stack's fade, `flow.fade` / `stack.push`): there from its first frame,
+   * with no entrance of its own. QA fixcheck of APK 13 (results-newgame-empty-frame-intermittent): its own fade
+   * from 0 started late on a busy frame while the stack's fade had already taken the results away, and only
+   * "ביטול חיפוש" (outside the column) was on screen for 170–500 ms. Without it: a search that comes back inside
+   * the screen (after a match fell through, or the timeout's "המשך לחפש") fades in.
+   */
+  still?: boolean;
   testID?: string;
 }
 
@@ -52,10 +60,17 @@ export interface SearchViewProps {
  * the search runs (or that nobody else is searching), and why the search started over when a match fell
  * through; never the seconds.
  */
-export function SearchView({ model: m, reduce, onCancel, onBot, testID = 'match-search' }: SearchViewProps) {
+export function SearchView({
+  model: m,
+  reduce,
+  onCancel,
+  onBot,
+  still = false,
+  testID = 'match-search',
+}: SearchViewProps) {
   const { t } = useTranslation('match');
   const insets = useSafeAreaInsets();
-  const enter = useEnter(reduce);
+  const enter = useEnter(reduce, 'fade', still);
   const time = clockText(m.elapsedMs);
   // Said once, as the search starts (not at every widening): the range it starts with. While nobody else is
   // searching it is forgotten, so the range that comes back with someone is said as it is then.
@@ -71,6 +86,14 @@ export function SearchView({ model: m, reduce, onCancel, onBot, testID = 'match-
   // Nobody else: said once as it begins (again only if it ends and comes back).
   const line = m.alone ? aloneTitle : rangeLine;
   const announcement = line ? joinSentences([m.requeued && requeued, line], t) : null;
+  // QA loop 7: with the notice, the column may still be taller than the room above "ביטול חיפוש" (a 360-dp
+  // phone at a large text size). Then the radar gives way to my rating's chip alone, until the notice goes;
+  // kept once decided, so the smaller column never flips it back while the notice stays.
+  const [viewHeight, setViewHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [tight, setTight] = useState(false);
+  if (!m.alone && tight) setTight(false);
+  if (m.alone && !tight && viewHeight > 0 && contentHeight > viewHeight + 1) setTight(true);
 
   return (
     <View style={styles.root} testID={testID}>
@@ -79,8 +102,14 @@ export function SearchView({ model: m, reduce, onCancel, onBot, testID = 'match-
           styles.content,
           { paddingTop: insets.top + space[8], paddingBottom: space[8] },
         ]}
+        onLayout={(e) => setViewHeight(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentHeight(h)}
+        testID={`${testID}-scroll`}
       >
-        <Animated.View style={[styles.column, enter]}>
+        <Animated.View
+          style={[styles.column, m.alone && styles.columnAlone, enter]}
+          testID={`${testID}-column`}
+        >
           <HeaderChip header={m.header} testID={`${testID}-header`} />
           <View style={styles.titleBlock}>
             <Text style={styles.title} accessibilityRole="header" testID={`${testID}-title`}>
@@ -95,7 +124,14 @@ export function SearchView({ model: m, reduce, onCancel, onBot, testID = 'match-
             </Text>
           </View>
 
-          <Radar me={m.me} reduce={reduce} active={!m.connecting} testID={`${testID}-radar`} />
+          <Radar
+            me={m.me}
+            reduce={reduce}
+            active={!m.connecting}
+            compact={m.alone}
+            chipOnly={m.alone && tight}
+            testID={`${testID}-radar`}
+          />
 
           {m.alone ? (
             <AloneNotice
@@ -137,7 +173,7 @@ export function SearchView({ model: m, reduce, onCancel, onBot, testID = 'match-
             </View>
             <View style={styles.slots}>
               {Array.from({ length: m.openSeats }, (_, k) => (
-                <EmptySeat key={k} colorIndex={k + 1} reduce={reduce} delayMs={k * 500} />
+                <EmptySeat key={k} colorIndex={k + 1} reduce={reduce} delayMs={k * 500} compact={m.alone} />
               ))}
             </View>
           </View>
@@ -213,16 +249,22 @@ function Radar({
   me,
   reduce,
   active,
+  compact,
+  chipOnly,
   testID,
 }: {
   me: SearchModel['me'];
   reduce: boolean;
   active: boolean;
+  /** Beside the "nobody else" notice: a smaller radar, so the seats stay above the cancel button. */
+  compact: boolean;
+  /** Where even that does not fit: my rating's chip alone, no avatar and no rings. */
+  chipOnly: boolean;
   testID: string;
 }) {
   const { t } = useTranslation('match');
   const turn = useSharedValue(0);
-  const sweeping = active && !reduce;
+  const sweeping = active && !reduce && !chipOnly;
 
   useEffect(() => {
     if (!sweeping) {
@@ -244,13 +286,38 @@ function Radar({
   }, [sweeping, turn]);
 
   const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.get() * 360}deg` }] }));
-  const r = metrics.radar.size;
+  const r = compact ? metrics.alone.radar : metrics.radar.size;
+  const chip = (
+    <View
+      style={
+        chipOnly
+          ? [styles.meChip, styles.meChipInline]
+          : [styles.meChip, compact && { bottom: metrics.alone.chipBottom }]
+      }
+    >
+      <Text style={[styles.meText, { color: paletteAt(0).ring }]}>{t('me')}</Text>
+      {me.rating !== null ? (
+        <Text style={styles.meRating} testID={`${testID}-rating`}>
+          {me.rating}
+        </Text>
+      ) : null}
+    </View>
+  );
+  const label = me.rating === null ? t('me') : t('search.myRating', { rating: me.rating });
+
+  if (chipOnly) {
+    return (
+      <View style={styles.radar} accessible accessibilityLabel={label} testID={testID}>
+        {chip}
+      </View>
+    );
+  }
 
   return (
     <View
       style={[styles.radar, { width: r, height: r }]}
       accessible
-      accessibilityLabel={me.rating === null ? t('me') : t('search.myRating', { rating: me.rating })}
+      accessibilityLabel={label}
       testID={testID}
     >
       <View style={[styles.ring, { width: r, height: r }]} />
@@ -264,14 +331,7 @@ function Radar({
         importantForAccessibility="no-hide-descendants"
       />
       <Avatar avatarId={me.avatarId} size="home" colorIndex={0} idle={AVATAR_STAGES.search} />
-      <View style={styles.meChip}>
-        <Text style={[styles.meText, { color: paletteAt(0).ring }]}>{t('me')}</Text>
-        {me.rating !== null ? (
-          <Text style={styles.meRating} testID={`${testID}-rating`}>
-            {me.rating}
-          </Text>
-        ) : null}
-      </View>
+      {chip}
     </View>
   );
 }
@@ -281,15 +341,22 @@ function EmptySeat({
   colorIndex,
   reduce,
   delayMs,
+  compact,
 }: {
   colorIndex: number;
   reduce: boolean;
   delayMs: number;
+  compact: boolean;
 }) {
   const { t } = useTranslation('match');
   const pulse = usePulse(true, reduce, delayMs);
   return (
-    <View style={styles.slot} accessible accessibilityLabel={t('search.slotLabel')} testID="empty-seat">
+    <View
+      style={[styles.slot, compact && { height: metrics.alone.slotHeight }]}
+      accessible
+      accessibilityLabel={t('search.slotLabel')}
+      testID="empty-seat"
+    >
       <View style={styles.slotGlyph}>
         <SeatGlyph colorIndex={colorIndex} size={metrics.slot.glyph} color={color.iconFaint} />
       </View>
@@ -302,9 +369,10 @@ function EmptySeat({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: tokens.layout.gutterGame },
   column: { alignItems: 'center', gap: space[9] },
+  columnAlone: { gap: metrics.alone.gap },
   titleBlock: { alignItems: 'center', gap: space[3] },
   title: { ...text('screenTitle'), color: color.text, textAlign: 'center' },
   elapsed: { ...text('scoreCompact'), color: color.textMuted },
@@ -334,6 +402,7 @@ const styles = StyleSheet.create({
     borderColor: paletteAt(0).ring,
     backgroundColor: color.bg,
   },
+  meChipInline: { position: 'relative', bottom: 0 },
   meText: { ...text('micro') },
   meRating: { ...text('ratingCompact'), color: color.accent },
   range: { alignItems: 'center', gap: space[5] },

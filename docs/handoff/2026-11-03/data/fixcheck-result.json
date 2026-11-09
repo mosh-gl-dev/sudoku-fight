@@ -1,0 +1,1074 @@
+{
+ "batches": [
+  {
+   "lane": "טלפון 1",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, 'אורי'): הורץ adb.ts reset (גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי). שפת האפליקציה עברית (get-app-locales = [he]); הוחלפה לאנגלית לבדיקה והוחזרה ל'עברית' כמו שהייתה. האפליקציה הופעלה מחדש ונשארה בבית. לא נוצר חדר, לא היה חיפוש מדורג, והקודים שהוקלדו (123459, 123512) לא קיימים. בהיסטוריה נוספו שני אימונים: אימון לבד מהיר (3.5 נקודות) ואימון מול Pip (3 נקודות).",
+   "chunk": {
+    "tasks": [
+     "general-depth-gold",
+     "general-depth-disabled",
+     "general-depth-pair",
+     "postgame-results-v2-action-pair"
+    ],
+    "bugs": [
+     "B13",
+     "B16",
+     "B19"
+    ]
+   }
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, אורי): האפליקציה פתוחה בבית, בעברית (app locale he). ‏font_scale 1.0, שלושת מקדמי האנימציה 1, והרצתי adb.ts reset. המתג 'פתח את כל השלבים (בדיקה)' כבוי, ואזור 'בדיקה' בהגדרות מוסתר שוב. שינויי התקדמות בחשבון: נוספו כמה אימונים (מול Pip ולבד), ול־L017 יש עכשיו 3 כוכבים (+30 XP) מבדיקת B26. בטלפון השני לא נגעתי.",
+   "chunk": {
+    "tasks": [
+     "postgame-results-buttons-large-font",
+     "postgame-replay-explain-correct"
+    ],
+    "bugs": [
+     "B17",
+     "B20",
+     "B18",
+     "B24",
+     "B31",
+     "B34",
+     "B1",
+     "B26"
+    ]
+   }
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, 'אורי'): האפליקציה פתוחה בבית, בעברית (נבדק ב־get-app-locales: he). הרצתי adb.ts reset: גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. 'פתח את כל השלבים' כבוי, 'שרשרת: ניחוש עולה 5 ש׳' כבוי, והקטע 'בדיקה' מוסתר שוב, כמו בהתחלה. מחקתי קובץ זמני /sdcard/w.xml. ההתקדמות של החשבון השתנתה, כי שיחקתי בשלבים לפי המשימות. ‏L015 ו־L016 נגמרו בזמן. ‏L024 עד L029 ננטשו עם 0 כוכבים, כדי להגיע ל־L030. ‏L030 קיבל כוכב אחד (נגמר בזמן כשהייתי מוביל), ואחר כך יצאתי ממנו פעם נוספת. ‏L010, ‏L020 (פעמיים) ו־L131 ננטשו. ‏L025 נגמר בזמן. ‏L031 קיבל 2 כוכבים. ‏L134, ‏L147 ו־L154 הושלמו. ‏L290 הפסדתי. הפרקים 4, 14, 15, 16 ו־29 נחשבים עכשיו פתוחים, כי שוחקו כשפתיחת כל השלבים הייתה דלוקה. בגלל זה, בלי פתיחת כל השלבים, לא נשאר בחשבון בוס עם שער סגור שאפשר להגיע אליו (פרק 5 אפשרי רק אחרי עוד 8 יציאות, L032 עד L039). את טלפון 3 לא נגעתי.",
+   "chunk": {
+    "tasks": [
+     "levels-boss-l020",
+     "levels-chain-accept",
+     "levels-fill-chapter14"
+    ],
+    "bugs": [
+     "B27",
+     "B33",
+     "B30",
+     "B39"
+    ],
+    "extra": "For B7 here, only check the map title in Hebrew; the other languages are checked on the other phone."
+   }
+  },
+  {
+   "lane": "טלפון 1",
+   "batch": 4,
+   "ok": true,
+   "phoneState": "RF8Y60PP2XZ (טלפון 1, 'אורי'): האפליקציה בבית, עברית (app locale he), font_scale 1.0, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי. הרצתי adb.ts reset. הפחתת תנועה 'כבויה' כמו בהתחלה. המתג 'פתח את כל השלבים' כבוי ואזור 'בדיקה' מוסתר כמו בהתחלה. נשארו שינויים בהתקדמות החשבון מהבדיקות: L019 ★★★, ‏L033 ★★, ‏L010 ★★★ (הבוס נוצח), ניסיונות בלי כוכבים ב־L040, ‏L041 (כ־8 ניסיונות), ‏L042 ו־L043, ושני אימוני לבד חדשים בהיסטוריה. ה־XP עלה מ־710 ל־860. הטלפון השני לא נגעתי בו.",
+   "chunk": {
+    "tasks": [
+     "game-moves-reduced-wrong",
+     "general-ambient-everywhere"
+    ],
+    "bugs": [
+     "B36",
+     "B15",
+     "B50",
+     "B25",
+     "B29",
+     "B35",
+     "B48",
+     "B11",
+     "B28",
+     "Q1"
+    ],
+    "extra": "B11/B28 were seen once and never reproduced: try each scenario twice at most; Q1 = does 'adb.ts ui' now read the solo game screen (no 'could not get idle state')? Report how often it works over ~10 tries during a game."
+   }
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "טלפון 3 (RF8Y30L038L, אחוותא) נשאר בבית, בעברית: app-locales [] (שפת המכשיר, כמו בהתחלה), ובהגדרות 'שפת המכשיר / עברית'. הרצתי adb.ts reset (גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי). 'הפחתת תנועה' הוחזרה ל'כבויה'. אזור 'בדיקה' נשאר פתוח, כמו שמצאתי אותו. הקובץ הזמני /data/local/tmp/qa-b32.sh נמחק. ב־Samsung Internet נשארו לשוניות מבדיקות הדפים. בהיסטוריה של אחוותא נוספו ניסיונות בשלב 2 ובשלב 3 ('הזמן נגמר', בלי כוכבים) וניסיונות קוד שגוי (918273). היומן (logcat) מלא במבול של Reanimated מ־05:52 ומ־05:55, ולא נוקה (אסור).",
+   "chunk": {
+    "tasks": [
+     "general-lang19-legal",
+     "general-lang19-invite-page",
+     "avatars-pirates-crash-join-code",
+     "account-settings-look",
+     "avatars-pirates-lab"
+    ],
+    "bugs": [
+     "B6",
+     "B32",
+     "Q2",
+     "B12"
+    ],
+    "extra": "Q2 = adb.ts 'ui' must fail loudly (non-zero exit, clear message) when uiautomator can't dump, and never return an old dump; it must still work on normal screens."
+   }
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "RF8Y30L038L (טלפון 3, אחוותא): adb.ts reset done (font scale 1, animations 1, colour correction off, airplane mode off). App locale is back to [] (device language). Settings shows 'שפה: שפת המכשיר, עברית', as at the start. App relaunched and left on Home in Hebrew. The hidden 'בדיקה' section was already open when I started and I left it open. 'Unlock all stages (testing)' was already ON and I did not touch it. The account now has 4 new local practice games: a loss vs Mr. Hoot, ar solo 10.5, de solo 12.5, and a loss vs Pip (ja). The other phone was not used.",
+   "chunk": {
+    "tasks": [
+     "general-lang19-arabic-rtl",
+     "general-lang19-arabic-solo",
+     "general-lang19-japanese-bot",
+     "general-lang19-numbers-screen",
+     "general-lang19-numbers-app"
+    ],
+    "bugs": [
+     "B4",
+     "B5",
+     "B2"
+    ]
+   }
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "RF8Y30L038L (טלפון 3, 'אחוותא'): the app is on Home in Hebrew. The app locale is [] (device language) and the Settings field shows 'שפת המכשיר / עברית', as at the start. wm size and density are reset to 1080x2340 / 450. adb.ts reset is done (font scale 1, animations 1, colour correction off, airplane mode off). The pseudo language is back to 'ללא'. The Settings 'בדיקה' section was already open when I started and I left it open. One solo practice game (Fast) was started in ar-XB and ended early with 'Yes, end it', so it may show in recent games. I did not do a ranked search, a room, or any account change.",
+   "chunk": {
+    "tasks": [
+     "general-lang19-fit-new-game",
+     "general-lang19-sweep",
+     "general-lang19-pseudo"
+    ],
+    "bugs": [
+     "B3",
+     "B7",
+     "B8",
+     "B9",
+     "B10"
+    ]
+   }
+  },
+  {
+   "lane": "טלפון 3",
+   "batch": 4,
+   "ok": true,
+   "phoneState": "RF8Y30L038L (טלפון 3, 'אחוותא'): הרצתי adb.ts reset (גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי). ‏Wi-Fi דלוק. שפת המכשיר he-IL: החלפתי זמנית ל־de-DE ול־sv-SE בשביל B46, והחזרתי. רשימת השפות של האפליקציה ריקה, והשדה 'שפה' באפליקציה 'שפת המכשיר', כמו שהיה. ‏show_touches לא שונה. האפליקציה הופעלה מחדש ונמצאת בבית, בעברית. האווטר ('מחשבון') והשם לא השתנו, ולא שמרתי שום דבר בפרופיל. נוספו לחשבון 2 משחקי אימון מול Pip: הפסד 6.5:13.5 וניצחון 83:12. נשארו ב־/sdcard הקבצים qa-ui.xml ו־qa-raw3.xml; הם לא שלי. לא ניגשתי לטלפון השני.",
+   "chunk": {
+    "tasks": [
+     "postgame-results-v2-languages",
+     "avatars-pirates-board-pinned-compact",
+     "general-ambient-screen-change"
+    ],
+    "bugs": [
+     "B21",
+     "B22",
+     "B23",
+     "B46",
+     "B14"
+    ],
+    "extra": "B14: measure the transition times the same way as the original report (framestats / screenshots), for 'שחק'→'משחק חדש', Settings, back to Home, and report numbers before/after."
+   }
+  },
+  {
+   "lane": "two",
+   "batch": 1,
+   "ok": true,
+   "phoneState": "שני הטלפונים במסך הבית אחרי adb.ts reset (גודל גופן 1, אנימציות 1, תיקון צבע כבוי, מצב טיסה כבוי) והפעלה מחדש של האפליקציה. שפת האפליקציה: בטלפון 1 [he]; בטלפון 3 [] (לפי המערכת, עברית), והממשק בעברית. האווטר של 'אורי' (טלפון 1) הוחלף זמנית ל'שומר התוכי (מושקע)' בשביל avatars-pirates-rival-phone, והוחזר ל'הגברת הפיראטית (מושקע)'. השם לא נשלח ולא שונה. הבניות לא זהות: בטלפון 1 (RF8Y60PP2XZ) הותקנה האפליקציה ב־2026-11-03 09:07, APK חדש יותר (apk6.txt, prebuild בגלל שינוי בהגדרות native). בטלפון 3 (RF8Y30L038L) ההתקנה מ־04:37, כלומר הבנייה של 04:36. שניהם מציגים build 87760ce-dirty. כל התיקונים שבדקתי נראו בשתי הבניות. בטלפון 3 צלצל שעון מעורר של Samsung Clock מ־09:31 בערך 10 דקות, והחלון שלו (KEYGUARD_DIALOG) כיסה את ראש המסך. ב־09:40 הקשתי פעם אחת על 'התעלם' כדי לעצור את הצלצול הזה. השעון עצמו לא שונה, וההתראה הבאה שלו עדיין מתוזמנת. שוחקו בין אורי לאחוותא: 2 משחקי חדר חברים (מהיר), משחק מדורג מהיר אחד (אחוותא נכנע לפני המהלך הראשון, ולכן הדירוג לא השתנה לאף אחד), ואימון לבד אחד בטלפון 3 שהסתיים מיד. קבצים זמניים שכתבתי ל־/sdcard (qaf*.raw, qa-b.xml): את ה־raw מחקתי, qa-b.xml נשאר כקובץ dump.",
+   "chunk": {
+    "tasks": [
+     "avatars-pirates-rival-phone",
+     "avatars-pirates-rival-fake",
+     "general-depth-no-pair"
+    ],
+    "bugs": [
+     "B42",
+     "B51",
+     "B44",
+     "B52",
+     "B41",
+     "B40",
+     "B53",
+     "B49"
+    ]
+   }
+  },
+  {
+   "lane": "two",
+   "batch": 2,
+   "ok": true,
+   "phoneState": "Both phones are on Home with the app relaunched, signed in as before: RF8Y60PP2XZ = אורי, fast rating 1177, 39 games; RF8Y30L038L = אחוותא, 1258. I ran adb.ts reset on both: font 1, animations 1, colour correction off, airplane mode off. Phone 1's reduced motion is back to 'כבויה' as it was; I changed no settings on phone 3. App locale: phone 1 is [he]; phone 3 is [] and follows the Hebrew system, so I left it. I deleted my temp files on the phones (/data/local/tmp/qa, qa-cap.sh, /sdcard/q.xml). Important: the two phones do NOT run the same APK. Phone 1 was updated at 09:07 (base.apk 74,612,505 bytes, md5 9ee0da88…), phone 3 at 04:37 (74,559,257 bytes, md5 a46a4c9a…); the version line on both says 1.1.0 build 87760ce-dirty staging. The --fixed-in field is limited to 40 characters, so I used '1.1.0 בנייה 03.11 04:36 + שרת staging'. Run #2 now has network-surrender-cancel and game-surrender-ranked-dialog marked fixed, and pregame-found-countdown-reduced and avatars-idle-still re-marked partial with new text on what happens now.",
+   "chunk": {
+    "tasks": [
+     "pregame-found-countdown-reduced",
+     "avatars-idle-still",
+     "network-surrender-cancel",
+     "game-surrender-ranked-dialog"
+    ],
+    "bugs": [
+     "B37",
+     "B43",
+     "B38",
+     "B54"
+    ]
+   }
+  },
+  {
+   "lane": "two",
+   "batch": 3,
+   "ok": true,
+   "phoneState": "Both phones are on Home in Hebrew, signed in as before (phone 1 RF8Y60PP2XZ 'אורי', phone 3 RF8Y30L038L 'אחוותא'). The app languages are restored as found: phone 1 is set-app-locales [he] (Settings field shows 'עברית'), and phone 3 is [] (field shows 'שפת המכשיר, עברית'). adb.ts reset ran on both: font scale 1, animations 1, colour correction off, airplane mode off. I played 6 ranked fast 2P games between the phones (phone 1 in de/ru/th/ja/ar/en against phone 3 in es/pt/fr/vi/nl/tr), and phone 3 surrendered each one before its first move. Phone 1's fast rating went 1177 → 1283. Phone 3 stayed at 1258, by design: 'no rating loss, left before your first move'. Run #2 task general-lang19-fit-interference is now 'handled' with a fix note, fixed-in '1.1.0 (בנייה 03.11.2026 04:36) + staging'. The server allows at most 40 characters, so the full string asked for was shortened.",
+   "chunk": {
+    "tasks": [
+     "general-lang19-fit-interference"
+    ],
+    "bugs": [
+     "B45",
+     "B47"
+    ]
+   }
+  }
+ ],
+ "checks": [
+  {
+   "id": "B13",
+   "result": "pass",
+   "evidence": "New build on phone 1 (RF8Y60PP2XZ), Hebrew Home. The gold 'שחק' is now a parallelogram leaning like '/'. Its face runs x=82..1026 at y=1350 and x=54..998 at y=1550: 28 px over 200 px, which is 8.0°. Over the whole face (y≈1313..1580) the top sits about 37 px right of the bottom. Gradient goes from #ffdf86 at the top to #f6c321 at the bottom, with a thin #fff1c9 line on top. The edge is #b88f00, rows 1584-1593 (about 10 px, 4 dp), slanted straight under the face (zoom shots -1-zoomL/-1-zoomR). The label is upright and centred. Press and hold (screencap mid-press): the face top moves from y=1313 to y=1325 and the edge shrinks to a single row, i.e. the face sinks onto the edge; on release Modes opens. English 'Play' leans the same way ('/'): x=99..1009 at y=1350, x=71..982 at y=1550. 'צור חדר': left edge x=565 to 552 between y=2050 and 2130. 'התחל אימון': x=51 to 38 between y=2030 and 2130. 'שחק' next to my row in the leaderboard: slanted, with its gold edge. Settings button edge: #2a3140, 9 px. Shots: qa-shots/RF8Y60PP2XZ-fix-B13-1.png, -1-zoomL.png, -1-zoomR.png, -2-press.png, -3-startcrop.png, -4-enc.png, -8-lbc.png. Side finding, reported as a separate appBug: the hero 'שחק'/'Play' sometimes stays about 96.5% of its size.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B16",
+   "result": "pass",
+   "evidence": "Modes friends footer: 'צור חדר' (gold) and 'הצטרף עם קוד' (slate) are both parallelograms with the same lean. 'צור חדר' left edge: 565/560/557/554/552 at y=2050/2070/2090/2110/2130, against the old 562/557/560. 'הצטרף עם קוד' right edge: 527/526/523/521/518. The gap between the inner edges is 34±1 px from top to bottom. Each edge band is slanted under its own face: gold #b88f00, slate #2a3140. 'לסיים את האימון?' dialog: gold 'ביטול' left edge goes 486 to 474 and red 'כן, לסיים' right edge goes 452 to 438 (y=1930 to 2030); the gap is 34 px, 36 px at the bottom corner. The red is on a dark red edge. Language dialog 'להחליף את השפה ל־English?': gold 'החלפה והפעלה מחדש' left edge goes 483 to 473 and slate 'ביטול' right edge goes 448 to 438; the gap is 34-35 px. Labels are upright. After 'ביטול' the language stayed Hebrew and the PID stayed 17698 (no restart). The English dialog leans the same way. Device-check note: at y≈2040 and y≈2150 the measurement lands on the rounded corner and on the edge band. On the straight part the slope is 0.14-0.16. Shots: qa-shots/RF8Y60PP2XZ-fix-B16-1.png, -1-gap.png, -2-endmodalc.png, -3-langmodalc.png, -4-langmodal-enc.png.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B19",
+   "result": "pass",
+   "evidence": "Bot practice against Pip (Fast), one correct move (A1=5), then 'סיום אימון' > 'כן, לסיים' > Results. 'משחק חדש' (gold, right) and 'צפייה חוזרת' (slate with clock icon, left) are both parallelograms. Gold left edge: 539/536/533/531/528 at y=2050..2130 (8°). Slate right edge: 505/503/500/497/494. The gap is 33-34 px from top to bottom. Labels are upright, and each edge is slanted under its own button: #b88f00 and #2a3140. After scrolling to the end the buttons are at exactly the same coordinates. In RF8Y80NPLZW-action-pair-1crop.png they were rounded rectangles. Shots: qa-shots/RF8Y60PP2XZ-fix-B19-1.png, -1crop.png, -2-scrolled.png.",
+   "qaAction": "none"
+  },
+  {
+   "id": "general-depth-gold",
+   "result": "pass",
+   "evidence": "Every v6 expected line seen: parallelogram at about 8° with upright text on Home, 'צור חדר', 'התחל אימון' and 'Play'; gradient with a thin light line on top; #b88f00 edge of about 10 px, slanted; settings button on a #2a3140 edge of 9 px; English leans the same way as Hebrew. Language was 'עברית' before the switch and was put back to 'עברית'; get-app-locales = he. A fix note was recorded, with a note line about the separate hero-scale bug. --fixed-in had to be shortened to '1.1.0 (03.11.2026 04:36) + שרת staging', because the server rejects fixedIn over 40 characters.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-depth-disabled",
+   "result": "pass",
+   "evidence": "With an empty code and with 12345, 'הצטרף' is dark grey #1f2430, flat, with a thin #2a3140 border and grey text. It has no edge below it and is slanted: left edge from x=57 at the top to x=42 at the bottom. Shot: RF8Y60PP2XZ-fix-disabled-4-five.png. After typing 9, 'לא מצאנו חדר עם הקוד ⁦123 459⁩. בדוק את הספרות.' appeared and the app stayed open. 'הצטרף' turned gold with a #b88f00 edge and stayed slanted: x=50 to 39 between y=900 and 980 (shot -6-after.png). The 'מצטרף לחדר…' spinner was not caught: the error came back in under 250 ms. On the first attempt 'adb input text 12345' dropped the '4' once; a clean retry worked. Fix note recorded, fixed-in shortened as above.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-depth-pair",
+   "result": "pass",
+   "evidence": "All three pairs are slanted at the same angle, with parallel inner edges and an even 33-35 px gap. 'הצטרף עם קוד' and the language dialog's 'ביטול' are slate on a grey edge. 'כן, לסיים' has a red outline on a dark red edge. The gold buttons are 'ביטול' in 'לסיים את האימון?' and 'החלפה והפעלה מחדש' in the language dialog. Text is upright. After 'ביטול' the app stayed in Hebrew with the same PID 17698. Fix note recorded.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "postgame-results-v2-action-pair",
+   "result": "pass",
+   "evidence": "A thin line sits above the buttons. 'משחק חדש' is gold on the right; 'צפייה חוזרת' is dark grey with a clock icon on the left. Both are slanted with a 33-34 px gap and stay fixed while scrolling. 'צפייה חוזרת' opened 'צפייה חוזרת' with 'אימון מול בוט · מהיר · היום', and Android back returned to Results (results-best visible), not to Home. Fix note recorded.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "postgame-replay-explain-correct",
+   "result": "pass",
+   "evidence": "טלפון 1, אימון מול Pip, עברית, גופן רגיל. בשלב 16 השורה מעל הלוח: 'אני · נכון ב־A2 · +4.5'. בכרטיס שלי: 'נכון +4.5'. המהלך 'A2 → 3' שלם, בשורה אחת, ולידו 'בודד גלוי'. המשפט: 'בשורה A חסרים 3, 7 ו־9. בעמודה 2 כבר יש 7 ו־9. לכן רק 3.' תחת 'חישוב הניקוד': '9 − 6 + (9 − 6) / 2 = 4.5', בלי 'points'. מתחת: '6 בשורה, הספרה 3 6 פעמים בלוח'. כלומר X=6 ≥ Y=6, ו־P=4.5 כמו בתג. בכרטיסים למעלה: 'אני' עם ● תכלת, ו'Pip' עם ▲. צילומים: qa-shots/RF8Y60PP2XZ-fix-replay-explain-1crop.png ו־RF8Y60PP2XZ-fix-B24-1crop.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "postgame-results-buttons-large-font",
+   "result": "pass",
+   "evidence": "font_scale 2.0, ואחר כך הוחזר ל־1.0. אימון מול Pip: ספרה נכונה אחת, Pip הוביל ב־4, ואז סיום. 'הפסד' בשורה אחת, ברוחב 380px מול 341px בגופן רגיל. הצ'יפים 2×2 ושלמים: 'בשורה', 'בטור', 'בריבוע', 'ספרות 9 / בלוח' (השבירה בין מילים). הכותרת: 'אימון מול בוט · מהיר' ובשורה השנייה '· 2 שחקנים'. התג 'בוט' שלם. הפרסים 'המהלך הטוב / ביותר · אני', 'הכי מעט / טעויות · Pip' ו'הכי הרבה / נקודות · Pip' שלמים, בלי '…'. האריחים שלמים. 'משחק חדש' מלא, ו'צפייה חוזרת' מתחתיו מלא ומוטה. אין גלילה לרוחב. צילומים: qa-shots/RF8Y60PP2XZ-fix-B17-1s.png עד -4s.png ו־-4btn.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B17",
+   "result": "pass",
+   "evidence": "בגופן 2.0 בעברית: הצ'יפים 2×2 עם מילים שלמות ('ספרות 9 / בלוח'), בלי '…'. הכותרת המלאה נשברה לשתי שורות: 'אימון מול בוט · מהיר' ואחריה '· 2 שחקנים'. הנקודה המפרידה פותחת את השורה השנייה, וזה רק עניין קוסמטי. 'בוט' שלם, ושורות הפרס שלמות. בגופן רגיל הצ'יפים ארבעה בשורה. צילומים: qa-shots/RF8Y60PP2XZ-fix-B17-2s.png, ‏RF8Y60PP2XZ-fix-B17-1hdr.png, ‏RF8Y60PP2XZ-fix-B17-2bot.png, ‏RF8Y60PP2XZ-fix-B20-2crop.png (גופן רגיל)",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B20",
+   "result": "pass",
+   "evidence": "1) בתוצאות, בגופן רגיל, 'מהלך המשחק' מציג '+4.5' ואחריו 'A2 → 3' שלם. הנקודות בצבע תכלת ולא בזהב כמו שכתוב בבדיקה. 2) בכרטיס ההסבר בצפייה החוזרת: 'A2 → 3' שלם, משמאל לימין, ליד 'בודד גלוי'. 3) בגופן 2.0: 'A3 → 9' שלם, גם בתוצאות וגם בכרטיס. בגרמנית: 'A6 → 9', גם ב־'Zug des Spiels' וגם בכרטיס, עם 'Nackter Einer'. בערבית: 'A3 → 2' בתוצאות ובכרטיס, עם 'المفرد الظاهر'. 4) ב־uiautomator, ‏replay-explain-me-move מכיל שלושה צמתי טקסט: 'A2', '→', '3'. צילומים: qa-shots/RF8Y60PP2XZ-fix-B20-2crop.png, ‏RF8Y60PP2XZ-fix-replay-explain-1crop.png, ‏RF8Y60PP2XZ-fix-B20-3card.png, ‏RF8Y60PP2XZ-fix-B20-de-1crop.png, ‏RF8Y60PP2XZ-fix-B20-de-2crop.png, ‏RF8Y60PP2XZ-fix-B20-ar-1crop.png, ‏RF8Y60PP2XZ-fix-B1-ar-1crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B18",
+   "result": "pass",
+   "evidence": "אימון לבד מהיר, שני מהלכים נכונים, סיום, ואז צפייה חוזרת. בכרטיס העליון: 'אני' עם ● תכלת. ‏desc: 'אני · מקום 1 · 0 נקודות · חושב, אין טעויות', ואחרי המהלכים: 'אני · מקום 1 · 7 נקודות …'. כרטיס 'הסבר לכל שחקן' כותב 'אני'. המילה 'שחקן' לא מופיעה. צילום: qa-shots/RF8Y60PP2XZ-fix-B18-1crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B24",
+   "result": "pass",
+   "evidence": "אימון מול Pip, צפייה חוזרת, שלב 16: 'אני · נכון ב־A2 · +4.5'. הכרטיס העליון: 'אני' (desc 'אני · מקום 1 · …'), זהה לכרטיס ההסבר 'אני: נכון +4.5…'. צילומים: qa-shots/RF8Y60PP2XZ-fix-B24-1crop.png ו־RF8Y60PP2XZ-fix-B24-1narr.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B31",
+   "result": "pass",
+   "evidence": "בצפייה החוזרת של אימון מול Pip: הכרטיס שלי 'אני' עם ● תכלת (P1), וכרטיס הבוט 'Pip' עם ▲ והתג 'בוט'. כך גם בערבית ('أنا' / 'Pip'), ביפנית ('自分') ובגרמנית ('Ich'). צילום: qa-shots/RF8Y60PP2XZ-fix-B24-1crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B34",
+   "result": "pass",
+   "evidence": "בצפייה החוזרת של אימון מול בוט, הכרטיס העליון 'אני' תואם לקריינות 'אני · נכון ב־A2 · +4.5' ו'אני · טעות ב־C3 · −3'. צילום: qa-shots/RF8Y60PP2XZ-fix-B24-1crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B1",
+   "result": "pass",
+   "evidence": "בעברית: 'חישוב הניקוד', ‏'9 − 6 + (9 − 6) / 2 = 4.5', ומתחת '6 בשורה, הספרה 3 6 פעמים בלוח'. בטעות: 'הקנס: כמה הייתה שווה הספרה הנכונה', ‏'9 − 7 + (9 − 7) / 2 = 3', ומתחת '7 בטור, 7 בריבוע'. בערבית: 'حساب النقاط', ‏'9 − 6 + (9 − 6) / 2 = 4.5', ומתחת '6 في الصف، 6 في العمود'. בטעות: 'الغرامة: قيمة الرقم الصحيح', ‏'9 − 7 + (9 − 5) / 2 = 4', ומתחת '7 في الصف، 5 في المربع'. ביפנית: '得点', ‏'9 − 6 + (9 − 5) / 2 = 5', ומתחת '同じ行に6マス、同じブロックに5マス'. בטעות: 'ペナルティ：正しい数字の点数', ‏'9 − 7 + (9 − 6) / 2 = 3.5', ומתחת '同じ行に7マス、同じ列に6マス'. הנוסחה תמיד משמאל לימין, בלי 'points'. בגרמנית יש פסיק עשרוני ('= 3,5'). הערה: בערבית וביפנית שיחקתי אימון מול Pip ולא אימון לבד. זה אותו כרטיס הסבר. צילומים: qa-shots/RF8Y60PP2XZ-fix-replay-explain-1crop.png, ‏RF8Y60PP2XZ-fix-B1-he-1crop.png, ‏RF8Y60PP2XZ-fix-B1-ar-1crop.png, ‏RF8Y60PP2XZ-fix-B1-ar-2crop.png, ‏RF8Y60PP2XZ-fix-B1-ja-1crop.png, ‏RF8Y60PP2XZ-fix-B1-ja-2crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B26",
+   "result": "pass",
+   "evidence": "ב־L013 כבר שיחקו בחשבון הזה (שיא 0 מתוך 5), ולכן פתחתי את L017 ('עוד לא שוחק') עם 'פתח את כל השלבים (בדיקה)'. כיביתי את המתג אחר כך, והסתרתי שוב את אזור הבדיקה. 1) הזמן נגמר עם 0: מופיעים 'הזמן נגמר', '0 מתוך 5 מקומות' ו'בלי כוכבים'. אין 'שיא חדש!' ואין 'השיא שלך:'. 2) 'שוב', ‏5 מתוך 5 מקומות ב־3.8 ש׳ (שיחקתי עם סקריפט שקורא צילומי מסך): 'שלב 17 הושלם', שלושה כוכבים, 'שיא חדש!', ‏+30 XP. 3) 'שוב' ונתתי לזמן להיגמר עם 0: 'הזמן נגמר', '0 מתוך 5', ‏'השיא שלך: ★★★', בלי 'שיא חדש!'. תופעת לוואי: ל־L017 של אורי יש עכשיו 3 כוכבים. צילומים: qa-shots/RF8Y60PP2XZ-fix-B26-1s.png, ‏RF8Y60PP2XZ-fix-B26-2s.png, ‏RF8Y60PP2XZ-fix-B26-3s.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "levels-boss-l020",
+   "result": "pass",
+   "evidence": "טלפון 1, בנייה 03.11.2026 04:36. ב־L020 (פתיחת כל השלבים דלוקה): כתוב 'שלב בוס!', יש כתר זהב מעל האווטר של Pip, והשבב 'מה קשה יותר' נקרא 'Pip מהיר ב־10%': ‏Pip בקצה הימני ו־10% בקצה השמאלי, אחרי 'ב־'. צילום התקריב: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-fix-levels-boss-l020-chip.png. במסך המרוץ יש כתר על הכרטיס של Pip (צילום levels-boss-l020-2.png). גם בבוס של L030 השבב תקין (RF8Y60PP2XZ-fix-B39-2.png).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "levels-chain-accept",
+   "result": "pass",
+   "evidence": "ב־L031, כשהקנס על ניחוש כבוי: הקלדתי A7=7 לפני A8. ‏A7 היא הצעד השלישי, והפותר קבע שהערך שלה זהה בכל הפתרונות ושהיא לא בודד גלוי או נסתר. הספרה נכנסה בלי קנס ובלי הודעה. המונה עלה מ'צעד 1 מתוך 3' ל'צעד 2 מתוך 3', ואין סימון של המשבצת הבאה (RF8Y60PP2XZ-fix-levels-chain-accept-5.png). אחר כך הקלדתי 8 ב־A1 (8 כבר בשורה): הופיע הצ'יפ '+5 ש׳' ליד השעון, והזמן קפץ מ־4.8 ל־11.6 ש׳ (צילום ‎-6.png). השלב הסתיים ב־15.6 ש׳ עם 2 כוכבים.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "levels-fill-chapter14",
+   "result": "pass",
+   "evidence": "שלושה שלבים, בכל אחד האזור כולו ריק, כתוב '0/9 משבצות', והסרגל נגמר ב־60 ש׳. ‏L134 (ריבוע 5, הסרגל 42/54/60), ‏L147 (שורה A, הסרגל 45/55/60), ‏L154 (עמודה 5, הסרגל 45/55/60). כל אחד הושלם ב־8.9 ש׳, לפני הזמן. ב־L131 (עמודה 9) כתוב '0/8 משבצות', הסרגל 38/50/60, והפאנל כותב 'מלא את 8 המשבצות החסרות'. הצילומים: RF8Y60PP2XZ-fix-levels-fill-chapter14-L134-1.png, ‏L147-1, ‏L154-1, ‏L131-1.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B27",
+   "result": "pass",
+   "evidence": "בעברית: השבב בפתיחה של L020 ושל L030 נקרא 'Pip מהיר ב־10%' (‏Pip מימין, 10% משמאל). בשורת הבוט בפאנל של L010, ‏L020, ‏L021 ו־L025 כתוב 'Pip · רמה 1 · טירון', ו־Pip ליד ה־▲ בצד ימין (RF8Y60PP2XZ-fix-B30-L010.png). בתוצאה של L030 שורת ההכרעה 'Pip ניצח', עם Pip מימין (RF8Y60PP2XZ-fix-B27-verdict-zoom.png). את הסיבה 'X הגיע ראשון' מקבלים רק בדו־קרב, כשהבוט מגיע ראשון ליעד. ‏Pip ברמה 1 לא הגיע ל־30, ולכן הפסדתי ב־L290 מול Overlord: 'Overlord הגיע ראשון' ו־'Overlord ניצח', שניהם עם השם מימין (RF8Y60PP2XZ-fix-B27-botwon-a.png ו־‎-b.png). השער: Biscuit הוא פרק 5. בשער שלפני פרק 5 כתוב 'Biscuit · שלבים 41–50', עם Biscuit מימין (RF8Y60PP2XZ-fix-B27-gate5-zoom.png). בשער שלפני פרק 6 כתוב '‏שורות ועמודות · שלבים 51–60', וגם הוא תקין. כלומר, בבדיקה במסמך כתוב בטעות פרק 6 / ‏51–60. בערבית השבב ב־L020 נקרא 'Pip أسرع بنسبة 10%', עם Pip מימין ו־10% משמאל (RF8Y60PP2XZ-fix-B27-ar-1.png).",
+   "qaAction": "none (המשימה levels-boss-l020 סומנה fix)"
+  },
+  {
+   "id": "B33",
+   "result": "pass",
+   "evidence": "נכנסתי למפה 3 פעמים מבית ← שחק ← אימון בשלבים, בלי לגעת במסך. בכל פעם השלב הנוכחי (15, עם טבעת זהב) והאסימון שלי היו ב־y=765 מתוך 2340. זה בערך 39% מגובה אזור המפה, שנמשך מ־y=255 עד y=1555, מעל הפאנל, שמתחיל ב־y≈1555 (RF8Y60PP2XZ-fix-B33-1.png). אחר כך שיחקתי את שלב 15 (נגמר בזמן) ובחרתי 'למפה'. המפה זזה לשלב 16, הבא בתור: טבעת זהב ואסימון ב־y=767, מעל הפאנל (RF8Y60PP2XZ-fix-B33-3.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B30",
+   "result": "pass",
+   "evidence": "בשורת הבוט בפאנל של L010, ‏L020, ‏L021 ו־L025 התג 'בוט' מלא, בשורה אחת. מדדתי ב־L021: התג נמשך מ־x=980 עד x=1058, כלומר 22 פיקסלים מהקצה הימני (RF8Y60PP2XZ-fix-B30-L021-zoom.png, ‏-L020-zoom.png, ‏-L025-zoom.png). ביפנית, ב־L020, כתוב 'ボット' מלא ובתוך המסך, בקצה השמאלי (RF8Y60PP2XZ-fix-B30-ja-zoom.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B39",
+   "result": "pass",
+   "evidence": "בפרק 1 של החשבון יש 21/20, ולכן מקרה הנעילה נבדק בבוס של פרק 3 (L030). שם היו 3/20, והשער לפרק 4 היה סגור. הגעתי ל־L030 ביציאה מ־L024 עד L029, בלי פתיחת כל השלבים. ב־X של L030: 'לצאת מהשלב?' / 'תקבל 0 כוכבים, והשלב הבא יישאר נעול.' (RF8Y60PP2XZ-fix-B39-4.png). אחרי 'יציאה' התוצאה: 'יצאת מהשלב', 'השער לפרק 4: ★ 3/20', 'השלב הבא עוד נעול' (‎-5.png), ובמפה כתוב 'פרק 4 נעול, 3 מתוך 20 כוכבים'. בשלב רגיל (L024 עד L029) כתוב 'תקבל 0 כוכבים, והשלב הבא ייפתח.' (‎-1.png). ב־L010, כשבפרק 1 יש 21/20: 'ייפתח', והתוצאה מציגה 'לשלב הבא' ו'נפתח!' (‎-6-zoom.png). כשפתיחת כל השלבים דלוקה, ה־X של L030 כותב 'ייפתח', והתוצאה מציגה 'לשלב הבא' (‎-7-zoom.png). את האנגלית (הבדיקה הרשותית) לא בדקתי: אחרי ששיחקתי ב־L031 עם פתיחת כל השלבים, פרק 4 נחשב פתוח, ולא נשאר בוס עם שער סגור שאפשר להגיע אליו.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B7",
+   "result": "pass",
+   "evidence": "רק בעברית, לפי ההוראה. הכותרת 'אימון בשלבים' בשורה אחת, בגודל מלא. התג '39/900 ★' וכפתור החזרה שלמים (RF8Y60PP2XZ-fix-B33-1.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "game-moves-reduced-wrong",
+   "result": "pass",
+   "evidence": "טלפון 1, בנייה 04:36 (lastUpdateTime 2026-11-03 04:37). הפחתת תנועה 'מופעלת', אימון לבד מהיר, 2 טעויות (A3=7 ו־B1=7, צילומי רצף על המכשיר כל ~80ms). אין רעידה. המסגרת האדומה מלאה ב־3 צילומים (התחלה ב־22/104/183ms) ודועכת ברביעי (254ms), ובניסיון השני מלאה ב־2 ודועכת ב־2. לפני התיקון נתפס פריים אחד בלבד. הספרה האדומה הקטנה מופיעה בפינה הימנית התחתונה. בכרטיס: הניקוד ‎−5 אדום ו'1 טעות' אדום לרגע, ואחר כך חוזרים לצבע רגיל (הצ'יפ ‎−5 נשאר אדום). צילומים: qa-shots/RF8Y60PP2XZ-fix-B36-1.png, -B36-2.png, -B36-card.png. בסוף ההגדרה הוחזרה ל'כבויה'.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-ambient-everywhere",
+   "result": "pass",
+   "evidence": "הפחתת תנועה 'כבויה'. יש ספרות ברקע ב־17 מסכים: הגדרות, עריכת פרופיל, שחקנים חסומים, רישיונות, כרטיס שחקן, משחק חדש, סוג משחק, בחר יריב בוט, משחק אימון לבד, תוצאות, טבלת מובילים, היסטוריה, צפייה חוזרת, הישגים, המפה פעמיים (לפני ואחרי גלילה) והצטרף עם קוד (מונטאז'ים qa-shots/RF8Y60PP2XZ-fix-amb-montA/B/C.png). על הלוח אין ספרות. המקשים, שהיו החלק שנכשל: 6 צילומים במשך 12 שניות בלי משבצת נבחרת, ועוד 7 עם מקש 1 בספירה 0. בתוך 9 המקשים השתנו 0 פיקסלים, ובאותו זמן 267–379 פיקסלים זזו ברווחים שבין המקשים. ספרה שעוברת ליד מקש נחתכת בקצה שלו (RF8Y60PP2XZ-fix-B15-key1-zoom.png). מסך החיפוש (שלב 7) והחדר (שלב 8) לא צולמו שוב, כי בסבב הזה אסור. הם עברו בבדיקה הקודמת.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B36",
+   "result": "pass",
+   "evidence": "כמו game-moves-reduced-wrong: המסגרת האדומה (2dp, כ־5–6px) עומדת בערך 0.3 שניות ודועכת, ונראית ב־4 מתוך כ־22 צילומים בכל ניסיון. אין רעידה. הספרה הקטנה בפינה מופיעה, והקנס אדום לרגע. הסרטון עצמו לא נותח: screenrecord בפורמט frames לא הפיק כלום, ואין ffmpeg. לכן נעשה צילום רצף מקביל על המכשיר. הקבצים RF8Y60PP2XZ-fix-B36-1.png ו־-2.png נמצאים ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/",
+   "qaAction": "none"
+  },
+  {
+   "id": "B15",
+   "result": "pass",
+   "evidence": "בלי משבצת נבחרת המקשים עמומים כמו קודם, ובתוכם אין אף ספרה מהרקע (0 פיקסלים השתנו ב־13 צילומים). אחרי שמילאתי את כל ה־1 (ספירה 0), המקש 1 כהה יותר ועדיין אטום. אחרי הקשה על משבצת המקשים מוארים עם מסגרת תכלת, והשפה התחתונה (y=1991–2002) בצבע אחיד (29,82,100) שלא משתנה בין צילומים. ספרה '2' מהרקע נחתכת בקצה השפה. צילומים: RF8Y60PP2XZ-fix-B15-keys-idle.png, -B15-count0-keys.png, -B15-armed.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B50",
+   "result": "partial",
+   "evidence": "המקלדת (אותו רכיב Keypad) נבדקה באימון לבד ואטומה (ראו B15). כפתור 'הפרעה' בכרטיס היריב לא נבדק: זה דורש משחק מדורג 2P בין שני הטלפונים, ובסבב הזה אסור לחפש משחק מדורג.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B25",
+   "result": "pass",
+   "evidence": "נבדק ב־L041 (נפתח עם המתג 'פתח את כל השלבים', שהוחזר לכבוי). ספרה נכונה ‎+3.5 ואחריה טעות: הניקוד ‎−0.5 שלם, הצ'יפ ‎−4 מעל 'נקודות' ליד המספר, ו'מהלך 2 נשרף' מתחת לנקודות בלי מגע. אחרי טעות שנייה: ‎−6.5 שלם עם צ'יפ ‎−6. הלוח לא זז (T=806 בכל הצילומים). בגופן מקסימלי (font_scale 2.0) המספר קטן יותר ושלם, והמילים 'מהלך 2 / נשרף' בשתי שורות בלי חפיפה. באנגלית: 'Move 2 burned', שורה אחת. בגרמנית: 'Zug 2 / verschenkt' בשתי שורות ממורכזות, '−0,5' שלם. צילומים: RF8Y60PP2XZ-fix-B25-n2-hud2.png, -f3-hud1.png, -f3-hud3.png, -en-hud.png, -de-hud.png. נמצא משהו אחר, מחוץ לשורה הזו: בגופן מקסימלי התוויות של סף הכוכבים מתחת לשורה מתנגשות (ראו appBugs).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B29",
+   "result": "pass",
+   "evidence": "ב־L041, אחרי מהלך שגוי, 'מהלך 2 נשרף' / 'מהלך 3 נשרף' והנקודות קריאים במלואם, ו'נקודות' לא מוסתר. כך גם בגודל רגיל וגם ב־font_scale 2.0 (RF8Y60PP2XZ-fix-B25-n2-hud2.png, -f3-hud1.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B35",
+   "result": "pass",
+   "evidence": "L017 כבר שוחק בחשבון, לכן נבדק ב־L033, מרוץ שלא שוחק. ניסיון ראשון: הזמן נגמר, 0 מתוך 5, בלי כוכבים. אין 'שיא חדש!' ואין 'השיא שלך:' (חיפוש 'שיא' ב־dump החזיר 0). גם ניסיון שני עם 0 בלי שורת שיא. ניסיון שלישי עם 3 מקומות (★★): מוצג 'שיא חדש!' עם ‎+20 XP. ניסיון רביעי עם 0: 'השיא שלך: שני כוכבים מתוך שלושה', בלי 'שיא חדש!'. צילומים: RF8Y60PP2XZ-fix-B26-1.png, -B26-3.png, -B26-4.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B48",
+   "result": "pass",
+   "evidence": "בעברית: L033 כמו ב־B35. באנגלית: L043, שלא שוחק, הזמן נגמר, '0 of 5 spots', 'no stars'. אין 'New best!' ואין 'Your best' (חיפוש החזיר 0). צילום: RF8Y60PP2XZ-fix-B48-en.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B11",
+   "result": "pass",
+   "evidence": "תרחיש 1, ב־L010 בלי לקחת מקום: HOME ב'עוד 2 ש׳', ובניסיון השני בדיוק ב'עוד 0 ש׳' עם Pip 2, כמו בדיווח המקורי. חזרתי אחרי 20 שניות. 'הבוס ניצח הפעם' / 'הזמן נגמר' / '0 מתוך 5' נשארו גלויים אחרי 1, 3, 10, 30 (גם בגלילה) ו־60 שניות. ב־dump היו 33 צמתים של level-result ב־10 וב־60 שניות (RF8Y60PP2XZ-fix-B11-2-mont.png). תרחיש 2, L019 ב־1.9 שניות (★★★, שיא חדש): HOME כשנראו '+30 XP' והקונפטי. אחרי חזרה ו־10 שניות הכוכבים זהובים והשורה '+30 XP' נשארה (RF8Y60PP2XZ-fix-B11s2-r10c.png). תרחיש 3, ניצחון 5:0 על הבוס L010: בפעם הראשונה HOME לפני שהתוצאה הופיעה. בפעם השנייה HOME כשהכתר כבר מלא והכוכב השלישי עוד באמצע ההופעה. אחרי חזרה הכתר בגודל מלא (אותו היקף זהב 319×231 בכל הצילומים), וכל 3 הכוכבים זהובים (RF8Y60PP2XZ-fix-B11s3d-r10c.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B28",
+   "result": "pass",
+   "evidence": "לא שוחזר. 1) L040, אחריו 'לשלב הבא', ו־HOME אחרי שנייה בזמן 'מוכן?' של L041 (צילום לפני HOME). חזרתי אחרי 90 שניות: 'מוכן?' הופיע עוד ב־0.75 שניות והשלים את הזמן שנשאר. ב־2.0 שניות השעון 0:29, ב־31.6 שניות 0:00, ו'הזמן נגמר' ב־34.2 שניות, כלומר כ־30 שניות של משחק גלוי. 2) 'לשלב הבא' מ־L041 ל־L042, ו־HOME אחרי 2.2 שניות כשהמסך היה ריק, בין 'מוכן?' ללוח. בחזרה הופיע 'ממשיכים בעוד 3·2·1', והשעון התחיל מ־0:01, כלומר לא רץ ברקע. 3) 'שוב' ב־L042 ו־HOME בזמן 'מוכן?'. בחזרה 'מוכן?' הושלם, השעון מ־0:00 ועד 0:38, והתוצאה ב־42.6 שניות (40 שניות מלאות). שלבים 2 ו־3 נעשו על L042 ולא על L041. מונטאז'ים: RF8Y60PP2XZ-fix-B28-1-mont.png, -2-mont.png, -3-mont.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "Q1",
+   "result": "pass",
+   "evidence": "באימון לבד מהיר, בלי נעילה: ‏10 מתוך 10 הרצות של uiautomator dump הצליחו ('UI hierchary dumped'), כל אחת כ־4–5 שניות. ב־solo-hud-time-stat יש content-desc בצעדים של 5 שניות: 'זמן 0:10', 0:15, 0:20, 0:25, 0:30, 0:35, 0:40, 0:45, 0:55, 1:00. ב־solo-hud-time הטקסט ריק. גם 'adb.ts ui' עבד במשחק בכל הפעמים שהרצתי אותו. השעון נראה רגיל (ספרות לבנות, '0:04' במונטאז' B). לידיעה, לא כשל: dump בזמן שאני מחזיק נעילה לקח 11.6 שניות והסתיים רק אחרי שהנעילה פגה. במסך שלב (L041 בזמן משחק) הוא נכשל ב־'could not get idle state'. הוא כן עבד בשלב שכבר נגמר ובמסכי התוצאות.",
+   "qaAction": "none"
+  },
+  {
+   "id": "general-lang19-legal",
+   "result": "pass",
+   "evidence": "טלפון 3, Samsung Internet. האפליקציה בגרמנית: הכתובת https://sudoku-fight-staging.fly.dev/legal/privacy?lang=de, הכותרת 'Datenschutzerklärung', ושורת 'Dies ist eine Übersetzung … maßgeblich.' עם הקישור 'English'. 'English' פתח את 'Privacy Policy' בלי שורת תרגום. 'Nutzungsbedingungen' נפתח בגרמנית עם אותה שורה. בערבית: 'سياسة الخصوصية' מימין לשמאל עם 'هذه ترجمة…'. ביפנית: 'プライバシーポリシー' עם '本書は英語版の翻訳です…'. ב־delete-account?lang=de: 'Dein Konto löschen' עם השורה. בעברית: 'מדיניות פרטיות' בלי שורה. בכל דף 19 השמות שלמים ב־6 שורות, השפה הנוכחית מודגשת ובלי קו תחתון, ואחרי החלקה לצדדים 0 פיקסלים השתנו. שפת האפליקציה הוחזרה ל'שפת המכשיר / עברית'. צילומים: qa-shots/RF8Y30L038L-fix-legal-de.png, -fix-legal-arja.png, -fix-legal-dehe.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-lang19-invite-page",
+   "result": "pass",
+   "evidence": "/r/123456: ב־de 'Du bist zu einem Spiel bei Sudoku Fight eingeladen', 'Raumcode', '123 456', 'In der App öffnen' ו־'Neues Spiel → Code eingeben'. ב־ar הדף מימין לשמאל, '123 456' משמאל לימין, ו־'مباراة جديدة ← انضم برمز'. ב־ja 'Sudoku Fightの対戦に招待されました', 'ルームコード' ו־'新しい対戦 → コードで参加'. ב־sw הדף בעברית: 'הוזמנת למשחק סודוקו פייט'. 19 השמות שלמים ב־6 שורות, בלי גלילה לרוחב. '日本語' בדף הגרמני החליף ליפנית עם אותו קוד. 'Datenschutzerklärung' פתח את מדיניות הפרטיות בגרמנית. צילומים: qa-shots/RF8Y30L038L-fix-inv-mont.png, -fix-inv-mont2.png, -fix-inv-de2ja-s.png, -fix-inv-de-privacy-s.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "avatars-pirates-crash-join-code",
+   "result": "pass",
+   "evidence": "עם 0 ו־5 ספרות 'הצטרף' אפור. בספרה השישית (918273) הופיעה ההודעה 'לא מצאנו חדר עם הקוד ⁦918 273⁩. בדוק את הספרות.' ו'הצטרף' חזר. מחיקה העלימה את ההודעה וכיבתה את הכפתור. בהקלדה החוזרת ובהקשה על 'הצטרף' ההודעה חזרה. צילום מהיר תפס את השורה עם הספינר ו'מצטרף לחדר…' במקום הכפתור (qa-shots/RF8Y30L038L-fix-join-joining.png). השורה מוצגת פחות מ־0.3 ש׳. אין שורות ב־logcat -b crash מאז 06:15:41, וה־PID ‏16184 לא השתנה. הערה קטנה: בזמן ההצטרפות שורת השגיאה נעלמת, ולכן שורת 'הדבק' ושורת ההצטרפות עולות בכ־85 פיקסלים ואז יורדות בחזרה.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "account-settings-look",
+   "result": "pass",
+   "evidence": "כל הקטעים מוצגים: 'צליל ורטט' עם שני המתגים והתיאורים. ב'הפחתת תנועה' האפשרויות 'כמו במכשיר', 'מופעלת', 'כבויה', ו'כבויה' מסומנת. 'שפה': 'שפת המכשיר' ומתחת 'עברית', עם 'החלפת שפה מפעילה מחדש את האפליקציה.'. 'חשבון': 'מחובר כ־achvata.chess@gmail.com', 'כניסה עם Google', 'עריכת פרופיל', 'שחקנים חסומים', 'התנתקות' והכפתור האדום 'מחיקת חשבון'. 'מידע ומשפטי': שלוש השורות. 'בדיקה' כבר היה פתוח: הסתרתי אותו, ואחרי 7 הקשות הופיעה ההודעה 'אזור הבדיקה נפתח, בתחתית ההגדרות' והוא חזר לפני הגרסה (נשאר פתוח, כמו שמצאתי). בסוף 'גרסה 1.1.0' ו־'build 87760ce-dirty · staging · מנוע 0.4.0'. צילומים: qa-shots/RF8Y30L038L-fix-settings-1.png, -fix-settings-2.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "avatars-pirates-lab",
+   "result": "partial",
+   "evidence": "כל השורות הסטטיות נראו: הכותרת, 9 הכפתורים, שתי העמודות ו־4 הגדלים (ב־22 רק הראש), משפט התנועות, ההבעות, הקפיצה, שני הלוחות, ו'סגירה' חוזר ל'הגדרות'. אבל במעבר בין הדמויות האפליקציה עדיין נתקעת: 3 ANR (05:49:54, 05:51:02, 05:52:07), חלון 'האפליקציה לא מגיבה' ב־05:52:10, ומבול של synchronouslyUpdateUIProps ביומן. הבמה ריקה 1.3 ש׳ ויותר, פעם אחת יותר מ־60 ש׳. במעבר המהיר 1→9→8→1 הקפטן הופיע רק אחרי 2.5 עד 3 ש׳. פירוט ב־B32.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "B6",
+   "result": "pass",
+   "evidence": "Samsung Internet, לאורך המסך. privacy?lang=he: 'סודוקו פייט' בשורה אחת מימין, ומתחתיו 19 שמות ב־6 שורות, כל שם שלם ('Português (Brasil)', 'Bahasa Indonesia', 'Tiếng Việt'). 'עברית' מודגשת ובלי קו. ב־ar השורה מתחילה מימין. ב־pt-BR, en, terms?lang=de ו־delete-account?lang=ja היא מתחילה משמאל, ו־'Sudoku Fight' בשורה אחת. גם ב־/r/123456 בעברית ובפורטוגזית: אותה כותרת, '123 456' והכפתור 'פתח באפליקציה' / 'Abrir no app'. החלקה ימינה ושמאלה ב־9 דפים: 0 פיקסלים השתנו, בלי שטח ריק. הקשה על '日本語' טענה את הדף ביפנית, והשפה הנוכחית מודגשת בלי קו. צילומים: qa-shots/RF8Y30L038L-fix-B6-he.png, -fix-B6-mont1.png, -fix-B6-mont2.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B32",
+   "result": "fail",
+   "evidence": "בלי 'adb logcat -c' (אסור): ספרתי מ־05:46:38 עם logcat -T. הקשתי על כפתורי 'דמות' 2..9..1 כל 0.8 ש׳, כ־50 ש׳ החל מ־05:49:37, עם idle דלוק. נמדדו 3 am_anr לאותו PID ‏16184 ('Input dispatching timed out … Waited 10000ms for MotionEvent'), וב־05:52:10 נוסף חלון ה־ANR (ty=2003). הכפתור הנבחר הופיע רק אחרי 0.5–1.3 ש׳, ובהרבה הקשות לא הופיע גם אחרי כ־2.2 ש׳. ביומן: 353,626 שורות 'W Reanimated: synchronouslyUpdateUIProps failed for tag N' (Caused by RetryableMountingLayerException: Unable to find SurfaceMountingManager), ובסך הכל 12.6 מיליון שורות (1.45GB) בכ־10 דקות: 6.9 מיליון ב־05:52, ו־5.7 מיליון ב־05:55–05:56. המחסנית: com.horcrux.svg.VirtualView.setClientRect → FabricEventDispatcher.dispatchEvent → NodesManager.onEventDispatch → synchronouslyUpdateUIProps, כלומר הנתיב של reanimated-onEventDispatch.patch שלא הוחל. גם מעבר בודד לא עומד ב'בתוך כשנייה': ב־6→1 הבמה נשארה ריקה יותר מ־60 ש׳ (ה־UI thread היה עסוק במבול, ו־input swipe לקח 3.5 ש׳). בסיבוב הראשון, 1.6 ש׳ אחרי ההקשה, הבמה הייתה ריקה בדמויות 3, 4, 5 ו־9. קטע מהיומן: qa-shots/RF8Y30L038L-B32-flood-excerpt.txt. צילומים: qa-shots/RF8Y30L038L-fix-B32-after1.png, -fix-lab-chars-mont.png, -fix-lab-c3-mont.png",
+   "qaAction": "mark partial (avatars-pirates-lab)"
+  },
+  {
+   "id": "Q2",
+   "result": "pass",
+   "evidence": "על 'פיראטים' (מסך שזז כל הזמן) הרצתי ui שלוש פעמים. בכל פעם: exit 1 אחרי כ־37 ש׳ (ההערכה הייתה כ־30 ש׳), עם 'uiautomator could not read the screen (3 tries): ERROR: could not get idle state.' ו־'Something on the screen keeps moving: wait and run ui again, or take a shot.'. התוויות של 'הגדרות' (המסך הקודם) לא הודפסו אף פעם. אחרי הכישלון /sdcard/qa-ui.xml החזיר 'No such file or directory'. ב'הגדרות' ובבית ui עבד, ו־tap \"<label>\" הקיש (למשל 'הסתרת אזור הבדיקה', 'הגדרות'). 'shot' בלי שם הדפיס נתיב ל־PNG. 'shot <file>' פעמיים דרס את הקובץ: הזמן השתנה מ־05:46:03 ל־05:46:07, והגודל מ־319228 ל־318410.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B12",
+   "result": "partial",
+   "evidence": "הגדרות ← 'הפחתת תנועה' על 'כבויה': 24 פריימים (כ־16 ש׳). בתוך הבורר, כולל המסגרת, 0 פיקסלים השתנו, בזמן שספרות זזו ממש מעליו ומתחתיו (1243 ו־1541 פיקסלים בפס של 25 פיקסלים בכל צד). הגוון הזהוב תקין (מילוי 39,37,28, מסגרת זהב). על 'מופעלת' הספרות עומדות, ובתוך המקטעים יש רק צבעי המילוי והטקסט; ספרה שליד המסגרת נחתכת בקצה (qa-shots/RF8Y30L038L-fix-B12-on.png). אחר כך הוחזר ל'כבויה'. טבלת מובילים: בצ'יפים 'כללי' ו'מהיר' ספרות לא נראות. השינויים היחידים היו ספרה בפינה שמחוץ לצורה המעוגלת, ותזוזה של קצה הצ'יפ הנבחר כשהבחירה מתייצבת. בורר 2/3/4 לא מוצג לחשבון הזה, כי showsPlayersPicker דורש board.players != null: לא נבדק. היסטוריה: צ'יפ הרצף, 90 פריימים, 0 שינויים בתוך המילוי, ו־545 שינויים רק בפינות שמחוץ לצורה, בזמן שספרות עברו מכל צד. הצ'יפ האדום בשלב 3 (פאזל), 'החלפה שגויה +5 ש׳': 29 פריימים בלי שום שינוי, אבל אף ספרה לא עברה מתחתיו בזמן הצילום. בשלב 2 (ריבוע, 20 ש׳) הצ'יפ 'טעות +5 ש׳' הופיע רק כשהזמן כבר נגמר.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B4",
+   "result": "pass",
+   "evidence": "Hebrew Home, recent row after a lost bot practice vs Mr. Hoot: title 'אימון מול בוט · מהיר', then 'הפסד מול Mr. Hoot' whole, and '3 בנוב׳, 06:43' whole on the line below. No '…' (RF8Y30L038L-fix-B4-1c.png). Arabic: 'خسارة ضد Mr. Hoot' whole, with '3 نوفمبر، 6:43 ص' whole on the second line (RF8Y30L038L-fix-B4-2c.png). Rows that fit stay on one line, e.g. 'فوز ضد Pip  30 أكتوبر، 7:34 م'. A solo row with no rival reads 'منتهية  3 نوفمبر، 6:52 ص' on one line (RF8Y30L038L-fix-B4-3s.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B5",
+   "result": "pass",
+   "evidence": "Arabic Settings, bottom of the screen. The build line, read right to left, is 'البناء 87760ce-dirty · staging · المحرك 0.4.0'. The sha '87760ce-dirty' is in one piece right after 'البناء', and the digits are not split off before the Arabic word (RF8Y30L038L-fix-B5-1c.png). The dump text is '⁦البناء ⁦87760ce-dirty⁩ · staging · المحرك ⁦0.4.0⁩⁩'.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B2",
+   "result": "pass",
+   "evidence": "Thai 'Plurals and numbers' screen: Date '3 พฤศจิกายน 2569', Date in digits '03/11/2569', Decimal 39.5, Percent 57% (RF8Y30L038L-fix-B2-1c.png). Thai player card: 'เล่นมาตั้งแต่ ตุลาคม 2569' (RF8Y30L038L-fix-B2-2c.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "general-lang19-arabic-rtl",
+   "result": "partial",
+   "evidence": "The language dialog 'להחליף את השפה ל־العربية?' opened and the app restarted in Arabic. The screens are RTL, the back chevron points right and sits on the right, the bottom bar reads الرئيسية / المتصدرون / السجل / الإنجازات, and all digits are 0–9 (100%, the dates, 'في الساحة منذ أكتوبر 2026'). B4 and B5 are fixed. Two new problems: (1) On the first of two in-app switches from he to ar, Home stayed blank under the profile card. 'هيا نلعب', the 'جولة أخرى' card and the 'المباريات الأخيرة' header were invisible: absent from the uiautomator dump, but the button still worked when tapped. They stayed hidden after going to Settings and back, and only a cold restart brought them back (RF8Y30L038L-fix-arrtl-3s.png, -4s.png). On the second switch Home was normal (RF8Y30L038L-fix-arrtl-8s.png). (2) On the player card, the stat label 'سلسلة الفوز' shows only 'سلسلة'. Its node is 831–1006 px wide and one line tall, so 'الفوز' goes onto a hidden second line with no '…' (RF8Y30L038L-fix-arrtl-7c.png).",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "general-lang19-arabic-solo",
+   "result": "pass",
+   "evidence": "Game type 'سريع': the range reads '4–6 د' with 4 on the left (RF8Y30L038L-fix-arsolo-1z.png). The board is LTR (A1 at x=98, A9 at x=982) and the keypad runs 1–9 left to right. The strip reads 'خانتك D5 · 8 ثوانٍ' (RF8Y30L038L-fix-arsolo-5s.png). Results show 'انتهى التدريب', 'حركة المباراة', 'الرئيسية', 'مباراة جديدة' and 'إعادة العرض', with 10.5 and 0.9 ث in 0–9 digits. In the replay, all 20 steps are Arabic, e.g. 'أنا · صحيح في A3 · +4.5' and 'أنا · خطأ في A6 · −4.5'. The wrong step shows '1 بدلًا من 9' and 'لماذا لا يصلح 1: …'. After 'حساب النقاط' the line reads '9 − 6 + (9 − 6) / 2 = 4.5' left to right, then '6 في المربع، الرقم 7 على اللوحة 6 مرات'. After 'الغرامة: قيمة الرقم الصحيح' comes the same formula, then '6 في الصف، الرقم 9 على اللوحة 6 مرات' (RF8Y30L038L-fix-arsolo-9c.png, -10s.png). Side note, outside the expected lines: the results header 'تدريب فردي · سريع' is cut to 'تدريب فردي ·' (listed in appBugs).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-lang19-japanese-bot",
+   "result": "pass",
+   "evidence": "Bot list: names Pip, Biscuit, Mr. Hoot, Maestro and Overlord in Latin letters; titles 初心者, アマチュア, 上級者, マスター and グランドマスター. Game and results are all in Japanese (RF8Y30L038L-fix-ja-games.png). All 18 replay steps are in Japanese: 'ステップ8/18', '自分 · A2で正解 · +4.5', 'Pip · G9でミス · −4.5'. The wrong step shows '5ではなく1' and '1が入らない理由：1はすでにB行にあります（B5）。'. The formula follows 得点: '9 − 5 + (9 − 5) / 2 = 6', then '同じ行に5マス、同じ列に5マス'. After 'ペナルティ：正しい数字の点数' it reads '9 − 7 + (9 − 6) / 2 = 3.5', then '同じブロックに7マス、盤面に5が6個'. Pip's card has the same form (RF8Y30L038L-fix-ja-replays.png).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-lang19-numbers-screen",
+   "result": "pass",
+   "evidence": "de: '3. November 2026', '03.11.2026', 39,5, '57 %'. tr: '3 Kasım 2026', '03.11.2026', 39,5, '%57'. ar: '3 نوفمبر 2026', '03/11/2026' (0–9), 39.5, 57%. th: '3 พฤศจิกายน 2569', '03/11/2569', and the player card reads 'เล่นมาตั้งแต่ ตุลาคม 2569'. Both dates show in every language. The testing section was already open, so I did not hide it.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-lang19-numbers-app",
+   "result": "partial",
+   "evidence": "de: '12,5' on the in-game card and at 'Endpunktzahl 12,5' (RF8Y30L038L-fix-numapp-de-1c.png). ar Home recent rows use 0–9 ('3 نوفمبر، 6:43 ص', '30 أكتوبر، 7:34 م'). th player card: 'เล่นมาตั้งแต่ ตุลาคม 2569' (fixed). New problem: in 'السجل' under the 'الكل' filter, only the first card shows, half transparent. The other cards are invisible and absent from the dump, although the header says 'مباراة واحدة · 7 تدريبات', and scrolling does not reveal them. The same happens in Hebrew and Thai (RF8Y30L038L-fix-ar-hist4s.png, RF8Y30L038L-fix-he-hists.png, RF8Y30L038L-fix-th-hist2s.png). The 'مصنفة' filter shows its single card opaque, with '30 أكتوبر' in 0–9 digits.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "general-lang19-fit-new-game",
+   "result": "partial",
+   "evidence": "Phone 3, screen emulated at 720x1560 / density 320, checked in de, ru, fr, th, ja, pl, nl, id and es. Passed: every title is whole (Neues Spiel, Новая партия, Nouvelle partie, เกมใหม่, 新しい対戦, Pertandingan baru). All 6 rows show in full with no scrolling. The tag pairs Без рейтинга+Можно без сети and Non classée+Jouable hors ligne each sit on one line. The Тренировка по этапам card is above the footer line, both footer buttons are whole in every language, and Thai marks are whole. The swipe 360,1200->360,400 moved the list 0 px in all 9 languages (best-offset compare of the two shots, mean diff 0.04-0.06). Still wrong: in ru (and es) the profile name next to the avatar is cut to 'אחוו…' (the name is 'אחוותא'). In de, th and ja the name shows whole; in fr and id it is hidden (avatar only). Shots: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/small/RF8Y30L038L-ru-1.png, .../small/RF8Y30L038L-es-1.png, zoom .../qa-shots/RF8Y30L038L-fix-B3-ru-header.png",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "general-lang19-sweep",
+   "result": "partial",
+   "evidence": "Covered all 17 languages plus en and he: Home, New Game, map and Settings with the language sheet, a dump and a shot of each (C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/sweep/). All the fixes work: the map title is whole everywhere (2 lines in es, pt-BR, fr, ru, it, tr, id, pl, vi, nl and en; 1 line in de, th and the CJK languages). tr shows Çevrimdışı and vi shows Không mạng. No avatar node has a content-desc and 'neutral' appears nowhere. No Hebrew letters (other than the player name and the עברית row), no tofu, 开始 in zh-Hans and 開始 in zh-Hant, and only ar is RTL. The ✓ sits by the chosen language in all 17; from Русский down you only see it after scrolling the sheet. One line not met: the expected line says the word 'Offline' appears in no language, but the staged-practice chip (home:levels.offline) reads 'Offline' in de, it, nl and id. In those same languages the other chips say 'Auch offline', 'Anche offline', 'Werkt offline' and 'Bisa offline', so it is likely the local word. It is not in glossary.csv or SAME_AS_ENGLISH_OK.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "general-lang19-pseudo",
+   "result": "partial",
+   "evidence": "en-XA works, and these are now whole: the New Game title '[Ñéŵ ĝåmé one]', the practice tags, the bottom nav (shrunk font) and '[Ļîķé ťĥé ðévîçé one]' (2 lines). Still cut with '…' and no ']': the 3 Home rating chips '[Þŕövîšîöñåļ o…', the ranked section note '[Ŕéåļ öþþöñéñťš, îñ ŕéåļ ťîmé one t…', the staged-practice subtitle '[Šĥöŕť šťåĝéš • ûþ ťö 3 šťåŕš one two …' and the testing row '[Ĥîðé ťĥé ťéšťîñĝ šéçťîöñ one t…'. ar-XB is right: RTL, words reversed, board A1 left to A9 right, keypad 1-9 left to right, '4–6' not flipped, 'None' on the right. Returned to Hebrew with the field showing 'שפת המכשיר / עברית'. Shots: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/pseudo/m-xa1.png, m-xa2.png, m-xb.png",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "B3",
+   "result": "partial",
+   "evidence": "(a) Hebrew at normal resolution: 'משחק חדש' is whole at the start, with 'אחוותא' and the avatar together at the far end (.../qa-shots/RF8Y30L038L-fix-B3-1.png). (b) At 720x1560/320: Новая партия, Nouvelle partie and es Nueva partida are whole with no '…'. The tag pairs are on one line in ru, fr and es (Sin puntuación + Sin conexión). The stage card is above the footer line. The swipe moved the list 0 px in ru, fr, es, de, th, ja, pl and nl. BUT in ru and es the name next to the avatar shows as 'אחוו…', a cut name rather than hidden or whole. (c) Did not test TalkBack (optional). The dump has modes-me desc='אחוותא', the profile name. wm size/density were reset and the locale restored.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B7",
+   "result": "pass",
+   "evidence": "The map title header in es, pt-BR, de, fr, ru, it, tr, id, pl, vi, th, nl and en is whole, with no '…' and no word split. 2 lines: 'Práctica por / fases', 'Treino em / fases', 'Entraînement / par étapes', 'Тренировка / по этапам', 'Allenamento / a fasi', 'Aşamalı / antrenman', 'Latihan / bertahap', 'Trening w / etapach', 'Luyện tập theo / màn', 'Oefenen in / etappes', 'Staged / practice'. 1 line: de 'Etappentraining' (smaller) and th 'ฝึกซ้อมแบบด่าน'. The '★ 0/900' chip and the back button are whole. Hebrew 'אימון בשלבים' is on one line at full size. Shots: .../qa-shots/sweep/m-<lang>.png, .../qa-shots/RF8Y30L038L-fix-B7-vi.png, .../qa-shots/p3-maphdr-cmp.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B8",
+   "result": "pass",
+   "evidence": "New Game in id: 'Pertandingan baru' is whole and the avatar is at the end (name hidden), both at normal resolution and at 360x780dp. ru: 'Рейтинговые ——— Живые соперники онлайн' is whole with a visible rule; nl: 'Ranked spelen ——— Tegelijk tegen echte spelers'. Home card in id: the account has 1 game and 100%, not 10 and 40%. '1 pertandingan' sits side by side in the first cell, and nothing crosses a divider: measured gaps are word end x=393 to divider ~403, then '100%' starts ~406, and 'menang' ends 674 with the divider at 677. Tight (about 1 dp from the divider) but not glued. Hebrew shows one line per stat. Zoom: .../qa-shots/RF8Y30L038L-fix-B8-home-id-crop.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B9",
+   "result": "pass",
+   "evidence": "tr New Game: 'Aşama 1 · ★ 0' + 'Çevrimdışı' on one line. vi: 'Màn 1 · ★ 0' + 'Không mạng' on one line, and the bot and solo rows show 'Không xếp hạng' + 'Không mạng' on one line. nl ranked line: 'Ranked spelen ——— Tegelijk tegen echte spelers'. Note: I did not play a stage first (the young account is at stage 1 with ★0) so as not to change its progress; a chip after one stage would have the same number of digits.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B10",
+   "result": "pass",
+   "evidence": "Dumps of Home, New Game and the map in he, en, de and the other 16 languages: modes-me-avatar-image, mode-solo-avatar-image, node-1-tile-pin-avatar-image and recent-avatar-...-image have no content-desc anywhere, and 'neutral' is in no dump. The Home profile-card desc reads e.g. 'כרטיס השחקן שלי: אחוותא, ישראל, בדירוג זמני, רמה 2 · 206 / 400 XP, דירוג מהיר 1229, זמני, … משחק אחד, 100% ניצחונות, רצף של ניצחון אחד', with nothing in English for the avatar. I did not listen with TalkBack; the evidence is the content-desc.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B21",
+   "result": "pass",
+   "evidence": "טלפון 3, גופן 1.0, תוצאות של הפסד מול Pip (6.5 מול 13.5) שנפתחו מ'משחקים אחרונים'. בגרמנית הצ'יפים ב־2×2 ומלאים: 'in der Zeile', 'in der Spalte', 'im Block', '2er auf dem Spielfeld' (אין '…'). 'Neues Spiel' (זהב, x=302) ו־'Wiederholung' (x=791) באותה שורה, y=2087. אחרי החזרה לעברית: 'משחק חדש' (x=774) ו'צפייה חוזרת' (x=284) עדיין באותה שורה, y=2087. צילומים: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y30L038L-fix-postgame-de-pair.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B22",
+   "result": "pass",
+   "evidence": "ביפנית התג על האווטר של Pip שלם: 'ボット'. ברוסית שורת הפרס 'Меньше всех ошибок · Pip' נשברת לשתי שורות, שלמה. הכותרת המשנית ברוסית 'Тренировка с ботом · / Быстрая · 2 игрока' (בבדיקה במכשיר היה כתוב 'Быстро', ובאפליקציה 'Быстрая') ובגרמנית 'Training gegen Bot • Schnell • 2 / Spieler' נשברות בין מילים, בלי '…'. השפה הוחזרה ל'שפת המכשיר'. צילומים: qa-shots/RF8Y30L038L-fix-postgame-ja-pair.png, -ru-pair.png, -de-pair.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B23",
+   "result": "pass",
+   "evidence": "נבדק בחשבון 'אחוותא' (זמני, רמה 2), לא 'מומו'. בשורה המוצמדת (leaderboard-me-row, מסגרת תכלת, 'שחק' לידה): בלשונית 'כללי' '#3' ובלשונית 'מהיר' '#2', האווטר, '● אחוותא', ומתחת לשם 'בדירוג זמני · רמה 2' שלם בשורה אחת, בלי '…'. בצד השני '1229' והתג 'זמני' מתחתיו (x=377/376, y=1882/1943). בשורה המוצמדת אין דגל, ובשלושת המובילים יש 🇮🇱. התווית לקורא המסך: 'מקום 3, אחוותא (אתה), ישראל, בדירוג זמני, רמה 2, דירוג 1229, זמני'. מה לא נבדק: שורות רשימה של שחקנים זמניים, כי כל השחקנים הזמניים נמצאים בשלושת המובילים ואין אף אחד מהם ברשימה. ב'רגיל' וב'קשה' אין לי שורה. צילומים: qa-shots/RF8Y30L038L-fix-B23-1-crop.png, -fast-crop.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B46",
+   "result": "pass",
+   "evidence": "טלפון 3, השפה באפליקציה 'שפת המכשיר'. החלפתי את שפת המכשיר עם cmd locale set-device-locale, וחזרתי לאפליקציה מהאפליקציות האחרונות. עשיתי 3 סבבים מלאים (he→de→sv-SE→he), 9 החלפות. בכל אחת האפליקציה עלתה מחדש בשפה הנכונה ('Spielen', 'Play', 'שחק'), ו־uiautomator מצא את profile-card (count=1). אחרי 5 שניות, מעבר להגדרות וחזרה, הכרטיס עדיין שם. בצילומים הכרטיס נראה במלואו (אווטר, שם, 3 דירוגים, שורת סטטיסטיקה). הפעלה קרה בלי רשת (מצב טיסה ו־Wi-Fi כבוי): מסך הפתיחה כשנייה, ואז בבית הכרטיס, 'אין חיבור לאינטרנט', 'שחק' והשורות האחרונות. אחרי שהרשת חזרה, משיכה לרענון ומעבר לשונית, הכל עדיין גלוי. שפת המכשיר הוחזרה ל־he-IL, מצב טיסה כבוי ו־Wi-Fi דלוק. צילומים: qa-shots/RF8Y30L038L-fix-B46-de-pair.png, -1-pair.png, -nonet-*.png",
+   "qaAction": "none"
+  },
+  {
+   "id": "B14",
+   "result": "partial",
+   "evidence": "נמדד בטלפון 3, לא בטלפון 1. השתמשתי ב־gfxinfo reset/framestats, ובמקום 'logcat -c' (אסור) ספרתי עם logcat -T <זמן>. לפני / אחרי: (a) 'שחק'→'משחק חדש': קודם 0.8–1.05 שניות עם פריימים של 310–530 ms. עכשיו מהפעם השנייה: המסך החדש מופיע ב־222–256 ms, הפריים הארוך ביותר 131–159 ms, והעמעום נגמר כ־0.45–0.5 שניות (בצילום ב־~490 ms המסך מלא). בפעם הראשונה אחרי הפעלה: המסך החדש רק ב־544 ms, וסך הכל 0.8–1.1 שניות. (b) חזרה לבית (חץ או Back): קודם 0.45–0.75 שניות, עכשיו ~0.2–0.23 שניות, בלי פריים ארוך. בצילום של אמצע העמעום האווטר הוא אותה תמונה, והאווטר מתחיל לזוז אחרי כ־0.8 שניות. (c) 'הגדרות': קודם 0.47–0.65 שניות, עכשיו ~0.35 שניות (פריים של 86 ms). (d) מהבית ל'שחק' או להגדרות: 0 כשלים, וגם ב־Back של המערכת 0. אבל בחץ 'חזרה' שבאפליקציה היו 52, 60, 60 ו־0 כשלים. ובבית→'היסטוריה' היו כ־6,700–8,900 כשלים והאפליקציה קפאה ל־6.5–7.4 שניות (Skipped 444–620 frames). (e) כל מהלך במשחק בוט נותן כ־230 כשלים (3 תגים, ~72 עדכונים כל אחד, כשנייה אחרי המהלך). אין פריים ארוך (מקסימום 43 ms). (f) המהלך האחרון→תוצאות: פריימים של 763 ו־801 ms, Skipped 69 frames, ו־944 כשלים. דרך 'סיום אימון'→תוצאות: 2 פריימים של ~300–350 ms, Skipped 30 frames, ו־~430 כשלים. (g) בחירת אווטר 5 פעמים מהר: 0 כשלים, אבל פריימים של עד 739 ms (Skipped 57 frames).",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "postgame-results-v2-languages",
+   "result": "pass",
+   "evidence": "גרמנית, רוסית, ערבית ויפנית, גופן רגיל, הפסד מול Pip. בכולן הכותרת בשורה אחת ('Niederlage', 'Поражение', 'خسارة', '敗北'). ארבעת הצ'יפים מלאים ובשתי שורות לכל היותר. הכפתורים מלאים וזה לצד זה: הזהב משמאל, ובערבית מימין. 'B2 → 2' כתוב משמאל לימין. תג הבוט 'Bot'/'Бот'/'بوت'/'ボット' שלם. הכותרת והפרסים נשברים בין מילים, ואין עברית במסך. הערה קוסמטית: ביפנית הצ'יפ '同じブロック' נשבר באמצע המילה ('同じブロッ / ク'), אבל שלם ובלי '…'. צילומים: qa-shots/RF8Y30L038L-fix-postgame-{de,ru,ar,ja}-pair.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "avatars-pirates-board-pinned-compact",
+   "result": "pass",
+   "evidence": "כמו ב־B23: השורה המוצמדת במסגרת P1 ו'שחק' לידה. '#3' ו־'#2' מלאים, האווטר ו־'● אחוותא' מלא, בלי דגל. בשלושת המובילים יש דגל. 'בדירוג זמני · רמה 2' בלי '…', ו'זמני' מתחת ל־1229. צילומים: qa-shots/RF8Y30L038L-fix-B23-1-crop.png, -fast-crop.png",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-ambient-screen-change",
+   "result": "partial",
+   "evidence": "לא ראיתי אף פעם מסך שזז הצידה. בצילום של אמצע המעבר (Back מ'משחק חדש') שני המסכים במקומם בשקיפות, ואין הבהוב שחור. הזמנים: הגדרות ~0.35 שניות, חזרה לבית ~0.2 שניות, היסטוריה→בית ~0.34 שניות, ו'שחק' מהפעם השנייה ~0.45–0.5 שניות. אבל בבית→'היסטוריה' האפליקציה קופאת ל־6.5–7.4 שניות (5 מתוך 5 ניסיונות), ואחר כך ב'הכל' מופיע רק כרטיס אחד חצי שקוף. 'שחק' בפעם הראשונה ~0.8–1.1 שניות. את הספרות המשוטטות לא מדדתי שוב בפיקסלים. ההקלטה (שלב 5) לא נותחה כי אין ffmpeg. הוא סומן שוב partial עם התיאור החדש.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "B42",
+   "result": "pass",
+   "evidence": "משחק חדר 1 (טלפון 1 'אורי' מארח עם שומר התוכי המושקע, טלפון 3 'אחוותא' עם מחשבון). בטלפון 3: בכרטיס היריב שומר התוכי עם דגל (qa-shots/RF8Y30L038L-fix-after-dismiss.png). במשבצת A7 שאורי נעל רק הפנים שלו במסגרת כתומה (RF8Y30L038L-fix-B42-lock.png). ב־😂 האימוג'י עלה, ובשני פריימים הפנים של שומר התוכי צחקו, עם עיניים סגורות ופה פתוח (RF8Y30L038L-fix-B42-react-fast.png). את הקפיצה עצמה אי אפשר להפריד בצילומי מסך, כי האימוג'י מכסה את האווטר. בטלפון 1: בכרטיס היריב המחשבון עם דגל, ובמשבצת A3 ראש המחשבון (RF8Y60PP2XZ-fix-B42-lock.png). בתוצאות בשני הטלפונים מופיע האווטר של היריב (fix-B42-results-both.png). אחר כך משחק מדורג 2 שחקנים בין אותם חשבונות: הכרטיסים והראשים במשבצות הנעולות נכונים בשני הכיוונים (fix-ranked-lock-both.png), וגם התוצאות (fix-ranked-results-both.png). כל הנתיבים בתיקייה C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/",
+   "qaAction": "none"
+  },
+  {
+   "id": "B51",
+   "result": "pass",
+   "evidence": "משחק חדר 2 (טלפון 3 מארח, טלפון 1 'אורי' עם הגברת הפיראטית המושקעת). בטלפון 3 הגברת הפיראטית מופיעה בכיסא ▲ (RF8Y30L038L-fix-fake-room-s.png), בכרטיס במשחק, ובמשבצת B8: רק ראש עם כובע, בריבוע עם טבעת כתומה (RF8Y30L038L-fix-fake-lock-cell.png). היא מופיעה גם בתוצאות (RF8Y30L038L-fix-fake-results-s.png), בכרטיס בהיסטוריה ובצפייה החוזרת (RF8Y30L038L-fix-fake-hist-replay.png). בטלפון 1 'אחוותא' עם המחשבון הרגיל במשחק 1: בכרטיס, במשבצת A3 ובתוצאות. בשום מקום לא הופיעה צללית אפורה.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B44",
+   "result": "pass",
+   "evidence": "טלפון 3 ← היסטוריה. הכרטיס של משחק החברים: 'הפסד · עם חברים · מהיר'. בצפייה החוזרת שלו כתוב מתחת לכותרת 'עם חברים · מהיר · היום', וכך גם בשני משחקי החברים (RF8Y30L038L-fix-B44-replay.png, RF8Y30L038L-fix-B52-replay.png). במשחק המדורג האמיתי שאחריהם הצפייה החוזרת אומרת 'מדורג · מהיר · היום'.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B52",
+   "result": "pass",
+   "evidence": "כמו ב־B44: היסטוריה ← משחק חברים (מספר 2: 10.5 : 0) ← צפייה חוזרת. מתחת לכותרת 'עם חברים · מהיר · היום' ולא 'מדורג' (RF8Y30L038L-fix-fake-hist-replay.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "B41",
+   "result": "pass",
+   "evidence": "משחק חדר 1 בלי אף מהלך נכון, וטלפון 3 נכנע. בכרטיס 'מהלך המשחק' כתוב 'לא היה לך מהלך נכון במשחק הזה', גם בטלפון 3 (הפסד) וגם בטלפון 1 (ניצחון) (fix-B42-results-both.png). אחר כך פתחתי בטלפון 3 אימון לבד מהיר וסיימתי אותו מיד ('סיום אימון' ← 'כן, לסיים'). בתוצאות אותה שורה: 'לא היה לך מהלך נכון במשחק הזה'.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B40",
+   "result": "pass",
+   "evidence": "טלפון 1 (מארח), לבד בחדר, בלי גלילה (uiautomator). 'התחל משחק' ב־[45,1812][1035,1959], ההערה ב־[45,1980][1035,2025], 'יציאה מהחדר' ב־[45,2048][1035,2171]. סרגל הניווט מתחיל ב־2205, ו־footer ב־[0,1775][1080,2340]. הקשה אחת על 'יציאה מהחדר' החזירה ל'משחק חדש', ו־MainActivity נשארה topResumed. אורח (טלפון 3): 'מחכים ש־אורי יתחיל' בערך ב־y=1998 ו'יציאה מהחדר' בערך ב־y=2110, נעוצים ב־footer מעל הסרגל (RF8Y30L038L-fix-B40-guest.png). את הגבולות מדדתי מהצילום, כי uiautomator לא הצליח לקרוא את המסך: הספינר ושעון מעורר הזיזו אותו. הקשה ב־540,2110 הוציאה את האורח מהחדר, האפליקציה נשארה בחזית, והמארח ראה שוב כיסא פנוי.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B53",
+   "result": "pass",
+   "evidence": "טלפון 3 לבד בחדר חדש (צור חדר), בלי גלילה. ההערה 'צריך לפחות 2 שחקנים מחוברים כדי להתחיל' ב־[45,1980][1035,2025], ו'יציאה מהחדר' ב־[45,2048][1035,2171]. הסרגל מתחיל ב־2205 (RF8Y30L038L-fix-B53-1.png). הקשה על 'יציאה מהחדר' (540,2110) החזירה ל'משחק חדש', והאפליקציה נשארה בחזית.",
+   "qaAction": "none"
+  },
+  {
+   "id": "B49",
+   "result": "pass",
+   "evidence": "בחדר, לבד (טלפון 3): 'התחל משחק' אפור, שטוח, עם מסגרת דקה ובלי קצה, ומקבילית. הקצה השמאלי זז 11 פיקסלים על 78 שורות, וגם הימני, כלומר בערך 8° (RF8Y30L038L-fix-B49-disabled-zoom.png). אחרי שאורח הצטרף: זהב עם קצה, מוטה בערך 8° (שמאל: 9 פיקסלים על 60 שורות; ימין: 13 על 100), בלי קריסה, בשני הטלפונים (RF8Y60PP2XZ-fix-B49-gold-zoom.png, RF8Y30L038L-fix-fake-room.png). חלון הכניעה במשחק מדורג (טלפון 3): 'ביטול' זז 15 פיקסלים על 100 שורות, ו'כן, להיכנע' 14 על 100, שניהם בערך 8° (RF8Y30L038L-fix-B49-surrender-zoom.png). 'שחק' בבית מוטה: 22 פיקסלים על 160 שורות, בערך 7.8° (RF8Y30L038L-fix-B49-home.png, RF8Y60PP2XZ-fix-B49-1.png).",
+   "qaAction": "none"
+  },
+  {
+   "id": "avatars-pirates-rival-phone",
+   "result": "pass",
+   "evidence": "טלפון 1 = א' (אורי). החלפתי את האווטר מ'הגברת הפיראטית (מושקע)' ל'שומר התוכי (מושקע)', ובסוף החזרתי אותו. טלפון 3 = ב'. בטלפון ב' שומר התוכי מופיע בחדר, בספירה (RF8Y30L038L-fix-rival-count-s.png) ובכרטיס במשחק. במשבצת A7 רק הפנים. ב־😂 פני צחוק. הוא מופיע גם בתוצאות, בפודיום של טבלת המובילים (RF8Y30L038L-fix-rival-lb-podium.png), בכרטיס השחקן (RF8Y30L038L-fix-rival-card-top.png) ובהיסטוריה. בצפייה החוזרת: 'עם חברים · מהיר · היום' (RF8Y30L038L-fix-rival-hist-replay.png).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "avatars-pirates-rival-fake",
+   "result": "pass",
+   "evidence": "בדיקה בדרך ב' (בלי token, ולכן ה־PATCH לא רלוונטי): טלפון 3 מארח מול טלפון 1 'אורי' עם הגברת הפיראטית המושקעת. מה שראיתי: הפיראטית בכיסא ▲; הכפתור 'התחל משחק · 2 שחקנים' נדלק בלי קריסה; בכרטיס במשחק הפיראטית; במשבצת B8 רק ראש עם כובע וטבעת כתומה; בתוצאות, בכרטיס בהיסטוריה ובצפייה החוזרת הפיראטית; הכותרת 'עם חברים · מהיר · היום'. במשחק שובצו 3 ספרות נכונות לפני הכניעה.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-depth-no-pair",
+   "result": "pass",
+   "evidence": "טלפון 3 לבד בחדר חדש. 'שתף קישור' ו'העתק קוד' ישרים: הקצה השמאלי ב־x=93 בכל השורות 620 עד 700, והימני ב־x=986. שניהם אפורים מלאים על קצה אפור (RF8Y30L038L-fix-nopair-zoom.png). 'התחל משחק' בשורה משלו, אפור, שטוח ומושבת, ומוטה בערך 8°. 'יציאה מהחדר' הוציא מהחדר.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B37",
+   "result": "fail",
+   "evidence": "I measured with screenrecord on the phone, extracting a frame every 50 ms (videos in scratchpad/rec/*-g2/g3/g4/b1.mp4, contact sheets rec/p1-g3-fine.png, p3-g3-fine.png, p1-g4-fine.png, p1-b1-fine.png). Phone 1, reduced motion on, against phone 3, two runs: '3' was shown for only about 0.45-0.5 s, '2' about 1 s, '1' about 0.95 s, so the whole count took about 2.4 s; in the run where the board was captured, GO! lasted 1.3 s or more before it appeared. Phone 1, reduced motion off, against phone 3: no '3' at all; 'נמצא יריב!' went to a dark frame and then straight to '2' (0.95 s), '1' (0.85 s), GO! 1.5 s, then the board. Phone 1 against the ranked bot (אבי43), reduced motion off: again no '3'; '2' 0.95 s, '1' 0.95 s, GO! 1.45 s, board. Phone 3, reduced motion off, three runs: '3' was missing every time and '2' sometimes lasted only 0.3-0.45 s; GO! 1.45 s, with a blank frame before GO! and another before the board. With reduced motion on the digits do cross-fade with no ring, which is correct. The 'נמצא יריב!' screen now stays 1.5-2 s, longer than 1.2 s, so it looks like the screen switches to the count late and the first digit is lost.",
+   "qaAction": "mark partial (pregame-found-countdown-reduced)"
+  },
+  {
+   "id": "B43",
+   "result": "partial",
+   "evidence": "The server hold works. 'נמצא יריב!' with the VS badge and both tiles stayed about 1.45-1.6 s on phone 1 and 1.8-2.1 s on phone 3 before the count. There is no jump from search to countdown any more; the overviews are in rec/*-g4-overview.png. With reduced motion off on phone 1, the 'מוכן' badges popped about 0.35 s after the VS appeared and the avatar smiled; after that the avatars did not change for 0.9 s (rec/p1-g4-found-sheet.png). But on phone 3, also with reduced motion off, in three games the 'מוכן' badges never appeared on the tiles during a VS screen of about 2 s, even though it said 'כל השחקנים מוכנים · המשחק מתחיל · 2/2' (checked at 0.2, 0.9 and 1.6 s; rec/p3-g3-hi-sheet.png, rec/p3-g2-hi/14000.jpg). With reduced motion off, one dark frame is still left between the VS screen and the count on both phones.",
+   "qaAction": "mark partial (avatars-idle-still)"
+  },
+  {
+   "id": "B38",
+   "result": "pass",
+   "evidence": "In the ranked surrender dialog on phone 1 (qa-shots/RF8Y60PP2XZ-fix-B38-1.png) and the friends surrender dialog on phone 3 (qa-shots/RF8Y30L038L-fix-network-surrender-cancel-3.png), 'ביטול' is gold and wider (about 530 px against about 380 px). 'כן, להיכנע' has a red outline on a red edge. Measured on the full-resolution screenshot, the edges slant -7.8°/-7.8° (gold) and -8.1°/-8.5° (red), so they are parallel. The VS badge on 'נמצא יריב!' and in the duel HUD is a slanted plate with 'VS' upright (qa-shots/RF8Y60PP2XZ-fix-B37-1.png, rec/p3-g2-hi/14000.jpg). Tapping 'ביטול' closed the dialog and the game went on. 'שחק' on Home (qa-shots/RF8Y60PP2XZ-fix-B38-home.png) and 'משחק חדש' / 'צפייה חוזרת' on Results (qa-shots/RF8Y60PP2XZ-fix-B54-1.png) are slanted too, where the old screenshots showed straight rectangles. Both builds show it: phone 1 has the 09:07 install, phone 3 the 04:37 one.",
+   "qaAction": "fix (network-surrender-cancel, game-surrender-ranked-dialog)"
+  },
+  {
+   "id": "B54",
+   "result": "pass",
+   "evidence": "Phone 1, ranked 2-player against phone 3: I entered only a wrong digit, then surrendered. On Results the 'מהלך המשחק' card says 'לא היה לך מהלך נכון במשחק הזה' (results-best; qa-shots/RF8Y60PP2XZ-fix-B54-1.png). Phone 3 shows the same wording on the Results of a friends game where it made no move.",
+   "qaAction": "none (game-surrender-ranked-dialog marked fixed for B38/B49)"
+  },
+  {
+   "id": "pregame-found-countdown-reduced",
+   "result": "partial",
+   "evidence": "On phone 1 with reduced motion on, the digits cross-fade with no landing and no ring, which is correct. But '3' is shown only about 0.45-0.5 s, the count takes about 2.4 s instead of 3, and GO! stays 1.3 s or more before the board, not about 0.4 s. With reduced motion off, '3' is missing altogether. I put reduced motion back to 'כבויה' at the end.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "avatars-idle-still",
+   "result": "partial",
+   "evidence": "Line 1 holds: in a 3-player search of about 16 s, the avatar region on phone 1 does not change (no blink, no movement). Lines 2 and 3 hold on phone 1: the VS screen stays 1.5 s, the 'מוכן' badges pop, the avatar smiles, then both avatars stay still. On phone 3 the 'מוכן' badges and reaction never appeared during a VS screen of about 2 s, in all three games.",
+   "qaAction": "mark partial"
+  },
+  {
+   "id": "network-surrender-cancel",
+   "result": "pass",
+   "evidence": "Friends room 927467, מהיר, phone 1 hosting and phone 3 joining. On phone 3 the surrender dialog has gold 'ביטול' and red 'כן, להיכנע', both slanted about -8°. While it was open, phone 1 entered 8 in B5. After 'ביטול' the dialog closed with no loss. Phone 3's board shows 'B5, 8, נפתרה על ידי אורי', and אורי's card shows 4 with 'אורי מוביל +4' (qa-shots/RF8Y30L038L-fix-network-surrender-cancel-2/3/4.png).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "game-surrender-ranked-dialog",
+   "result": "pass",
+   "evidence": "Phone 1, ranked against phone 3. Phone 3 entered a correct digit (H1=4) and phone 1 a wrong one. The dialog opens from the bottom with the 'כניעה' tag and 'אתה בטוח שאתה רוצה להיכנע?'. Below that it shows 'המשחק ייחשב כהפסד · שינוי דירוג משוער ⁦−14⁩' in red, then the score row 'אני ● −3' against 'אחוותא ▲ 4', 'אחוותא מוביל +7' and a bar. 'ביטול' is gold and 'כן, להיכנע' red, both slanted at the same angle, with 'המשחק ממשיך ברקע' underneath (qa-shots/RF8Y60PP2XZ-fix-B38-1.png).",
+   "qaAction": "fix"
+  },
+  {
+   "id": "general-lang19-fit-interference",
+   "result": "pass",
+   "evidence": "New build, phone 1 (אורי) played against phone 3 (אחוותא): 4 ranked fast 2P games, one each with phone 1 in de, ru, th and ja. Phone 3 surrendered every game before making a move. In every language the rival-card button was written in full: 'Stören', 'Помешать', 'ก่อกวน', '妨害'. The sheet showed all 6 kinds with full names plus the price row. I swiped inside the sheet and compared pixels: the only changes were in the animated-icon rows (y≈1450-1900), while the row-2 names and the footer did not move, so nothing scrolls. Thai price row at score 10: '…ครั้งถัดไป: 4' and 'คะแนนของคุณ 10 → 8' sit on one line with an 87 px gap. At 14.5: 'ครั้งถัดไป:/4' and 'คะแนนของ/คุณ' each wrap to 2 lines, '14.5 → 12.5' stays full size, and nothing overlaps (RF8Y60PP2XZ-fix-B45-th-3price.png). Status rows were whole with no truncation: 'Keine/Fehler', 'Überlegt…', 'Без/ошибок', 'Думает…', 'ไม่มีข้อผิด/พลาด' (marks above and below the letters intact), 'กำลังคิด…', 'ミスなし', '思考中…'. The sheet was entirely in the app language except the rival's name. Shots: qa-shots/RF8Y60PP2XZ-fix-B45-{de,ru,th,ja}-1.png and -2.png, RF8Y60PP2XZ-fix-B47-{de,ru,th,ja}-1c.png. Deviation from the task wording: phone 3 was in es/pt/fr/vi instead of Hebrew, to cover B47 at the same time. This has no effect on what phone 1 shows. The game screen's uiautomator dump now works, but it still fails ('could not get idle state') while the sheet is open.",
+   "qaAction": "fix"
+  },
+  {
+   "id": "B45",
+   "result": "pass",
+   "evidence": "Thai: with 10 → 8 the price row stays on one line, and ': 4' ends about 87 px before 'คะแนนของคุณ'. With 14.5 → 12.5 the words take a second line inside the row ('ครั้งถัดไป:' / '4', 'คะแนนของ' / 'คุณ'), with no overlap, and −2 / 14.5 / 12.5 stay full size (qa-shots/RF8Y60PP2XZ-fix-B45-th-3.png, -th-3price.png, -th-pricez.png). German: 'Preis −2 Pkt. · Nächste:' / '4' and 'Deine' / 'Punkte' wrap to 2 lines, '15,5 → 13,5' is full size, no overlap, no '…' (-de-1.png, -de-price.png). Russian fits on one line: 'Цена −2 оч. · Дальше: 4 … Твой счёт 12 → 10' (-ru-1.png). Japanese fits on one line: '価格 −2点 · 次：4 … あなたの得点 9.5 → 7.5' (-ja-1.png). In all 4 languages the 6 kinds show with no scroll, and the swipe pixel diff covered only the animated-icon rows. Cosmetic only: in de and th the '4' of 'Next: 4' sits alone on the second line.",
+   "qaAction": "none (covered by the fix on general-lang19-fit-interference)"
+  },
+  {
+   "id": "B47",
+   "result": "pass",
+   "evidence": "My card (phone 1): 'Keine Fehler', 'Без ошибок' and 'ไม่มีข้อผิดพลาด' are each in full on 2 lines with no '…'. The rival card with no cell held showed the full word and the full button: es 'Piensa…' + 'Interferir', pt 'Pensa…' + 'Interferir', fr 'Pense…' + 'Perturber', vi 'Nghĩ…' + 'Phá rối' (all on phone 3), ar 'يفكر…' + 'تشويش' (phone 1), nl 'Denkt na…' + 'Storen' (phone 3), tr 'Düşünüyor…' + 'Baltala' (phone 3). Also in full: en 'Thinking…' + 'Interfere', de 'Überlegt…' + 'Stören', ru 'Думает…' + 'Помешать', th 'กำลังคิด…' + 'ก่อกวน', ja '思考中…' + '妨害'. While the rival held a cell, the lock word always wrapped to 2 lines and stayed complete ('Elige • A2', 'Escolhe • A4', 'Choisit • A1', 'Đang chọn · A1', 'Kiest • A3', 'Seçiyor • A5', 'Choosing • A6', 'قيد الاختيار • A6'). On a disabled button (0 points), the button word shrank and stayed whole: 'Interferir', 'Perturber', 'Phá rối', 'Storen', 'Baltala'. On an enabled button (I had points), it was cut with no '…': en 'Inter', ar 'تش'. This is the known limit from the notes. Shots: qa-shots/RF8Y30L038L-fix-B47-{es,pt,fr,vi,nl,tr}-1c.png and -lockc.png, RF8Y60PP2XZ-fix-B47-{de,ru,th,ja,ar,en}-1c.png, RF8Y60PP2XZ-fix-B47-ar-lockz.png, RF8Y60PP2XZ-fix-B47-en-lockz.png.",
+   "qaAction": "none (covered by the fix on general-lang19-fit-interference)"
+  }
+ ],
+ "appBugs": [
+  {
+   "id": "NEW-home-hero-scale",
+   "title": "כפתור 'שחק' בבית נשאר לפעמים מוקטן לכ־96.5% (אנימציית הכניסה settle לא מגיעה ל־1)",
+   "what": "טלפון 1 (SM-A165F), בנייה 1.1.0 מ־03.11.2026 04:36. ברוב הפעמים שהבית נטען, 'שחק' (וגם 'Play' באנגלית) נשאר קטן מהעמודה. לפי uiautomator התיבה של play היא [85,1319][996,1579] או [83,1318][998,1580], במקום [68,1314][1013,1584]. זה קנה מידה של בערך 0.964 עד 0.968 בשני הצירים, והכרטיס שמעליו ב־[68..1013]. המצב לא משתנה אחרי 20 שניות, אחרי מעבר למצבים וחזרה, וגם אחרי הפעלה קרה. נצפה ב־5 מתוך 7 טעינות: באנגלית אחרי הפעלה מחדש ×2, הפעלה קרה באנגלית, עברית אחרי הפעלה מחדש, והפעלה קרה בעברית. הפעלה קרה בעברית ב־04:39 ועברית אחרי ההפעלה מחדש הראשונה היו בגודל מלא. בדוח הקודם 'Play' נמדד ב־x=68..1012, כלומר זה חדש. כנראה קשור לשינוי ב־Enter.tsx מסבב התיקונים (B46): Enter kind='settle' מתחיל ב־0.94, שעון הבטיחות הוא 1500ms, והסגנון עובר ל־END עם scale 1, אבל על המסך נשאר הערך שבאמצע הקפיץ. צילומים: qa-shots/RF8Y60PP2XZ-fix-B13-6-en-stuckc.png (מוקטן) מול qa-shots/RF8Y60PP2XZ-fix-B13-1c.png (מלא), ו־RF8Y60PP2XZ-fix-B13-7-he-small.png."
+  },
+  {
+   "id": "NEW-join-code-overflow",
+   "title": "(קטן) הצטרף עם קוד: ספרה שמוקלדת אחרי שהקוד מלא מחליפה את התיבה האחרונה, וההודעה מציגה קוד אחר",
+   "what": "כשהקוד הוקלד מהר ב־adb ('input text 12345' על שדה שכבר היה בו 1235), ההצטרפות יצאה עם 123512, כי הקוד התמלא אחרי '12'. אחר כך ה־'3' שהגיע אחריו החליף את הספרה האחרונה. התוצאה: בתיבות מוצג 1 2 3 5 1 3, וההודעה אומרת 'לא מצאנו חדר עם הקוד ⁦123 512⁩'. בנוסף: בפעם הראשונה ה־'4' נבלע ('12345' נקלט כ־1235), וזה לא חזר בניסיון נקי. גם adb keyevent 67 (DEL) לא מחק ספרות מהתיבות. אולי זה רק באופן ההקלדה של adb, ולכן צריך לבדוק עם מקלדת אמיתית. צילום: qa-shots/RF8Y60PP2XZ-fix-disabled-3c.png."
+  },
+  {
+   "id": "NEW-replay-hud-large-font",
+   "title": "צפייה חוזרת בגופן 2.0: הניקוד וה'חושב' בכרטיסים העליונים חתוכים, והכותרת המשנית נקטעת ב־'…'",
+   "what": "ב־font_scale 2.0 ‏(SM-A165F, ‏1.1.0, בנייה 03.11.2026 04:36), בראש הצפייה החוזרת של אימון מול Pip, החצי העליון של מספר הניקוד בשני הכרטיסים ('4.5' של Pip ו־'5' שלי) חתוך, ורואים רק את החצי התחתון. כך גם במילה 'חושב' בשני הכרטיסים. זה נשאר גם אחרי 3 שניות, כלומר זו לא אנימציה. הכותרת המשנית 'אימון מול בוט · מהיר · היום' מוצגת 'אימון מול בוט • מהיר • ..' (המילה 'היום' נחתכה). באותו מסך הדגל מכסה את רוב האווטר שלי, והתג 'בוט' ו־'#2' מכסים את האווטר של Pip. צילומים: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-fix-B20-4s.png ו־RF8Y60PP2XZ-fix-B20-5cards.png"
+  },
+  {
+   "id": "NEW-he-hidden-single-row-gender",
+   "title": "עברית: בהסבר 'בודד נסתר' בשורה כתוב 'בו' במקום 'בה'",
+   "what": "בצפייה החוזרת, בהסבר של Pip: 'הספרה 8 חייבת להופיע בשורה F. כל שאר המשבצות הריקות בו חסומות…'. ‏'שורה' היא בלשון נקבה, ולכן צריך 'בה'. בריבוע ('בריבוע 1 … בו') זה נכון. כנראה אותו טקסט משמש לכל סוגי היחידות. דבר קטן."
+  },
+  {
+   "id": "NEW-ar-plural-one-digit",
+   "title": "ערבית: 'الأرقام 6' (רבים) כשיש ספרה אחת בלבד",
+   "what": "בהסבר בערבית: 'في العمود 7 توجد بالفعل الأرقام 6.' המילה ברבים, אבל ברשימה יש ספרה אחת. דבר קטן בתרגום, בתבנית ההסבר של בודד גלוי."
+  },
+  {
+   "id": "N1",
+   "title": "השעון ממשיך לרוץ מאחורי 'לצאת מהשלב?', ושלב יכול להיגמר כשהחלון פתוח (תצפית, אולי לא באג)",
+   "what": "ב־L030 (דו־קרב ל־30) פתחתי את X כשנשארו 0:03, והפער היה ‎+5, כי ל־Pip הייתה טעות של ‎−5. החלון 'לצאת מהשלב? … יישאר נעול' נשאר פתוח כמה שניות. הקשתי על המקום של 'יציאה' ונחתתי על 'למפה' של מסך תוצאה. כלומר, הזמן נגמר בזמן שהחלון היה פתוח, השלב הסתיים כרגיל, ו־L030 קיבל כוכב אחד ('מוביל בסוף'). ה־X לא עוצר את השעון. באפיון אין כלל לזה (סעיף 948 מתאר רק את הטקסט). כדאי שמשה יחליט אם החלון צריך להקפיא את השלב, או לפחות להיסגר כשהשלב נגמר."
+  },
+  {
+   "id": "N2",
+   "title": "במפה, בבחירת שלב בוס בתחתית המסך, הפאנל הגבוה מכסה את השלב שנבחר",
+   "what": "בטלפון 1 הקשתי על node-10, שהיה ב־y=1385. הפאנל של בוס גבוה יותר (יש בו שבב 'בוס'), ועלה עד y≈1385. מ־L010 נשאר גלוי רק הכתר, והמפה לא גוללה את השלב מעל הפאנל (RF8Y60PP2XZ-fix-B30-L010.png). זה לא חלק מ־B33, שעוסק בכניסה למפה. זו תצפית קלה."
+  },
+  {
+   "id": "NEW-hunter-stars-labels-maxfont",
+   "title": "צייד הנקודות בגופן מקסימלי: התוויות '15.5' ו־'17.5' של סף הכוכבים מתנגשות, ו־'17.5' נחתך",
+   "what": "ב־L041 (צייד הנקודות), כשגודל הגופן של המערכת מקסימלי (font_scale 2.0, ‏SM-A165F, בנייה 04:36): בפס הכוכבים שמתחת ל'המקסימום בלוח: 18' התוויות '15.5' ו־'17.5' נוגעות זו בזו ונקראות '15.517.5', והספרה האחרונה של '17.5' נחתכת בקצה הימני של המסך. בגודל רגיל הן נפרדות ('13   15.5   17.5'). שורת הניקוד עצמה (המספר, הצ'יפ, 'נקודות' ו'מהלך N נשרף') תקינה. צילומים: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-fix-B25-f2-scale.png ו־RF8Y60PP2XZ-fix-B25-f3-hud1.png"
+  },
+  {
+   "id": "B32-still",
+   "title": "מסך 'פיראטים': מעבר בין דמויות עדיין גורם ל־ANR ולמבול שגיאות Reanimated (1.1.0, בנייה 03.11.2026 04:36)",
+   "what": "טלפון 3 (SM-A165F). הקשות על כפתורי 'דמות' כל 0.8 ש׳, במשך כ־50 ש׳: 3 ANR ('Waited 10000ms for MotionEvent') וחלון 'האפליקציה לא מגיבה'. ביומן 353,626 אזהרות 'synchronouslyUpdateUIProps failed for tag N' (Unable to find SurfaceMountingManager), ו־1.45GB של לוג בכ־10 דקות. כל אזהרה מגיעה עם מחסנית מלאה, דרך com.horcrux.svg.VirtualView.setClientRect → FabricEventDispatcher.dispatchEvent → NodesManager.onEventDispatch. כלומר, כל ציור של צורת SVG שולח event, ו־Reanimated מנסה לעדכן בו views שכבר נמחקו. זה הנתיב שבפאץ' reanimated-onEventDispatch.patch, שעדיין ממתין לאישור של משה. בזמן המבול ה־UI thread עסוק: אחרי מעבר בודד מ־6 ל־1 הבמה נשארה ריקה יותר מ־60 ש׳, עד שנגעתי במסך, ו־input swipe לקח 3.5 ש׳."
+  },
+  {
+   "id": "JOIN-shift",
+   "title": "(קטן) הצטרפות עם קוד: המסך קופץ בזמן 'מצטרף לחדר…'",
+   "what": "אחרי קוד שגוי, הקשה על 'הצטרף' מעלימה את שורת השגיאה בזמן ההצטרפות. לכן שורת 'הדבק' ושורת הספינר עולות בכ־85 פיקסלים, ואחרי כ־0.3 ש׳ יורדות בחזרה כשהשגיאה חוזרת. השורה עצמה באותו גובה כמו הכפתור, אבל התוכן עדיין זז (צילומים: qa-shots/RF8Y30L038L-fix-join-burst4.png)."
+  },
+  {
+   "id": "P3-HIST",
+   "title": "History list shows only the first card, half transparent; all other games invisible",
+   "what": "New build 1.1.0 (03.11 04:36), phone 3. Opening History ('היסטוריה' / 'السجل' / 'ประวัติ') under the 'All' filter shows only the newest card, at about 50% opacity. The other 7 entries (header: 'משחק אחד · 7 אימונים') are not drawn and are absent from the uiautomator dump, meaning alpha 0. Scrolling and switching filters do not reveal them. Waiting 8+ s does not help either. Seen in he, ar and th. The animation scales are 1. It looks like Enter (the B46 fix in Enter.tsx, which also covers History) leaving list items stuck at their start values. Screenshots: RF8Y30L038L-fix-he-hists.png, RF8Y30L038L-fix-ar-hist4s.png, RF8Y30L038L-fix-th-hist2s.png."
+  },
+  {
+   "id": "P3-HOME-AR",
+   "title": "After the in-app switch he→ar, Home's Play button, 'جولة أخرى' and the recent header stay invisible (intermittent)",
+   "what": "Settings › language › العربية › 'החלפה והפעלה מחדש'. After the restart, Home showed the profile card and then empty space. 'هيا نلعب', the 'جولة أخرى' card and the 'المباريات الأخيرة' header were invisible and absent from the dump. The recent rows started at y≈2066, under the nav bar. The invisible Play button still opened 'مباراة جديدة' when tapped at its spot. Going to Settings and back did not fix it; force-stop and relaunch did. It happened on 1 of 2 tries. Switching he→ja in-app was fine. This is similar to B46, but RTL→RTL. Screenshots: RF8Y30L038L-fix-arrtl-3s.png, RF8Y30L038L-fix-arrtl-4s.png."
+  },
+  {
+   "id": "P3-AR-CLIP",
+   "title": "Arabic labels lose their last word to a hidden second line (no ellipsis)",
+   "what": "(1) On the player card stats, 'سلسلة الفوز' renders as just 'سلسلة'. The text node is [831..1006] x [1945..1993], one line tall (RF8Y30L038L-fix-arrtl-7c.png). (2) The solo results header 'تدريب فردي · سريع' renders as 'تدريب فردي ·'. Its node is [68..357], with empty space up to the 'الرئيسية' button at x=697 (RF8Y30L038L-fix-arsolo-6h.png). In both cases the text is measured slightly narrower than it draws, wraps, and the second line is clipped without '…'."
+  },
+  {
+   "id": "P3-TH-CHIP",
+   "title": "Thai History filter chip 'แรงก์' is cut to 'แร'",
+   "what": "In Thai, the History filter row shows 'ทั้งหมด | แร | ฝึกซ้อม'. The ranked chip's label 'แรงก์' (from its desc) is cut to 'แร' (RF8Y30L038L-fix-th-hist3s.png). Minor."
+  },
+  {
+   "id": "P3-JA-A11Y",
+   "title": "Japanese replay explanation: accessibility label joins two lines with no separator ('5ではなく11が入らない理由')",
+   "what": "The wrong-step explanation card's content description concatenates '5ではなく1' and '1が入らない理由：…' with no space or punctuation. TalkBack would read '…5ではなく11が入らない理由…', so the digit 1 sounds like 11. The screen text itself is fine. Arabic joins them with a space. Minor accessibility issue."
+  },
+  {
+   "id": "P3-AR-PLURAL",
+   "title": "Arabic explanation uses plural 'الأرقام' with a single digit",
+   "what": "Replay explanation on the wrong step: 'في العمود 6 توجد بالفعل الأرقام 1. في المربع 2 توجد بالفعل الأرقام 6.' The plural noun is used for one digit, which should be 'الرقم 1'. Minor wording."
+  },
+  {
+   "id": "P3-B3-name",
+   "title": "New Game header: profile name cut with '…' on a small phone (ru, es)",
+   "what": "At 360x780dp (wm size 720x1560, density 320), in ru and es, the header shows 'Новая партия' / 'Nueva partida' whole, but the profile name next to the avatar shows as 'אחוו…' (the name is 'אחוותא'). The catalog expects the name only when it has room, and no '…'. In de, th and ja it shows whole; in fr and id it is hidden. Shot: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/small/RF8Y30L038L-ru-1.png"
+  },
+  {
+   "id": "P3-pseudo-cut",
+   "title": "en-XA: some texts still end in '…' with no ']'",
+   "what": "Normal resolution on the A16, en-XA: the 3 Home rating chips '[Þŕövîšîöñåļ o…', the New Game ranked note '[Ŕéåļ öþþöñéñťš, îñ ŕéåļ ťîmé one t…', the staged-practice subtitle '[Šĥöŕť šťåĝéš • ûþ ťö 3 šťåŕš one two …' and the Settings testing row '[Ĥîðé ťĥé ťéšťîñĝ šéçťîöñ one t…'. The New Game title, the practice tags, the bottom nav and the 'Like the device' segment are fixed. The fix notes already expected a partial result here."
+  },
+  {
+   "id": "P3-offline-chip",
+   "title": "'Offline' chip in de/it/nl/id (decide: allow or translate)",
+   "what": "The staged-practice chip home:levels.offline reads 'Offline' in de, it, nl and id. The catalog says the English word 'Offline' must appear in no language. glossary.csv and SAME_AS_ENGLISH_OK do not list it, though the other chips in those languages say 'Auch offline', 'Anche offline', 'Werkt offline' and 'Bisa offline'. This is possibly by design; it needs Moshe's decision."
+  },
+  {
+   "id": "T3-HISTORY-FREEZE",
+   "title": "פתיחת 'היסטוריה' מקפיאה את האפליקציה לכ־7 שניות",
+   "what": "בטלפון 3, בבנייה 03.11.2026 04:36: מקישים בית → 'היסטוריה' בסרגל התחתון. 5 מתוך 5 ניסיונות, גם בתהליך שהופעל זה עתה: שלד הטעינה נשאר קפוא 6.5–7.4 שניות. ב־logcat: 'Choreographer: Skipped 444–620 frames' ו־'HWUI Davey! duration=6494–6928ms', ועוד כ־6,700–8,900 שורות 'Reanimated: synchronouslyUpdateUIProps failed' על כ־24 תגים (370 עדכונים לכל תג). ה־stack: com.horcrux.svg.VirtualView.setClientRect → FabricEventDispatcher.dispatchEvent → NodesManager.onEventDispatch → performNonLayoutOperations, מתוך SvgView.onDraw. בבדיקה הקודמת (טלפון 1) ההיסטוריה הגיעה תוך ~0.75 שניות. צילום: qa-shots/RF8Y30L038L-fix-B14-history-after.png"
+  },
+  {
+   "id": "T3-HISTORY-ALL-ONE-CARD",
+   "title": "בלשונית 'הכל' בהיסטוריה מופיע רק כרטיס אחד, והוא חצי שקוף",
+   "what": "אחרי ההקפאה שבבאג הקודם, ב'היסטוריה' עם 'הכל' מופיע רק הכרטיס הראשון. הוא מוצג בשקיפות חלקית (הספרות המשוטטות נראות דרכו), ושאר המשחקים חסרים. בסיכום כתוב 'משחק אחד · 8 אימונים'. ‏uiautomator מוצא רק history-card אחד. בלשונית 'אימון' כל הכרטיסים מופיעים, ובלשונית 'מדורג' המשחק המדורג מופיע. זה חזר 3 פעמים, גם אחרי הפעלה מחדש. אחרי החלפת שפה (הפעלה מחדש לגרמנית) הרשימה הייתה פעם אחת מלאה. ייתכן שזה קשור לשינוי ב־Enter.tsx (B46), שחל גם על השורות בהיסטוריה. צילומים: qa-shots/RF8Y30L038L-fix-B14-history-all.png, -history-2.png"
+  },
+  {
+   "id": "T3-GAME-RESULTS-HITCH",
+   "title": "משחק → תוצאות: פריים של ~0.8 שניות ומאות כשלי Reanimated",
+   "what": "משחק אימון מול Pip שנפתר עד הסוף. אחרי ה־reset לפני המהלך האחרון: 2 פריימים של 763 ו־801 ms, 'Skipped 69 frames' ו־944 'synchronouslyUpdateUIProps failed'. דרך 'סיום אימון' ← 'כן, לסיים': 2 פריימים של ~300–350 ms, 'Skipped 30 frames' ו־~430 כשלים. הבדיקה במכשיר דרשה 0 כשלים ואף פריים מעל ~200 ms. זו החשיפה שנשארה ב־PERF.md."
+  },
+  {
+   "id": "T3-MOVE-UIPROPS",
+   "title": "כל מהלך במשחק בוט נותן כ־230 כשלי synchronouslyUpdateUIProps",
+   "what": "מהלך נכון אחד (B2=2) מול Pip: 18 כשלים בהקשה על הספרה, ואחר כך כ־216 כשלים על 3 תגים (~72 עדכונים כל אחד, כ־1.2 שניות) כשנייה אחרי המהלך. אין פריים ארוך (מקסימום 43 ms), אז לא רואים גמגום. הבדיקה במכשיר (e) דרשה 0."
+  },
+  {
+   "id": "T3-BACK-ARROW-UIPROPS",
+   "title": "חץ 'חזרה' באפליקציה, בחזרה לבית: 52–60 כשלים",
+   "what": "חזרה מ'הגדרות' או מ'משחק חדש' לבית בחץ 'חזרה' שבראש המסך: 52, 60 ו־60 כשלים (2 תגים, ~30 עדכונים לכל אחד במשך ~150 ms), ובניסיון אחד 0. ב־Back של המערכת תמיד 0. כנראה אנימציית הלחיצה של הכפתור ממשיכה אחרי שהמסך יורד."
+  },
+  {
+   "id": "T3-AVATAR-PICKER-HITCH",
+   "title": "בחירת אווטרים מהר: פריימים של עד 0.74 שניות",
+   "what": "עריכת פרופיל → פתיחת 'בחר אווטאר' ובחירה, 5 פעמים ברצף (~1.6 שניות לכל פעם): 0 כשלים, אבל פריימים של 243, 281, 372, 739, 258, 347 ו־317 ms, 'Choreographer: Skipped 57 frames' ו־'Davey! duration=739ms'. לא קפא לגמרי. (לא שמרתי; האווטר נשאר 'מחשבון'.)"
+  },
+  {
+   "id": "T3-FIRST-PLAY-SLOW",
+   "title": "'שחק' → 'משחק חדש' בפעם הראשונה אחרי הפעלה: ~0.8–1.1 שניות",
+   "what": "בפעם הראשונה בתהליך: אין פריים חדש בין ~90 ל־544 ms, אחר כך פריימים של 147 ו־136 ms, והעמעום נגמר כ־0.8–1.1 שניות. מהפעם השנייה ~0.45–0.5 שניות."
+  },
+  {
+   "id": "NEW-history-hidden-cards",
+   "title": "בטלפון 3 ההיסטוריה מציגה רק כרטיס אחד, דהוי, ושאר הכרטיסים העליונים בלתי נראים",
+   "what": "טלפון 3 (אחוותא), בבנייה שהותקנה ב־04:37 (בנייה 03.11.2026 04:36). אחרי המשחקים: היסטוריה ← 'הכל'. השורה העליונה אומרת '2 משחקים · 50% ניצחונות · 11 אימונים', אבל ברשימה רואים רק את הכרטיס החדש ביותר, דהוי (שקוף למחצה). שני משחקי החברים, המשחק המדורג הקודם והאימונים העליונים לא נראים, וגם uiautomator רואה כרטיס אחד בלבד. בגלילה למטה, החלק העליון של הרשימה ריק, וכרטיסי האימון הנמוכים מופיעים חדים. זה חוזר גם אחרי סגירה ופתיחה של האפליקציה (צילומים: qa-shots/RF8Y30L038L-history-now-s.png, RF8Y30L038L-history-now3-s.png, RF8Y30L038L-history-cold2-s.png). בטלפון 1 ההיסטוריה מלאה וחדה (RF8Y60PP2XZ-history-now-s.png), אבל בו מותקנת בנייה חדשה יותר (09:07). כנראה זו תופעת ה־Enter, כרטיסים שנתקעים בהתחלה (B46/E1-E3), שתוקנה ב־Enter.tsx ב־08:01, אחרי הבנייה של 04:36. צריך להתקין בטלפון 3 את ה־APK החדש כדי לאמת."
+  },
+  {
+   "id": "NEW-black-new-game",
+   "title": "'משחק חדש' on ranked Results leads to a black screen that never goes away",
+   "what": "Reproduced three times on SM-A165F, both builds: first both phones together, then both phones together while recording, then phone 1 alone after a ranked game against a bot. On the Results of a ranked 2-player מהיר game, tap 'משחק חדש'. After about 0.9 s the screen turns completely dark: every pixel has luminance 19, with no ambient digits and no UI, and uiautomator sees only the root views. It stayed that way for 20 s to more than 90 s. Android back leaves the app to the launcher; relaunching opens Home with no game counted. Home's 'עוד סיבוב' (play-again) works: it searched and found a bot. The tap goes through results/[id].tsx newGame → leave() → startRankedAndOpen(..., 'replace'). Evidence: qa-shots/RF8Y60PP2XZ-newbug-black-1.png, RF8Y60PP2XZ-newbug-black-2.png, RF8Y30L038L-newbug-black-2.png, RF8Y60PP2XZ-newbug-single-1.png, RF8Y60PP2XZ-newbug-single-2.png, and the video rec/RF8Y30L038L-n1.mp4."
+  },
+  {
+   "id": "B37-still",
+   "title": "The ranked countdown still loses its start; GO! lasts about 1.45 s",
+   "what": "On the new build with the staging server: '3' is missing whenever reduced motion is off (phone 1 against phone 3, phone 1 against the bot, and phone 3 in three runs). With reduced motion on, '3' shows for only 0.45-0.5 s. '2' is sometimes 0.3 s. GO! stays 1.3-1.5 s before the board, with blank frames before GO! and before the board. 'נמצא יריב!' runs 0.3-0.9 s past its 1.2 s hold, so the switch to the count happens late and the even spread from countdownStepOver does not appear on screen."
+  },
+  {
+   "id": "B43-badges-phone3",
+   "title": "The 'מוכן' badges and the ready reaction never appear on phone 3",
+   "what": "Phone 3 (RF8Y30L038L, reduced motion off), three games: the VS screen is shown for 1.8-2.1 s with 'כל השחקנים מוכנים · 2/2', but the badges that should pop at metrics.vs.badgesAtMs (800 ms) never appear, and the avatars do not react. On phone 1 they pop. It looks like the setTimeout does not fire in time, or the JS thread is busy (phone 3 was charging)."
+  },
+  {
+   "id": "NEW-3p-timeout-early",
+   "title": "Searching alone for 3 players gives a timeout of '1:00' after about 20 s (minor, needs a check)",
+   "what": "Phone 1, ranked 3 שחקנים מהיר, searching alone with 'כרגע אין מספיק שחקנים' on screen. The search clock showed 0:16 about 18.5 s after the tap. Between about 19 and 21 s, match-timeout appeared with '1:00' and 'חיפשנו דקה שלמה', even though only about 20 s had passed (video rec/RF8Y60PP2XZ-s3.mp4)."
+  },
+  {
+   "id": "B47-lock",
+   "title": "2P rival card: when the rival holds a cell, an enabled interference button cuts its word with no ellipsis",
+   "what": "Known limit from the fix notes, still waiting for Moshe's decision (icon-only button, or a wider button / less padding). Seen on the new build: when the rival is 'Choosing • A6' and I have at least 2 points (button enabled, bright), the label is clipped mid-word with no '…': English 'Inter' (instead of 'Interfere'), Arabic 'تش' (instead of 'تشويش'). The same state with a disabled button (0 points) shrinks the font and keeps the word whole (es 'Interferir', fr 'Perturber', vi 'Phá rối', nl 'Storen', tr 'Baltala'). With no cell held, the enabled button shows 'Interfere' in full. Screenshots: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y60PP2XZ-fix-B47-en-lockz.png and RF8Y60PP2XZ-fix-B47-ar-lockz.png."
+  }
+ ],
+ "catalogIssues": [
+  {
+   "taskId": "general-depth-disabled",
+   "issue": "השורה הצפויה 'מופיעה לרגע, במקום הכפתור, שורה עם ספינר ו־מצטרף לחדר…' כמעט אי אפשר לאמת: ב־staging התשובה מגיעה תוך פחות מ־250ms, וגם screencap מיד אחרי 'input text 9' כבר מראה את השגיאה. כדאי לנסח 'אם מספיקים לראות', או לבדוק את זה ב־Jest."
+  },
+  {
+   "taskId": "B16 (device-checks.md)",
+   "issue": "ההוראה 'למדוד את הצד של צור חדר ב־y≈2040 וב־y≈2150, הפרש של 17-18 פיקסלים' נופלת על הפינה המעוגלת למעלה ועל פס הקצה #b88f00 למטה. נכון יותר למדוד על החלק הישר, y=2050..2130: מ־565 ל־552, כלומר 13 פיקסלים על 80, בשיפוע של 0.14 עד 0.16."
+  },
+  {
+   "taskId": "postgame-replay-explain-correct",
+   "issue": "שלב B20 ב־device-checks כותב 'המהלך שאחרי הנקודות הזהובות', אבל במסך התוצאות הנקודות של 'מהלך המשחק' ('+4.5') מוצגות בתכלת (צבע P1). כדאי לעדכן את הנוסח או לבדוק מה העיצוב רוצה."
+  },
+  {
+   "taskId": "levels-region-ready",
+   "issue": "צריך שלב מרוץ שעוד לא שוחק. בטלפון 1 כבר שיחקו ב־L013 (שיא 0), ולכן השתמשתי ב־L017 עם 'פתח את כל השלבים (בדיקה)'. בזמן מרוץ, 'adb.ts ui' לוקח כ־35 ש׳ (uiautomator לא מגיע למצב idle), והשלב נגמר לפני שהוא מחזיר תשובה. כדי לשחק מרוץ צריך לעבוד מצילומי מסך בלבד."
+  },
+  {
+   "taskId": "levels-boss-l020",
+   "issue": "אין בעיה בניסוח המשימה. בבדיקה במסמך device-checks, ב־B27, יש שתי טעויות. (1) 'השער שלפני פרק 6' עם 'Biscuit · שלבים 51–60': ‏Biscuit הוא פרק 5, ולכן צריך 'השער שלפני פרק 5' עם 'Biscuit · שלבים 41–50'. בשער שלפני פרק 6 כתוב 'שורות ועמודות · שלבים 51–60'. (2) 'Lose a race' עם 'Pip הגיע ראשון': הסיבה botWon קיימת רק בדו־קרב, כשהבוט מגיע ראשון ל־30. במרוץ התוצאה היא 'הזמן נגמר'. ‏Pip ברמה 1 כמעט לא מגיע ל־30 תוך 30 ש׳, ולכן כדאי לבדוק בדו־קרב מאוחר, למשל L290 מול Overlord."
+  },
+  {
+   "taskId": "*",
+   "issue": "‏qa.ts fix: השרת מגביל את --fixed-in ל־40 תווים. המחרוזת שבמשימה ('1.1.0 (בנייה 03.11.2026 04:36) + שרת staging 03.11.2026', ‏55 תווים) נדחתה ב־HTTP 400. השתמשתי ב־'1.1.0 בנייה 03.11.2026 04:36 + staging'."
+  },
+  {
+   "taskId": "general-ambient-everywhere",
+   "issue": "שלבים 7 ('מצא יריב', חיפוש מדורג) ו־8 ('צור חדר') מתנגשים בכלל של סבבי התיקון שאוסר לחפש משחק מדורג או לפתוח חדר. לכן הם לא צולמו שוב בבדיקת התיקון."
+  },
+  {
+   "taskId": "B11 (device-checks)",
+   "issue": "תרחיש 2 מצפה ל־'+20 XP', אבל בסיום ראשון של שלב (L019) מוצג '+30 XP'. מה שנבדק בפועל הוא שהערך שהוצג לא יורד ל־'+0 XP'. כדאי לנסח את הציפייה בלי מספר קבוע."
+  },
+  {
+   "taskId": "B28 (device-checks)",
+   "issue": "השלבים דורשים L040 ו־L041, כלומר פרק 5. בחשבון 'אורי' (שלב 18) צריך את המתג 'פתח את כל השלבים' באזור 'בדיקה'. חזרות 2 ו־3 נעשו על L041 ו־L042, כי אחרי L041 'לשלב הבא' מוביל ל־L042."
+  },
+  {
+   "taskId": "avatars-pirates-lab",
+   "issue": "קשה לשפוט מצילומים את ההבעות של סבא הטבח ('הכובע תופח, המצקת קופצת', 'הכובע צונח') ואת 'כל הגדלים קופצים יחד'. רואים רק את שינוי הפנים, וזה דורש וידאו או עין של משה. בצעד 1 כתוב 'בטלפון א'' למרות שהמשימה צריכה טלפון אחד."
+  },
+  {
+   "taskId": "B32 (device check)",
+   "issue": "הבדיקה דורשת 'adb logcat -c', שאסור לבודק. אפשר לספור עם logcat -d -T '<זמן>'. אחרי מבול (1.45GB) קריאה של logcat -d למחשב לוקחת דקות, ולכן עדיף לספור בטלפון: adb shell \"logcat -d -T '<time>' | grep -c synchronouslyUpdateUIProps\". את ה־ANR מוצאים מהר ב־logcat -b events (am_anr)."
+  },
+  {
+   "taskId": "B12 (device check)",
+   "issue": "בורר 2/3/4 בטבלת המובילים מוצג רק כש־board.players != null (showsPlayersPicker). בחשבון צעיר (אחוותא) הוא לא מופיע ב'כללי' וגם לא ב'מהיר'. צריך לכתוב באיזה חשבון ובאיזו לשונית רואים אותו. שלב 2 (ריבוע) נמשך 20 ש׳, וזה לא מספיק כדי לעשות טעות ואז לבדוק את הצ'יפ האדום (וגם ui לא מצליח לקרוא את המסך בזמן). עדיף שלב 3 (פאזל, 45 ש׳). כשיש 3 ריבועים זזים, ההחלפה הראשונה אף פעם לא שגויה: 'החלפה שגויה' היא להחזיר את אותם שני ריבועים."
+  },
+  {
+   "taskId": "avatars-pirates-crash-join-code",
+   "issue": "שורת 'מצטרף לחדר…' מוצגת ב־staging פחות מ־0.3 ש׳, כך שבודק אנושי כמעט לא יראה אותה. נתפסה רק בצילום מהיר מהטלפון (screencap בלולאה). כדאי לכתוב זאת במשימה, או לאפשר לבדוק את זה ברשת איטית."
+  },
+  {
+   "taskId": "Q2 (device check)",
+   "issue": "כתוב 'עד כ־30 ש׳', אבל בפועל כל הרצה שנכשלת לקחה כ־37 ש׳ (3 ניסיונות של כ־10 ש׳ ועוד ההמתנה ביניהם)."
+  },
+  {
+   "taskId": "(all fix commands)",
+   "issue": "The given --fixed-in text '1.1.0 (בנייה 03.11.2026 04:36) + שרת staging 03.11.2026' is rejected by the server ('fixedIn: at most 40 characters'). I used '1.1.0 (03.11.2026 04:36) + שרת 03.11' instead."
+  },
+  {
+   "taskId": "general-lang19-numbers-app",
+   "issue": "The expected line says 'the date and time of every game' in 'السجل', but History cards show only a date ('30 أكتوبر') or 'اليوم', never a time. Suggest 'התאריך (וב\"المباريات الأخيرة\" גם השעה)'."
+  },
+  {
+   "taskId": "general-lang19-arabic-solo",
+   "issue": "Step 4 ('tap D5 and look at the strip'): in 'سريع' the cell lock lasts only 8 s, then the strip goes back to 'اختيار خانة'. A slow tester (or an agent's ui dump) can miss 'خانتك D5'. Worth a note: look right after the tap."
+  },
+  {
+   "taskId": "general-lang19-sweep",
+   "issue": "The line 'המילה האנגלית Offline לא מופיעה באף שפה' gives only tr and vi as examples. But de, it, nl and id use 'Offline' as the staged chip and 'offline' inside the other chips, and neither glossary.csv nor SAME_AS_ENGLISH_OK lists it. Either list 'offline' for those languages or narrow the line to tr and vi."
+  },
+  {
+   "taskId": "general-lang19-sweep",
+   "issue": "Expected says the ✓ is shown next to the language in the sheet. For languages below 日本語 (Русский onward) the sheet opens at the top and the ✓ is only visible after scrolling. The step should say to scroll, or the sheet should scroll to the selected row."
+  },
+  {
+   "taskId": "general-lang19-sweep",
+   "issue": "Device check B9 says 'Play one stage so the row shows progress'. Phone 3's young account is at stage 1 ★0, and playing would change the progress other batches may rely on. The chip format is the same either way."
+  },
+  {
+   "taskId": "general-lang19-sweep",
+   "issue": "Device check B8 (home card) assumes an account with 10 games and 40% wins. Phone 3 'אחוותא' has 1 game and 100%, so the wrap-under case ('pertandingan' under '10') could not be reproduced. Only the side-by-side case was checked."
+  },
+  {
+   "taskId": "general-ambient-screen-change",
+   "issue": "שלב 5 דורש לעבור על הקלטת screenrecord פריים אחרי פריים, אבל במחשב אין ffmpeg. גם screenrecord --output-format=frames נתקע בטלפון. מדדתי במקום זה ב־dumpsys gfxinfo framestats, ובצילומי screencap עם סימני זמן (log -t + logcat -v monotonic). כדאי לכתוב את השיטה הזו בקטלוג."
+  },
+  {
+   "taskId": "(device-checks B14)",
+   "issue": "הבדיקה במכשיר של B14 מבקשת 'adb logcat -c', וזה אסור לפי כללי הריצה. ספרתי עם 'adb logcat -d -T \"<MM-DD HH:MM:SS.000>\"'. בנוסף, B14 ו־B46 כתובות לטלפון 1, ו־B23 לחשבון 'מומו'. הרצתי אותן בטלפון 3 (אחוותא)."
+  },
+  {
+   "taskId": "(qa tool fix --fixed-in)",
+   "issue": "השרת דחה את ה־fixed-in שביקשתם, '1.1.0 (בנייה 03.11.2026 04:36) + שרת staging 03.11.2026', עם 'fixedIn: at most 40 characters'. בשתי המשימות שתוקנו השתמשתי ב־'1.1.0 (בנייה 03.11.2026 04:36) + שרת'."
+  },
+  {
+   "taskId": "general",
+   "issue": "הערך של --fixed-in שהוגדר בתסריט, '1.1.0 (בנייה 03.11.2026 04:36) + שרת staging 03.11.2026' (55 תווים), נדחה בשרת: HTTP 400, 'fixedIn: at most 40 characters'. השתמשתי במקומו ב־'1.1.0 בנייה 03.11.2026 04:36 + שרת 03.11' (40 תווים). שאר הקבוצות צריכות ערך קצר באותה צורה."
+  },
+  {
+   "taskId": "avatars-pirates-rival-phone",
+   "issue": "השורה 'שומר התוכי של א' צוחק וקופץ': בזמן התגובה האימוג'י 😂 מכסה את האווטר, ולכן את הקפיצה אי אפשר לראות בצילום. רואים רק את פני הצחוק (עיניים סגורות, פה פתוח). כדאי לנסח 'הפנים שלו צוחקות', או להוסיף 'צפייה בעין, לא בצילום'."
+  },
+  {
+   "taskId": "avatars-pirates-rival-fake",
+   "issue": "בהרצה הכותרת עדיין 'יריב פיראט מול טלפון אחד', ו־who=claude עם צעדי Gil/fake-client בלבד. ב־v6 הכותרת 'יריב פיראט בחדר חברים', who=both, ויש בה גם דרך ב' עם טלפון שני. ההרצה מחזיקה את הנוסח הישן."
+  },
+  {
+   "taskId": "pregame-found-countdown-reduced",
+   "issue": "The device check for B37 asks for about 9 fps. Parallel raw screencaps (scratchpad/cap.sh with 4 loops) slow the phone enough to change what is measured: the found screen came out blank or almost transparent, '3' disappeared and GO! lasted 3.4 s. For timing checks, use 'screenrecord --size 540x1170' plus frame extraction (rec/thumbs.ps1 via WinRT MediaComposition, no ffmpeg needed). Also, 'הלוח מופיע כ־0.4 שנייה אחרי GO!' cannot be judged by eye; the expected line should say it needs a recording."
+  },
+  {
+   "taskId": "avatars-idle-still",
+   "issue": "Step 2 searches alone in 3 שחקנים. After about 20 s the timeout screen ('עדיין אין מספיק שחקנים') replaced the search screen, so there was no 'ביטול חיפוש' to tap; I left with 'חזרה לבית'. The 15 s observation still fits. The task also observes only phone א', while the 'מוכן' reaction failed only on phone ב'."
+  },
+  {
+   "taskId": "general-lang19-fit-interference",
+   "issue": "The Thai overlap only shows with a wide score: 'คะแนนของคุณ 10 → 8' fits on one line, while '14.5 → 12.5' forces the wrap. The steps should ask for a score with a decimal and two digits before the point (about 10.5 or more) before tapping 'ก่อกวน', so the check covers the widest case. Also, step 4's note 'only a screenshot: uiautomator doesn't read the game screen' is now only half true: on the new build the ranked game screen dumps fine, and the dump fails only while the sheet is open (animated icons)."
+  },
+  {
+   "taskId": "general-lang19-fit-interference",
+   "issue": "The task does not cover the rival-card button while the rival holds a cell ('Choosing · A6'). That is where the label still gets cut (en 'Inter', ar 'تش') when the button is enabled. If Moshe decides on a fix (B47 known limit), add a step: the rival taps a cell while I have 2 or more points, and expect the button label whole or icon-only."
+  }
+ ],
+ "missing": []
+}

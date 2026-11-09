@@ -198,6 +198,8 @@ export function RegisterAccountScreen() {
           size="md"
           wrapLabel
           loading={busy}
+          // submit() plays the press itself, and only for a valid form (an invalid one shows why).
+          cue={null}
           onPress={() => void submit()}
           testID="account-submit"
         />

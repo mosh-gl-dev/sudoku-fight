@@ -36,7 +36,7 @@ from time to time: if a button has moved, use the console's own search box.
 | **Play App Signing / upload key** | Google keeps the real **app signing key** and signs what users download. We sign uploads with an **upload key** that EAS creates and keeps on its servers. Consequence: an APK you install with ADB and the app from Play have different signatures; switching between them requires uninstalling first. | $0 |
 | **Google Play Console** | Google's developer account and website for publishing. | US$25 once. |
 | **Sentry (optional)** | Error reports from the server (crashes, 500s), without personal data. | Developer plan: $0, 5k errors/month, 1 user. Team plan: $26/month. |
-| **Own domain (optional)** | e.g. `api.yourdomain.com` instead of `sudoku-fight-prod.fly.dev`. | Roughly $10 to $20/year for a `.com` (not checked here: compare a few registrars, and look at the renewal price, not only the first year). |
+| **Own domain** | `sudokufight.app` (bought at Cloudflare on 2026-10-30, C1), instead of `sudoku-fight-prod.fly.dev`. | Bought; renews yearly at Cloudflare (keep auto-renew on: if it lapses, the app loses its server). |
 | **Apple Developer Program** | Needed only for iOS (Part I, later). | US$99/year. |
 
 ---
@@ -71,7 +71,7 @@ Earliest public Play release from today: about 3 to 4 weeks, almost all of it wa
 **Steps**
 1. Pick one password manager (Bitwarden is free; any is fine) and create entries as you go: Play Console, Expo, Fly.io, Neon, Sentry, "Admin password staging", "Admin password production", "Neon URL staging", "Neon URL production", "Demo account 1", "Demo account 2".
 2. Use your **personal Google account** (not a work account) for Play Console and Firebase. Turn on 2-Step Verification for it: https://myaccount.google.com/security.
-3. Create a dedicated, public-facing mailbox for the game, for example a new Gmail such as `sudokufight.support@gmail.com` (any free name), or `support@<your domain>` if you choose your own domain in C1. It is used for: the Play "Contact email" (public), `LEGAL_CONTACT_EMAIL` (shown on the privacy page), the IARC rating email, and tester feedback.
+3. Create a dedicated, public-facing mailbox for the game, for example a new Gmail such as `sudokufight.support@gmail.com` (any free name), or `support@sudokufight.app` (your domain since 2026-10-30, C1; Cloudflare Email Routing forwards it to your Gmail, `docs/handoff/2026-10-27/play-release/plan.md` step 1ג). It is used for: the Play "Contact email" (public), `LEGAL_CONTACT_EMAIL` (shown on the privacy page), the IARC rating email, and tester feedback.
 
 **You're done when** the password manager is open, and you can log in to the new mailbox.
 
@@ -276,7 +276,7 @@ The full Hebrew guide is `docs/FIREBASE-SETUP.md`; the steps below follow it, An
 
 ### B6. Google sign-in for the admin site (new, small)
 
-- [ ] **B6** Google provider on; web app "Sudoku Fight Admin" added; both fly.dev domains authorized; Claude has the apiKey, the appId and your admin addresses
+- [ ] **B6** Google provider on; web app "Sudoku Fight Admin" added; `sudoku-fight-staging.fly.dev` and `sudokufight.app` authorized; Claude has the apiKey, the appId and your admin addresses
 
 **Why.** On the real servers you sign in to the admin site (`/admin`) **with your Google account**, and only the accounts on a list kept on the server (`ADMIN_EMAILS`) get in. No admin password to generate or store. Full Hebrew guide: `docs/FIREBASE-SETUP.md` §9א.
 
@@ -289,9 +289,9 @@ The full Hebrew guide is `docs/FIREBASE-SETUP.md`; the steps below follow it, An
 1. **Authentication** → **Sign-in method** → **Add new provider** → **Google** → **Enable** → **Project support email**: pick your email → **Save**.
 2. Gear icon → **Project settings** → **General** → **Your apps** → **Add app** → the Web icon (`</>`). **App nickname:** `Sudoku Fight Admin`. Do **not** tick "Also set up Firebase Hosting". **Register app**.
 3. From the `firebaseConfig` it shows, copy **`apiKey`** (starts with `AIza`) and **`appId`** (`1:<number>:web:<letters and digits>`). Then **Continue to console** (no SDK to install).
-4. **Authentication** → **Settings** → **Authorized domains** → **Add domain**: `sudoku-fight-staging.fly.dev`, then again for `sudoku-fight-prod.fly.dev` (`localhost` is already there).
+4. **Authentication** → **Settings** → **Authorized domains** → **Add domain**: `sudoku-fight-staging.fly.dev`, then again for `sudokufight.app` (production, C1). `localhost` is already there. To use the production admin site on `sudoku-fight-prod.fly.dev` before the domain's certificate is ready, add that one too.
 
-**You're done when** Sign-in method shows Google "Enabled", the web app appears under Your apps, and Authorized domains lists both fly.dev names.
+**You're done when** Sign-in method shows Google "Enabled", the web app appears under Your apps, and Authorized domains lists `sudoku-fight-staging.fly.dev` and `sudokufight.app`.
 
 **Then tell Claude:** the `apiKey`, the `appId`, and the Google addresses that may enter the admin site (yours, up to 3). They are not secrets (the admin page receives the apiKey and appId anyway), so the chat is fine; Claude sets them as Fly secrets in D4/D11 and **never writes them into the repo**. Write each address exactly as Google shows it.
 
@@ -303,13 +303,15 @@ The full Hebrew guide is `docs/FIREBASE-SETUP.md`; the steps below follow it, An
 
 **The rule from now on: every new signing key needs its SHA-1 in Firebase.** The next one is Google Play's own key (Play App Signing), at **F7**. After adding a fingerprint, sign-in starts working within minutes (no new build); still download the new `google-services.json`, replace it in `apps/mobile/config/firebase/`, and upload it to EAS again (`eas env:create ... --force`, `docs/FIREBASE-SETUP.md` §7).
 
+**2026-10-30, Moshe "מאשר מפתח פרטי":** `npm run apk` now signs with this PC's own key (`~/.sudoku-fight/apk-key`, made by `npm run apk -- --key`, which also prints its fingerprints; `docs/BUILD-APK.md`). In Firebase: **Add fingerprint** with its SHA-1, delete the old one below, download `google-services.json` again. Google sign-in keeps working in APKs from this PC; phones with an older APK uninstall it once. Keep a copy of both key files in the password manager.
+
 **Before the first store build (F6):** remove the local debug key's SHA-1 from Firebase. That key is React Native's public template key, the same in every project: while Firebase lists it, anyone can sign an APK with this app's package name, get someone to install it, and take over the Google sign-ins made in it. **The production build on EAS now refuses to build while `google-services.json` still lists it**, and says what to do: Firebase console → **Project settings → General → Your apps → Sudoku Fight Android** → the fingerprint `5e:8f:16:...:f6:25` → delete → download the new `google-services.json` into `apps/mobile/config/firebase/` → tell Claude (it re-uploads the file to EAS with `--force`). APKs from this PC then show no Google button (email and password only); test Google on an EAS `preview` APK or the Play build. If you want Google in APKs from this PC too, ask Claude to give `npm run apk` a key of its own (its SHA-1 goes into Firebase instead; phones with the old APK uninstall it once).
 
 ### B8. Room links (1.0.4): the SHA-256 of the signing keys (new)
 
 - [ ] **B8** The **SHA-256** of the EAS key, sent to Claude (and later the Play App Signing key's, at F7)
 
-**Why.** Playing with friends (spec §5.4) shares a link, `https://sudoku-fight-staging.fly.dev/r/123456` (in production `https://sudoku-fight-prod.fly.dev/r/…`, per C1). Android opens it straight in the app, in the room, only when the server lists the **SHA-256** of the key that signed the installed app (`/.well-known/assetlinks.json`, setting `ANDROID_APP_LINK_SHA256`). Without it the link opens a small page in the browser, whose "פתח באפליקציה" button still works.
+**Why.** Playing with friends (spec §5.4) shares a link, `https://sudoku-fight-staging.fly.dev/r/123456` (in production `https://sudokufight.app/r/…`, per C1). Android opens it straight in the app, in the room, only when the server lists the **SHA-256** of the key that signed the installed app (`/.well-known/assetlinks.json`, setting `ANDROID_APP_LINK_SHA256`). Without it the link opens a small page in the browser, whose "פתח באפליקציה" button still works.
 
 **What to do.** `eas credentials -p android` → the profile → copy **SHA256 Fingerprint** (not SHA1) → tell Claude. It is not a secret (anyone can read it from the app), so the chat is fine; Claude puts it in `fly.toml` (staging) and `fly.production.toml` (production) `[env]`. At **F7**, the same for Play App Signing (Play Console → App integrity → App signing → the SHA-256 under the SHA-1).
 
@@ -349,7 +351,7 @@ Only the ones that block these three goals. Everything else in `docs/DECISIONS-P
 - [x] **C5** store name decided
 
 **Decided 2026-10-12:**
-- **C1:** stay on `sudoku-fight-prod.fly.dev` (already in `apps/mobile/eas.json`).
+- **C1:** stay on `sudoku-fight-prod.fly.dev`. **Changed 2026-10-30** ("קניתי sudokufight.app", and "כן" to the move): production is `sudokufight.app`, bought at Cloudflare (spec D128). Already in `apps/mobile/eas.json`; the Fly app keeps the name `sudoku-fight-prod`. Setup: D10 step 4.
 - **C2:** `LEGAL_CONTACT_EMAIL=mosh.gl.dev@gmail.com`, `LEGAL_OPERATOR_NAME=Moshe Glazman` (filled in D4 and D11).
 - **C3:** the avatars are our own (`packages/avatars`); the old 50 "freebie" avatars are removed from the app. The 690 "fast" puzzles: verified, Kaggle "1 million Sudoku games" by Kyubyong Park (`bryanpark/sudoku`), license **CC0: Public Domain**; our first puzzle is that file's first row.
 - **C4:** option A (report a player + block), built by Claude.
@@ -586,7 +588,7 @@ Backups: Neon's Free plan keeps a 6-hour restore window. Before the public launc
 
 Budget: production is busier than staging. During the closed test, look at the project's CU-hours (Neon console → **Usage**) once a week; if it heads for 100 before the month ends, move this project to Launch, or the database stops until next month. (Launch at the smallest size costs at most about $20/month even if the database never sleeps: 0.25 CU × 730 hours ≈ 183 CU-hours × $0.106, plus $0.35 per GB stored.)
 
-### D10. Create the Fly production app (and your domain, if C1 = own domain)
+### D10. Create the Fly production app (and the domain `sudokufight.app`)
 
 - [ ] **D10** `fly apps list` shows `sudoku-fight-prod`
 
@@ -595,14 +597,14 @@ Budget: production is busier than staging. During the closed test, look at the p
    cd C:\Users\mosheg\Documents\ReactNative\sudoku-fight
    fly apps create sudoku-fight-prod --org personal
    ```
-2. If the name is taken: tell Claude the new name (it changes `app` in `fly.production.toml` and `EXPO_PUBLIC_SERVER_HOST` in the `production` profile of `apps/mobile/eas.json`), and add `<the new name>.fly.dev` to Firebase **Authorized domains** yourself (B6 step 4), or the admin site's Google sign-in fails there (`auth/unauthorized-domain`).
+2. If the name is taken: tell Claude the new name (it changes `app` in `fly.production.toml` and the `-a` in the commands; the app's host, `EXPO_PUBLIC_SERVER_HOST` in the `production` profile of `apps/mobile/eas.json`, stays `sudokufight.app`, and step 4 runs with the new name).
 3. Never `fly deploy` for production without `--config fly.production.toml` (without it, it deploys to staging).
-4. **Only if C1 = own domain:** after the first production deploy (D12),
+4. **The domain `sudokufight.app` (C1):** once the app exists (if Fly shows no `A`/`AAAA` address yet, right after the first production deploy, D12),
    ```powershell
-   fly certs add api.<your-domain> -a sudoku-fight-prod
+   fly certs add sudokufight.app -a sudoku-fight-prod
    ```
-   Add the DNS records it prints at your domain registrar, then wait for `fly certs show api.<your-domain> -a sudoku-fight-prod` to report the certificate as issued. Tell Claude the host name; Claude updates the `production` profile in `eas.json` **before** F6.
-   Also add `api.<your-domain>` to Firebase → Authentication → Settings → **Authorized domains** (as in B6 step 4), or the admin site's Google sign-in fails on that address (`auth/unauthorized-domain`).
+   Add the DNS records it prints in Cloudflare (`sudokufight.app` → **DNS** → **Records**), each with **Proxy status off (grey cloud, "DNS only")**: with the orange cloud Fly can't issue the certificate. Then run `fly certs check sudokufight.app -a sudoku-fight-prod` until it reports the certificate as issued. `EXPO_PUBLIC_SERVER_HOST` in the `production` profile of `eas.json` is already `sudokufight.app`; check the domain (D12 steps 3 and 4) **before** F6. Full Hebrew guide: `docs/DEPLOY-PRODUCTION.md` §11א.
+   Also add `sudokufight.app` to Firebase → Authentication → Settings → **Authorized domains** (as in B6 step 4), or the admin site's Google sign-in fails on that address (`auth/unauthorized-domain`).
 
 ### D11. Production secrets (you: only the database; Claude: the rest)
 
@@ -649,18 +651,19 @@ If production already runs a server older than the 2026-10-15 givens change, swa
 3. Checks:
    ```powershell
    fly status -a sudoku-fight-prod
-   curl.exe https://sudoku-fight-prod.fly.dev/health
+   curl.exe https://sudokufight.app/health
    fly logs -a sudoku-fight-prod --no-tail
    ```
 4. Open in a browser:
-   - https://sudoku-fight-prod.fly.dev/admin (sign in with Google)
-   - https://sudoku-fight-prod.fly.dev/legal/privacy?lang=en and https://sudoku-fight-prod.fly.dev/legal/privacy
-   - https://sudoku-fight-prod.fly.dev/legal/terms?lang=en
-   - https://sudoku-fight-prod.fly.dev/legal/delete-account?lang=en
+   - https://sudokufight.app/admin (sign in with Google)
+   - https://sudokufight.app/legal/privacy?lang=en and https://sudokufight.app/legal/privacy
+   - https://sudokufight.app/legal/terms?lang=en
+   - https://sudokufight.app/legal/delete-account?lang=en
+   - https://sudokufight.app/r/123456 (the room invite page) and https://sudokufight.app/.well-known/assetlinks.json (JSON once `ANDROID_APP_LINK_SHA256` is set, B8; 404 before)
 
 **You're done when** one machine is `started`/`passing`, `/health` answers `{"ok":true,...}`, the log has `[server] production, database Postgres, admin site on (Google sign-in for ...), ...` without `accounts disabled`, `admin site disabled`, `admin Google sign-in off`, `no ranked puzzles` or `LEGAL_CONTACT_EMAIL or LEGAL_OPERATOR_NAME is not set`, the Google sign-in opens the admin site, and the three legal pages show your email and name, **with no red placeholder and no "draft" note**, in English and Hebrew.
 
-(With your own domain, replace `sudoku-fight-prod.fly.dev` with `api.<your-domain>` everywhere from here on, and make sure it is in Firebase **Authorized domains**: D10 step 4.)
+(Until the `sudokufight.app` certificate is issued (D10 step 4), the same checks work on `https://sudoku-fight-prod.fly.dev`. Only `sudokufight.app` goes into the app and the stores, and it must be in Firebase **Authorized domains**.)
 
 ### Sources (Part D)
 - flyctl install (`pwsh`, or `powershell` instead; `~\.fly`): https://docs.fly.io/flyctl/install, and the script itself (user PATH, the UAC prompt for the `fly.exe` link): https://fly.io/install.ps1
@@ -1008,17 +1011,17 @@ Repeat the three `adb` lines for each screen, changing the file name (`en-02-...
 
 - [ ] **F5** Every App content declaration except App access is complete
 
-Open them from the Dashboard's **"Set up your app"** list (or left menu **Policy and programs → App content**; if it moved, type "App content" in the console's search). Answers, with reasons, are in `docs/store/LISTING-GOOGLE.md` §3 to §5 and `docs/store/DATA-SAFETY.md`. Production host below = `sudoku-fight-prod.fly.dev`, or `api.<your-domain>` (C1).
+Open them from the Dashboard's **"Set up your app"** list (or left menu **Policy and programs → App content**; if it moved, type "App content" in the console's search). Answers, with reasons, are in `docs/store/LISTING-GOOGLE.md` §3 to §5 and `docs/store/DATA-SAFETY.md`. Production host below = `sudokufight.app` (C1).
 
 | Form | Answer |
 |---|---|
-| **Privacy policy** | `https://sudoku-fight-prod.fly.dev/legal/privacy?lang=en` (D12 must show no "draft" note) |
+| **Privacy policy** | `https://sudokufight.app/legal/privacy?lang=en` (D12 must show no "draft" note) |
 | **Ads** | No, my app does not contain ads |
 | **App access** | Later, in F8 (needs the demo accounts) |
 | **Content rating** | Start the IARC questionnaire: email = support mailbox; category **Game**; answers per LISTING-GOOGLE §4 (all No, except **"Users can interact or exchange content": Yes**; location sharing No; digital purchases No). Expected: PEGI 3 / ESRB Everyone, with "Users Interact" |
 | **Target audience** | Age groups **13–15, 16–17, 18+** only (nothing under 13, which would bring the Families policy); "Could the store listing unintentionally appeal to children?" **No** |
 | **News app** | No |
-| **Data safety** | Fill it exactly per `docs/store/DATA-SAFETY.md` §1 and §2. **Delete account URL:** `https://sudoku-fight-prod.fly.dev/legal/delete-account?lang=en` |
+| **Data safety** | Fill it exactly per `docs/store/DATA-SAFETY.md` §1 and §2. **Delete account URL:** `https://sudokufight.app/legal/delete-account?lang=en` |
 | **Advertising ID** | **No** (the build blocks the `AD_ID` permission). Confirm in F7 step 7 before submitting it |
 | **Government apps** | No |
 | **Financial features** | My app doesn't provide any financial features |
@@ -1033,7 +1036,7 @@ Open them from the Dashboard's **"Set up your app"** list (or left menu **Policy
 
 - [ ] **F6** A finished `production` Android build (an `.aab`)
 
-**Before:** D12 healthy; C1 final (the host in the `production` profile of `eas.json` is the one you'll keep); E2 shows `GOOGLE_SERVICES_JSON` in `production`; the projectId is in `app.json` (E1); the local debug key's SHA-1 removed from Firebase and the new `google-services.json` uploaded (B7, last paragraph).
+**Before:** D12 healthy; C1 final (the host in the `production` profile of `eas.json` is the one you'll keep: `sudokufight.app`, with its certificate issued and its checks passing, D10 step 4); E2 shows `GOOGLE_SERVICES_JSON` in `production`; the projectId is in `app.json` (E1); the local debug key's SHA-1 removed from Firebase and the new `google-services.json` uploaded (B7, last paragraph).
 
 Say **"build the production AAB"**, or:
 ```powershell
@@ -1280,11 +1283,11 @@ The full list is in `docs/RELEASE-CHECKLIST.md` (stages ב, ג, ז, ח, יא) wi
 | Fly app | `sudoku-fight-staging` | `sudoku-fight-prod` |
 | Config file | `fly.toml` | `fly.production.toml` |
 | Deploy | `fly deploy --ha=false` | `fly deploy --config fly.production.toml --ha=false` |
-| Address | https://sudoku-fight-staging.fly.dev | https://sudoku-fight-prod.fly.dev (C1: stays on fly.dev) |
+| Address | https://sudoku-fight-staging.fly.dev | https://sudokufight.app (C1, since 2026-10-30; `sudoku-fight-prod.fly.dev` also works, for our own checks only) |
 | Machine | 1 x shared-cpu-1x, 512 MB, `fra` | same |
 | Neon project | `sudoku-fight-staging`, AWS Europe (Frankfurt) | `sudoku-fight-prod`, same region |
 | Used by | `preview` APK | `production` AAB (Play) |
-| Admin site | `/admin` (sign in with Google; the address must be in Firebase **Authorized domains**, B6) | `/admin` (same; a new name or your own domain goes there too) |
+| Admin site | `/admin` (sign in with Google; the address must be in Firebase **Authorized domains**, B6) | `/admin` (same; `sudokufight.app` must be there) |
 | Legal pages | `/legal/privacy`, `/legal/terms`, `/legal/delete-account` (`?lang=en` or `?lang=he`) | same |
 
 ### Server settings: where each one comes from
@@ -1322,7 +1325,7 @@ The full list is in `docs/RELEASE-CHECKLIST.md` (stages ב, ג, ז, ח, יא) wi
 |---|---|---|---|---|
 | `development` | Development Build (dev client) | internal | `development` | whatever `apps/mobile/.env.local` says (Metro on this PC) |
 | `preview` | **APK** | internal | `preview` | `sudoku-fight-staging.fly.dev`, port 443, TLS |
-| `production` | **AAB** | store | `production` | `sudoku-fight-prod.fly.dev`, port 443, TLS (C1: fly.dev); auto-increments the version code |
+| `production` | **AAB** | store | `production` | `sudokufight.app`, port 443, TLS (C1: own domain since 2026-10-30); auto-increments the version code |
 | submit `production` (Android) | | track `internal`, release status `draft` | | |
 
 | EAS variable | Type / visibility | Environments | From |

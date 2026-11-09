@@ -1,5 +1,6 @@
 import type { GameView, PlayerId } from '@sudoku-fight/engine';
 
+import { duelCardWidth } from '../../../components/player/metrics';
 import type { FeedbackCue } from '../../../services/feedback';
 import { size, space, tokens } from '../../../theme';
 import type { Rect } from '../geometry';
@@ -193,11 +194,12 @@ export function avatarX(cardRect: Rect, screenWidth: number): number {
 
 /**
  * Where a 2-player card is before it was measured: the design's spot (Dir-C-Game: top 48, 159 × 160, at a
- * 16 dp gutter). Mine is on the right in Hebrew, the opponent's on the left (and the other way in English).
- * Only for a first frame; the screen passes the measured rect.
+ * 16 dp gutter; narrower on a screen under 360 dp, duelCardWidth). Mine is on the right in Hebrew, the
+ * opponent's on the left (and the other way in English). Only for a first frame; the screen passes the measured
+ * rect.
  */
 export function defaultCardRect(screenWidth: number, onRight: boolean, top: number = card.top): Rect {
-  const width = size.playerCard.width;
+  const width = duelCardWidth(screenWidth - 2 * tokens.layout.gutterGame);
   const x = onRight ? screenWidth - tokens.layout.gutterGame - width : tokens.layout.gutterGame;
   return { x, y: top, width, height: size.playerCard.height };
 }

@@ -65,6 +65,7 @@
     "noLogic": "答え：{{cell}} → {{digit}}",
     "scoreLine": "得点",
     "penaltyLine": "ペナルティ：正しい数字の点数",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "選択を取り消し",
       "timeout": "時間切れ",

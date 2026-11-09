@@ -14,6 +14,8 @@ import {
   idleBlinkDelayMs,
   LAYER_FALLBACK_OVERSCAN,
   layerSvg,
+  MOTION_AMPLITUDE,
+  motionAmplitude,
   motionPlan,
   NATIVE_IDENTITY,
   type NativeLayers,
@@ -382,7 +384,7 @@ describe('nativeLayers', () => {
 
     it('changes only the face layers with the expression', () => {
       const base = nativeLayers(a, { size: 96 });
-      const face = new Set(['cheeks', 'eye', 'features']);
+      const face = new Set(['cheeks', 'eye', 'features', 'extras']);
       for (const expression of EXPRESSIONS) {
         const other = nativeLayers(a, { size: 96, expression });
         expect(other.nodes.map((n) => n.key)).toEqual(base.nodes.map((n) => n.key));
@@ -391,6 +393,29 @@ describe('nativeLayers', () => {
         });
       }
     });
+  });
+
+  it('draws the extras over the front layers and gimmicks, or with a face a gimmick holds', () => {
+    const keys = (id: string) =>
+      nativeLayers(fixture(id), { size: 96, expression: 'angry' }).nodes.map((n) => `${n.key}<${n.parent}`);
+    const pirate = keys('demo-pirate-egg');
+    expect(pirate.indexOf(`${NODE.extras}<${NODE.body}`)).toBe(pirate.length - 1);
+    expect(pirate.indexOf(`${NODE.front}<${NODE.body}`)).toBeGreaterThan(-1);
+    const kettle = keys('demo-kettle');
+    expect(kettle[kettle.length - 1]).toBe(`${NODE.extras}<${NODE.body}`);
+    const balloon = keys('demo-balloon');
+    const skin = gimmickNodeKey('skin');
+    expect(balloon).toContain(`${NODE.extras}<${skin}`);
+    // right after the face and what it holds, still inside the gimmick
+    const at = balloon.indexOf(`${NODE.extras}<${skin}`);
+    expect(balloon[at - 1]).toBe(`${NODE.features}<${NODE.face}`);
+    // the angry mark is there, and only there
+    const layers = nativeLayers(fixture('demo-pirate-egg'), { size: 96, expression: 'angry' });
+    const extras = layers.nodes.find((n) => n.key === NODE.extras);
+    expect(extras?.kind).toBe('extras');
+    expect(extras?.svg).not.toBeNull();
+    const calm = nativeLayers(fixture('demo-pirate-egg'), { size: 96 });
+    expect(calm.nodes.find((n) => n.key === NODE.extras)?.svg).toBeNull();
   });
 
   it('turns grey on request, the tile too', () => {
@@ -529,14 +554,22 @@ describe('the frame and px', () => {
 // ---------------------------------------------------------------------------------------------------------
 
 describe('motion plans', () => {
-  /** The nodes a track moves, with the origin CSS gives them (an eye's own centre for `eyes`). */
+  /**
+   * The nodes a track moves, with the origin CSS gives them (an eye's own centre for `eyes`); a `face` track
+   * moves the face's extras too (motion.ts TARGET_CLASSES).
+   */
   const expected = (a: AvatarDef, tr: MotionTrack): [string, Point][] =>
     tr.target === 'eyes'
       ? eyeCentres(a.face).map((c, i) => [
           eyeNodeKey(i),
           tr.origin === 'eyes' ? c : motionOrigin(a, tr.origin),
         ])
-      : [[tr.target, motionOrigin(a, tr.origin)]];
+      : tr.target === 'face'
+        ? [
+            [NODE.face, motionOrigin(a, tr.origin)],
+            [NODE.extras, motionOrigin(a, tr.origin)],
+          ]
+        : [[tr.target, motionOrigin(a, tr.origin)]];
 
   it.each(EACH)('%s: every motion plays as sampleTrack says, on every node it moves', (_, a) => {
     const N = 64;
@@ -603,6 +636,47 @@ describe('motion plans', () => {
     expect(reduced.faceChanges).toEqual(motionPlan(person, 'spin').faceChanges);
     expect(reduced.faceChanges.map((c) => c.expression)).toEqual(['surprised', 'laugh', 'base']);
     expect(reduced.faceChanges.map((c) => c.atMs)).toEqual([0, 546, 1300]);
+  });
+
+  it('moves farther on a small avatar, so a nod shows at 28-36 px (amplitude × clamp(48 / size, 1, 2.2))', () => {
+    expect(MOTION_AMPLITUDE).toEqual({ fromSize: 48, max: 2.2 });
+    expect([96, 64, 48, 36, 28, 22, 10].map((s) => Number(motionAmplitude(s).toFixed(3)))).toEqual([
+      1, 1, 1, 1.333, 1.714, 2.182, 2.2,
+    ]);
+    // No size, or nonsense: as tuned.
+    expect([undefined, 0, -5, Number.NaN].map(motionAmplitude)).toEqual([1, 1, 1, 1]);
+
+    const a = fixture('demo-kettle');
+    const values = (plan: ReturnType<typeof motionPlan>, property: string) =>
+      plan.nodes.flatMap((n) =>
+        n.properties
+          .filter((p) => p.property === property)
+          .flatMap((p) => [p.from, ...p.segments.map((x) => x.to)]),
+      );
+    for (const id of ['nod', 'shake', 'bounce'] as const) {
+      const tuned = motionPlan(a, id);
+      for (const size of [64, 48]) expect(motionPlan(a, id, { size })).toEqual(tuned);
+      const small = motionPlan(a, id, { size: 28 });
+      const k = 48 / 28;
+      for (const property of ['translateX', 'translateY']) {
+        const was = values(tuned, property);
+        expect(values(small, property).map((v) => Number(v.toFixed(6)))).toEqual(
+          was.map((v) => Number((v * k).toFixed(6))),
+        );
+      }
+      // Turns and scales keep their size; the timing is the same.
+      for (const property of ['rotate', 'scaleX', 'scaleY'])
+        expect(values(small, property)).toEqual(values(tuned, property));
+      expect(small.durationMs).toBe(tuned.durationMs);
+      expect(small.faceChanges).toEqual(tuned.faceChanges);
+    }
+    // A nod really moves more at 28 px than as tuned.
+    const nodY = (size?: number) =>
+      Math.max(...values(motionPlan(a, 'nod', { size }), 'translateY').map(Math.abs));
+    expect(nodY(28)).toBeGreaterThan(nodY());
+    expect(nodY(22) / nodY()).toBeCloseTo(48 / 22, 6);
+    // Reduced motion: nothing moves at any size.
+    expect(motionPlan(a, 'nod', { size: 28, reducedMotion: true }).nodes).toEqual([]);
   });
 
   it('blinks every eye around its own centre, now and then', () => {

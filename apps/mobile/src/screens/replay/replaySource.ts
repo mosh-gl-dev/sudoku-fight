@@ -18,6 +18,11 @@ export interface ReplayMeta {
   source: ReplaySourceKind;
   /** Players' countries, when known (a ranked game's profiles). */
   countries: Readonly<Partial<Record<PlayerId, string | null>>>;
+  /**
+   * A game in a friends room (protocol HistoryGame.friends): its log says 'ranked', so the replay names it from
+   * this, as the history card does. Absent: not one.
+   */
+  friends?: true;
 }
 
 export type ReplayLoad =
@@ -73,7 +78,7 @@ async function fromServer(id: string, api: HistoryApi | null): Promise<ReplayLoa
     return {
       kind: 'found',
       replay: buildReplay(events, { me, avatars, names }),
-      meta: { source: 'ranked', countries },
+      meta: { source: 'ranked', countries, ...(game.friends === true && { friends: true as const }) },
     };
   } catch (error) {
     if (!isHistoryApiError(error)) return { kind: 'unavailable' };

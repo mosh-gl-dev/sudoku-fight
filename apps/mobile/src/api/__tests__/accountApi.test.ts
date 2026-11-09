@@ -1,4 +1,4 @@
-import { type Me, RENAME_COOLDOWN_MS } from '@sudoku-fight/protocol';
+import { AVATAR_CATALOG, AVATAR_CATALOG_HEADER, type Me, RENAME_COOLDOWN_MS } from '@sudoku-fight/protocol';
 
 import {
   type AccountFetch,
@@ -88,14 +88,18 @@ async function failure(p: Promise<unknown>): Promise<AccountApiError> {
 }
 
 describe('account API client (spec §18 HTTP API)', () => {
-  it('GET /v1/me with the bearer token', async () => {
+  it('GET /v1/me with the bearer token, and the avatar catalog this app knows', async () => {
     const { fetch, requests } = scripted({ status: 200, body: SAMPLE_ME });
     expect(await api(fetch).api.getMe()).toEqual(SAMPLE_ME);
     expect(requests[0]).toEqual({
       url: `${BASE}/v1/me`,
       init: expect.objectContaining({
         method: 'GET',
-        headers: { Accept: 'application/json', Authorization: 'Bearer tok' },
+        headers: {
+          Accept: 'application/json',
+          Authorization: 'Bearer tok',
+          [AVATAR_CATALOG_HEADER]: String(AVATAR_CATALOG),
+        },
       }),
     });
   });
@@ -304,8 +308,15 @@ describe('the profile as the app keeps it', () => {
   it('reads an avatar of the retired av01–av51 pack as its replacement', () => {
     expect(readMe(SAMPLE_ME)).toEqual(SAMPLE_ME);
     expect(readMe({ ...SAMPLE_ME, avatarId: 'av07' })).toEqual({ ...SAMPLE_ME, avatarId: 'lava-lamp' });
-    expect(readMe({ ...SAMPLE_ME, avatarId: 'av36' })).toBeNull();
     expect(readMe(null)).toBeNull();
+  });
+
+  it('reads an avatar it does not know (chosen on a newer app) as none, instead of refusing the whole Me', () => {
+    // an app before this one refused its Me over it (protocol AVATAR_CATALOG_HEADER)
+    for (const avatarId of ['av36', 'pirates-10-house', 'dragons-1-invested'])
+      expect(readMe({ ...SAMPLE_ME, avatarId })).toEqual({ ...SAMPLE_ME, avatarId: 'av00' });
+    // an avatar that is not an id at all is still a broken Me
+    for (const avatarId of [7, null, undefined, {}]) expect(readMe({ ...SAMPLE_ME, avatarId })).toBeNull();
   });
 
   it('when the name may change again [D20]', () => {

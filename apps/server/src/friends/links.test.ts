@@ -422,11 +422,14 @@ describe('the Fly apps', () => {
       { warn: () => {}, randomSecret: () => 'x' },
     );
 
-  it('staging lists the PC’s test key, on purpose; its settings load', () => {
+  it('staging lists the PC’s own APK key, not the public debug key (2026-10-30); its settings load', () => {
     const env = flyEnv('fly.toml');
     expect(env.SENTRY_ENVIRONMENT).toBe('staging');
-    expect(load('fly.toml').friends?.links.androidSha256).toContain(TEMPLATE_DEBUG_KEY_SHA256);
-    expect(env.ANDROID_APP_LINK_ALLOW_DEBUG_KEY).toBe('true');
+    const keys = load('fly.toml').friends?.links.androidSha256 ?? [];
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys).not.toContain(TEMPLATE_DEBUG_KEY_SHA256);
+    expect(env.ANDROID_APP_LINK_ALLOW_DEBUG_KEY).toBeUndefined();
+    expect(flyEnv('fly.production.toml').ANDROID_APP_LINK_ALLOW_DEBUG_KEY).toBeUndefined();
   });
 
   it('the QA module is on, and open (no sign-in), in staging only; a key would be a secret, never in a file', () => {

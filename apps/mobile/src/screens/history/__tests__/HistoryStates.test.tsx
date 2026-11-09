@@ -3,6 +3,7 @@ import 'react-native-reanimated';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
 
+import { ltr } from '../../../components/player/format';
 import type { PracticeRepo } from '../../../game/practiceRepo';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
@@ -23,9 +24,10 @@ jest.mock(
   () => jest.requireActual<{ default: object }>('react-native-safe-area-context/jest/mock').default,
 );
 
+// The answers, and the frames a swapped list waits for (HistoryScreen `pick`, `run`; a frame is a timer under Jest).
 const settle = () =>
   act(async () => {
-    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 const MIN = 60_000;
@@ -100,7 +102,9 @@ describe('history states (stage 13)', () => {
     expect(screen.getByTestId('history-offline-body')).toHaveTextContent(
       'המשחקים המדורגים ייטענו כשיחזור החיבור. אימונים מהמכשיר מופיעים כאן גם בלי חיבור.',
     );
-    expect(screen.getByTestId('history-offline-code')).toHaveAccessibleName('קוד שגיאה: unavailable-503');
+    expect(screen.getByTestId('history-offline-code')).toHaveAccessibleName(
+      `קוד שגיאה: ${ltr('ERR_UNAVAILABLE · 503')}`,
+    );
     // The state says it; the note over the list would say it twice.
     expect(screen.queryByTestId('history-note-offline')).toBeNull();
     expect(announce).toHaveBeenCalledWith(expect.stringMatching(/^אין חיבור לשרת\. /));
@@ -121,7 +125,7 @@ describe('history states (stage 13)', () => {
     expect(screen.getByTestId('history-note-offline')).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('history-filter-ranked'));
     await settle();
-    expect(screen.getByTestId('history-offline-code')).toHaveTextContent('network');
+    expect(screen.getByTestId('history-offline-code')).toHaveTextContent(ltr('ERR_NETWORK'));
     expect(screen.queryByTestId('history-empty')).toBeNull();
   });
 
@@ -131,7 +135,7 @@ describe('history states (stage 13)', () => {
     expect(screen.getByTestId('history-error-body')).toHaveTextContent(
       'השרת לא ענה כמו שצריך. נסה שוב בעוד רגע.',
     );
-    expect(screen.getByTestId('history-error-code')).toHaveTextContent('badRequest-400');
+    expect(screen.getByTestId('history-error-code')).toHaveTextContent(ltr('ERR_BAD_REQUEST · 400'));
     expect(screen.getByRole('button', { name: 'לנסות שוב' })).toBeOnTheScreen();
     expect(screen.queryByTestId('history-note-rankedError')).toBeNull();
   });
@@ -159,7 +163,9 @@ describe('history states (stage 13)', () => {
 
     await show(memoryRepo, failingApi('timeout').api);
     expect(screen.getByTestId('history-offline-title')).toHaveTextContent('No connection to the server');
-    expect(screen.getByTestId('history-offline-code')).toHaveAccessibleName('Error code: timeout');
+    expect(screen.getByTestId('history-offline-code')).toHaveAccessibleName(
+      `Error code: ${ltr('ERR_TIMEOUT')}`,
+    );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeOnTheScreen();
 
     await show(memoryRepo, failingApi('badRequest', 400).api);

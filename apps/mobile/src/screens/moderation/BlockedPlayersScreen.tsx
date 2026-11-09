@@ -150,7 +150,7 @@ function BlockedRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: GUTTER.screen },
   content: { paddingHorizontal: GUTTER.screen, paddingTop: space[6], gap: space[8] },
   note: { ...text('caption'), color: color.textMuted },

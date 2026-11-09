@@ -69,6 +69,34 @@ export function hitOf(
   };
 }
 
+/** Someone who may send me a hit, as its banner shows them: their avatar and their seat colour on this phone. */
+export interface HitSender {
+  avatarId: AvatarIdOrNone | null;
+  colorIndex: number;
+}
+
+/** One sender's banner avatar, for telling it apart (the seat colour is one player's; the avatar may change). */
+export const senderKeyOf = (s: HitSender): string => `${s.colorIndex}:${s.avatarId ?? ''}`;
+
+/**
+ * Everyone who may send me a hit (the other players), as hitOf() describes a hit's sender: the hit banner keeps
+ * their avatars ready between hits (HitLayer `senders`), so the sender of a hit is one of them.
+ */
+export function hitSendersOf(
+  view: Pick<GameView, 'players' | 'me'>,
+  { avatarOf }: Pick<HitNames, 'avatarOf'>,
+): HitSender[] {
+  const me = view.players.find((p) => p.id === view.me);
+  if (!me) return [];
+  const seats = view.players.map((p) => p.seat);
+  return view.players
+    .filter((p) => p.id !== me.id)
+    .map((p) => ({
+      avatarId: avatarOf?.(p.id) ?? null,
+      colorIndex: colorIndexFor(p.seat, me.seat, seats),
+    }));
+}
+
 /** The hit is on at `now`: not over by its deadline. */
 export const isHitOn = (hit: HitInfo | null, now: number): hit is HitInfo =>
   hit !== null && remainingOf(hit, now) > 0;

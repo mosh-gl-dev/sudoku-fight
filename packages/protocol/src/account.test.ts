@@ -3,8 +3,13 @@ import { BOT_LEVELS } from '@sudoku-fight/engine';
 import {
   ACCOUNT_ERROR_CODES,
   ACCOUNT_PATHS,
+  AVATAR_CATALOG,
+  AVATAR_CATALOG_ADDED,
+  AVATAR_CATALOG_HEADER,
   AVATAR_IDS,
   type AvatarId,
+  avatarCatalogOf,
+  avatarIdForCatalog,
   COUNTRY_CODES,
   DISPLAY_NAME_PATTERN,
   devToken,
@@ -105,16 +110,29 @@ describe('normalizeForCompare', () => {
 });
 
 describe('avatars (spec §3.4)', () => {
-  it('has the 101 choosable avatars of the catalog, once each, as ids the catalog allows', () => {
-    expect(AVATAR_IDS).toHaveLength(101);
-    expect(new Set(AVATAR_IDS).size).toBe(101);
+  it('has the 119 choosable avatars of the catalog, once each, as ids the catalog allows', () => {
+    expect(AVATAR_IDS).toHaveLength(119);
+    expect(new Set(AVATAR_IDS).size).toBe(119);
     for (const id of AVATAR_IDS) expect(id).toMatch(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/);
     // The picker's first of each kind (people, animals, objects, food, nature, creatures, symbols).
     expect(
-      ['noam', 'fox', 'coffee-cup', 'pickle', 'cactus', 'alien', 'eight'].map((id) =>
+      ['noam', 'fox', 'coffee-cup', 'pickle', 'cactus', 'alien', 'pirates-1-house'].map((id) =>
         AVATAR_IDS.indexOf(id as AvatarId),
       ),
     ).toEqual([0, 12, 19, 53, 64, 74, 86]);
+  });
+
+  it('opens the symbols with the 18 pirates: 1 to 9 in the house style, then 1 to 9 invested', () => {
+    const pirates = (['house', 'invested'] as const).flatMap((look) =>
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => `pirates-${digit}-${look}`),
+    );
+    expect(AVATAR_IDS.slice(86, 105)).toEqual([...pirates, 'eight']);
+    for (const id of pirates) expect(isAvatarId(id)).toBe(true);
+    // the four of the first slice keep their ids (stored with accounts since 31.10.2026)
+    for (const id of ['pirates-1-house', 'pirates-7-house', 'pirates-1-invested', 'pirates-7-invested'])
+      expect(isAvatarId(id)).toBe(true);
+    // every pirate id is in the symbols group, and nowhere else
+    expect(AVATAR_IDS.filter((id) => id.startsWith('pirates-'))).toEqual(pirates);
   });
 
   it('av00 means "no avatar" and is never chosen; the old pack is not chosen either', () => {
@@ -175,6 +193,51 @@ describe('avatars (spec §3.4)', () => {
     for (const id of LEGACY_AVATAR_IDS) expect(normalizeAvatarId(id)).toBe(LEGACY_AVATAR_MAP[id]);
     for (const v of ['av00', 'av36', 'av52', 'AV01', 'Noam', '', null, undefined, 7, {}, ['noam']])
       expect(normalizeAvatarId(v)).toBe(NO_AVATAR_ID);
+  });
+
+  it('reads an id a newer app may send (one this list does not have yet) as "no avatar", never as junk', () => {
+    for (const v of ['pirates-10-house', 'dragons-1-house', 'pirates-1-golden'])
+      expect(normalizeAvatarId(v)).toBe(NO_AVATAR_ID);
+  });
+});
+
+describe('the avatar catalog an app knows (an older app refuses an answer with an id it does not know)', () => {
+  const PIRATES = AVATAR_IDS.filter((id) => id.startsWith('pirates-'));
+
+  it('is catalog 2 since the pirates: the 18 of them are what it added to the 101 of 1.1.0', () => {
+    expect(AVATAR_CATALOG).toBe(2);
+    expect(AVATAR_CATALOG_HEADER.toLowerCase()).toBe('x-avatar-catalog');
+    expect(PIRATES).toHaveLength(18);
+    expect([...(AVATAR_CATALOG_ADDED[2] ?? [])]).toEqual(PIRATES);
+    expect(AVATAR_IDS.length - PIRATES.length).toBe(101);
+    // every catalog after the first adds ids that exist, once
+    const added = Object.values(AVATAR_CATALOG_ADDED).flat();
+    expect(new Set(added).size).toBe(added.length);
+    for (const id of added) expect(isAvatarId(id)).toBe(true);
+    expect(Math.max(...Object.keys(AVATAR_CATALOG_ADDED).map(Number))).toBe(AVATAR_CATALOG);
+  });
+
+  it('reads the header: a whole number from 1, else 1 (an app that sends none is an app of catalog 1)', () => {
+    expect(avatarCatalogOf(undefined)).toBe(1);
+    expect(avatarCatalogOf(null)).toBe(1);
+    expect(avatarCatalogOf('')).toBe(1);
+    expect(avatarCatalogOf('2')).toBe(2);
+    expect(avatarCatalogOf(' 2 ')).toBe(2);
+    expect(avatarCatalogOf(['2', '1'])).toBe(2);
+    expect(avatarCatalogOf('7')).toBe(7);
+    for (const junk of ['0', '-1', '2.5', 'two', '1e3', '00002', 2, {}, '99999'])
+      expect(avatarCatalogOf(junk)).toBe(1);
+  });
+
+  it('shows an app only the avatars of its catalog: a newer one as "no avatar", the rest as they are', () => {
+    for (const id of PIRATES) {
+      expect(avatarIdForCatalog(id, 1)).toBe(NO_AVATAR_ID);
+      expect(avatarIdForCatalog(id, 2)).toBe(id);
+      expect(avatarIdForCatalog(id, 3)).toBe(id);
+    }
+    for (const id of AVATAR_IDS.filter((a) => !a.startsWith('pirates-')))
+      expect(avatarIdForCatalog(id, 1)).toBe(id);
+    expect(avatarIdForCatalog(NO_AVATAR_ID, 1)).toBe(NO_AVATAR_ID);
   });
 });
 

@@ -50,10 +50,11 @@ describe('Board', () => {
 
   it('draws every state of the demo board', async () => {
     await render(<Board model={demo()} />);
+    // A lock's seconds in the label go in 5-second steps (Q1): 7 left reads "5".
     expect(
-      screen.getByRole('button', { name: /^F8, ריקה, נעולה אצלך, 7 שניות, ספרות שגויות: \d$/ }),
+      screen.getByRole('button', { name: /^F8, ריקה, נעולה אצלך, 5 שניות, ספרות שגויות: \d$/ }),
     ).toBeSelected();
-    expect(screen.getByRole('button', { name: 'A8, ריקה, נעולה על ידי Aiko_M, 7 שניות' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'A8, ריקה, נעולה על ידי Aiko_M, 5 שניות' })).toBeEnabled();
     expect(
       screen.getByRole('button', { name: 'D4, ריקה, נעולה על ידי NinaVolt, הטיימר עצור' }),
     ).toBeEnabled();

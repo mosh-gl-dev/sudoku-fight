@@ -17,11 +17,16 @@ export interface BoardGeometry {
   cell: number;
   /** Cell size relative to the design's (1 at 358 dp). */
   scale: number;
+  /**
+   * The system text is large (fontScale ≥ LARGE_TEXT.fontScale, BRD-3): the cells draw their digits a little
+   * bigger, within the cell. Absent: the design's sizes.
+   */
+  largeText?: boolean;
 }
 
-export function boardGeometry(width: number = size.board): BoardGeometry {
+export function boardGeometry(width: number = size.board, { largeText = false } = {}): BoardGeometry {
   const cell = ((width - 2 * boxGap) / 3 - 2 * grid) / 3;
-  return { width, cell, scale: cell / size.boardCell };
+  return { width, cell, scale: cell / size.boardCell, ...(largeText ? { largeText } : null) };
 }
 
 /** The cell size of a board of `width`, for a single cell drawn on its own. */
@@ -33,6 +38,27 @@ export const px = (g: BoardGeometry, dp: number): number => Math.max(1, Math.rou
 
 /** A font size at this board's scale, to half a dp. */
 export const fontPx = (g: BoardGeometry, dp: number): number => Math.round(dp * g.scale * 2) / 2;
+
+/**
+ * BRD-3: the board's digits never follow the system text size (ui/Text scale 'board'): the cell can't grow, and
+ * would cut them. From a slightly larger system text on, a cell gives its digits more of itself instead: the
+ * digit from about 0.57 to 0.66 of the cell (Rubik 22 → 25 at the design's 38.4 dp), the wrong marks 11 → 12.
+ */
+export const LARGE_TEXT = { fontScale: 1.15, digit: 25, wrongDigit: 12 } as const;
+
+/** Whether the phone's text size (React Native's fontScale) asks for the cells' larger digits. */
+export const isLargeText = (fontScale: number): boolean => fontScale >= LARGE_TEXT.fontScale;
+
+/** A cell's digit or wrong-mark size at this board's scale, larger for large text: font size and line height. */
+export function cellTextPx(
+  g: BoardGeometry,
+  kind: 'digit' | 'wrongDigit',
+): { fontSize: number; lineHeight: number } {
+  const type = kind === 'digit' ? tokens.type.digitCell : tokens.type.wrongDigit;
+  const dp = g.largeText ? LARGE_TEXT[kind] : type.size;
+  // The tokens set the line height to the size (22/22, 11/11); keep that ratio at the larger size.
+  return { fontSize: fontPx(g, dp), lineHeight: fontPx(g, (dp * type.lineHeight) / type.size) };
+}
 
 /** A rect in the board's own coordinates (dp from its top-left corner). */
 export interface CellRect {

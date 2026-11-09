@@ -71,7 +71,7 @@
     "hint": "Ouvre le replay"
   },
   "results": {
-    "replay": "Voir le replay",
+    "replay": "Revoir",
     "replayHint": "La partie depuis le début, pas à pas, avec chaque coup expliqué",
     "rating": {
       "title": "Variation du classement · {{type}}",

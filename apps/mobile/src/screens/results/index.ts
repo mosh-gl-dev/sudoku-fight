@@ -2,11 +2,18 @@
 export {
   type AwardResult,
   type BestMoveModel,
+  type DecidingCount,
   type GameEnd,
   loadOnlineResults,
   loadPracticeResults,
+  myEndCue,
+  type NewGameContext,
+  type NewGameTarget,
+  newGameTarget,
   type OpponentResult,
   type Outcome,
+  type PlayAgain,
+  playAgainOf,
   type PracticeEnd,
   type RankedEnd,
   type RankingRow,
@@ -16,6 +23,9 @@ export {
   type ResultsModel,
   type ResultsSession,
   type ResultsSource,
+  SCORE_COUNTS,
+  type ScoreCount,
+  scoreCountsOf,
   sessionResultsModel,
 } from './resultsModel';
 export { ResultsScreen, type ResultsScreenProps } from './ResultsScreen';

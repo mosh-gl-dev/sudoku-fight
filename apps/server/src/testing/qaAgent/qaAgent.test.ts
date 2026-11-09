@@ -3,13 +3,19 @@ import type { AdminQaBug, AdminQaItem, AdminQaRun } from '@sudoku-fight/protocol
 import {
   centerOf,
   describeNodes,
+  dumpUi,
   findNode,
   formatBug,
   formatItem,
   formatRun,
+  isPng,
+  isUiDump,
   parseUiDump,
   readToken,
   serverUrlOf,
+  UI_DUMP_RETRY_MS,
+  UI_DUMP_TRIES,
+  type UiDumpDevice,
 } from './index';
 
 const DUMP = `<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
@@ -45,6 +51,67 @@ describe('the ADB screen dump', () => {
 
   it('reads the screen as short lines: label, centre, and whether it takes a tap', () => {
     expect(describeNodes(parseUiDump(DUMP))[0]).toBe('"משחק חדש" id=home-new-game @540,260 [tap]');
+  });
+});
+
+describe('a fresh dump every time (QA run #2: an animated screen read as the one before it)', () => {
+  const IDLE_ERROR = 'ERROR: could not get idle state.';
+  const OLD = DUMP.replace('משחק חדש', 'המסך הקודם');
+
+  /** A phone whose uiautomator fails `failures` times before it dumps `DUMP`; the old screen's file is there. */
+  function fakePhone(failures: number) {
+    const files = new Map([['/sdcard/qa-ui.xml', OLD]]);
+    const calls: string[] = [];
+    let left = failures;
+    const device: UiDumpDevice = {
+      shell: (...args) => {
+        calls.push(args.join(' '));
+        if (args[0] === 'rm') files.delete(args[2]!);
+        if (args[0] !== 'uiautomator') return '';
+        if (left-- > 0) return IDLE_ERROR;
+        files.set(args[2]!, DUMP);
+        return `UI hierchary dumped to: ${args[2]}`;
+      },
+      read: (path) => files.get(path) ?? `cat: ${path}: No such file or directory`,
+      sleep: (ms) => calls.push(`sleep ${ms}`),
+    };
+    return { device, calls };
+  }
+
+  it('deletes the old dump before it dumps, and reads the new one', () => {
+    const { device, calls } = fakePhone(0);
+    expect(dumpUi(device, '/sdcard/qa-ui.xml')).toBe(DUMP);
+    expect(calls).toEqual(['rm -f /sdcard/qa-ui.xml', 'uiautomator dump /sdcard/qa-ui.xml']);
+  });
+
+  it('tries again, briefly, while the screen will not settle', () => {
+    const { device, calls } = fakePhone(UI_DUMP_TRIES - 1);
+    expect(parseUiDump(dumpUi(device, '/sdcard/qa-ui.xml'))[0]?.text).toBe('משחק חדש');
+    expect(calls.filter((c) => c === `sleep ${UI_DUMP_RETRY_MS}`)).toHaveLength(UI_DUMP_TRIES - 1);
+    expect(calls.filter((c) => c.startsWith('rm '))).toHaveLength(UI_DUMP_TRIES);
+  });
+
+  it('then fails with uiautomator’s reason instead of the old screen', () => {
+    const { device, calls } = fakePhone(UI_DUMP_TRIES);
+    expect(() => dumpUi(device, '/sdcard/qa-ui.xml')).toThrow(
+      `uiautomator could not read the screen (${UI_DUMP_TRIES} tries): ${IDLE_ERROR}`,
+    );
+    expect(() => dumpUi(fakePhone(UI_DUMP_TRIES).device, '/sdcard/qa-ui.xml')).toThrow(/keeps moving/);
+    expect(calls.filter((c) => c.startsWith('uiautomator'))).toHaveLength(UI_DUMP_TRIES);
+  });
+
+  it('a dump is whole, from <hierarchy> to its end', () => {
+    expect(isUiDump(DUMP)).toBe(true);
+    expect(isUiDump(`${DUMP}\n`)).toBe(true);
+    expect(isUiDump(DUMP.slice(0, -20))).toBe(false);
+    expect(isUiDump('cat: /sdcard/qa-ui.xml: No such file or directory')).toBe(false);
+    expect(isUiDump('')).toBe(false);
+  });
+
+  it('a shot is a PNG, not the error text adb passes on in its place', () => {
+    expect(isPng(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]))).toBe(true);
+    expect(isPng(Buffer.from('/system/bin/sh: screencap: inaccessible or not found'))).toBe(false);
+    expect(isPng(Buffer.alloc(0))).toBe(false);
   });
 });
 

@@ -89,7 +89,7 @@ export function SuspendedScreen({
 const ICON_CIRCLE = size.ctaHero - space[8];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  screen: { flex: 1 },
   header: { paddingHorizontal: GUTTER.screen },
   content: { paddingHorizontal: GUTTER.screen, paddingTop: space[6], gap: space[11] },
   hero: { alignItems: 'center', gap: space[6] },

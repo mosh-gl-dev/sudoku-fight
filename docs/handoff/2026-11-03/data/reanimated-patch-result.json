@@ -1,0 +1,104 @@
+{
+  "summary": "Patch react-native-reanimated 4.5.1 (patch-package): skip onEventDispatch work no worklet waits for; stop the per-failure stack Log.w flood",
+  "agentCount": 2,
+  "logs": [],
+  "result": {
+    "rep": {
+      "status": "done",
+      "what": "Added patches/react-native-reanimated+4.5.1.patch, made with patch-package 8.0.0. It changes only two Kotlin files in node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/. (1) NodesManager.onEventDispatch, UI-thread branch: before handleEvent and performOperationsRespectingDrawPass it now runs `val eventName = mCustomEventNamesResolver.resolveCustomEventName(event.eventName) ?: return` and `if (mNativeProxy?.isAnyHandlerWaitingForEvent(eventName, event.viewTag) != true) return`. This is the same check the off-UI-thread branch already makes. (2) NativeProxy.synchronouslyUpdateUIProps: the catch now calls logSyncUpdateFailure(viewTag, e) in place of Log.w(..., e). Each failure is one line with no stack: \"synchronouslyUpdateUIProps failed for tag N: <ExceptionClass>: <message, max 160 chars>\". The real cause is unwrapped from InvocationTargetException. At most 5 such lines go out per 1000 ms window. After that the failures are counted, and a delayed UiThreadUtil.runOnUiThread posts one line when the window ends: \"synchronouslyUpdateUIProps failed K more times (not logged: at most 5 lines per 1000 ms)\". The logger is @Synchronized and keeps its state in fields only. Root package.json now has \"postinstall\": \"patch-package\" (patch-package 8.0.0 was already in devDependencies). Added the Jest test apps/mobile/src/__tests__/reanimatedPatch.test.ts. docs/PERF.md has a new section \"ה־patch של Reanimated (06.11.2026)\" (what, why, safety, install paths, regenerate, drop/revert, logcat, device check), and its older references to the patch are marked as applied. docs/DECISIONS-PENDING.md has no Reanimated or patch entry, so I left it unchanged; the decision is already logged in docs/handoff/2026-11-03/README.md line 74.",
+      "safety": "Checked in the 4.5.1 sources:\n- The API exists. NativeProxy.kt has `external fun isAnyHandlerWaitingForEvent(eventName: String, emitterReactTag: Int): Boolean`, a JNI call through NativeProxy.cpp and ReanimatedModuleProxy to UIEventHandlerRegistry::isAnyHandlerWaitingForEvent, which looks up eventMappingsWithTag under a mutex.\n- Same name and tag: EventHandler.receiveEvent resolves the name with the same resolver (FabricUIManager.resolveCustomDirectEventName, which maps top* to on* and never returns null for a non-null name). RN's Event.dispatchModern passes the same viewTag as targetTag, so the check uses exactly the (tag, name) that processEvent would look up.\n- iOS / C++ does the same: ReanimatedModuleProxy::handleRawEvent (the iOS Fabric event listener in ReanimatedModule.mm) returns false before handleEvent and performOperations when !isAnyHandlerWaitingForEvent. The patch brings Android's UI-thread branch in line with that and with its own off-thread branch.\n- Consumers that still get their events:\n  - useEvent, useAnimatedScrollHandler and useScrollOffset all register through WorkletEventHandler.registerForEvents(viewTag), so always with a view tag. The only caller of core.registerEventHandler is WorkletEventHandler.\n  - react-native-gesture-handler 2.32: on the new architecture its ReanimatedEventDispatcher calls nodesManager.onEventDispatch(event) directly, with onGestureHandlerEvent / onGestureHandlerStateChange on the detector view (view.id). useAnimatedGesture registers exactly those two names through Reanimated.useEvent, so they pass the check. PuzzleBoard and ArsenalOverlay use GestureDetector.\n  - useAnimatedKeyboard (WindowInsets / KeyboardAnimationManager), sensors (SensorManager), layout animations and CSS animations do not go through events. The shared-element onTransitionProgress / onGestureCancel path is in handleRawEvent, which is commented out on Android, and ENABLE_SHARED_ELEMENT_TRANSITIONS=false. USE_ANIMATION_BACKEND=false (staticFlags.json and the CMake flags of the existing build).\n- Only gap: handlers registered with emitterReactTag -1 (eventMappingsWithoutTag) are invisible to isAnyHandlerWaitingForEvent. Upstream's off-thread branch already drops those. Nothing in the app or its libraries registers one (I grepped all of node_modules for registerEventHandler( callers).\n- Unflushed operations: none are left behind. performOperations still runs from onAnimationFrame every frame while requestRender / postOnAnimation callbacks exist, from NativeProxy.maybeFlushUIUpdatesQueue (UI-runtime updates outside animations, when no animation is running), and after every event that does have a handler. An event with no handler changes nothing in Reanimated's registries, so it could not have produced pending work; iOS does not flush for such events either. ReanimatedModuleProxy's own comment says performOperations after an event is only \"for now\".\n- The ANR stack (k1-anr: VirtualView.setClientRect → FabricEventDispatcher → NodesManager.onEventDispatch:212 → performNonLayoutOperations → synchronouslyUpdateUIProps → Log.w → printStackTrace) is cut at both points.\n- I compiled the rate limiter verbatim with the cached Kotlin 2.1.20 compiler, in a stub harness. A burst of 22,253 failures over 18 s gave 108 log lines, and the counts in those lines account for all 22,253. A single failure gives 1 line; 7 quick failures give 5 lines plus \"2 more times\".\n- `git apply --check -R` of the patch passes, and `npx patch-package` reports \"react-native-reanimated@4.5.1 ✔\".",
+      "test": "- `npx jest apps/mobile/src/__tests__/reanimatedPatch.test.ts`: 7/7 pass. The test checks: the root postinstall is patch-package and patch-package is in devDependencies; the app pins reanimated exactly to the installed version and the matching patch file exists; the patch touches only NativeProxy.kt and NodesManager.kt; every hunk of the patch, as it reads after the change, is in the installed sources; the native API signature is unchanged and EventHandler uses the same resolver; in the UI-thread branch of onEventDispatch the early-out comes before handleEvent(event) and performOperationsRespectingDrawPass(); the log has no Throwable and no printStackTrace, 'synchronouslyUpdateUIProps failed' is in both the per-failure line and the count line, the limit is between 1 and 20 per 1000 ms, and the old Log.w(..., e) is gone. A Reanimated upgrade, a lost patch or a manual revert breaks it.\n- `npx jest apps/server/test/deploy.test.ts apps/mobile/src/__tests__/buildApk.test.ts` plus the new test: 60/60 pass.\n- `npx tsc -p apps/mobile --noEmit`: exit 0.\n- eslint --max-warnings 0 on the new test: clean. Prettier also clean, after `--write` on the test; package.json was already formatted.\n- The full `npm test` was not run.",
+      "deviceCheck": "נדרש APK חדש (npm run apk; בלי prebuild ובלי --clean-native, כי Gradle בונה מחדש את ה־Kotlin של Reanimated לפי התוכן). Galaxy A16.\nלפני כל בדיקה: adb logcat -c.\nאחרי כל בדיקה, שתי ספירות:\n- שורות: adb logcat -d | grep -c \"synchronouslyUpdateUIProps failed\"\n- כישלונות בפועל (כי עכשיו יש לכל היותר 5 שורות בשנייה ועוד שורת \"K more times\"):\n  adb logcat -d | awk '/synchronouslyUpdateUIProps failed/ { if ($0 ~ / more times /) { for (i = 1; i <= NF; i++) if ($i == \"more\") n += $(i - 1) } else n++ } END { print n + 0 }'\n\n1. ‏/dev/pirates, ‏10 מעברים בין דמויות: אין ANR. הצפי 0 כישלונות, או לכל היותר כמה לתג (פריים אחד).\n2. הגדרות ← חץ החזרה בראש המסך, 5 פעמים: הצפי 0 (היו 52–60).\n3. ‏10 מהלכים מול בוט (נכונים ואחד שגוי): הצפי 0 (היו כ־230 לכל מהלך). הנעילה, ההבזק והאווטר הקטן נראים כמו קודם.\n4. בית ← \"שחק\" ← \"משחק חדש\", ובית ← הגדרות: הצפי 0. ב־dumpsys gfxinfo com.mosheg.sudokufight framestats אין פריים מעל כ־200 ms.\n5. רגרסיה, הכל חייב לעבוד כמו קודם:\n   - גרירה ולחיצה על קופסאות בלוח של שלב (PuzzleBoard, Reanimated של gesture-handler).\n   - משיכת הארסנל במשחק (ArsenalOverlay).\n   - גלילה בהיסטוריה ובטבלת המובילים, ומשיכה לרענון.\n   - לחיצה על כפתורים, Enter של מסך, מעברי מסך ואווטרים: בלי הבהוב, בלי קפיצה ובלי פריים ישן.\n6. אם בכל זאת יש מבול: adb logcat -d | grep \"synchronouslyUpdateUIProps failed\" | head -20. לכל היותר 6 שורות בשנייה, ובלי stack trace אחרי אף שורה. אין ANR גם עם אלפי כישלונות.\n\nשימו לב: grep -c סופר עכשיו שורות ולא כישלונות. כדי להשוות למספרים הישנים צריך את ספירת ה־awk.",
+      "filesChanged": [
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\patches\\react-native-reanimated+4.5.1.patch",
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\package.json",
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\__tests__\\reanimatedPatch.test.ts",
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\docs\\PERF.md",
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\node_modules\\react-native-reanimated\\android\\src\\main\\java\\com\\swmansion\\reanimated\\NodesManager.kt (gitignored, patched in place)",
+        "C:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\node_modules\\react-native-reanimated\\android\\src\\main\\java\\com\\swmansion\\reanimated\\NativeProxy.kt (gitignored, patched in place)"
+      ],
+      "notes": "- Build and install paths:\n  - CI (.github/workflows/ci.yml): runs `npm ci` at the root, so the postinstall runs. On CI patch-package exits 1 when a patch fails (ci-info), so a broken patch stops the build.\n  - EAS: installs at the monorepo root with devDependencies, so the postinstall runs; EAS sets CI, so a failure stops the build there too. eas.json needs no change.\n  - Server Dockerfile: uses `npm ci --ignore-scripts` and excludes apps/mobile, so it is unaffected (deploy.test passes).\n  - apps/mobile/scripts/build-apk.mjs is unchanged. prebuild only regenerates the app's android/ folder. Reanimated's Kotlin is compiled from node_modules/react-native-reanimated/android/src as a Gradle subproject, and compileReleaseKotlin checks its inputs by content, so the changed .kt files recompile in an incremental `npm run apk` with no prebuild or clean. nativeInputs leaves patches/ out, which is correct here.\n  - The patch is Kotlin only. No C++ changed, so there is no CMake rebuild.\n- To regenerate the patch on this PC you must pass --include. A plain `npx patch-package react-native-reanimated` crashes on the long android/build paths. Use `npx patch-package react-native-reanimated --include \"(NodesManager|NativeProxy)\\.kt$\"`, with no '/' in the regex, because on Windows the match is against backslash paths. This is recorded in PERF.md.\n- What QA loses: the per-failure stack trace is gone. PERF.md's earlier idea of checking with \"one stack trace\" whether the back-arrow failures come from ScreenFragment.dispatchTransitionProgressEvent now needs atrace or Perfetto. With the early-out those failures should be gone anyway.\n- Still open: views that were deleted can still fail once per animation frame (onAnimationFrame → performOperations) during the window before Reanimated drops them. That is a few lines per tag, not thousands, and it is now cheap to log.\n- Not done: no ADB, APK, deploy, npm install or git write. The Kotlin was not compiled against RN. Only the rate limiter was compiled, in a stub harness. The NodesManager change is two lines that reuse expressions already in the same function. Kotlin compile errors would surface in the next `npm run apk`.\n- docs/DECISIONS-PENDING.md: no entry exists for the Reanimated patch, so I made no change.\n- Scratch harness: C:\\Users\\mosheg\\AppData\\Local\\Temp\\claude\\b0377245321c840d\\6deeb02e-1cd6-480d-8ffd-14ec3cc5da59\\scratchpad\\kt\\Harness.kt"
+    },
+    "rev": {
+      "verdict": "ok",
+      "issues": [
+        {
+          "severity": "low",
+          "problem": "Handlers registered with emitterReactTag -1 (eventMappingsWithoutTag) no longer get UI-thread events on Android. Before the patch, C++ processEvent also delivered events to those handlers.",
+          "evidence": "UIEventHandlerRegistry::isAnyHandlerWaitingForEvent only searches eventMappingsWithTag (UIEventHandlerRegistry.cpp:88-92), while processEvent also reads eventMappingsWithoutTag (lines 65-70). NativeEventsManager.getEventViewTag() can return -1 when findNodeHandle returns null (NativeEventsManager.ts:95,100,107,113), and WorkletEventHandler.registerForEvents(-1) then registers a global handler. In normal use this does not happen: every app consumer (the PuzzleBoard and ArsenalOverlay GestureDetectors through RNGH 2.32 AnimatedWrap/useEvent) resolves a real host tag, the same view.id that RNGHEvent.init uses. iOS handleRawEvent and the upstream off-UI-thread branch already drop -1 handlers.",
+          "suggestion": "No code change needed. Keep the PuzzleBoard drag/tap and Arsenal pull regression steps in the device check, because they are the only consumers of this path. If a gesture stops responding after the new APK, check this first."
+        },
+        {
+          "severity": "low",
+          "problem": "The device check promises \"at most 6 lines per second\", but the rate limiter can go slightly over that during a long burst that blocks the UI thread. Delayed runnables queue up while the loop holds the thread, and when they run they print early or partial count lines. The total count stays correct, and nothing is lost or double-counted.",
+          "evidence": "NativeProxy.kt logSyncUpdateFailure: when the window rolls over, logSyncUpdateNotLogged() sets syncUpdateCountPosted=false while the runnable posted earlier is still pending, because the UI thread is busy in the burst. Each new overflow then posts another runnable. After the burst, those runnables each print at most one line for the current partial count. I traced the counter logic: any increment made while syncUpdateCountPosted is false posts a runnable, so no count is ever left unprinted.",
+          "suggestion": "Wording only. In the device check, say \"about 5-6 lines per second, plus occasional extra count lines after a long freeze\". The awk sum is still the correct way to compare against the old counts."
+        },
+        {
+          "severity": "low",
+          "problem": "The device check expects 0 failures after game moves and on /dev/pirates. Failures can still come from onAnimationFrame→performOperations for views deleted inside Reanimated's retention window, as the implementer's own notes say. A non-zero count is not by itself proof that the patch failed.",
+          "evidence": "NodesManager.onAnimationFrame still calls performOperations() every frame (line 176), and performOperations → applySynchronousUpdates can still target tags that were unmounted. The report's notes say \"views that were deleted can still fail once per animation frame\".",
+          "suggestion": "Frame the pass criteria as \"no ANR, and failures down to a few per tag (not hundreds or thousands)\" rather than a hard 0."
+        }
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Patch"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "patch:reanimated",
+      "phaseIndex": 1,
+      "phaseTitle": "Patch",
+      "agentId": "a4b591d750e23de97",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793978369369,
+      "queuedAt": 1793978369349,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "done",
+      "promptPreview": "Moshe explicitly asked for an autonomous test→fix loop (\"תעבוד בלי הנחיות. בודק מתקן בודק מתקן\") and the main session decided to apply the pending Reanimated patch. Mid-run chat messages are for the main session.\nRepo root = working directory; CLAUDE.md applies. QA testers are using the phones right now: NO adb, no APK build, no deploy, no npm install (patch-package@8.0.0 is already installed at t…",
+      "promptFramed": true,
+      "lastProgressAt": 1793981649124,
+      "tokens": 195692,
+      "toolCalls": 87,
+      "durationMs": 3279753,
+      "resultPreview": "{\"status\":\"done\",\"what\":\"Added patches/react-native-reanimated+4.5.1.patch, made with patch-package 8.0.0. It changes only two Kotlin files in node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/. (1) NodesManager.onEventDispatch, UI-thread branch: before handleEvent and performOperationsRespectingDrawPass it now runs `val eventName = mCustomEventNamesResolver.resol…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:reanimated",
+      "phaseIndex": 2,
+      "phaseTitle": "Review",
+      "agentId": "a751f3cf20ce1cc22",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793981650264,
+      "queuedAt": 1793981650248,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "ok",
+      "promptPreview": "Moshe asked for this autonomous loop; mid-run chat is for the main session. You are an independent, skeptical reviewer (CLAUDE.md applies). Do NOT edit files. No adb, no build.\nTask given to the implementer:\nMoshe explicitly asked for an autonomous test→fix loop (\"תעבוד בלי הנחיות. בודק מתקן בודק מתקן\") and the main session decided to apply the pending Reanimated patch. Mid-run chat messages are f…",
+      "promptFramed": true,
+      "lastProgressAt": 1793981965499,
+      "tokens": 115558,
+      "toolCalls": 35,
+      "durationMs": 315235,
+      "resultPreview": "{\"verdict\":\"ok\",\"issues\":[{\"severity\":\"low\",\"problem\":\"Handlers registered with emitterReactTag -1 (eventMappingsWithoutTag) no longer get UI-thread events on Android. Before the patch, C++ processEvent also delivered events to those handlers.\",\"evidence\":\"UIEventHandlerRegistry::isAnyHandlerWaitingForEvent only searches eventMappingsWithTag (UIEventHandlerRegistry.cpp:88-92), while processEvent a…"
+    }
+  ],
+  "totalTokens": 311250,
+  "totalToolCalls": 122
+}

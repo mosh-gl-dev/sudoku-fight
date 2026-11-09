@@ -78,11 +78,14 @@ export function SelfReconnecting({
   const announcement = leaving
     ? null
     : m.phase === 'lost'
-      ? m.secondsLeft !== null && m.secondsLeft <= HURRY_SECONDS
-        ? t('connection.self.announceHurry', { count: HURRY_SECONDS, seconds: HURRY_SECONDS })
-        : m.attempt !== null
-          ? t('connection.self.announceAttempt', { attempt: m.attempt })
-          : t('connection.self.announceLost')
+      ? m.secondsLeft !== null && m.secondsLeft <= 0
+        ? // The time is up and the host still checks (the bottom card says so): not "only N seconds left".
+          sentences([t('connection.opponent.timeUp'), t('connection.opponent.checking')], t)
+        : m.secondsLeft !== null && m.secondsLeft <= HURRY_SECONDS
+          ? t('connection.self.announceHurry', { count: HURRY_SECONDS, seconds: HURRY_SECONDS })
+          : m.attempt !== null
+            ? t('connection.self.announceAttempt', { attempt: m.attempt })
+            : t('connection.self.announceLost')
       : m.phase === 'syncing'
         ? t('connection.self.announceSyncing')
         : t('connection.self.announceSynced');
@@ -212,13 +215,15 @@ function LockCard({
   const { t } = useTranslation('game');
   const lost = m.phase === 'lost';
   const done = m.phase === 'synced';
+  // Back from the background, the player is here: "מסנכרן…" from the start, never "עד שתחזור".
+  const locked = lost && m.returning !== true;
   // Self-Reconnecting: "הלוח נעול עד שתחזור", then "מסנכרן…", then "הכל סונכרן" as the card fades out.
-  const title = lost
+  const title = locked
     ? t('connection.self.lockedTitle')
     : done
       ? t('connection.self.syncedTitle')
       : t('connection.self.syncingTitle');
-  const sub = lost ? t('connection.self.lockedSub') : t('connection.self.savedSub');
+  const sub = locked ? t('connection.self.lockedSub') : t('connection.self.savedSub');
   const items = m.syncItems.map((item) => t(`connection.self.item.${item}`));
   const label = sentences([title, sub, items.join(t('listSep'))], t);
   const tint = lost ? color.textMuted : color.success;
@@ -292,10 +297,20 @@ function Timer({ model: m, testID }: { model: SelfReconnectingModel; testID: str
   const fill = useAnimatedStyle(() => ({ width: `${share.get() * 100}%` }));
   const tint = lost ? color.accent : color.success;
   const seconds = m.secondsLeft ?? 0;
-  const spoken = lost
-    ? sentences([t('connection.self.timeLeft', { count: seconds, seconds }), t('connection.self.timeSub')], t)
-    : sentences([t('connection.self.backInTime'), t('connection.self.backInTimeSub')], t);
-  const parts = lost ? splitMarked(t('connection.self.timeLeft', { count: seconds, seconds: MARK })) : null;
+  // Past the time to come back the host still tries, for the finished game's result (RemoteGameHost
+  // afterGraceRetryMs): "הזמן נגמר · בודקים מול השרת…", never "יש לך עוד 0 שניות לחזור"
+  // (connection-lost-no-recovery).
+  const timeUp = lost && seconds <= 0;
+  const spoken = timeUp
+    ? sentences([t('connection.opponent.timeUp'), t('connection.opponent.checking')], t)
+    : lost
+      ? sentences(
+          [t('connection.self.timeLeft', { count: seconds, seconds }), t('connection.self.timeSub')],
+          t,
+        )
+      : sentences([t('connection.self.backInTime'), t('connection.self.backInTimeSub')], t);
+  const parts =
+    lost && !timeUp ? splitMarked(t('connection.self.timeLeft', { count: seconds, seconds: MARK })) : null;
 
   return (
     <View
@@ -312,7 +327,11 @@ function Timer({ model: m, testID }: { model: SelfReconnectingModel; testID: str
           <Icon name={lost ? 'history' : 'check'} size={size.icon.card} color={tint} />
         </View>
         <View style={styles.timerTexts}>
-          {lost ? (
+          {timeUp ? (
+            <Text style={styles.timerTitle} numberOfLines={1} testID={`${testID}-title`}>
+              {t('connection.opponent.timeUp')}
+            </Text>
+          ) : lost ? (
             <Text style={styles.timerTitle} numberOfLines={1} testID={`${testID}-title`}>
               {parts ? parts[0] : null}
               <Text style={styles.timerSeconds} testID={`${testID}-seconds`}>
@@ -326,7 +345,11 @@ function Timer({ model: m, testID }: { model: SelfReconnectingModel; testID: str
             </Text>
           )}
           <Text style={styles.timerSub} numberOfLines={1}>
-            {lost ? t('connection.self.timeSub') : t('connection.self.backInTimeSub')}
+            {timeUp
+              ? t('connection.opponent.checking')
+              : lost
+                ? t('connection.self.timeSub')
+                : t('connection.self.backInTimeSub')}
           </Text>
         </View>
       </View>

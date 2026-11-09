@@ -155,9 +155,18 @@ function ReplayBody({
   }, [sv.view, mySeat, step.t, avatars]);
   const flashes = useMemo(() => flashesOf(step), [step]);
   const faces = useReplayFaces(replay, index, sv.view);
+  // The names the explanations use: "אני" on my card, as in the game (in P1's colour, CLAUDE.md), not the log's
+  // name (a practice has none: it said "שחקן"); the others by the replay's names (a ranked game's of today).
+  const myName = t('me');
   const cards = useMemo(
-    () => cardModels(sv.view, mySeat, step.t).map((c) => ({ ...c, mine: null, interference: null })),
-    [sv.view, mySeat, step.t],
+    () =>
+      cardModels(sv.view, mySeat, step.t).map((c) => ({
+        ...c,
+        name: c.isMe ? myName : (replay.players.find((p) => p.id === c.playerId)?.name ?? c.name),
+        mine: null,
+        interference: null,
+      })),
+    [sv.view, mySeat, step.t, myName, replay],
   );
 
   const gutter = tokens.layout.gutterGame;
@@ -165,7 +174,8 @@ function ReplayBody({
   const clock = formatClock(step.clockMs);
   const day = dayOf(replay.startedAt, now());
   const subtitle = t('subtitle', {
-    mode: t(`mode.${replay.mode}`),
+    // A friends room's game is logged as a ranked one: named as the history card names it (protocol friends).
+    mode: meta.friends ? t('friends:mode') : t(`mode.${replay.mode}`),
     type: tg(`type.${replay.gameType}`),
     date: day ? th(`card.${day}`) : shortDate(replay.startedAt, lang),
   });
@@ -183,10 +193,13 @@ function ReplayBody({
 
   return (
     <View style={[styles.root, { paddingTop: padding.paddingTop }]} testID={testID}>
+      {/* At the largest text size the title and the line under it take two lines, never "…" (QA 2026-11-03). */}
       <ScreenHeader
         title={t('title')}
         subtitle={subtitle}
         onBack={onBack}
+        wrapTitle
+        wrapSubtitle
         style={styles.gutter}
         end={
           <Text
@@ -348,7 +361,7 @@ function narration(sv: StepView, replay: Replay, who: ReturnType<typeof useWho>,
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.bg },
+  root: { flex: 1 },
   gutter: { paddingHorizontal: tokens.layout.gutterGame },
   center: {
     flex: 1,
@@ -366,7 +379,6 @@ const styles = StyleSheet.create({
     paddingTop: space[4],
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
-    backgroundColor: color.bg,
   },
   nav: { flexDirection: 'row', gap: space[4] },
   /** Replay.dc.html: "שלב קודם" 140 and "שלב הבא" the rest of the row, about 2 : 3. */

@@ -5,7 +5,14 @@ import type { ExpoConfig } from 'expo/config';
 
 import { FRIENDS_APP_SCHEME, roomLinkPath } from '@sudoku-fight/protocol';
 
-import { appJsonFiles, resolveServer, serverEnv } from '../../scripts/lib/build-apk.mjs';
+import {
+  appJsonFiles,
+  localApkEnv,
+  parseApkArgs,
+  resolveServer,
+  serverEnv,
+  TEMPLATE_DEBUG_KEY_SHA1 as BUILD_APK_DEBUG_SHA1,
+} from '../../scripts/lib/build-apk.mjs';
 import appConfig, {
   AD_ID_PERMISSION,
   allowsCleartext,
@@ -179,6 +186,7 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
     expect(readGoogleSignIn(servicesJson(), PACKAGE)).toEqual({
       webClientId: WEB,
       androidClients: 2,
+      sha1s: ['a'.repeat(40), 'a'.repeat(40)],
       debugKey: false,
     });
     // Firebase sometimes lists the web client only under the invite service.
@@ -187,6 +195,7 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
     expect(readGoogleSignIn(servicesJson(), 'com.example.nothere')).toEqual({
       webClientId: null,
       androidClients: 0,
+      sha1s: [],
       debugKey: false,
     });
     expect(readGoogleSignIn(servicesJson({ web: 'not a client id' }), PACKAGE).webClientId).toBeNull();
@@ -195,6 +204,7 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
       expect(readGoogleSignIn(junk, PACKAGE)).toEqual({
         webClientId: null,
         androidClients: 0,
+        sha1s: [],
         debugKey: false,
       });
     expect(readGoogleSignIn(servicesJson(), undefined).webClientId).toBeNull();
@@ -256,12 +266,15 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
     const setup = readGoogleSignIn(JSON.parse(readFileSync(file, 'utf8')), app.expo.android?.package);
     expect(extra.googleSignIn.webClientId === setup.webClientId).toBe(true);
     const env = { ...NO_ENV, easBuild: process.env.EAS_BUILD, localApk: process.env.SF_LOCAL_APK };
-    const keyListed = isLocalApk(env) ? setup.debugKey : setup.androidClients > 0;
+    const localKey = (process.env.SF_LOCAL_APK_SHA1 ?? '').replace(/:/g, '').toLowerCase();
+    const keyListed = isLocalApk(env)
+      ? localKey !== '' && setup.sha1s.includes(localKey)
+      : setup.androidClients > 0;
     expect(extra.googleSignIn.android).toBe(setup.webClientId !== null && keyListed);
     expect(config.plugins).toContain(GOOGLE_SIGN_IN_PLUGIN);
   });
 
-  describe("React Native's public template debug key (it signs `npm run apk`)", () => {
+  describe("React Native's public template debug key (it signed `npm run apk` until 2026-10-30)", () => {
     const DEBUG_COLONS = '5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25';
     const withDebugKey = servicesJson({ hashes: [TEMPLATE_DEBUG_KEY_SHA1] });
     const easKeyOnly = servicesJson({ androidClients: 1 });
@@ -289,10 +302,18 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
       ).toMatchObject({ debugKey: false });
     });
 
-    it('an APK of `npm run apk` shows Google only while Firebase lists that key (else it could only fail)', () => {
-      expect(googleOn(withDebugKey, { localApk: '1' })).toBe(true);
-      // The debug key's SHA-1 removed from Firebase: the EAS key alone can't sign this APK in.
-      expect(googleOn(easKeyOnly, { localApk: '1' })).toBe(false);
+    it("an APK of `npm run apk` shows Google only while Firebase lists this PC's key (else it could only fail)", () => {
+      const PC_KEY = 'b'.repeat(40);
+      const PC_KEY_COLONS = 'BB:'.repeat(19) + 'BB';
+      const withPcKey = servicesJson({ hashes: ['c'.repeat(40), PC_KEY] });
+      expect(googleOn(withPcKey, { localApk: '1', localApkSha1: PC_KEY })).toBe(true);
+      expect(googleOn(withPcKey, { localApk: '1', localApkSha1: PC_KEY_COLONS })).toBe(true);
+      // Firebase lists other keys only (EAS's, the public debug key): this APK can't sign in.
+      expect(googleOn(easKeyOnly, { localApk: '1', localApkSha1: PC_KEY })).toBe(false);
+      expect(googleOn(withDebugKey, { localApk: '1', localApkSha1: PC_KEY })).toBe(false);
+      // An APK that doesn't say its key never shows it.
+      expect(googleOn(withPcKey, { localApk: '1' })).toBe(false);
+      expect(googleOn(withDebugKey, { localApk: '1' })).toBe(false);
       // Other builds can't tell their key in the file: any Android client.
       expect(googleOn(easKeyOnly, {})).toBe(true);
       expect(googleOn(easKeyOnly, { easBuild: 'true', profile: 'preview', platform: 'android' })).toBe(true);
@@ -301,12 +322,41 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
       expect(googleOn(easKeyOnly, { localApk: '1', easBuild: 'true', profile: 'preview' })).toBe(true);
     });
 
+    it('an APK signed again afterwards (`npm run apk -- --resign-sha1 debug`, the QA phones) follows that key', () => {
+      // QA loop 3: the phones' app is signed with the template debug key, so each APK of this PC is signed again
+      // with it (apksigner); Firebase lists that key, yet app.config.ts looked for this PC's key and hid Google.
+      const PC_KEY = 'b'.repeat(40);
+      const parsed = parseApkArgs(['--resign-sha1', 'debug']);
+      if (parsed.kind !== 'options') throw new Error(JSON.stringify(parsed));
+      expect(parsed.options.resignSha1).toBe(TEMPLATE_DEBUG_KEY_SHA1);
+      expect(BUILD_APK_DEBUG_SHA1).toBe(TEMPLATE_DEBUG_KEY_SHA1);
+      const env = (e: ReturnType<typeof localApkEnv>) => ({
+        localApk: e.SF_LOCAL_APK,
+        localApkSha1: e.SF_LOCAL_APK_SHA1,
+      });
+      expect(googleOn(withDebugKey, env(localApkEnv(PC_KEY, parsed.options.resignSha1)))).toBe(true);
+      // Without it, this PC's key decides, as before.
+      expect(googleOn(withDebugKey, env(localApkEnv(PC_KEY, null)))).toBe(false);
+      // Any other key it names: Google only while Firebase lists that one.
+      expect(googleOn(easKeyOnly, env(localApkEnv(PC_KEY, 'd'.repeat(40))))).toBe(false);
+      // A store build on EAS never reads it, and still refuses the debug key.
+      expect(() =>
+        googleOn(withDebugKey, {
+          ...env(localApkEnv(PC_KEY, TEMPLATE_DEBUG_KEY_SHA1)),
+          easBuild: 'true',
+          profile: 'production',
+          platform: 'android',
+          server: { host: 'sudokufight.app', secure: 'true' },
+        }),
+      ).toThrow(/public debug key/);
+    });
+
     it('an Android store build fails while the file lists it, saying how to remove it', () => {
       const store = {
         easBuild: 'true',
         profile: 'production',
         platform: 'android',
-        server: { host: 'sudoku-fight-prod.fly.dev', secure: 'true' },
+        server: { host: 'sudokufight.app', secure: 'true' },
       };
       expect(() => googleOn(withDebugKey, store)).toThrow(
         /public debug key.*5e8f16062ea3cd2c4a0d547876baa6f38cabf625.*Remove that fingerprint in Firebase.*--force/s,
@@ -332,7 +382,7 @@ describe('"Continue with Google" (Moshe, 14.10.2026): the plugin and the web cli
 });
 
 describe('a store build never ships the development sign-in', () => {
-  const server = { host: 'sudoku-fight-prod.fly.dev', secure: 'true' };
+  const server = { host: 'sudokufight.app', secure: 'true' };
   const production = { easBuild: 'true', profile: 'production', server };
 
   it("EAS's production profile without Firebase for its platform fails, naming what to upload", () => {
@@ -390,12 +440,10 @@ describe('a store build reaches a real game server (stage 14)', () => {
       expect(() => assertStoreBuildHasServer(build, { host, secure: 'true' })).toThrow(
         /EXPO_PUBLIC_SERVER_HOST.*eas\.json/,
       );
-    expect(() =>
-      assertStoreBuildHasServer(build, { host: 'sudoku-fight-prod.fly.dev', secure: 'false' }),
-    ).toThrow(/EXPO_PUBLIC_SERVER_SECURE/);
-    expect(() =>
-      assertStoreBuildHasServer(build, { host: 'sudoku-fight-prod.fly.dev', secure: 'true' }),
-    ).not.toThrow();
+    expect(() => assertStoreBuildHasServer(build, { host: 'sudokufight.app', secure: 'false' })).toThrow(
+      /EXPO_PUBLIC_SERVER_SECURE/,
+    );
+    expect(() => assertStoreBuildHasServer(build, { host: 'sudokufight.app', secure: 'true' })).not.toThrow();
   });
 
   it('development and preview builds, and anything off EAS, may point anywhere', () => {

@@ -28,9 +28,12 @@
  *     │   face                          motion target 'face'; draws nothing itself
  *     │   ├─ cheeks
  *     │   ├─ eye-0, eye-1…              motion target 'eyes': one node per drawn eye, around its own centre
- *     │   └─ features                   brows, mouth, face art and extras (no motion moves them apart)
+ *     │   └─ features                   brows, mouth and face art (no motion moves them apart)
+ *     │  [extras]                       here when a gimmick holds the face, so they ride with it
  *     ├─ front                          layers.front, if any
- *     └─ gimmick:{id}…                  z 'front'
+ *     ├─ gimmick:{id}…                  z 'front'
+ *     └─ extras                         the face's tear, sweat drop, anger mark, z's or stars, over everything
+ *                                       (render.ts): a 'face' track moves it with the face
  *
  *   No layer is clipped (a clip inside a moving layer would move with it): clip the whole stack with a View
  *   of the avatar's size, `overflow: 'hidden'` and `borderRadius: tile.radiusPx`.
@@ -294,8 +297,10 @@ export function nativeTransform(pose: Pose, origin: Point, scale: number): Nativ
 interface FaceParts {
   cheeks: string;
   eyes: EyePart[];
-  /** Brows, mouth, face art and extras, in render.ts's order. */
+  /** Brows, mouth and face art, in render.ts's order. */
   features: string;
+  /** The extras, drawn over the front layers (render.ts). */
+  extras: string;
 }
 
 function faceParts(def: AvatarDef, expression: Expression, faceSize: number): FaceParts {
@@ -305,11 +310,8 @@ function faceParts(def: AvatarDef, expression: Expression, faceSize: number): Fa
   return {
     cheeks: drawCheeks(face, expression, rig),
     eyes: eyeParts(face, expression, rig),
-    features:
-      drawBrows(face, expression, rig) +
-      drawMouth(face, expression, rig) +
-      art +
-      drawExtras(face, expression, rig),
+    features: drawBrows(face, expression, rig) + drawMouth(face, expression, rig) + art,
+    extras: drawExtras(face, expression, rig),
   };
 }
 
@@ -358,18 +360,20 @@ export function renderStatic(def: AvatarDef | null, opts: StaticOptions = {}): s
         .join('');
     const holder = faceHolder(def);
     // A face held by a gimmick hidden at rest is hidden with it, as in renderAvatar.
+    // The extras ride with a held face; else they go over everything.
     const held = !holder
       ? face
       : holder.rest === 'hidden'
-        ? `<g opacity="0">${holder.markup}${face}</g>`
-        : holder.markup + face;
+        ? `<g opacity="0">${holder.markup}${face}${parts.extras}</g>`
+        : holder.markup + face + parts.extras;
     body =
       shown(gimmicksAt(def, 'behind')) +
       def.layers.back +
       shown(gimmicksAt(def, 'back')) +
       held +
       (def.layers.front ?? '') +
-      shown(gimmicksAt(def, 'front'));
+      shown(gimmicksAt(def, 'front')) +
+      (holder ? '' : parts.extras);
   }
   const svg =
     `<svg xmlns="${SVG_NS}" viewBox="${f(box.x)} ${f(box.y)} ${f(box.size)} ${f(box.size)}" ` +
@@ -383,7 +387,8 @@ export function renderStatic(def: AvatarDef | null, opts: StaticOptions = {}): s
 // ---------------------------------------------------------------------------------------------------------
 // nativeLayers: the tree of layers an avatar moves in
 
-export type NativeNodeKind = 'tile' | 'body' | 'art' | 'gimmick' | 'face' | 'cheeks' | 'eye' | 'features';
+export type NativeNodeKind =
+  'tile' | 'body' | 'art' | 'gimmick' | 'face' | 'cheeks' | 'eye' | 'features' | 'extras';
 
 /** The fixed node keys (eyes and gimmicks: eyeNodeKey, gimmickNodeKey). */
 export const NODE = {
@@ -394,6 +399,7 @@ export const NODE = {
   face: 'face',
   cheeks: 'cheeks',
   features: 'features',
+  extras: 'extras',
 } as const;
 
 /** The key of the drawn eye `index` (eyeCentres() order: the viewer's left first). */
@@ -448,7 +454,8 @@ export interface LayerOptions {
 
 /**
  * An avatar as layers to stack and move (see the top of this file). Only the face nodes (cheeks, eyes,
- * features) change with the expression: render again for a new face, and the other layers' strings stay equal.
+ * features, extras) change with the expression: render again for a new face, and the other layers' strings stay
+ * equal.
  * `def` null gives the placeholder: tile, body and its art.
  */
 export function nativeLayers(def: AvatarDef | null, opts: LayerOptions = {}): NativeLayers {
@@ -496,8 +503,10 @@ export function nativeLayers(def: AvatarDef | null, opts: LayerOptions = {}): Na
     add(NODE.cheeks, 'cheeks', NODE.face, parts.cheeks);
     parts.eyes.forEach((e, i) => add(eyeNodeKey(i), 'eye', NODE.face, e.markup, e.c));
     add(NODE.features, 'features', NODE.face, parts.features);
+    if (holder) add(NODE.extras, 'extras', gimmickNodeKey(holder.id), parts.extras);
     if (def.layers.front) add(NODE.front, 'art', NODE.body, def.layers.front);
     gimmicksAt(def, 'front').forEach(gimmick);
+    if (!holder) add(NODE.extras, 'extras', NODE.body, parts.extras);
   }
   // Each node's extents, its children's included: children come after their parent, so walk back.
   const fallback: Extents = {
@@ -699,18 +708,51 @@ function trackNodes(def: AvatarDef, tr: MotionTrack): { node: string; origin: Po
       node: eyeNodeKey(i),
       origin: tr.origin === 'eyes' ? c : motionOrigin(def, tr.origin),
     }));
-  return [{ node: tr.target === 'body' ? NODE.body : NODE.face, origin: motionOrigin(def, tr.origin) }];
+  const origin = motionOrigin(def, tr.origin);
+  if (tr.target === 'body') return [{ node: NODE.body, origin }];
+  // the extras go with the face (render.ts draws them apart, over the front layers)
+  return [
+    { node: NODE.face, origin },
+    { node: NODE.extras, origin },
+  ];
+}
+
+/**
+ * How much bigger a motion's moves are drawn at `size` px (the avatars evaluation of 30.10.2026, Phase 0): the
+ * motions are tuned at 48 px and up, where a nod's 2.4 canvas units are 1.2 px; at the 28-36 px of the game's
+ * cards that is under a pixel, and nobody sees it. So under 48 px the translations grow by 48 / size, at most
+ * MOTION_AMPLITUDE.max times (22 px: 2.2). Rotations and scales keep their size (they read at any size), and
+ * the tile still clips the character (it never leaves its rounded tile).
+ */
+export const MOTION_AMPLITUDE = { fromSize: 48, max: 2.2 } as const;
+
+/** The factor of a motion's translations at `size` px (see MOTION_AMPLITUDE): 1 from 48 px up. */
+export function motionAmplitude(size: number | undefined): number {
+  if (size === undefined || !Number.isFinite(size) || size <= 0) return 1;
+  return clamp(MOTION_AMPLITUDE.fromSize / size, 1, MOTION_AMPLITUDE.max);
+}
+
+/** A translation's plan with its values `k` times as far from rest (0). */
+function scaled(p: PropertyPlan, k: number): PropertyPlan {
+  if (k === 1 || (p.property !== 'translateX' && p.property !== 'translateY')) return p;
+  return { ...p, from: p.from * k, segments: p.segments.map((s) => ({ ...s, to: s.to * k })) };
 }
 
 /**
  * What a motion does to an avatar's layers (nativeLayers), as Reanimated plans. When it ends, every node it
  * moved goes back to rest (its last keyframe already is: a spin ends at 360°, the same picture as 0°).
+ * `size`: the avatar's size in px, under 48 its translations grow (motionAmplitude).
  */
-export function motionPlan(def: AvatarDef, id: MotionId, opts: { reducedMotion?: boolean } = {}): MotionPlan {
+export function motionPlan(
+  def: AvatarDef,
+  id: MotionId,
+  opts: { reducedMotion?: boolean; size?: number } = {},
+): MotionPlan {
   const m = resolveMotion(def, id);
   const plans = new Map<string, NodePlan>();
   if (!opts.reducedMotion) {
     const timing: Timing = { durationMs: m.durationMs, ease: m.ease, delayMs: 0, loop: false };
+    const k = motionAmplitude(opts.size);
     // Two tracks on one target: the later one wins, as in CSS.
     for (const tr of m.tracks)
       for (const { node, origin } of trackNodes(def, tr))
@@ -718,7 +760,9 @@ export function motionPlan(def: AvatarDef, id: MotionId, opts: { reducedMotion?:
           node,
           origin,
           rest: { ...NATIVE_IDENTITY },
-          properties: propertyPlans(tr.keyframes, timing, TRANSFORMS, NATIVE_IDENTITY),
+          properties: propertyPlans(tr.keyframes, timing, TRANSFORMS, NATIVE_IDENTITY).map((p) =>
+            scaled(p, k),
+          ),
         });
   }
   return {

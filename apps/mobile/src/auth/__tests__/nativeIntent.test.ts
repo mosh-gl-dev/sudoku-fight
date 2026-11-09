@@ -4,6 +4,7 @@ import { redirectSystemPath } from '../../../app/+native-intent';
 import { useToast } from '../../components/ui/toastStore';
 import i18n from '../../i18n';
 import { track } from '../../services/analytics';
+import { type GameStoreState, useGameStore } from '../../game/gameStore';
 import { useAuth } from '../authStore';
 import { pendingInviteCode, usePendingInvite } from '../pendingInvite';
 
@@ -104,5 +105,25 @@ describe('anything else', () => {
     }
     expect(pendingInviteCode()).toBeNull();
     expect(toasts()).toEqual([]);
+  });
+});
+
+describe('a new root while a game runs (Android recreated the activity: density-change-orphans-ranked-game)', () => {
+  const live = {
+    hasGame: true,
+    isFriends: false,
+    getView: () => ({ status: 'running' }),
+    online: { status: 'reconnecting' },
+  };
+  afterEach(() => useGameStore.setState({ online: null } as Partial<GameStoreState>));
+
+  it('starts on the game: from the launcher, and from the room link the activity was first opened with', () => {
+    useGameStore.setState({ online: live } as unknown as Partial<GameStoreState>);
+    expect(redirectSystemPath({ path: 'sudokufight:///', initial: true })).toBe('/game');
+    expect(redirectSystemPath({ path: roomAppLink('123456'), initial: true })).toBe('/game');
+    expect(pendingInviteCode()).toBeNull();
+    // A link that comes while the app runs is still a link (InviteLinkPrompt asks: "אתה באמצע משחק").
+    expect(redirectSystemPath({ path: roomAppLink('123456'), initial: false })).toBeNull();
+    expect(usePendingInvite.getState().arrival?.code).toBe('123456');
   });
 });

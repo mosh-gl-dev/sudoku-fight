@@ -213,6 +213,47 @@ describe('RemoteGameHost: optimistic select and refusals', () => {
     expect(table.host.metrics.action.count).toBe(1);
   });
 
+  it('a digit right behind its select (BRD-1): both go out in order, and the server judges the digit there', async () => {
+    const table = await liveTable({ oneWayMs: 60 });
+    table.host.select(c0);
+    await elapse(table, 200);
+    // A switch to c1 and its digit at once: the select reaches the server first, on the same socket.
+    table.host.select(c1);
+    table.host.place(c1, answerIn(PUZZLE, c1));
+    expect(table.room.actions.slice(-2)).toEqual([
+      { type: 'select', cell: c1, clientSeq: 2 },
+      { type: 'place', cell: c1, digit: answerIn(PUZZLE, c1), clientSeq: 3 },
+    ]);
+    expect(table.host.pendingCell).toBe(c1);
+    await elapse(table, 200);
+    const view = table.host.getView();
+    expect(view.grid[c1]).toBe(answerIn(PUZZLE, c1));
+    expect(view.grid[c0]).toBe(0);
+    expect(view.players[0]).toMatchObject({ correct: 1, mistakes: 0, lock: null });
+    expect(table.host.pendingCell).toBeNull();
+    expectInSync(table);
+  });
+
+  it('a refused select takes its digit with it (BRD-1): two refusals, in order, and no penalty', async () => {
+    const table = await liveTable({ oneWayMs: 60 });
+    const { updates } = record(table);
+    table.host.select(c0);
+    await elapse(table, 200);
+    table.opponent({ type: 'select', cell: c1 });
+    table.host.select(c1);
+    table.host.place(c1, wrongIn(PUZZLE, c0));
+    await elapse(table, 200);
+    expect(
+      updates.flatMap((u) => (u.kind === 'rejected' ? [[u.action.type, u.reason] as const] : [])),
+    ).toEqual([
+      ['select', 'cellTaken'],
+      ['place', 'notLockedCell'],
+    ]);
+    expect(table.host.getView().players[0]).toMatchObject({ score: 0, mistakes: 0, lock: { cell: c0 } });
+    expect(table.host.pendingCell).toBeNull();
+    expectInSync(table);
+  });
+
   it('while offline an action is refused here with "disconnected", and nothing goes out', async () => {
     // Without the soft phase [D42] (its play offline is tested below).
     const table = await liveTable({ rules: { softGraceMs: 0 } });
@@ -391,8 +432,18 @@ describe('RemoteGameHost: losing the connection and coming back (spec §16.2)', 
     await elapse(table, 18_300);
     expect(table.host.online.status).toBe('reconnecting');
     expect(reconnects(table).length).toBeGreaterThan(5);
+    // Past the seat's deadline the finished game's room is still there (closeAfterGameMs): it keeps trying for
+    // its result (connection-lost-no-recovery), then gives up for good.
     await elapse(table, 1500);
-    expect(table.host.online).toMatchObject({ status: 'closed', closeReason: 'lostConnection' });
+    expect(table.host.online.status).toBe('reconnecting');
+    await elapse(table, 58_000);
+    expect(table.host.online.status).toBe('reconnecting');
+    await elapse(table, 2500);
+    expect(table.host.online).toMatchObject({
+      status: 'closed',
+      closeReason: 'lostConnection',
+      pastGrace: true,
+    });
     expect(infos.at(-1)?.error?.code).toBe('network');
     expect(table.tracked).toContainEqual({
       name: 'reconnect',
@@ -415,6 +466,50 @@ describe('RemoteGameHost: losing the connection and coming back (spec §16.2)', 
     expect(view.status).toBe('over');
     expect(view.result?.ranking.find((r) => r.playerId === ME)?.status).toBe('abandoned');
     expect(table.host.solution).toBe(PUZZLE.solution);
+  });
+
+  it('network back only after the seat’s deadline (airplane mode ~80 s): it still tries, and the finished game comes in a second or two (connection-lost-no-recovery)', async () => {
+    const table = await liveTable({ rules: { graceMs: 15_000 } });
+    table.offline = true;
+    table.cutMe();
+    const r = table.host.online.reconnect!;
+    // The soft phase 10 s + the grace 15 s + the server's notice 4.5 s + 1 s: 30.5 s.
+    expect(r.deadline - r.since).toBe(30_500);
+    await elapse(table, 80_000);
+    // The old way gave up at 30.5 s, so a network back at 80 s found an error screen and never the result.
+    expect(table.host.online.status).toBe('reconnecting');
+    table.offline = false;
+    await elapse(table, 1500);
+    const view = table.host.getView();
+    expect(view.status).toBe('over');
+    expect(view.result?.ranking.find((p) => p.playerId === ME)?.status).toBe('abandoned');
+    expect(table.host.online.pastGrace).toBeUndefined();
+  });
+
+  it('back after the deadline but the room is gone: closed at once, as too late (pastGrace)', async () => {
+    const table = await liveTable({ rules: { graceMs: 3000 } });
+    table.offline = true;
+    table.cutMe();
+    await elapse(table, 25_000);
+    expect(table.host.online.status).toBe('reconnecting');
+    table.offline = false;
+    table.disposed = true;
+    await elapse(table, 1500);
+    expect(table.host.online).toMatchObject({
+      status: 'closed',
+      closeReason: 'lostConnection',
+      pastGrace: true,
+    });
+    expect(table.host.online.error?.code).toBe('roomGone');
+  });
+
+  it('a room gone before the abandonment time is a plain lost connection (no pastGrace)', async () => {
+    const table = await liveTable();
+    table.disposed = true;
+    table.cutMe();
+    await elapse(table, 100);
+    expect(table.host.online.closeReason).toBe('lostConnection');
+    expect(table.host.online.pastGrace).toBeUndefined();
   });
 
   it('the room is gone: closed at once', async () => {
@@ -470,6 +565,46 @@ describe('RemoteGameHost: losing the connection and coming back (spec §16.2)', 
     table.lobby();
     await elapse(table, 50);
     expect(table.host.online).toMatchObject({ status: 'lobby', reconnect: null });
+  });
+
+  it('a drop in the 3… 2… 1…: back with the token; the lobby that comes with the count brings the cards, and the return still ends at GO (countdown-lobby-resync)', async () => {
+    // No soft phase: past the drop, the return is hard (the banner), as decided by the snapshot at GO.
+    const table = new FakeTable({ rules: { softGraceMs: 0 }, options: { defaultSoftGraceMs: 0 } });
+    const { host } = table;
+    await host.join(CODE);
+    const players = [
+      { id: ME, name: 'Moshe', avatarId: 'lava-lamp', country: 'IL' },
+      { id: OPP, name: 'Rival', avatarId: 'pirate', country: 'DE' },
+    ] as const;
+    table.lobby([...players]);
+    await elapse(table, 50);
+    const startsAt = table.serverNow() + 3000;
+    table.countdown(startsAt);
+    await elapse(table, 50);
+    expect(host.online.startsAt).toBe(startsAt);
+    const token = table.room.reconnectionToken;
+
+    table.cutMe();
+    expect(host.online.status).toBe('reconnecting');
+    await elapse(table, 1000);
+    expect(reconnects(table).map((c) => c.arg)).toEqual([token]);
+    // The room's countdown and lobby (GameRoom.welcomeBack): the cards are here, the count goes on, and the
+    // return is still under way (resyncing), not over as a "back in a lobby" would make it.
+    expect(host.online.lobby?.players).toEqual(players);
+    expect(host.online.startsAt).toBe(startsAt);
+    expect(host.online.status).toBe('reconnecting');
+    expect(host.online.reconnect).toMatchObject({ resyncing: true });
+
+    // GO: the snapshot ends the return, with its banner and its report.
+    table.startGame();
+    await elapse(table, 100);
+    expect(host.online).toMatchObject({ status: 'live', reconnect: null, hasGame: true });
+    expect(host.online.resyncedAt).not.toBeNull();
+    expect(table.tracked).toContainEqual({
+      name: 'reconnect',
+      props: { durationMs: expect.any(Number), success: true, phase: 'hard', queued: 0 },
+    });
+    expect(host.online.lobby?.players).toEqual(players);
   });
 
   it('the server closes the room after the game: closed, gameOver; before it: serverClosed', async () => {
@@ -1143,6 +1278,46 @@ describe('RemoteGameHost: the app in the background (work plan, stage 7)', () =>
     appState.set('active');
     await elapse(table, 300);
     expect(table.host.online.status).toBe('live');
+  });
+
+  it('woken long after the time to come back, the network still coming up: it keeps trying, and the finished game comes (connection-lost-no-recovery, loop 12)', async () => {
+    // Airplane mode ~80 s with the screen gone off: the app was in the background past every deadline.
+    const appState = fakeAppState();
+    const table = await liveTable({ appState, rules: { graceMs: 15_000 } });
+    table.offline = true;
+    table.cutMe();
+    await elapse(table, 600);
+    appState.set('background');
+    await elapse(table, 120_000);
+    expect(table.host.online.status).toBe('reconnecting');
+    // Woken: Wi-Fi is not back yet for a few seconds. The old way made one try, failed, and closed on 'network'.
+    appState.set('active');
+    await elapse(table, 4000);
+    expect(table.host.online.status).toBe('reconnecting');
+    table.offline = false;
+    await elapse(table, 1500);
+    const view = table.host.getView();
+    expect(view.status).toBe('over');
+    expect(view.result?.ranking.find((p) => p.playerId === ME)?.status).toBe('abandoned');
+  });
+
+  it('woken long after, and the network never comes: it gives up after the short window, as too late', async () => {
+    const appState = fakeAppState();
+    const table = await liveTable({ appState, rules: { graceMs: 15_000 } });
+    table.offline = true;
+    table.cutMe();
+    await elapse(table, 600);
+    appState.set('background');
+    await elapse(table, 120_000);
+    appState.set('active');
+    await elapse(table, 9000);
+    expect(table.host.online.status).toBe('reconnecting');
+    await elapse(table, 2500);
+    expect(table.host.online).toMatchObject({
+      status: 'closed',
+      closeReason: 'lostConnection',
+      pastGrace: true,
+    });
   });
 
   it('the lobby and a finished game stay connected in the background', async () => {

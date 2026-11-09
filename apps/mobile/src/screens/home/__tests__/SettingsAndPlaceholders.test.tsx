@@ -1,11 +1,14 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
 import { ENGINE_VERSION } from '@sudoku-fight/engine';
+import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { act, fireEvent, screen } from 'expo-router/testing-library';
 
 import { ltr } from '../../../components/player';
 import { directionProblems } from '../../../components/ui/testing/layout';
+import { useToast } from '../../../components/ui/toastStore';
+import { UNLOCK_TAPS } from '../../../config/testing';
 import { practiceStorageOrNull } from '../../../game/storage';
 import i18n from '../../../i18n';
 import { haptics as hapticsService } from '../../../services/haptics';
@@ -24,6 +27,14 @@ jest.mock('expo-audio', () => jest.requireActual<Mocks>('../testing/nativeMocks'
 jest.mock('expo-haptics', () => jest.requireActual<Mocks>('../testing/nativeMocks').expoHaptics);
 
 const haptics = jest.requireMock<{ selectionAsync: jest.Mock }>('expo-haptics');
+
+/** The version lines the "בדיקה" tests tap (a staging build's). */
+const VERSION = { version: '1.1.0', build: 'a1b2c3d', server: 'staging' };
+
+/** `n` quick taps on the version lines (one right after another, well within UNLOCK_TAP_GAP_MS). */
+async function tapVersion(n: number) {
+  for (let i = 0; i < n; i++) await fireEvent.press(screen.getByTestId('app-version'));
+}
 
 beforeEach(async () => {
   jest.useRealTimers();
@@ -94,11 +105,11 @@ describe('settings (spec §4.1)', () => {
     await renderApp('/settings', { settings: () => <SettingsScreen version={version} /> });
     expect(screen.getByTestId('app-version-version')).toHaveTextContent(`גרסה ${ltr('1.0.1')}`);
     expect(screen.getByTestId('app-version-details')).toHaveTextContent(
-      ltr(`build a1b2c3d · staging · מנוע ${ENGINE_VERSION}`),
+      ltr(`build ${ltr('a1b2c3d')} · staging · מנוע ${ltr(String(ENGINE_VERSION))}`),
     );
     expect(screen.getByTestId('app-version')).toHaveProp(
       'accessibilityLabel',
-      `גרסה ${ltr('1.0.1')}, build a1b2c3d · staging · מנוע ${ENGINE_VERSION}`,
+      `גרסה ${ltr('1.0.1')}, build ${ltr('a1b2c3d')} · staging · מנוע ${ltr(String(ENGINE_VERSION))}`,
     );
   });
 
@@ -106,7 +117,7 @@ describe('settings (spec §4.1)', () => {
     const version = { version: '1.0.0', build: null, server: 'production' };
     await renderApp('/settings', { settings: () => <SettingsScreen version={version} /> });
     expect(screen.getByTestId('app-version-details')).toHaveTextContent(
-      ltr(`production · מנוע ${ENGINE_VERSION}`),
+      ltr(`production · מנוע ${ltr(String(ENGINE_VERSION))}`),
     );
   });
 
@@ -116,7 +127,8 @@ describe('settings (spec §4.1)', () => {
   });
 
   it('a staging build: "בדיקה" with the chain switch and "פתח את כל השלבים", kept on the phone', async () => {
-    useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false });
+    // Opened by the version's taps (the describe below).
+    useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false, sectionOpen: true });
     try {
       const staging = { server: 'staging', dev: false };
       await renderApp('/settings', { settings: () => <SettingsScreen build={staging} /> });
@@ -139,19 +151,35 @@ describe('settings (spec §4.1)', () => {
         state: { chainPenalty: true, unlockAllLevels: true },
       });
       expect(Storage.getItemSync('settings') ?? '').not.toContain('chainPenalty');
+      // The Pirates slice, for Moshe to judge on the phone (a staging APK has no __DEV__).
+      const push = jest.spyOn(router, 'push').mockImplementation(() => {});
+      await fireEvent.press(screen.getByRole('button', { name: 'פיראטים (טיוטת אווטרים)' }));
+      expect(push).toHaveBeenCalledWith('/dev/pirates');
+      push.mockRestore();
     } finally {
-      await act(async () => useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false }));
+      await act(async () =>
+        useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false, sectionOpen: false }),
+      );
     }
   });
 
   it('a production build never shows "בדיקה" (a development build pointed at production neither)', async () => {
+    useToast.getState().clear();
     for (const build of [
       { server: 'production', dev: false },
       { server: 'production', dev: true },
     ]) {
-      await renderApp('/settings', { settings: () => <SettingsScreen build={build} /> });
+      // Not even when the phone kept it open (from a staging build), nor after 7 taps on the version.
+      useTestingSwitches.setState({ sectionOpen: true });
+      await renderApp('/settings', { settings: () => <SettingsScreen build={build} version={VERSION} /> });
       expect(screen.queryByTestId('settings-testing')).toBeNull();
       expect(screen.queryByRole('switch', { name: 'שרשרת: ניחוש עולה 5 ש׳' })).toBeNull();
+      expect(screen.queryByTestId('setting-pirates')).toBeNull();
+      await act(async () => useTestingSwitches.setState({ sectionOpen: false }));
+      await tapVersion(7);
+      expect(screen.queryByTestId('settings-testing')).toBeNull();
+      expect(useTestingSwitches.getState().sectionOpen).toBe(false);
+      expect(useToast.getState().current).toBeNull();
       await screen.unmount();
     }
   });
@@ -177,9 +205,85 @@ describe('settings (spec §4.1)', () => {
     expect(screen.getByRole('radio', { name: 'עברית' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'English' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
-    // A development build (not on production) has the testing switches too.
-    expect(screen.getByRole('switch', { name: 'Chain: a guess costs 5 s' })).toBeTruthy();
-    expect(screen.getByRole('switch', { name: 'Unlock all stages (testing)' })).toBeTruthy();
+    // A development build (not on production) has the testing switches too, once the version's taps open them.
+    expect(screen.queryByRole('switch', { name: 'Chain: a guess costs 5 s' })).toBeNull();
+    await act(async () => useTestingSwitches.setState({ sectionOpen: true }));
+    try {
+      expect(screen.getByRole('switch', { name: 'Chain: a guess costs 5 s' })).toBeTruthy();
+      expect(screen.getByRole('switch', { name: 'Unlock all stages (testing)' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Hide the testing section' })).toBeTruthy();
+    } finally {
+      await act(async () => useTestingSwitches.setState({ sectionOpen: false }));
+    }
+  });
+});
+
+describe('the hidden "בדיקה" section (Moshe 31.10.2026: "ראיתי דברים מוזרים במסך הגדרות שלא הבנתי")', () => {
+  const STAGING = { server: 'staging', dev: false };
+  const showStaging = () =>
+    renderApp('/settings', { settings: () => <SettingsScreen build={STAGING} version={VERSION} /> });
+
+  beforeEach(() => {
+    useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false, sectionOpen: false });
+    useToast.getState().clear();
+  });
+  afterEach(async () => {
+    await act(async () =>
+      useTestingSwitches.setState({ chainPenalty: false, unlockAllLevels: false, sectionOpen: false }),
+    );
+  });
+
+  it('is hidden on staging; 6 quick taps on the version do nothing, the 7th opens it with a toast', async () => {
+    await showStaging();
+    expect(screen.queryByTestId('settings-testing')).toBeNull();
+    expect(screen.queryByTestId('setting-pirates')).toBeNull();
+    await tapVersion(6);
+    expect(screen.queryByTestId('settings-testing')).toBeNull();
+    expect(useTestingSwitches.getState().sectionOpen).toBe(false);
+    expect(useToast.getState().current).toBeNull();
+    await tapVersion(1);
+    expect(screen.getByTestId('settings-testing')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'פיראטים (טיוטת אווטרים)' })).toBeTruthy();
+    expect(useToast.getState().current).toMatchObject({
+      variant: 'success',
+      message: 'אזור הבדיקה נפתח, בתחתית ההגדרות',
+    });
+    // Open: more taps change nothing and say nothing more.
+    await act(async () => useToast.getState().clear());
+    await tapVersion(7);
+    expect(useToast.getState().current).toBeNull();
+    expect(screen.getByTestId('settings-testing')).toBeTruthy();
+  });
+
+  it('stays open (kept on the phone) on the next visit, and hides again from inside, its switches kept', async () => {
+    await showStaging();
+    await tapVersion(7);
+    await fireEvent.press(screen.getByRole('switch', { name: 'פתח את כל השלבים (בדיקה)' }));
+    expect(JSON.parse(Storage.getItemSync('testing-switches')!)).toMatchObject({
+      state: { sectionOpen: true, unlockAllLevels: true },
+    });
+    await screen.unmount();
+    await showStaging();
+    expect(screen.getByTestId('settings-testing')).toBeTruthy();
+
+    // Its hint says how to come back, with the count of the config (UNLOCK_TAPS), not a number in the text.
+    expect(screen.getByTestId('setting-testing-hide')).toHaveProp(
+      'accessibilityHint',
+      `המתגים נשארים כמו שהם. ${UNLOCK_TAPS} הקשות מהירות על הגרסה פותחות אותו שוב.`,
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'הסתרת אזור הבדיקה' }));
+    expect(screen.queryByTestId('settings-testing')).toBeNull();
+    // Hidden, the switch stays on (the map still reads it), on the phone too.
+    expect(useTestingSwitches.getState()).toMatchObject({ sectionOpen: false, unlockAllLevels: true });
+    expect(JSON.parse(Storage.getItemSync('testing-switches')!)).toMatchObject({
+      state: { sectionOpen: false, unlockAllLevels: true },
+    });
+    // And 7 taps open it again.
+    await tapVersion(7);
+    expect(screen.getByRole('switch', { name: 'פתח את כל השלבים (בדיקה)' })).toHaveProp(
+      'accessibilityState',
+      { checked: true },
+    );
   });
 });
 

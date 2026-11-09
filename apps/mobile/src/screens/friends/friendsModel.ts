@@ -68,6 +68,14 @@ export interface FriendsSeat {
 export const maxPlayersOf = (lobby: FriendsLobby): number =>
   Math.max(lobby.maxPlayers ?? FRIENDS_MAX_PLAYERS, lobby.players.length);
 
+/** The room screen's subtitle, "מהיר · 2 מתוך 4": the game type, the players in and the seats. */
+export const roomSubtitleOf = (t: FriendsT, lobby: FriendsLobby): string =>
+  t('subtitle', {
+    type: t(`game:type.${lobby.gameType}`),
+    count: lobby.players.length,
+    max: maxPlayersOf(lobby),
+  });
+
 export const minPlayersOf = (lobby: FriendsLobby): number => lobby.minPlayers ?? FRIENDS_MIN_PLAYERS;
 
 /** The host's id: the server's word, else the first one in. */

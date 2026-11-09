@@ -5,7 +5,6 @@ import {
   evolve,
   explain,
   type Explanation,
-  formatScoreLine,
   type GameEvent,
   type GameMode,
   type GameResult,
@@ -37,7 +36,7 @@ import { playerIdentity } from '../game/identity';
  * The replay of a game (spec §13; work plan stage 11), from its event log: the steps, the state before and
  * after each (rebuilt by the engine's replay()), what to draw, an explanation for every player at every step,
  * the timeline and the key moments. Pure: no React, no clock; every rule and every explanation is the
- * engine's (replay, rankPlayers, toView, explain, whyWrong, formatScoreLine). The log is a practice's from the
+ * engine's (replay, rankPlayers, toView, explain, whyWrong, missedPoints). The log is a practice's from the
  * phone [D25] or a ranked game's from the server (both with the solution once the game is over, spec §21).
  *
  * Steps (spec §13.1, "שלב אחד הוא פעולה אחת"; original §21): one per action, plus the start.
@@ -59,7 +58,8 @@ import { playerIdentity } from '../game/identity';
  * step, each player is shown the cell they last chose (their latest select, correct or wrong move so far):
  * the digit the logic puts there, why, and the logical explanation, computed on the board BEFORE that move.
  * Teaching mode (the default) shows the answer even while the player is still choosing. A correct move also
- * gets its score line, and a wrong one says why the digit was wrong.
+ * gets its score's breakdown (the screen writes its calculation in the viewer's language), and a wrong one says
+ * why the digit was wrong.
  */
 
 export type StepKind =
@@ -87,9 +87,8 @@ export interface ReplayStep {
   /** The right digit of `cell`, when the solution is known. */
   answer: Digit | null;
   points: number | null;
+  /** A correct move's score as the engine worked it out (spec §6.4): the four counts, X, Y and the points. */
   breakdown: MoveScore | null;
-  /** A correct move's calculation (spec §13.2): "points = 9 − 7 + (9 − 6) / 2 = 3.5". */
-  scoreLine: string | null;
   penalty: number | null;
   /** An interference: on whom, which, and what it cost the sender. */
   targetId: PlayerId | null;
@@ -206,13 +205,17 @@ export interface PlayerExplanation {
   wrongText: string | null;
   points: number | null;
   penalty: number | null;
-  scoreLine: string | null;
+  /**
+   * A correct move's score (spec §13.2), for its calculation line "9 − 7 + (9 − 6) / 2 = 3.5": the engine's
+   * breakdown, written out by the screen in the viewer's language (B1: the engine's "points = …" was English).
+   */
+  score: MoveScore | null;
   /**
    * A wrong move (spec §6.5, §13.2): its penalty's calculation, i.e. what the right digit would have scored
-   * there, "points = 9 − 4 + (9 − 3) / 2 = 8". Null for a game played before that rule (see
+   * there ("9 − 4 + (9 − 3) / 2 = 8"), as the same breakdown. Null for a game played before that rule (see
    * `Replay.penaltiesAreMissedPoints`), and when the log has no solution.
    */
-  penaltyLine: string | null;
+  penaltyScore: MoveScore | null;
   /** A choice that was let go of: why. */
   releaseReason: ReleaseReason | null;
 }
@@ -350,7 +353,6 @@ function stepOf(
     answer: null,
     points: null,
     breakdown: null,
-    scoreLine: null,
     penalty: null,
     targetId: null,
     interference: null,
@@ -385,7 +387,6 @@ function stepOf(
         answer: e.digit,
         points: e.points,
         breakdown: e.breakdown,
-        scoreLine: formatScoreLine(e.breakdown),
         offline: e.offline === true,
       };
     case 'placedWrong':
@@ -582,8 +583,8 @@ function explanationOf(replay: Replay, k: number, seat: number, lang: string): P
     wrongText: null,
     points: null,
     penalty: null,
-    scoreLine: null,
-    penaltyLine: null,
+    score: null,
+    penaltyScore: null,
     releaseReason: null,
   };
   if (subject === null) return none;
@@ -618,11 +619,10 @@ function explanationOf(replay: Replay, k: number, seat: number, lang: string): P
       wrongText = null;
     }
   }
-  let penaltyLine: string | null = null;
-  if (s.kind === 'wrong' && replay.penaltiesAreMissedPoints) {
-    const missed = missedPointsOf(replay.states, s, after.config.rules.scoreY);
-    penaltyLine = missed ? formatScoreLine(missed) : null;
-  }
+  const penaltyScore =
+    s.kind === 'wrong' && replay.penaltiesAreMissedPoints
+      ? missedPointsOf(replay.states, s, after.config.rules.scoreY)
+      : null;
   return {
     ...none,
     status,
@@ -637,8 +637,8 @@ function explanationOf(replay: Replay, k: number, seat: number, lang: string): P
     wrongText,
     points: s.points,
     penalty: s.penalty,
-    scoreLine: s.scoreLine,
-    penaltyLine,
+    score: s.breakdown,
+    penaltyScore,
     releaseReason,
   };
 }

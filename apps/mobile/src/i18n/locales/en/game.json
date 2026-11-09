@@ -135,10 +135,12 @@
     "error": {
       "title": "Connection error",
       "offlineTitle": "No internet connection",
+      "expiredTitle": "You did not come back in time",
       "body": {
         "offline": "Your phone has no network right now. Connect to the internet and try again.",
         "unreachable": "We couldn't reach the game server. Check your connection and try again.",
         "lost": "The connection to the game server dropped and we couldn't get it back.",
+        "expired": "The connection didn't come back in time, so the game counts as abandoned.",
         "refused": "The server didn't let us into the room."
       },
       "refusal": {
@@ -174,7 +176,9 @@
       "confirm": "Yes, surrender",
       "cancel": "Cancel",
       "footnote": "The game goes on in the background",
-      "dialog": "Confirm surrender"
+      "dialog": "Confirm surrender",
+      "notSent": "You didn't surrender, and the game goes on. You can try again",
+      "notSentOffline": "No connection to the server, so you didn't surrender. You can try again once it's back"
     },
     "lobby": {
       "title": "Private room",
@@ -423,9 +427,31 @@
       "move": "{{cell}} → {{digit}}",
       "label_one": "Move of the game: {{points}} point, {{digit}} in {{cell}}",
       "label_other": "Move of the game: {{points}} points, {{digit}} in {{cell}}",
-      "formula": "How it scored",
-      "formulaLabel": "How it scored: {{line}}",
-      "none": "No correct move in this practice"
+      "before": "Filled before the move",
+      "count": {
+        "row": "in the row",
+        "col": "in the column",
+        "box": "in the box",
+        "num": "{{digit}}s on the board"
+      },
+      "filled": {
+        "row_one": "{{count}} in the row",
+        "row_other": "{{count}} in the row",
+        "col_one": "{{count}} in the column",
+        "col_other": "{{count}} in the column",
+        "box_one": "{{count}} in the box",
+        "box_other": "{{count}} in the box",
+        "num_one": "{{digit}} placed once",
+        "num_other": "{{digit}} placed {{count}} times"
+      },
+      "countName": {
+        "row": "the row",
+        "col": "the column",
+        "box": "the box",
+        "num": "the {{digit}}s"
+      },
+      "why": "The emptier around the cell, the more a move is worth. The two fullest set the score: {{highest}} at full weight, {{next}} at half weight.",
+      "none": "You had no correct move in this game"
     },
     "stats": {
       "time": "Game time",
@@ -457,6 +483,13 @@
     "actions": {
       "home": "Home",
       "newGame": "New game"
+    },
+    "again": {
+      "solo": "Starts another solo practice right away, {{type}}",
+      "bot": "Starts another game against {{bot}} right away, {{type}}",
+      "botAny": "Starts another game against the bot right away, {{type}}",
+      "ranked": "Another ranked game, {{type}}",
+      "friends": "Back to playing with friends"
     },
     "loading": "Loading the result…",
     "missing": "We couldn't find this practice",

@@ -12,9 +12,10 @@ export { InterferenceButton, type InterferenceButtonProps } from './Interference
 export { LeadBar, type LeadBarProps } from './LeadBar';
 export { LeagueBadge, type LeagueBadgeProps } from './LeagueBadge';
 export { LockStrip, type LockStripProps } from './LockStrip';
+export { MoveText, type MoveTextProps } from './MoveText';
 export { PlayerCard, type PlayerCardActions, type PlayerCardProps } from './PlayerCard';
 export { PlayerCardCompact, type PlayerCardCompactProps } from './PlayerCardCompact';
-export { Rating, type RatingProps, type RatingSize } from './Rating';
+export { ProvisionalChip, Rating, type RatingProps, type RatingSize } from './Rating';
 export { DeltaLabel, type ScoreDelta, ScoreNumber } from './Score';
 export { SeatGlyph, type SeatGlyphProps } from './SeatGlyph';
 export { TargetFrame, type TargetFrameProps } from './TargetFrame';
@@ -68,8 +69,16 @@ export {
   nextLeague,
   playerLeague,
 } from './league';
-export { AVATAR_SIZES, type AvatarSize, compactCardGap, compactCardWidth, paletteAt } from './metrics';
+export {
+  AVATAR_SIZES,
+  type AvatarSize,
+  compactCardGap,
+  compactCardWidth,
+  duelCardWidth,
+  paletteAt,
+} from './metrics';
 export { sameData, sameProps, sameStyle } from './sameProps';
+export { vsInset } from './statusFit';
 export {
   activityPhrase,
   activityWord,

@@ -1,12 +1,13 @@
 import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { color, radius, size, space, text, tokens } from '../../theme';
+import { color, size, space, text } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 import { Spinner } from './Spinner';
-
+import { PressableCard } from './tactile';
 import { Text } from './Text';
+
 export interface RowButtonProps {
   icon: IconName;
   title: string;
@@ -27,6 +28,8 @@ export interface RowButtonProps {
 /**
  * The full-width list row of Dir-C-Home ("עוד סיבוב"): icon, title over subtitle, and a chevron that points the
  * way reading goes (left in Hebrew). Everything sits in a `row`, so React Native mirrors it with the language.
+ * Since D125 it is a tappable card (VIS-2): the card surface on its base, with the one card press. Its own
+ * screen plays its sound, so the card plays none.
  */
 export function RowButton({
   icon,
@@ -43,8 +46,9 @@ export function RowButton({
 }: RowButtonProps) {
   const { t } = useTranslation('ui');
   const label = subtitle ? t('row.label', { title, subtitle }) : title;
+  const faint = disabled ? styles.faint : null;
   return (
-    <Pressable
+    <PressableCard
       ref={ref}
       accessibilityRole="button"
       accessibilityLabel={loading ? t('button.loading', { label }) : label}
@@ -55,23 +59,19 @@ export function RowButton({
         ...(selected === undefined ? null : { selected }),
       }}
       disabled={disabled}
+      selected={selected}
+      cue={null}
       onPress={loading ? undefined : onPress}
       testID={testID}
-      style={({ pressed }) => [
-        styles.row,
-        pressed && styles.pressed,
-        selected && styles.selected,
-        disabled && styles.disabled,
-        style,
-      ]}
+      style={[styles.row, style]}
     >
-      <Icon name={icon} size={size.icon.row} color={color.textMuted} />
+      <Icon name={icon} size={size.icon.row} color={disabled ? color.iconFaint : color.textMuted} />
       <View style={styles.texts}>
-        <Text style={[styles.title, selected && styles.titleSelected]} numberOfLines={1}>
+        <Text style={[styles.title, selected && styles.titleSelected, faint]} numberOfLines={ROW_TITLE_LINES}>
           {title}
         </Text>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
+          <Text style={[styles.subtitle, faint]} numberOfLines={1}>
             {subtitle}
           </Text>
         ) : null}
@@ -81,9 +81,15 @@ export function RowButton({
       ) : (
         <Icon name="chevronForward" size={size.icon.chevron} color={color.iconFaint} />
       )}
-    </Pressable>
+    </PressableCard>
   );
 }
+
+/**
+ * The title takes a second line, broken between words, rather than ending in "…" (QA 2026-11-03: en-XA's "[Ĥîðé
+ * ťĥé ťéšťîñĝ šéçťîöñ one t…" in Settings). Two lines of it and the subtitle still fit the row's 64.
+ */
+export const ROW_TITLE_LINES = 2;
 
 const styles = StyleSheet.create({
   row: {
@@ -93,18 +99,6 @@ const styles = StyleSheet.create({
     // The least: a taller script (Thai, Arabic) may need more, never cut (localization plan 0ט).
     minHeight: size.listRow,
     paddingHorizontal: space[8],
-    borderRadius: radius.button,
-    borderWidth: tokens.border.hairline,
-    borderColor: color.border,
-  },
-  pressed: {
-    backgroundColor: color.surface,
-  },
-  selected: {
-    borderColor: color.accent,
-  },
-  disabled: {
-    opacity: tokens.opacity.disabled,
   },
   texts: {
     flex: 1,
@@ -122,5 +116,9 @@ const styles = StyleSheet.create({
   subtitle: {
     ...text('caption'),
     color: color.textMuted,
+  },
+  // Disabled: no base and no press; the words go to the faint level (never a faded row).
+  faint: {
+    color: color.tactile.disabledLabel,
   },
 });

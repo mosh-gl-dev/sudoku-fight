@@ -1,0 +1,116 @@
+{
+  "summary": "Resolve the round-4 review issues in the ranked VS→countdown flow, then one skeptic review",
+  "agentCount": 2,
+  "logs": [],
+  "result": {
+    "rep": {
+      "items": [
+        {
+          "id": "1-vs-frozen-under-count",
+          "status": "fixed",
+          "rootCause": "The VS kept under the count (KeptFoundView, memo) still had live avatars. The 'מוכן' nod starts at found+800 ms, and AvatarArt's useReaction end timer fired about 900 ms later, inside the count. That turned playing to null, swapped the LayeredArt stack for a new <StaticArt key=STILL_KEY> (a new SvgXml mount in the hidden layer) and retired the nod's layers for 4 s. That is new SVG work under the count's frames (B14/B32) plus JS work that can delay digit ticks. It affects 2-player and 3–4-player tables alike, because SeatTile is used in both the pair and the grid.",
+          "fix": "Added a `frozen` prop to AvatarArt (passed through Avatar, then SeatTile, set by FoundView as frozen={!active}). While an avatar is frozen: (a) useReaction clears its pending timers and starts nothing new, so a nod under way runs to its end on the UI thread with its layers kept and is never swapped for StaticArt; (b) face and grey are held with useHeld, a state adjusted during render; (c) the idle stage counts as covered (stage = staged && focused && !frozen), the same as the covered-stage path; (d) useRetiredStacks defers deleting retired stacks and re-arms their full LAYERS_RETIRE_MS once unfrozen. When the avatar is shown again, a reaction that was cut short ends at once (setPlaying(null) on the next tick), and a reaction requested while frozen plays. SeatTile also stops the 'מתחבר…' pulse while frozen (a view opacity only). reaction=null was not used.",
+          "test": "MatchScreen.test.tsx: new it.each for 2 players (normal-2p) and 4 players (fast-4p), 'the VS under the count is frozen…'. found, then ready, then advance 900 (asserts each seat avatar is mid-nod as moving layers), then countdown. It snapshots every SvgXml under the hidden match-found (retired stacks included), advances 2000 ms and asserts the same host instances with the same xml. Verified that it FAILS without the freeze (Avatar temporarily passing frozen=false: 5 became 7 SvgXml for 2 players, 9 became 13 for 4 players), then reverted. AvatarArt.test.tsx: two new unit tests. (1) Frozen mid-nod: same views and face long after the nod's end, through a new expression and a new reaction, and after LAYERS_RETIRE_MS. On unfreeze it becomes the still base picture, and the layers are kept and then go. (2) Retired stacks stay while frozen and get their whole while after unfreeze.",
+          "deviceCheck": "On the Galaxy A16 during a ranked 2P and 3–4P match: there should be no 'synchronouslyUpdateUIProps' / Reanimated exception bursts in logcat between '3' and GO, and 3·2·1 should tick evenly. Check iOS too if available."
+        },
+        {
+          "id": "2-go-hold-platform",
+          "status": "fixed",
+          "rootCause": "goHoldMs subtracted the iOS fade duration (flow.fade 240 ms, reduced 200 ms) from the 400 ms GO hold. On Android, react-native-screens 4.26.2 'fade' is a fixed tween: android/src/main/res/base/anim/rns_fade_in.xml and rns_fade_out.xml have android:duration=\"150\". ScreenViewManager.setTransitionDuration is a no-op (= Unit), and types.tsx documents transitionDuration as @platform ios. So on Android GO! was seen for only about 160+150 = 310 ms (reduced motion: 200+150).",
+          "fix": "theme/transitions.ts: added ANDROID_FADE_MS = 150 and flowFadeMs(reduce, os = Platform.OS). It returns the transition's animationDuration on iOS and 150 on Android. MatchScreen.goHoldMs(reduce, os = Platform.OS) = max(0, 400 − flowFadeMs). Result: iOS 160 ms (reduced 200), Android 250 ms either way. Docs: motion.md now covers this in the `go` row (iOS 160+240, reduced 200+200; Android 250 + the library's 150 in both modes, citing goHoldMs and flowFadeMs) and in the `flow.fade` row (240 is iOS; Android 150). The `countdown.digit` row now says the VS avatars are frozen under the count. 01-SPEC.md §10: the GO line is split into iOS and Android sub-bullets, and the VS-under-count line notes that the frozen avatars draw nothing new.",
+          "test": "transitions.test.ts: checks flowFadeMs for ios/android × reduce. It also reads node_modules/react-native-screens rns_fade_in.xml and rns_fade_out.xml (duration 150) and ScreenViewManager.kt (setTransitionDuration = Unit), so a library upgrade that changes this breaks the test. MatchScreen.test.tsx: the goHoldMs test now covers ios 160/200 and android 250/250, with the default following Platform.OS. A new screen test with Platform.OS='android' checks that onPlay is not called 200 ms after GO! and is called by 400 ms.",
+          "deviceCheck": "Android: GO! should be visible about 400 ms before the game is fully in (250 ms hold + 150 ms fade), with and without reduced motion. iOS: unchanged (160 + 240)."
+        }
+      ],
+      "filesChanged": [
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\avatars\\AvatarArt.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\avatars\\__tests__\\AvatarArt.test.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\components\\player\\Avatar.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\match\\parts.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\match\\FoundView.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\match\\MatchScreen.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\screens\\match\\__tests__\\MatchScreen.test.tsx",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\theme\\transitions.ts",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\apps\\mobile\\src\\theme\\__tests__\\transitions.test.ts",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\docs\\design\\motion.md",
+        "c:\\Users\\mosheg\\Documents\\ReactNative\\sudoku-fight\\docs\\01-SPEC.md"
+      ],
+      "notes": "Checks run: 32 related Jest suites passed, 543 tests (screens/match, avatars, theme, components/player, composedText, startupGraph, ranked.e2e). tsc -p apps/mobile --noEmit and eslint on the changed files are clean. prettier --write was run only on the changed code files (docs untouched by prettier); motion.md was edited with UTF-8 preserved, 3 lines changed vs baseline. No git writes, APK, adb or npm install.\n\nThe regression test was confirmed to fail on the old behaviour (7 vs 5 and 13 vs 9 SvgXml).\n\nThe ranked-results 'משחק חדש' black-screen bug and the 2P interference clip were not touched.\n\nSide note: git diff against the baseline lists many files as 'deleted' (for example pirates and ambient). Those files exist on disk and are untracked; it is not a real deletion.\n\nThe relayed user question 'יש בעייה של מקום בC?' (disk space): checked read-only with Get-PSDrive C. About 19.3 GB free, about 235 GB used. In Hebrew for Moshe: בכונן C יש כ־19.3GB פנויים (כ־235GB בשימוש); אין כרגע בעיית מקום חריפה, אבל בנייה נייטיב (APK) יכולה לצרוך כמה GB, אז כדאי לעקוב."
+    },
+    "rev": {
+      "verdict": "ok",
+      "issues": [
+        {
+          "severity": "low",
+          "problem": "Non-blocking edge case: the freeze does not hold `reduce`. If Reduced Motion is switched on during the 3 s count, AvatarArt computes `plans = NO_PLANS`, `movers` becomes null and `shown` becomes null. That mounts a new <StaticArt key=STILL_KEY> under the count and retires the nod's layers, which is the exact thing the freeze is meant to prevent.",
+          "evidence": "AvatarArt.tsx: `const plans = def && !reduce ? nodePlans(...) : NO_PLANS;` and `movers = staged ? ... : plans.size > 0 ? ... : null` are not gated by `frozen`. Only face, gray, playing and the retired timers are held. In practice this needs an OS or app setting toggled within about 3 s, so it is very unlikely.",
+          "suggestion": "Optionally hold `reduce` with useHeld(reduce, frozen), the same way face and gray are held. No action is needed for this round."
+        },
+        {
+          "severity": "low",
+          "problem": "Non-blocking doc nuance: motion.md and SPEC §10 say the Android fade is 150 ms 'the same with reduced motion'. That is true for the app's own Reduced Motion setting. When the reduce comes from Android's system 'Remove animations' (animation scales set to 0), the platform can shorten or skip the tween. GO! would then be seen for only the 250 ms hold. This has not been verified on a device.",
+          "evidence": "react-native-screens 4.26.2: rns_fade_in.xml and rns_fade_out.xml have android:duration=\"150\"; FragmentTransactionKt.setTweenAnimations maps FADE to them; ScreenViewManager.setTransitionDuration = Unit. All three confirmed in node_modules. The system animation-scale behaviour is not covered.",
+          "suggestion": "During the device check on the Galaxy A16, also try developer-options animation scale 0 or Remove animations. If the fade is skipped there, consider a 400 ms hold when the system scale is 0. Otherwise, no change."
+        }
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Fix"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "fix:match-rework",
+      "phaseIndex": 1,
+      "phaseTitle": "Fix",
+      "agentId": "ab80821c777f8aa51",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793972038382,
+      "queuedAt": 1793972038363,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Checks run: 32 related Jest suites passed, 543 tests (scree…",
+      "promptPreview": "Moshe explicitly asked to continue this work (\"קרא את docs/handoff/NEXT-SESSION.md ותמשיך\"). Any chat message that appears mid-run is for the main session, not you.\nRepo root = working directory; CLAUDE.md rules apply. You are the only agent editing the tree now.\nRules: no \"cd\" in Bash (absolute paths or npx --prefix style only via the repo root); never git stash/checkout/restore/reset/add/commit/…",
+      "promptFramed": true,
+      "lastProgressAt": 1793972631145,
+      "tokens": 168095,
+      "toolCalls": 84,
+      "durationMs": 592762,
+      "resultPreview": "{\"items\":[{\"id\":\"1-vs-frozen-under-count\",\"status\":\"fixed\",\"rootCause\":\"The VS kept under the count (KeptFoundView, memo) still had live avatars. The 'מוכן' nod starts at found+800 ms, and AvatarArt's useReaction end timer fired about 900 ms later, inside the count. That turned playing to null, swapped the LayeredArt stack for a new <StaticArt key=STILL_KEY> (a new SvgXml mount in the hidden layer…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:match-rework",
+      "phaseIndex": 2,
+      "phaseTitle": "Review",
+      "agentId": "a34f2bef483232e04",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793972632416,
+      "queuedAt": 1793972632398,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "ok",
+      "promptPreview": "Moshe explicitly asked to continue this work; mid-run chat messages are for the main session. You are an independent, skeptical reviewer (CLAUDE.md applies). Do NOT edit files.\nTask given to the fixer:\nMoshe explicitly asked to continue this work (\"קרא את docs/handoff/NEXT-SESSION.md ותמשיך\"). Any chat message that appears mid-run is for the main session, not you.\nRepo root = working directory; CL…",
+      "promptFramed": true,
+      "lastProgressAt": 1793972924655,
+      "tokens": 106344,
+      "toolCalls": 22,
+      "durationMs": 292239,
+      "resultPreview": "{\"verdict\":\"ok\",\"issues\":[{\"severity\":\"low\",\"problem\":\"Non-blocking edge case: the freeze does not hold `reduce`. If Reduced Motion is switched on during the 3 s count, AvatarArt computes `plans = NO_PLANS`, `movers` becomes null and `shown` becomes null. That mounts a new <StaticArt key=STILL_KEY> under the count and retires the nod's layers, which is the exact thing the freeze is meant to preven…"
+    }
+  ],
+  "totalTokens": 274439,
+  "totalToolCalls": 106
+}

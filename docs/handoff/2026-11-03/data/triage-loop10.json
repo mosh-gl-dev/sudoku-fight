@@ -1,0 +1,890 @@
+{
+ "lanes": {
+  "BOTH": [
+   {
+    "order": 1,
+    "rankedOk": false,
+    "sessions": [
+     {
+      "key": "both-friends-room",
+      "title": "חדר חברים: הצטרפות בקוד, סוג משחק, הפחתת תנועה ומקלדת מתערבלת",
+      "tasks": [
+       "interference-new-keypad-shuffle",
+       "general-motion-friends",
+       "friends-code-type-join",
+       "friends-game-type",
+       "interference-a11y-rm-keypad"
+      ],
+      "setup": "טלפון 3 (RF8Y30L038L, אחוותא, רמה 7) הוא המארח, וגם מקבל את ההפרעה. טלפון 1 (RF8Y60PP2XZ, אורי, רמה 9) מצטרף, ושולח את ההפרעה. שניהם בעברית, בבית, ועל APK 15 מול staging. משחק בחדר חברים לא מדורג, אז כניעה לא משנה דירוג. הקלטות מסך: adb shell screenrecord. פריימים: frames.ps1 (ראו planNotes).",
+      "deviceSettings": "טלפון 3: 'הגדרות' ← 'הפחתת תנועה' ← 'מופעלת' לפני צעד 1, ובסוף מחזירים ל'כבויה'. טלפון 1: הפחתת תנועה 'כבויה' (רק בודקים, לא משנים). גופן, צפיפות ושפה נשארים ברירת מחדל ועברית.",
+      "script": "0. (בשולחן, בלי טלפון) interference-new-keypad-shuffle: מריצים frames.ps1 על הסרטון הקיים C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/RF8Y30L038L-interference-new-keypad-shuffle.mp4. קודם עוברים על כל הסרטון בצעד של 250ms, כדי למצוא את חלון ההפרעה. אחר כך עוברים על חלון ההפרעה בצעד של 20ms, עם חיתוך לאזור המקלדת. בודקים: (א) בין שני סדרים יש פריימים שבהם המקשים נמצאים במקומות ביניים, כלומר החלקה ולא קפיצה. (ב) המרווח בין החלפה להחלפה הוא כשנייה וחצי. (ג) הלוח לא משתנה. ההחלפות עצמן והלוח הקבוע כבר עברו, אז לא בודקים אותם שוב. אם הסרטון מספיק, מסמנים את המשימה. אם לא, מדלגים לצעד 9.\n1. טלפון 3: 'שחק' ← 'צור חדר'. אם נשאלים 'לסגור את החדר הקודם?', מקישים 'סגור ופתח חדש'. רושמים את הקוד.\n2. general-motion-friends, החלק שנשאר: מפעילים screenrecord בטלפון 3 עם --time-limit 5, ומקישים 'העתק קוד'. מוציאים פריימים מ־0 עד 1500ms בצעד של 20ms. ✓ 'הקוד הועתק' והווי מופיעים באותו מקום ובאותו גודל בכל הפריימים, רק בדהייה, בלי החלקה ובלי הגדלה. הנקודה בכיסא הריק והספירה כבר עברו, אז לא בודקים אותן שוב.\n3. friends-code-type-join: טלפון 1: 'שחק' ← 'הצטרף עם קוד'. מקלידים את 5 הספרות הראשונות אחת אחרי השנייה, ומצלמים אחרי כל ספרה. ✓ הסמן עובר לתיבה הבאה (זה כבר נבדק, אז מספיק מבט). מפעילים screenrecord בטלפון 1 עם --time-limit 5, ומקלידים את הספרה השישית. מוציאים פריימים מ־0 עד 2000ms בצעד של 20ms. ✓ במקום הכפתור 'הצטרף' מופיעה שורה עם ספינר ו'מצטרף לחדר…'. ✓ אחר כך נפתח החדר של טלפון 3, עם אותו קוד ועם השם אחוותא בכיסא של המארח.\n4. friends-game-type: טלפון 3 (המארח) בוחר 'קשה' בסוג המשחק. מצלמים את טלפון 1 תוך שנייה. ✓ בטלפון 1 הסוג 'קשה', והכותרת 'קשה · 2 מתוך 4'. ✓ בטלפון 1 כתוב 'המארח בוחר'. מקישים בטלפון 1 על 'מהיר'. ✓ שום דבר לא משתנה, לא בטלפון 1 ולא בטלפון 3.\n5. טלפון 3: 'התחל משחק · 2 שחקנים'. הספירה כבר נבדקה, אז לא מנתחים אותה.\n6. טלפון 3 ממלא 2–3 משבצות נכונות, בעזרת כלי הפתרון. טלפון 1 פותר משבצות נכונות עד שהניקוד בכרטיס שלו 2 לפחות.\n7. interference-a11y-rm-keypad: מפעילים screenrecord בטלפון 3 עם --time-limit 10. מיד אחר כך טלפון 1 מקיש 'הפרעה' בכרטיס של אחוותא ← 'מקלדת מתערבלת'. מוציאים פריימים של אזור המקלדת: מ־0 עד 1000ms אחרי שהבאנר '<אורי> ערבב/ה לך את המקלדת!' מופיע, בצעד של 20ms. ✓ ההחלפה קורית פעם אחת, והסדר החדש נכנס בדעיכה: יש פריימים עם שקיפות ביניים, ואין פריימים שבהם מקש נמצא במקום ביניים. אחר כך עוברים על שאר ההפרעה ועל הסוף בצעד של 250ms. ✓ המקשים לא זזים. ✓ בסוף המקשים חוזרים ל־1–9 משמאל לימין. השורות האלה כבר עברו בצילומים, אז כאן הן רק אישור מתוך ההקלטה.\n8. טלפון 3: 'כניעה' ← 'כן, להיכנע' ← 'לבית'. בטלפון 1 מקישים 'לבית'. טלפון 3: 'הגדרות' ← 'הפחתת תנועה' ← 'כבויה'.\n9. רק אם צעד 0 לא הספיק: טלפון 3 פותח חדר חדש, טלפון 1 מצטרף בקוד, וטלפון 3 מקיש 'התחל משחק · 2 שחקנים'. הפעם הפחתת התנועה בטלפון 3 כבויה. טלפון 1 צובר 2 נקודות. מפעילים screenrecord בטלפון 3 עם --time-limit 10, וטלפון 1 שולח 'מקלדת מתערבלת'. מוציאים פריימים של המקלדת בצעד של 40ms לאורך 5 שניות. ✓ יש מקומות ביניים, כלומר החלקה. ✓ ההחלפות קורות בערך כל 1.5 שניות. ✓ הלוח לא משתנה. בסוף: כניעה בטלפון 3 ← 'לבית' בשניהם.\nבסוף שני הטלפונים בבית, אין חדר פתוח, והפחתת התנועה בטלפון 3 כבויה.",
+      "estMinutes": 35
+     }
+    ]
+   }
+  ],
+  "P1": [
+   {
+    "order": 1,
+    "rankedOk": false,
+    "sessions": [
+     {
+      "key": "p1-recorded-anims",
+      "title": "טלפון 1: הקלטת אנימציות: תגובות אימוג'י, הבהוב טעות בצפייה חוזרת וכתר הבוס",
+      "tasks": [
+       "avatars-react-emoji",
+       "postgame-replay-explain-wrong",
+       "levels-boss-win"
+      ],
+      "setup": "טלפון 1 (RF8Y60PP2XZ, אורי), בעברית, בבית, על APK 15. מקליטים עם adb shell screenrecord, ומוציאים פריימים עם frames.ps1. לא נוגעים בטלפון 3.",
+      "deviceSettings": "'הגדרות' ← 'הפחתת תנועה': מוודאים שהיא 'כבויה' (אם היא מופעלת, מכבים ומחזירים בסוף). גופן וצפיפות ברירת מחדל.",
+      "script": "1. בית ← 'שחק' ← 'אימון מול בוט' ← 'מהיר' ← 'בחירת יריב' ← 'טירון' ← 'יאללה, למשחק'.\n2. avatars-react-emoji, רק סוג התנועה: עושים את זה לכל אימוג'י לפי הסדר 😂 😱 😎 🤦 🔥 👀, ומחכים לפחות 6 שניות בין אחד לשני. לכל אחד: מפעילים screenrecord עם --time-limit 4, מקישים 'תגובות', ובוחרים את האימוג'י. מוציאים פריימים מ־0 עד 2500ms בצעד של 40ms, עם חיתוך סביב האווטר שלי. מסווגים את התנועה לפי תיבת האווטר ולפי הקווים שלו: קפיצה היא תזוזה למעלה וחזרה. מעיכה היא גובה קטן ורוחב גדל. הנהון הוא ירידה קטנה של הראש, וחוזר. סיבוב הוא רוטציה מלאה. הטיה היא רוטציה של כמה מעלות, וחזרה. ✓ 😂 קפיצה, 😱 מעיכה, 😎 הטיה, 🤦 הנהון, 🔥 סיבוב, 👀 הטיה. הבעות הפנים, וזה שרק האווטר שלי מגיב, כבר עברו, אז לא בודקים אותם שוב. אם הבועה מסתירה, מתעדים מה כן נראה ומסמנים partial.\n3. באותו משחק: מכניסים ספרה נכונה אחת. אחר כך מכניסים במשבצת ריקה אחרת ספרה שגויה, ספרה שכבר מופיעה באותה שורה.\n4. 'סיום אימון' ← 'כן, לסיים' ← 'צפייה חוזרת'. מקישים 'שלב הבא' עד השלב שלפני הטעות.\n5. postgame-replay-explain-wrong, רק ההבהוב: מפעילים screenrecord עם --time-limit 5, ומקישים 'שלב הבא'. מוציאים פריימים מ־0 עד 1500ms בצעד של 20ms, עם חיתוך למשבצת הטעות. ✓ המשבצת מהבהבת באדום, כלומר יש פריימים עם רקע או מסגרת אדומים. שאר השורות של המשימה כבר עברו, אז לא בודקים אותן שוב.\n6. levels-boss-win: בית ← 'שחק' ← 'אימון בשלבים' ← L010 (מרוץ, בוס). משחקים ומנצחים את הבוט. ממש לפני המהלך המנצח מפעילים screenrecord עם --time-limit 6. מוציאים פריימים מ־0 עד 3000ms אחרי שמסך התוצאה נפתח, בצעד של 20ms, עם חיתוך למדליון הכתר. ✓ 'ניצחת את הבוס!', והכתר קופץ: יש שינוי בגודל או במקום, ואחר כך הוא חוזר. בפעם הקודמת ראו רק את הכתר במקום, בלי התנועה.\n7. חוזרים לבית. ההגדרות כמו שהיו.",
+      "estMinutes": 30
+     }
+    ]
+   },
+   {
+    "order": 2,
+    "rankedOk": true,
+    "sessions": [
+     {
+      "key": "p1-ranked-stealth",
+      "title": "טלפון 1: חיפוש מדורג מול הבוט הסמוי: 'לא שיחקתם לאחרונה', ומסך החיפוש באנגלית",
+      "tasks": [
+       "pregame-found-rematch",
+       "pregame-search-english"
+      ],
+      "setup": "טלפון 1 (אורי, דירוג 'מהיר' 1293), בעברית, בבית. הבוט הסמוי דלוק ב־staging, ומושיב יריב אחרי בערך 8–20 שניות. טלפון 3 לא מחפש מדורג בזמן הזה. כניעה אחרי GO ולפני כל מהלך לא מורידה דירוג (נבדק בעבר), ובכל זאת רושמים את הדירוג לפני ואחרי.",
+      "deviceSettings": "שפה: עוברים לאנגלית בצעד 3, ומחזירים לעברית בצעד 6. שאר ההגדרות לא משתנות.",
+      "script": "1. רושמים את הדירוג ב'מהיר' מכרטיס השחקן בבית. pregame-found-rematch ✓1: 'שחק' ← '2 שחקנים' ← 'מהיר' ← 'מצא יריב'. כשנמצא יריב (פרסונה של הבוט הסמוי), רושמים את השם שלו ומצלמים את המסך 'מוכנים'. ✓ מתחת ל'מוכנים' כתוב 'לא שיחקתם זה מול זה לאחרונה'. אם כתוב 'שיחקתם זה מול זה לאחרונה' (אותה פרסונה כמו קודם), מתעדים את השם ומנסים עוד פעם אחת בלבד. ✓2 כבר עבר, אז לא בודקים אותו שוב.\n2. אחרי GO, לפני כל מהלך: 'כניעה' ← 'כן, להיכנע' ← 'לבית'. בודקים שהדירוג לא השתנה.\n3. 'הגדרות' ← 'שפה' ← 'English' ← 'החלפה והפעלה מחדש'.\n4. pregame-search-english: 'Play' ← '2 players' ← 'Hard' ← 'Find an opponent'. בכל 0.7 שניות, במשך 6 שניות, מצלמים ומריצים uiautomator dump. ✓ הפריסה משמאל לימין. ✓ קודם 'Joining the queue…' ואז 'Finding an opponent…'. ✓ התג 'Ranked · 2 players · Hard'. ✓ מתחת לאווטר 'Me' והדירוג. ✓ 'Opponents' עם '0/1'. ✓ אין אף תו עברי ב־dump. מקישים 'Cancel search' עד שנייה 7, לפני שהבוט מגיע. אם בכל זאת נמצא יריב: כניעה לפני מהלך ← 'Home'.\n5. ✓2 ('No one else is searching…' ו־'Play a bot meanwhile') לא מופיע כשהבוט הסמוי דלוק. מסמנים partial, עם ההערה 'נשאר ✓2: דורש כיבוי הבוט הסמוי'.\n6. 'Settings' ← 'Language' ← 'עברית' ← 'Switch and restart'. מוודאים שהבית בעברית.",
+      "estMinutes": 12
+     }
+    ]
+   }
+  ],
+  "P3": [
+   {
+    "order": 1,
+    "rankedOk": false,
+    "sessions": [
+     {
+      "key": "p3-levels-fresh",
+      "title": "טלפון 3: אימון בשלבים מההתחלה: שורת האימון ו'איך משחקים' ב־L001–L005",
+      "tasks": [
+       "levels-modes-row-new",
+       "levels-howto-chapter1",
+       "levels-find-howto",
+       "levels-puzzle-ready",
+       "levels-puzzle-howto-pictures"
+      ],
+      "setup": "טלפון 3 (RF8Y30L038L, אחוותא), בעברית, בבית, על APK 15. לפי ההערות, השלבים שוחקו ו'איך משחקים' הוצג בטלפון 1 ובטלפון 2 הישן. בטלפון 3 זה כנראה עוד לא קרה, ולכן הבדיקה נעשית עליו. אם צעד 1 או צעד 3 מראים שהוא כבר לא נקי, מסמנים untested עם מה שנראה, וממשיכים לשחק L001–L005 בשביל הסשן הבא.",
+      "deviceSettings": "'הגדרות' ← גוללים לסוף ← 7 הקשות מהירות על שורות הגרסה ← בקטע 'בדיקה' רושמים את מצב 'פתח את כל השלבים (בדיקה)', ומכבים אותו (זה צריך להישאר כבוי גם בסשן p3-levels-gate). מסתירים שוב את אזור הבדיקה רק בסוף הסשן הבא. הפחתת תנועה, גופן ושפה לא משתנים.",
+      "script": "1. levels-modes-row-new: בית ← 'שחק'. מצלמים את השורה השישית 'אימון בשלבים'. ✓ התיאור '300 שלבים קצרים · ⁦0–3⁩ כוכבים'. ✓ אין צ'יפ 'שלב N · ★ M', ויש רק 'עובד גם בלי אינטרנט'. אם יש צ'יפ התקדמות, אחוותא כבר שיחק שלבים: מסמנים untested ומצטטים את הצ'יפ.\n2. מגדירים את 'פתח את כל השלבים' כבוי, כמו שכתוב בהגדרות המכשיר.\n3. 'אימון בשלבים' ← L001. levels-find-howto ו־levels-howto-chapter1: ✓ מופיע 'איך משחקים' עם הכותרת 'מיקום מדויק', 3 תמונות, 'הבנתי' ו'דלג'. ✓ התמונות מתאימות לטקסט (מצלמים כל תמונה). אם L001 נפתח ישר ב'מוכן?', 'איך משחקים' כבר הוצג במכשיר: מסמנים את levels-find-howto, levels-howto-chapter1, levels-puzzle-ready ו־levels-puzzle-howto-pictures בתור untested ('כבר הוצג בטלפון 3'), ורק משחקים את L001–L005.\n4. 'הבנתי' ← משחקים את L001 עד הסוף, עם כוכב אחד לפחות. רושמים כמה כוכבים.\n5. L002: ✓ 'איך משחקים' עם 3 תמונות, 'הבנתי' ו'דלג'. משחקים עד הסוף ורושמים כוכבים.\n6. L003 (פאזל), levels-puzzle-howto-pictures: מצלמים כל תמונה. ✓ על כל ריבוע קבוע יש מנעול. ✓ בתמונה השנייה, לריבוע שגוררים יש מסגרת בצבע שלי (P1), והיא שונה ממסגרת הזהב של הריבוע שעליו עוזבים. ✓ (howto-chapter1) 3 תמונות, עם 'הבנתי' ו'דלג'. 'הבנתי'. levels-puzzle-ready: ✓ אחר כך 'מוכן?' עם '3 ריבועים זזים · 6 ריבועים קבועים', בלי מפה קטנה של אזור (זה כבר עבר בטלפון 1, אז כאן רק לוודא שזה בא אחרי 'איך משחקים'). משחקים עד הסוף ורושמים כוכבים.\n7. L004: ✓ 'איך משחקים' עם 3 תמונות, והמילה 'שורה' כתובה בו. משחקים עד הסוף ורושמים כוכבים.\n8. L005 (מיקום מדויק בפעם השנייה): ✓ אין 'איך משחקים', ונפתח ישר 'מוכן?'. משחקים עד הסוף ורושמים כוכבים.\n9. תקציב כוכבים בשביל הסשן הבא: מוודאים שהסכום בפרק 1 נשאר נמוך, אחרי L010 צריך להיות לכל היותר 19. משאירים לפחות שלב קל אחד עם כוכב אחד בלבד, כדי שאפשר יהיה לשחק אותו שוב ולעבור את 20. מעבירים את הספירה לסשן הבא.",
+      "estMinutes": 25
+     },
+     {
+      "key": "p3-levels-gate",
+      "title": "טלפון 3: L006–L010, השער הסגור של פרק 2, ו־'+50 XP' בפתיחת הפרק",
+      "tasks": [
+       "levels-boss-howto",
+       "levels-gate-locked",
+       "levels-lang-signed-numbers"
+      ],
+      "setup": "ממשיכים מהסשן p3-levels-fresh, באותו טלפון ובאותו מצב: 'פתח את כל השלבים' כבוי, ויש ספירת כוכבים לפרק 1.",
+      "deviceSettings": "בסוף: 'פתח את כל השלבים (בדיקה)' חוזר למצב שנרשם בתחילת הסשן הקודם, ואם אזור הבדיקה היה מוסתר מקישים 'הסתרת אזור הבדיקה'. עברית.",
+      "script": "1. משחקים את L006 עד L009 לפי הסדר, ושומרים על תקציב הכוכבים (הסכום אחרי L010 לכל היותר 19).\n2. levels-boss-howto: פותחים את L010. ✓ מופיע 'איך משחקים' אחד בלבד, של המרוץ. ✓ יש בו תמונה רביעית: 'זה גם שלב בוס: השלב העשירי בכל פרק.' אם L010 נפתח ישר ב'מוכן?', ההסבר כבר הוצג במכשיר: מסמנים untested (בקטלוג v6 המשימה של משה). משחקים את L010 עד הסוף.\n3. levels-gate-locked: חוזרים למפה, לכותרת של פרק 2. ✓ בלוחית 'נפתח ב־20 כוכבים' ו־'N/20', כש־N הוא הסכום (19 או פחות). ✓ L011 נעול. מקישים על L011. ✓ יש רעד קצר, כלומר שני צילומים מהירים עם הזזה קטנה, או הקלטה. ✓ ההודעה 'פרק 2 נפתח ב־20 כוכבים בפרק 1'. אם כבר בהתחלה היו לפרק 1 עשרים כוכבים או יותר, מסמנים untested עם המספר.\n4. levels-lang-signed-numbers, רק '+50 XP' (השורות '+5 ש׳' ו־'−6' כבר עברו): משחקים שוב את השלב שנשאר עם כוכב אחד, ואם צריך עוד שלבים, עד שהסכום בפרק 1 מגיע ל־20 או יותר. במסך התוצאה שבו הפרק נפתח, וגם במפה אם משהו מופיע שם, מצלמים ומריצים uiautomator dump. ✓ '⁦+50⁩ XP', והפלוס משמאל ל־50. אם מבחינת הכוכבים אי אפשר להגיע ל־20, וגם לא לשער הנעול הבא (בתנאי שחסרים לו 6 כוכבים לכל היותר), מסמנים untested עם המספרים.\n5. מחזירים את הגדרות 'בדיקה' כמו שכתוב בהגדרות המכשיר, וחוזרים לבית.",
+      "estMinutes": 35
+     }
+    ]
+   }
+  ]
+ },
+ "blocked": [
+  {
+   "taskId": "account-open-guard",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-look",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-arena",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-empty",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-bad-email",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-wrong-password",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-unknown-email",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-offline",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-success",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-unverified",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-login-eye",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-open-english",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-look",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-preview",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-avatar-sheet",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-country-sheet",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-country-search-latin",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-country-long",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-length",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-chars",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-available",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-taken",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-blocked",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-name-empty",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-fighter-large-font",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-look",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-edit-fighter",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-empty",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-password-rule",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-strength",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-confirm",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-terms-links",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-email-taken",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-offline",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-success",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-name-race",
+   "reason": "צריך שתי הרשמות חדשות משני טלפונים, ושניהם צריכים להיות מנותקים.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-server-down",
+   "reason": "צריך APK מול שרת מקומי ועצירה של השרת באמצע, וגם התנתקות והרשמה חדשה.",
+   "needs": "login + other: local server stop"
+  },
+  {
+   "taskId": "account-signup-large-font",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-signup-english",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-forgot-look",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-forgot-validation",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-forgot-sent",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-forgot-unknown",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-verify-look",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת. מסך האימות עצמו כבר עבר, ונשאר רק הבאנר בבית, שמופיע רק לחשבון מייל שלא אומת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-verify-not-yet",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-verify-resend",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-verify-practice",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-verify-ranked",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-recovery-english",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-profile-rename",
+   "reason": "שינוי שם נועל את השם ל־30 יום, ולסוכן אסור לשנות שם. מה שאפשר לבדוק בלי לשמור כבר נבדק.",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "account-profile-name-taken",
+   "reason": "אין שם תפוס באותיות לטיניות (בערך 40 שמות נבדקו), והסוכן לא יכול להקליד בעברית. 'פנוי' כבר נבדק.",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "account-settings-version",
+   "reason": "נשארו רק שורות הגרסה במסך ההתחברות, ולשם צריך להתנתק. ההגדרות כבר עברו.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-settings-sign-out",
+   "reason": "נשאר רק לאשר את ההתנתקות. החלון וגם 'ביטול' כבר עברו.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-settings-sign-out-practice",
+   "reason": "צריך להתנתק ולהתחבר מחדש.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-settings-delete-password",
+   "reason": "צריך חשבון של מייל וסיסמה. אחוותא ואורי מחוברים דרך Google, ומסלול ה־Google כבר נבדק.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-settings-delete-success",
+   "reason": "צריך לרשום חשבון חדש, למחוק אותו ולהתחבר מחדש.",
+   "needs": "login"
+  },
+  {
+   "taskId": "account-settings-delete-name-free",
+   "reason": "צריך הרשמה אחרי מחיקת חשבון.",
+   "needs": "login"
+  },
+  {
+   "taskId": "pregame-search-alone",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני ההודעה 'כרגע אין שחקנים אחרים…' ולפני מסך הדקה. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-search-bot-from-notice",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני ההודעה 'כרגע אין שחקנים אחרים…'. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-search-other-type",
+   "reason": "הבוט הסמוי מושיב בוט מול כל אחד מהטלפונים ומקלקל את הבדיקה (אסור שיופיע 'נמצא יריב!'). צריך שהבוט יהיה כבוי.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-timeout-alone",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני מסך הדקה. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-timeout-keep-alone",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני מסך הדקה. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-timeout-bot",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני מסך הדקה. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-timeout-home",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני מסך הדקה. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "pregame-timeout-range",
+   "reason": "צריך שני חשבונות שההפרש ביניהם בדירוג 'מהיר' הוא 250–300, וגם שהבוט הסמוי יהיה כבוי. אורי ואחוותא קרובים בדירוג.",
+   "needs": "stealth off + login (other accounts)"
+  },
+  {
+   "taskId": "pregame-timeout-keep-nocap",
+   "reason": "צריך שני חשבונות שההפרש ביניהם בדירוג 'מהיר' הוא 250–300, וגם שהבוט הסמוי יהיה כבוי.",
+   "needs": "stealth off + login (other accounts)"
+  },
+  {
+   "taskId": "game-online-3p-cards",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-3p-pips",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-3p-small",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-3p-soft",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-3p-grace",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-3p-last-player",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-exit-order",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-4p-cards",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-4p-pips",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-4p-overflow",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-online-4p-small",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-dialog",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-no-loss",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-out",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-others",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-home",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-results",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "game-surrender-3p-requeue",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-entry-unverified-email",
+   "reason": "צריך חשבון שהמייל שלו לא אומת. שני הטלפונים מחוברים לחשבונות מאומתים.",
+   "needs": "login"
+  },
+  {
+   "taskId": "ranked-entry-already-queued",
+   "reason": "צריך את אותו חשבון בשני מכשירים. אסור להחליף חשבון, ואין ID token של אורי ל־fake-client.",
+   "needs": "login"
+  },
+  {
+   "taskId": "ranked-search-no-show",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-found",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-three-recent-pair",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-recent-pair",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-cards",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-interfere-target",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-surrender",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-surrender-no-loss-dialog",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-results",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-leavers-order",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-elo-new",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-fake-client-summary",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-home-rating",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "ranked-four-surrender-no-new-search",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-picker-no-points",
+   "reason": "השורות על המסך כבר עברו. נשאר רק הרטט הקל, ואותו אפשר לבדוק רק ביד.",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "interference-hit-fireworks-look",
+   "reason": "הזמנים והכיסוי כבר נבדקו. נשאר רק לשפוט את המראה ('נראה טוב'), וזה של משה.",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "interference-hit-cats-look",
+   "reason": "הזמנים והכיסוי כבר נבדקו. נשאר רק לשפוט את המראה והתנועה ('נראה טוב, בלי קפיצות').",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "interference-target-buttons",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-english",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-header",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-highlight",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-others-inert",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-switch",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-hit-only",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-3p",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-third-player",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-target-leaves",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-where-bot-from-search",
+   "reason": "הבוט הסמוי דלוק ב־staging ומצטרף אחרי כ־10 שניות, לפני ההודעה עם 'שחק מול בוט בינתיים'. רק משה יכול לכבות אותו באתר הניהול.",
+   "needs": "stealth off"
+  },
+  {
+   "taskId": "interference-where-legacy-room",
+   "reason": "צריך fake-client --legacy-app בחדר פרטי מול שרת מקומי, עם Development Build.",
+   "needs": "old app + other: Development Build"
+  },
+  {
+   "taskId": "interference-where-legacy-ranked",
+   "reason": "צריך fake-client --legacy-app בתור המדורג, ול־staging אין ID token.",
+   "needs": "old app + 3rd-4th player tokens"
+  },
+  {
+   "taskId": "interference-where-staging-new-new",
+   "reason": "✓1 כבר עבר. ✓2 צריך חשבון ברמה 1–3 (שיש לו סוגים נעולים), ושני החשבונות ברמה 7 ומעלה.",
+   "needs": "login (fresh low-level account)"
+  },
+  {
+   "taskId": "postgame-results-place-4p",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "postgame-results-pairs-4p",
+   "reason": "צריך 4 שחקנים אמיתיים. בקטלוג v6 המשימה גם הועברה למשה.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "postgame-results-leaver-4p",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "postgame-leaderboard-no-rating",
+   "reason": "לשני החשבונות יש שורה בלשונית 'קשה', ולכן צריך חשבון חדש בלי דירוג. הכפתור 'שחק' כבר נבדק.",
+   "needs": "login"
+  },
+  {
+   "taskId": "levels-app-closed-not-counted",
+   "reason": "החלק שבטלפון כבר עבר. נשאר לבדוק באתר הניהול (דף 'שלבים'), ולשם צריך כניסת מנהל.",
+   "needs": "admin cookie"
+  },
+  {
+   "taskId": "levels-talkback-map",
+   "reason": "התוויות כבר נבדקו ב־uiautomator. נשאר להאזין להקראה בפועל ב־TalkBack.",
+   "needs": "Moshe by hand (TalkBack)"
+  },
+  {
+   "taskId": "levels-sync-restore",
+   "reason": "צריך להתחבר לאותו חשבון בטלפון אחר, או להסיר ולהתקין מחדש.",
+   "needs": "login"
+  },
+  {
+   "taskId": "levels-sync-merge",
+   "reason": "צריך שני טלפונים מחוברים לאותו חשבון.",
+   "needs": "login"
+  },
+  {
+   "taskId": "levels-xp-no-double",
+   "reason": "צריך שני טלפונים מחוברים לאותו חשבון. החישוב בשרת כבר נבדק בטלפון 1.",
+   "needs": "login"
+  },
+  {
+   "taskId": "friends-room-server-restart",
+   "reason": "צריך deploy או הפעלה מחדש של השרת באמצע הבדיקה, ורק משה מאשר את זה.",
+   "needs": "other: server deploy (Moshe)"
+  },
+  {
+   "taskId": "friends-link-signed-out",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת. החלק בלי התנתקות כבר עבר.",
+   "needs": "login"
+  },
+  {
+   "taskId": "friends-link-sign-up",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "friends-link-sign-up-resume",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "friends-link-unverified-email",
+   "reason": "צריך להתנתק, להתחבר או להירשם. אסור בריצה הזאת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "friends-game-start-without",
+   "reason": "צריך 3 שחקנים בחדר (fake-client Fake3), ואין tokens. עם 2 טלפונים בלבד אי אפשר.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-game-start-without-closed",
+   "reason": "צריך 3 שחקנים בחדר (fake-client), ואין tokens. עם 2 טלפונים בלבד אי אפשר.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-game-join-started",
+   "reason": "צריך 3 שחקנים בחדר (fake-client), ואין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-game-four-seats",
+   "reason": "צריך 4 שחקנים בחדר, ואין tokens ל־fake-client.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-game-room-full",
+   "reason": "צריך 4 שחקנים בחדר ועוד אחד, ואין tokens ל־fake-client.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-game-four-play",
+   "reason": "צריך 4 שחקנים בחדר, ואין tokens ל־fake-client.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "friends-error-other-device",
+   "reason": "צריך את אותו חשבון בשני מכשירים. אסור להחליף חשבון, ואין ID token של אורי ל־fake-client.",
+   "needs": "login"
+  },
+  {
+   "taskId": "states-empty-leaderboard-table",
+   "reason": "יש שחקנים בכל לשוניות הטבלה, ואין בורר של מספר שחקנים, ולכן אי אפשר להגיע לטבלה ריקה.",
+   "needs": "other: empty leaderboard data on server"
+  },
+  {
+   "taskId": "states-empty-friends",
+   "reason": "צריך חשבון חדש שעוד לא שיחק מדורג.",
+   "needs": "login"
+  },
+  {
+   "taskId": "states-account-verify-resend",
+   "reason": "צריך חשבון מייל שעוד לא אומת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "states-account-verify-not-yet",
+   "reason": "צריך חשבון מייל שעוד לא אומת.",
+   "needs": "login"
+  },
+  {
+   "taskId": "states-match-already-queued",
+   "reason": "צריך את אותו חשבון בשני מכשירים. אסור להחליף חשבון, ואין ID token של אורי ל־fake-client.",
+   "needs": "login"
+  },
+  {
+   "taskId": "avatars-motion-dev-local",
+   "reason": "צריך Development Build (המסך מאחורי __DEV__). בטלפונים מותקן APK 15 של staging.",
+   "needs": "other: Development Build"
+  },
+  {
+   "taskId": "avatars-idle-register-card",
+   "reason": "ההרשמה זמינה רק אחרי התנתקות. בקטלוג v6 המשימה הועברה למשה, והרשת בעריכת פרופיל כבר נבדקה.",
+   "needs": "login"
+  },
+  {
+   "taskId": "avatars-look-cell-distinct",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "avatars-look-small-details",
+   "reason": "צריך Development Build (המסך מאחורי __DEV__). בטלפונים מותקן APK 15 של staging.",
+   "needs": "other: Development Build"
+  },
+  {
+   "taskId": "avatars-perf-android-4p",
+   "reason": "צריך 3–4 שחקנים. יש רק 2 טלפונים, הבוט הסמוי ממלא רק 2 שחקנים, ול־fake-client אין tokens.",
+   "needs": "3rd-4th player tokens"
+  },
+  {
+   "taskId": "avatars-perf-dev-grid",
+   "reason": "צריך Development Build ואת ה־Perf Monitor של Expo.",
+   "needs": "other: Development Build"
+  },
+  {
+   "taskId": "avatars-pirates-register",
+   "reason": "ההרשמה זמינה רק אחרי התנתקות. הבוחר בעריכת פרופיל כבר נבדק.",
+   "needs": "login"
+  },
+  {
+   "taskId": "avatars-pirates-old-app",
+   "reason": "אין טלפון עם גרסה ישנה, והורדת גרסה מוחקת את הנתונים.",
+   "needs": "old app"
+  },
+  {
+   "taskId": "avatars-pirates-api-catalog",
+   "reason": "צריך Firebase ID token של חשבון הבדיקה Gil.",
+   "needs": "other: Firebase ID token"
+  },
+  {
+   "taskId": "stealth-search-high-rating",
+   "reason": "צריך חשבון שהדירוג שלו ב'מהיר' מעל 1500. לאורי יש 1293, ואחוותא עוד בדירוג זמני.",
+   "needs": "login (other account)"
+  },
+  {
+   "taskId": "general-motion-levels",
+   "reason": "בקטלוג v6 המשימה הועברה למשה ('למה רק משה': 3 כוכבים ב־L001 תוך 5 שניות, ועין). המפה, הצומת הנעול והספירה כבר עברו.",
+   "needs": "Moshe by hand"
+  },
+  {
+   "taskId": "general-motion-update-migrates",
+   "reason": "צריך טלפון עם גרסה מלפני 31.10 ואחר כך עדכון. בקטלוג v6 המשימה הועברה למשה.",
+   "needs": "old app"
+  },
+  {
+   "taskId": "general-display-design-system",
+   "reason": "צריך Development Build (המסך מאחורי __DEV__). בטלפונים מותקן APK 15 של staging.",
+   "needs": "other: Development Build"
+  },
+  {
+   "taskId": "general-ambient-login",
+   "reason": "צריך להתנתק ולהתחבר עם סיסמה של חשבון בדיקה.",
+   "needs": "login"
+  }
+ ],
+ "planNotes": "סדר וזמנים: קודם BOTH (both-friends-room, כ־35 דקות, צריך את שני הטלפונים). אחר כך P1 ו־P3 במקביל: P1 הוא p1-recorded-anims (30) ואחריו p1-ranked-stealth (12). P3 הוא p3-levels-fresh (25) ואחריו p3-levels-gate (35), ברצף ובאותו מצב. סך הכל בערך 95 דקות. מדורג יש רק ב־p1-ranked-stealth, ובזמן הזה טלפון 3 לא מחפש מדורג.\n\nכלי פריימים: אפשר לראות עכשיו אנימציות קצרות מ־0.3 שנייה, והרבה הערות קודמות ('אין לי כלי לפרק וידאו') כבר לא נכונות. מקליטים: adb -s <serial> shell screenrecord --time-limit N /sdcard/x.mp4, ואז adb pull. מוציאים פריימים: powershell -File C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/frames.ps1 -Video <mp4> -OutDir <dir> -FromMs a -ToMs b -StepMs 20 -W 540 -H 1170. הכלי עובד דרך WinRT, בלי ffmpeg. יש גם frames.py, דרך playwright ו־Chrome. בגלל הכלי הזה הוחזרו לעבודה המשימות שנשארו 'למשה' רק בגלל מהירות הצילום: keypad-shuffle (על הסרטון הקיים), a11y-rm-keypad (הדעיכה), general-motion-friends (רגע 'הקוד הועתק'), friends-code-type-join (הספינר), avatars-react-emoji (סוג התנועה), postgame-replay-explain-wrong (ההבהוב האדום) ו־levels-boss-win (הכתר הקופץ). בכל המשימות האלה בודקים רק את השורה שנשארה. מה שכבר עבר כתוב בהערה, ולא בודקים אותו שוב. אם ההקלטה לא מכריעה, מסמנים partial עם תיאור מדויק של מה שנראה בפריימים.\n\nטלפון 3 ושלבים: לפי ההערות, השלבים שוחקו ו'איך משחקים' הוצג רק בטלפון 1 ובטלפון 2 הישן. לכן טלפון 3 (אחוותא) הוא כנראה מכשיר 'נקי' בשבילם. בצעדים 1 ו־3 של p3-levels-fresh בודקים את זה קודם. אם הוא לא נקי, מסמנים untested עם הראיה, ולא מנסים לנקות נתונים (צעד הרסני). levels-boss-howto מסומן בקטלוג v6 כמשימה של משה, אבל ההסבר יופיע ממילא כשפותחים את L010 בטלפון נקי, אז הוא נכלל ב־p3-levels-gate בלי עלות נוספת. תקציב הכוכבים: אחרי L010 לכל היותר 19 בפרק 1, ושלב קל אחד נשאר עם כוכב אחד, כדי שאפשר יהיה לעבור את 20 ולראות '+50 XP'.\n\nהבוט הסמוי דלוק, ולכן לעולם לא יופיעו 'כרגע אין שחקנים אחרים…', מסך הדקה או 'שחק מול בוט בינתיים'. pregame-search-english מסומן partial, ונשאר בו ✓2. ב־pregame-found-rematch בודקים את ✓1 מול פרסונה של הבוט הסמוי. נכנעים רק אחרי GO ולפני כל מהלך, ורושמים את הדירוג לפני ואחרי.\n\n5 משימות שבקלט מסומנות [claude]/[both] הועברו בקטלוג v6 למשה: postgame-results-pairs-4p, levels-boss-howto, avatars-idle-register-card, general-motion-levels ו־general-motion-update-migrates. כולן ב־blocked, חוץ מ־levels-boss-howto (ראו למעלה). חשבון: 175 משימות של [claude]/[both]. 18 בסשנים ו־157 ב־blocked. אין כפילויות.\n\nשחזור בסוף: הפחתת התנועה בטלפון 3 כבויה. השפה בטלפון 1 עברית. 'פתח את כל השלבים' בטלפון 3 חוזר למצב שהיה לפני, ואזור הבדיקה מוסתר אם היה מוסתר. אין חדרים פתוחים. כל הקלטה נשמרת ב־qa-shots, בשם <serial>-<taskId>.mp4."
+}

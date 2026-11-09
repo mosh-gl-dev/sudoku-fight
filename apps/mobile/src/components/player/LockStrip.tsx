@@ -13,9 +13,10 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { color, radius, size, text, tokens } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { Icon } from '../Icon';
-import { Text } from '../ui/Text';
+import { FONT_SCALE_CAPS, Text } from '../ui/Text';
 import { useBlink, useShake } from './anim';
 import { type LockStripModel, sameCountdown } from './cardModel';
+import { labelSecondsLeft } from './format';
 import { metrics, paletteAt } from './metrics';
 import { sameData, sameProps, sameStyle } from './sameProps';
 import { useDrain } from './TimerRing';
@@ -59,7 +60,10 @@ export const LockStrip = memo(function LockStrip({ model, nudgeKey, style, testI
   const progress = useDrain(locked?.remainingMs ?? 0, locked?.totalMs ?? 0, locked?.expiresAt ?? null);
   const fill = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.get() }] }));
 
-  const label = lockStripLabel(model, t);
+  // The strip's label and the bar's value say the seconds in steps, exact in the last 5 (Q1): a label that changes
+  // every second sends a change event every second. The announcements stay exact (useAnnouncements).
+  const shownLeft = locked ? labelSecondsLeft(locked.secondsLeft) : 0;
+  const label = lockStripLabel(locked ? { ...locked, secondsLeft: shownLeft } : model, t);
 
   if (!locked) {
     const pickColor = nudge.flash ? color.text : color.textMuted;
@@ -73,7 +77,14 @@ export const LockStrip = memo(function LockStrip({ model, nudgeKey, style, testI
       >
         <Animated.View style={[styles.group, styles.pick, nudge.style]}>
           <Icon name="target" size={metrics.lockStrip.pickIcon} color={pickColor} />
-          <Text style={[text('status'), { color: pickColor }]}>{t('lock.pick')}</Text>
+          <Text
+            scale="hud"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={[text('status'), styles.shrink, { color: pickColor }]}
+          >
+            {t('lock.pick')}
+          </Text>
         </Animated.View>
       </View>
     );
@@ -86,16 +97,25 @@ export const LockStrip = memo(function LockStrip({ model, nudgeKey, style, testI
     <View style={[styles.strip, style]} testID={testID}>
       <View style={styles.group} accessible accessibilityRole="text" accessibilityLabel={label}>
         {paused ? <PauseGlyph /> : null}
-        <Text style={[text('status'), styles.muted]} {...hidden}>
+        {/* BRD-3: a 24 dp row. Up to ×1.35 of the system text, on one line; the words give way first. */}
+        <Text
+          scale="hud"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={[text('status'), styles.muted, styles.shrink]}
+          {...hidden}
+        >
           {t('lock.yourCell')}
         </Text>
-        <Text style={[text('cellRef'), { color: ME.ring }]} {...hidden}>
+        <Text scale="hud" numberOfLines={1} style={[text('cellRef'), { color: ME.ring }]} {...hidden}>
           {locked.cell}
         </Text>
-        <Text style={[text('status'), styles.dot]} {...hidden}>
+        <Text scale="hud" numberOfLines={1} style={[text('status'), styles.dot]} {...hidden}>
           {t('dot')}
         </Text>
         <Animated.Text
+          maxFontSizeMultiplier={FONT_SCALE_CAPS.hud}
+          numberOfLines={1}
           style={[
             text('status'),
             { color: paused ? color.textMuted : urgent ? color.accent : color.text },
@@ -112,7 +132,7 @@ export const LockStrip = memo(function LockStrip({ model, nudgeKey, style, testI
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={t('lock.progress', { cell: locked.cell })}
-        accessibilityValue={{ min: 0, max: Math.round(locked.totalMs / 1000), now: locked.secondsLeft }}
+        accessibilityValue={{ min: 0, max: Math.round(locked.totalMs / 1000), now: shownLeft }}
       >
         <Animated.View
           style={[styles.fill, { backgroundColor: fillColor }, fill, urgent ? blink : null]}
@@ -177,6 +197,8 @@ const styles = StyleSheet.create({
   // "בחר משבצת" with its target icon: an icon has no baseline, so this row centres.
   pick: { alignItems: 'center' },
   muted: { color: color.textMuted },
+  // The words of the row shrink (adjustsFontSizeToFit) before the cell, the seconds or the bar move.
+  shrink: { flexShrink: 1 },
   dot: { color: color.iconFaint },
   track: {
     width: size.lockTimerBar.width,

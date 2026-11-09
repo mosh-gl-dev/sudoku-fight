@@ -68,7 +68,8 @@
       "timeout": "伺服器沒有及時回應。請再試一次。",
       "signedOut": "你尚未登入。請重新登入。",
       "unexpected": "伺服器傳回了非預期的回應。請再試一次，或更新應用程式。"
-    }
+    },
+    "avatarUnavailable": "伺服器暫時還不支援這個頭像。請選擇其他頭像。"
   },
   "splash": {
     "tagline": "一個盤面。人人解題。勝者唯一。",
@@ -249,6 +250,9 @@
     "deleteGoogleBody": "要刪除帳號，請再次選擇 Google 帳號{{email}}。",
     "deleteGoogleSubmit": "用 Google 確認並刪除",
     "deleteGoogleAgain": "刪除帳號需要重新確認。請再試一次並選擇你的 Google 帳號。",
-    "deleteWithPassword": "改用密碼確認"
+    "deleteWithPassword": "改用密碼確認",
+    "deleteGoogleOffTitle": "需要使用 Google 登入",
+    "deleteGoogleOffBody": "此帳號使用 Google 登入，因此刪除時需要透過 Google 確認。此版本的應用程式沒有 Google 登入，所以無法在這裡刪除帳號。你可以在商店（Google Play）版本的應用程式中刪除。",
+    "deleteGoogleOffOk": "知道了"
   }
 }

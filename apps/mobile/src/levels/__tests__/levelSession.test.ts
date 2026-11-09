@@ -10,8 +10,11 @@ import {
   ManualClock,
   ManualScheduler,
 } from '@sudoku-fight/engine';
+import { renderHook } from '@testing-library/react-native';
+import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '../../auth/authStore';
+import { useModalWindow } from '../../components/ui/modalWindows';
 import { LEVEL_UI } from '../../config/levels';
 import { activeSwitches, levelRulesNow } from '../../config/testing';
 import { openPracticeStorage } from '../../game/storage';
@@ -23,6 +26,7 @@ import {
   type LevelSession,
   type LevelSessionDeps,
   startLevel,
+  type WindowFocusSource,
 } from '../levelSession';
 import { allLevels } from '../levelsData';
 import { firstBossOf, firstLevelOf, levelsOf } from './helpers/levelsOf';
@@ -70,16 +74,24 @@ const DUEL = firstLevelOf('duel'); // the first duel: against Pip
 const PIP_DUEL = levelsOf('duel').filter((l) => l.bot?.level === 1)[1]!;
 const DUEL_BOSS = firstBossOf('duel'); // the first duel boss (chapter 3): its bot at ×0.9
 
-/** A fake AppState: the test says when the app goes and comes back. */
-function fakeAppState() {
+/** A fake AppState: the test says when the app goes and comes back (and where it is as the stage starts). */
+function fakeAppState(initial = 'active') {
   let listener: ((state: string) => void) | null = null;
+  let now = initial;
   const source: AppStateSource = {
+    get currentState() {
+      return now;
+    },
     addEventListener: (_type, l) => {
       listener = l;
       return { remove: () => (listener = null) };
     },
   };
-  return { source, set: (state: string) => listener?.(state), listening: () => listener !== null };
+  const set = (state: string) => {
+    now = state;
+    listener?.(state);
+  };
+  return { source, set, listening: () => listener !== null };
 }
 
 interface Harness {
@@ -410,6 +422,37 @@ describe('[D65] the background freeze', () => {
     expect(s.pause).toEqual({ kind: 'countdown', count: 3 });
   });
 
+  it.each([
+    ['a tap stage', FIND],
+    ['a digit stage', BOX],
+  ])(
+    '%s that starts with the app already away (it left after "מוכן?") starts frozen; the return counts down (B28)',
+    async (_name, level) => {
+      const h = harness();
+      h.app.set('background');
+      const s = await start(level, h);
+      expect(s.pause).toEqual({ kind: 'paused' });
+      expect(s.getView().status).toBe('paused');
+      const left = s.levelView()!.remainingMs;
+      // A minute and a half away: none of the stage's time goes.
+      h.scheduler.advance(90_000);
+      expect(s.levelView()!.remainingMs).toBe(left);
+      h.app.set('active');
+      expect(s.pause).toEqual({ kind: 'countdown', count: 3 });
+      h.scheduler.advance(LEVEL_UI.resumeCountdownMs);
+      expect(s.getView().status).toBe('running');
+      expect(s.levelView()!.remainingMs).toBe(left);
+    },
+  );
+
+  it('LEVEL_UI.backgroundPause off: a stage that starts away is not frozen either', async () => {
+    const h = harness({ settings: { ...LEVEL_UI, backgroundPause: false } });
+    h.app.set('background');
+    const s = await start(FIND, h);
+    expect(s.getView().status).toBe('running');
+    expect(s.pause).toEqual({ kind: 'none' });
+  });
+
   it('LEVEL_UI.backgroundPause off: no freeze', async () => {
     const h = harness({ settings: { ...LEVEL_UI, backgroundPause: false } });
     const s = await start(FIND, h);
@@ -507,5 +550,213 @@ describe('[D64] the chain under the staging switch (Moshe tries both first, 2026
     expect(activeSwitches(on, production)).toEqual({ chainPenalty: false, unlockAllLevels: false });
     expect(levelRulesNow(activeSwitches(on, production)).chainNotYet).toBe('accept');
     expect(levelRulesNow(activeSwitches(on, { server: 'staging', dev: false })).chainNotYet).toBe('penalty');
+  });
+});
+
+describe('[D65] Android: the freeze comes with the window’s blur (QA levels-freeze-background)', () => {
+  /** A fake window focus: the test says when the window loses and gets back the focus. */
+  function fakeFocus(app: ReturnType<typeof fakeAppState>) {
+    const listeners: Partial<Record<'blur' | 'focus', () => void>> = {};
+    const source: WindowFocusSource = {
+      get currentState() {
+        return app.source.currentState;
+      },
+      addEventListener: (type, l) => {
+        listeners[type] = l;
+        return { remove: () => delete listeners[type] };
+      },
+    };
+    return {
+      source,
+      blur: () => listeners.blur?.(),
+      focus: () => listeners.focus?.(),
+      listening: () => Object.keys(listeners).length > 0,
+    };
+  }
+
+  function focusHarness() {
+    const h = harness();
+    const win = fakeFocus(h.app);
+    h.deps.windowFocus = win.source;
+    return { h, win };
+  }
+
+  it("Recents: the cover is up at the blur, before 'background' (Android’s Recents picture comes between)", async () => {
+    const { h, win } = focusHarness();
+    const s = await start(FIND, h);
+    h.scheduler.advance(3000);
+    const left = s.levelView()!.remainingMs;
+    win.blur();
+    expect(s.pause).toEqual({ kind: 'paused' });
+    expect(s.getView().status).toBe('paused');
+    h.app.set('background');
+    h.scheduler.advance(30_000);
+    // Back: 'focus' may come before 'active'; the 3, 2, 1 starts with 'active', once.
+    win.focus();
+    expect(s.pause).toEqual({ kind: 'paused' });
+    h.app.set('active');
+    win.focus();
+    expect(s.pause).toEqual({ kind: 'countdown', count: 3 });
+    h.scheduler.advance(LEVEL_UI.resumeCountdownMs);
+    expect(s.getView().status).toBe('running');
+    expect(s.levelView()!.remainingMs).toBe(left);
+  });
+
+  it('a blur with no going away (the notification shade): frozen, then 3, 2, 1 at the focus', async () => {
+    const { h, win } = focusHarness();
+    const s = await start(FIND, h);
+    win.blur();
+    expect(s.pause).toEqual({ kind: 'paused' });
+    h.scheduler.advance(10_000);
+    win.focus();
+    expect(s.pause).toEqual({ kind: 'countdown', count: 3 });
+    h.scheduler.advance(LEVEL_UI.resumeCountdownMs);
+    expect(s.pause).toEqual({ kind: 'none' });
+    expect(s.getView().status).toBe('running');
+  });
+
+  it('the app’s own window ("לצאת מהשלב?") takes the focus: the stage runs on under it', async () => {
+    const { h, win } = focusHarness();
+    const s = await start(FIND, h);
+    const dialog = await renderHook(({ up }: { up: boolean }) => useModalWindow(up), {
+      initialProps: { up: true },
+    });
+    try {
+      win.blur();
+      expect(s.pause).toEqual({ kind: 'none' });
+      expect(s.getView().status).toBe('running');
+      win.focus();
+      expect(s.pause).toEqual({ kind: 'none' });
+      // The dialog gone, a blur is the app's again.
+      await dialog.rerender({ up: false });
+      win.blur();
+      expect(s.pause).toEqual({ kind: 'paused' });
+    } finally {
+      await dialog.unmount();
+    }
+  });
+
+  it('not with LEVEL_UI.backgroundPause off; and a closed stage stops listening', async () => {
+    const off = focusHarness();
+    off.h.deps.settings = { ...LEVEL_UI, backgroundPause: false };
+    const s = await start(FIND, off.h);
+    off.win.blur();
+    expect(s.pause).toEqual({ kind: 'none' });
+    expect(off.win.listening()).toBe(false);
+    const on = focusHarness();
+    const t = await start(FIND, on.h);
+    expect(on.win.listening()).toBe(true);
+    t.close();
+    expect(on.win.listening()).toBe(false);
+  });
+
+  it("by default: React Native’s AppState on Android, none on iOS (its 'inactive' comes in time)", async () => {
+    const listen = jest.spyOn(AppState, 'addEventListener');
+    let os: jest.ReplaceProperty<typeof Platform.OS> | null = null;
+    try {
+      const focusTypes = () =>
+        listen.mock.calls.map(([type]) => type).filter((type) => type === 'blur' || type === 'focus');
+      await start(FIND, harness());
+      expect(focusTypes()).toEqual([]);
+      os = jest.replaceProperty(Platform, 'OS', 'android');
+      await start(FIND, harness());
+      expect(focusTypes()).toEqual(['blur', 'focus']);
+    } finally {
+      os?.restore();
+      listen.mockRestore();
+    }
+  });
+});
+
+describe('[D65] Android 13+: no Recents picture while a stage runs (QA levels-freeze-background)', () => {
+  /** A fake services/recentsPicture: counts the holds; `hidden` says whether this Android has the switch. */
+  function fakeRecents(hidden: boolean) {
+    let held = 0;
+    const hide = jest.fn(() => {
+      held += 1;
+      let released = false;
+      return {
+        hidden,
+        release: () => {
+          if (released) return;
+          released = true;
+          held -= 1;
+        },
+      };
+    });
+    return { hide, held: () => held };
+  }
+
+  /** A window focus that only says whether anyone listens. */
+  function listenedFocus() {
+    let listeners = 0;
+    const source: WindowFocusSource = {
+      currentState: 'active',
+      addEventListener: () => {
+        listeners += 1;
+        return { remove: () => void (listeners -= 1) };
+      },
+    };
+    return { source, listening: () => listeners > 0 };
+  }
+
+  it('held from the start to the close, whatever is on top ("לצאת מהשלב?" too); no freeze at the blur then', async () => {
+    const recents = fakeRecents(true);
+    const win = listenedFocus();
+    const h = harness({ hideRecentsPicture: recents.hide, windowFocus: win.source });
+    const s = await start(FIND, h);
+    expect(recents.held()).toBe(1);
+    // The picture is out of Recents already: the window's blur (the shade, a screenshot bar) freezes nothing.
+    expect(win.listening()).toBe(false);
+    // 'background' still freezes, as D65 says.
+    h.app.set('background');
+    expect(s.pause).toEqual({ kind: 'paused' });
+    s.close();
+    expect(recents.held()).toBe(0);
+    s.close();
+    expect(recents.held()).toBe(0);
+  });
+
+  it('the stage ending by itself lets the picture go at the close too', async () => {
+    const recents = fakeRecents(true);
+    const h = harness({ hideRecentsPicture: recents.hide, windowFocus: null });
+    const s = await start(FIND, h);
+    s.tap(answerOf(s));
+    expect(s.over).not.toBeNull();
+    s.close();
+    expect(recents.held()).toBe(0);
+  });
+
+  it('where there is no switch (below Android 13, an older binary): the freeze at the blur instead', async () => {
+    const recents = fakeRecents(false);
+    const win = listenedFocus();
+    const s = await start(FIND, harness({ hideRecentsPicture: recents.hide, windowFocus: win.source }));
+    expect(recents.hide).toHaveBeenCalledTimes(1);
+    expect(win.listening()).toBe(true);
+    s.close();
+    expect(win.listening()).toBe(false);
+    expect(recents.held()).toBe(0);
+  });
+
+  it('not with LEVEL_UI.backgroundPause off; a hide that throws is reported, and the blur freeze stands', async () => {
+    const recents = fakeRecents(true);
+    const off = harness({ hideRecentsPicture: recents.hide, windowFocus: null });
+    off.deps.settings = { ...LEVEL_UI, backgroundPause: false };
+    await start(FIND, off);
+    expect(recents.hide).not.toHaveBeenCalled();
+    const win = listenedFocus();
+    const onError = jest.fn();
+    await start(
+      FIND,
+      harness({
+        hideRecentsPicture: () => {
+          throw new Error('no activity');
+        },
+        windowFocus: win.source,
+        onError,
+      }),
+    );
+    expect(onError).toHaveBeenCalledWith('could not hide the Recents picture', expect.any(Error));
+    expect(win.listening()).toBe(true);
   });
 });

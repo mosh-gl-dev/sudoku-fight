@@ -1,12 +1,23 @@
 import type { LeaderboardEntry } from '@sudoku-fight/protocol';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Avatar, Flag, LeagueBadge, paletteAt, Rating, SeatGlyph } from '../../components/player';
+import {
+  Avatar,
+  Flag,
+  LeagueBadge,
+  paletteAt,
+  ProvisionalChip,
+  Rating,
+  SeatGlyph,
+} from '../../components/player';
 import { shownName } from '../../components/player/temporaryName';
+import { Button } from '../../components/ui/Button';
+import { PressableCard } from '../../components/ui/tactile';
 import { Text } from '../../components/ui/Text';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { entryLabel, rankText, type ProgressT } from './leaderboardModel';
+import { useTightRows } from './rowFit';
 
 /**
  * The leaderboard's rows (spec §14.2; Leaderboard.dc.html in direction C): the podium of the first three, a
@@ -47,14 +58,16 @@ export function Podium({
         if (!entry) return <View key={i} style={styles.podiumColumn} />;
         const mine = entry.id === myId;
         const medal = MEDAL[i]!;
+        // The one card press (D125), on a column with no surface of its own: its step is the raised part.
         return (
-          <Pressable
+          <PressableCard
             key={entry.id}
+            variant="bare"
             accessibilityRole="button"
             accessibilityLabel={entryLabel(entry, t as ProgressT, i18n.language, mine)}
             accessibilityHint={t('leaderboard.openHint')}
             onPress={() => onOpen(entry)}
-            style={({ pressed }) => [styles.podiumColumn, pressed && styles.pressed]}
+            style={styles.podiumColumn}
             testID={`leaderboard-podium-${entry.rank}-${entry.id}`}
           >
             <Avatar
@@ -73,11 +86,20 @@ export function Podium({
               </Text>
               <Flag country={entry.country} size="compact" decorative />
             </View>
-            <Rating value={entry.rating} size="list" provisional={entry.provisional} decorative />
+            {/* The chip goes under the number when both don't fit the column (QA loop 9: off the screen's edge). */}
+            <Rating
+              value={entry.rating}
+              size="list"
+              provisional={entry.provisional}
+              decorative
+              wrap
+              style={styles.podiumRating}
+              testID={`leaderboard-podium-${entry.rank}-rating`}
+            />
             <View style={[styles.step, { height: STEP[i], borderTopColor: medal }]}>
               <Text style={[text('scoreCompact'), { color: medal }]}>{entry.rank}</Text>
             </View>
-          </Pressable>
+          </PressableCard>
         );
       })}
     </View>
@@ -98,24 +120,44 @@ export function LeaderboardRow({
   entry,
   mine,
   onOpen,
+  compact = false,
   testID,
 }: {
   entry: LeaderboardEntry;
   mine: boolean;
   onOpen: (entry: LeaderboardEntry) => void;
+  /**
+   * My pinned row, beside "שחק" (spec §14.2: "#214 · MosheG · 1287"): the rank only as wide as it is, and no flag,
+   * so the name keeps its room on a narrow phone (Moshe's phone, 1.11.2026: "אורי" came out as "…"). B23: the
+   * provisional chip goes under the rating, which leaves the line under the name its room ("בדירוג זמני · ר…" was
+   * cut on the A16), and that line may take a second line before an ellipsis.
+   */
+  compact?: boolean;
   testID?: string;
 }) {
   const { t, i18n } = useTranslation('progress');
+  // Narrow or large text (rowFit.ts): the chip joins the line under the name, which wraps; the number stands alone.
+  const tight = useTightRows();
+  const chipUnderName = tight && entry.provisional;
+  // A tappable card (D125): the surface on its base, my row in P1's border, the one card press and its tick.
   return (
-    <Pressable
+    <PressableCard
       accessibilityRole="button"
       accessibilityLabel={entryLabel(entry, t as ProgressT, i18n.language, mine)}
       accessibilityHint={t('leaderboard.openHint')}
       onPress={() => onOpen(entry)}
-      style={({ pressed }) => [styles.row, mine && styles.rowMine, pressed && styles.pressed]}
+      tone={mine ? ME.ring : undefined}
+      style={styles.row}
       testID={testID ?? `leaderboard-row-${entry.id}`}
     >
-      <Text style={[text('label'), styles.rank, mine ? styles.me : styles.muted]} numberOfLines={1}>
+      <Text
+        style={[
+          text('label'),
+          compact ? styles.rankCompact : tight ? styles.rankTight : styles.rank,
+          mine ? styles.me : styles.muted,
+        ]}
+        numberOfLines={1}
+      >
         {rankText(entry.rank)}
       </Text>
       <Avatar
@@ -133,18 +175,31 @@ export function LeaderboardRow({
           >
             {shownName(entry.displayName, t)}
           </Text>
-          <Flag country={entry.country} size="compact" decorative />
+          {compact ? null : <Flag country={entry.country} size="compact" decorative />}
         </View>
-        {entry.league ? (
-          <LeagueBadge league={entry.league} level={entry.level} variant="icon" />
-        ) : (
-          <Text style={[text('micro'), styles.muted]} numberOfLines={1}>
-            {`${t('common.provisional')}${t('player:sep')}${t('common.level', { level: entry.level })}`}
-          </Text>
-        )}
+        {/* The line under the name wraps between its parts, never over the rating (QA loop 7: "LevelProvisional"). */}
+        <View style={styles.under} testID={`under-${testID ?? `leaderboard-row-${entry.id}`}`}>
+          {entry.league ? (
+            <LeagueBadge league={entry.league} level={entry.level} variant="icon" wrap />
+          ) : (
+            <Text
+              style={[text('micro'), styles.muted, styles.shrink]}
+              numberOfLines={compact || tight ? 2 : 1}
+            >
+              {`${t('common.provisional')}${t('player:sep')}${t('common.level', { level: entry.level })}`}
+            </Text>
+          )}
+          {chipUnderName ? <ProvisionalChip /> : null}
+        </View>
       </View>
-      <Rating value={entry.rating} size="list" provisional={entry.provisional} decorative />
-    </Pressable>
+      <Rating
+        value={entry.rating}
+        size="list"
+        provisional={entry.provisional && !chipUnderName}
+        stacked={compact}
+        decorative
+      />
+    </PressableCard>
   );
 }
 
@@ -163,22 +218,23 @@ export function PinnedMe({
   onPlay: () => void;
 }) {
   const { t } = useTranslation('progress');
+  // Narrow or large text (rowFit.ts): "שחק" goes under my row, which then has the width for my name and its line.
+  const tight = useTightRows();
+  // The app's own small primary (D125), not a gold pill of its own: 40 high, a 44 touch target.
   const play = (label: string) => (
-    <Pressable
-      accessibilityRole="button"
+    <Button
+      label={t('leaderboard.play')}
+      size="sm"
       accessibilityLabel={label}
       onPress={onPlay}
-      style={({ pressed }) => [styles.play, pressed && styles.pressed]}
       testID="leaderboard-play"
-    >
-      <Text style={[text('buttonSm'), styles.onAccent]}>{t('leaderboard.play')}</Text>
-    </Pressable>
+    />
   );
   if (me) {
     return (
-      <View style={[styles.pinned, styles.pinnedRow]} testID="leaderboard-me">
-        <View style={styles.grow}>
-          <LeaderboardRow entry={me} mine onOpen={onOpen} testID="leaderboard-me-row" />
+      <View style={[styles.pinned, tight ? styles.pinnedStack : styles.pinnedRow]} testID="leaderboard-me">
+        <View style={tight ? null : styles.grow}>
+          <LeaderboardRow entry={me} mine onOpen={onOpen} compact testID="leaderboard-me-row" />
         </View>
         {play(t('leaderboard.climbHint'))}
       </View>
@@ -204,6 +260,7 @@ const styles = StyleSheet.create({
   },
   podiumColumn: { flex: 1, minWidth: 0, alignItems: 'center', gap: space[3] },
   podiumName: { flexDirection: 'row', alignItems: 'center', gap: space[2], maxWidth: '100%' },
+  podiumRating: { maxWidth: '100%' },
   step: {
     alignSelf: 'stretch',
     alignItems: 'center',
@@ -228,37 +285,33 @@ const styles = StyleSheet.create({
     gap: space[5],
     minHeight: size.listRow,
     paddingHorizontal: space[5],
-    borderRadius: radius.lg,
-    backgroundColor: color.surface,
+    // The card surface (PressableCard, D125) gives the fill, the lit border, the radius and the base.
     borderWidth: tokens.border.hairline,
-    borderColor: color.surface,
   },
-  rowMine: { borderColor: ME.ring },
-  pressed: { opacity: 0.85 },
   rank: { width: RANK_WIDTH, textAlign: 'center' },
+  rankCompact: { minWidth: space[10], textAlign: 'center' },
+  // A larger number takes its width rather than an ellipsis ("#1234" at font 1.3).
+  rankTight: { minWidth: RANK_WIDTH, textAlign: 'center' },
   who: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: space[2] },
+  under: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: space[2],
+    maxWidth: '100%',
+  },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space[3], maxWidth: '100%' },
   shrink: { flexShrink: 1 },
   grow: { flex: 1 },
   pinned: {
     paddingHorizontal: tokens.layout.gutterGame,
     paddingVertical: space[4],
-    backgroundColor: color.bg,
     borderTopWidth: tokens.border.hairline,
     borderTopColor: color.border,
   },
   pinnedRow: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
+  pinnedStack: { gap: space[4] },
   pinnedEmpty: { minHeight: size.listRow },
-  play: {
-    minHeight: size.touch,
-    minWidth: size.touch,
-    paddingHorizontal: space[8],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.button,
-    backgroundColor: color.accent,
-  },
-  onAccent: { color: color.onAccent },
   strong: { color: color.text },
   muted: { color: color.textMuted },
   me: { color: ME.ring },

@@ -60,9 +60,15 @@ export const MODE_GROUPS: readonly ModeGroup[] = ['ranked', 'practice'];
  * row of two buttons, "צור חדר" | "הצטרף עם קוד", not options of its own (friends-room.md §2). Without it (the
  * buttons pinned under the list, D100, or FRIENDS_UI.modesGroup off) the list is the two groups, as in 1.0.3.
  */
-export type ModesSection = ModeGroup | 'friends';
+export type ModesSection = ModeGroup | 'friends' | 'needsConnection';
 
-export function modesSections(friendsGroup: boolean): readonly ModesSection[] {
+/**
+ * Offline (spec §16.1; MOT-3's device check, 30.10.2026: the whole top half of the screen was dimmed cards, and
+ * the practices were pushed under the fold): what can be played comes first, and what can't (the ranked tables
+ * and the friends room) is one compact line under it, `needsConnection`, in place of its dimmed cards.
+ */
+export function modesSections(friendsGroup: boolean, offline = false): readonly ModesSection[] {
+  if (offline) return ['practice', 'needsConnection'];
   return friendsGroup ? ['ranked', 'friends', 'practice'] : MODE_GROUPS;
 }
 

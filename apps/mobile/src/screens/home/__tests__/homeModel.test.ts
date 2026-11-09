@@ -15,6 +15,7 @@ import {
   rankedRatingIn,
   lastPlayOf,
   MODE_OPTIONS,
+  modesSections,
   percentOf,
   playedAtText,
   recentOutcome,
@@ -77,6 +78,18 @@ describe('the modes (spec §5.1)', () => {
     expect(rankedRatingIn(a, 'normal', 3)?.rating).toBe(1190);
     expect(rankedRatingIn(a, 'fast')).toBeNull();
     expect(rankedRatingIn(null, 'fast')).toBeNull();
+  });
+
+  it('the sections: ranked, then practice, with "עם חברים" between them when the friends sit in the list', () => {
+    expect(modesSections(false)).toEqual(['ranked', 'practice']);
+    expect(modesSections(true)).toEqual(['ranked', 'friends', 'practice']);
+    expect(modesSections(false, false)).toEqual(['ranked', 'practice']);
+  });
+
+  it('offline: the practices first, and what needs the connection folded into one line under them', () => {
+    // Device check of 30.10.2026: the dimmed ranked and friends cards took the whole top half of the screen.
+    expect(modesSections(false, true)).toEqual(['practice', 'needsConnection']);
+    expect(modesSections(true, true)).toEqual(['practice', 'needsConnection']);
   });
 });
 

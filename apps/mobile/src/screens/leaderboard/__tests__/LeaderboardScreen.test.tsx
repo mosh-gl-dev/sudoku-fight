@@ -4,8 +4,10 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 
 import type { ProgressApi } from '../../../api/progressApi';
 import { entry, type FakeBoards, fakeProgressApi, ranked } from '../../../api/testing/fakeProgress';
+import { avatarIdsIn } from '../../../avatars/testing/avatarTesting';
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
+import { rankText } from '../leaderboardModel';
 import { LeaderboardScreen, type LeaderboardScreenProps } from '../LeaderboardScreen';
 
 /**
@@ -20,9 +22,10 @@ jest.mock(
 );
 
 const hidden = { includeHiddenElements: true };
+// The answers, and the frames another tab waits for (LeaderboardScreen `show`; a frame is a timer under Jest).
 const settle = () =>
   act(async () => {
-    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
   });
 
 const ME = entry({ id: 'me', displayName: 'MosheG', rank: 214, rating: 1287, league: 'gold', level: 14 });
@@ -101,6 +104,53 @@ describe('LeaderboardScreen', () => {
     expect(screen.getByTestId('leaderboard-row-me')).toHaveProp(
       'accessibilityLabel',
       expect.stringContaining('MosheG (אתה)'),
+    );
+  });
+
+  it('my pinned row, beside "שחק", is compact: no flag, the rank as wide as it is (the name keeps its room)', async () => {
+    await show({ tabs: { general: [...ranked(4), { ...ME, rank: 5 }] }, me: { ...ME, rank: 5 } });
+    const pinned = screen.getByTestId('leaderboard-me-row');
+    const listed = screen.getByTestId('leaderboard-row-me');
+    expect(within(listed).getByTestId('flag-IL', hidden)).toBeTruthy();
+    expect(within(pinned).queryByTestId('flag-IL', hidden)).toBeNull();
+    const rankStyle = (row: typeof pinned) =>
+      [within(row).getByText(rankText(5), hidden).props.style]
+        .flat(3)
+        .reduce((all, s) => ({ ...all, ...s }), {});
+    expect(rankStyle(listed)).toHaveProperty('width');
+    expect(rankStyle(pinned)).not.toHaveProperty('width');
+    // What a screen reader hears is the same: the country is still in my row's label.
+    expect(pinned).toHaveProp('accessibilityLabel', expect.stringContaining('MosheG (אתה), ישראל'));
+  });
+
+  it('an edit made after the board came: my rows show it at once, everyone else as read', async () => {
+    const MINE = { ...ME, rank: 5, avatarId: 'lava-lamp' as const };
+    const { api, ...props } = await show(
+      { tabs: { general: [...ranked(4), MINE] }, me: MINE },
+      { myProfile: { displayName: 'MosheG', avatarId: 'lava-lamp', country: 'IL' } },
+    );
+    expect(avatarIdsIn(screen.getByTestId('leaderboard-me-row'))).toEqual(['lava-lamp']);
+    // Back from my card, where I changed my avatar, name and country.
+    await screen.rerender(
+      <LeaderboardScreen
+        api={() => api}
+        myId="me"
+        myAvatar="fox"
+        myProfile={{ displayName: 'Moshe', avatarId: 'fox', country: 'DE' }}
+        myLeague={{ league: 'gold', rating: 1276 }}
+        {...props}
+      />,
+    );
+    for (const id of ['leaderboard-me-row', 'leaderboard-row-me']) {
+      expect(avatarIdsIn(screen.getByTestId(id))).toEqual(['fox']);
+      expect(screen.getByTestId(id)).toHaveProp(
+        'accessibilityLabel',
+        expect.stringMatching(/Moshe \(אתה\), גרמניה/),
+      );
+    }
+    expect(screen.getByTestId('leaderboard-row-p4')).toHaveProp(
+      'accessibilityLabel',
+      expect.stringContaining('Player4, ישראל'),
     );
   });
 

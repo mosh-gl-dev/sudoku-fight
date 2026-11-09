@@ -98,7 +98,7 @@ describe('DuelLevelHud', () => {
     expect(screen.getByTestId('duel-bot-score')).toHaveTextContent('4.5');
     expect(screen.getByTestId('duel-bot')).toHaveProp(
       'accessibilityLabel',
-      'Pip, בוט רמה 1, 4.5 מתוך 30 נקודות',
+      '‏Pip, בוט רמה 1, 4.5 מתוך 30 נקודות',
     );
     // The clock counts down the stage's 30 s; no interference button, no reactions (D62).
     expect(screen.getByTestId('duel-clock')).toHaveTextContent('0:30');

@@ -18,6 +18,11 @@ export interface LeagueBadgeProps {
   level?: number | null;
   /** `text`: "ליגת זהב · רמה 14" (Home). `icon`: hexagon, tier name in its colour, then the level. */
   variant?: 'text' | 'icon';
+  /**
+   * `icon` in a narrow column (a leaderboard row): the level goes under the league's name when both don't fit
+   * one line, never over what follows the column, and no word breaks (QA loop 7: "LevelProvisional").
+   */
+  wrap?: boolean;
   thresholds?: LeagueThresholds;
   style?: StyleProp<ViewStyle>;
 }
@@ -31,6 +36,7 @@ export function LeagueBadge({
   league: given,
   level = null,
   variant = 'text',
+  wrap = false,
   thresholds = LEAGUE_THRESHOLDS,
   style,
 }: LeagueBadgeProps) {
@@ -58,18 +64,32 @@ export function LeagueBadge({
     );
   }
 
+  const hexagon = (
+    <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <Polygon points={HEXAGON} fill={tint} />
+    </Svg>
+  );
+  const tierText = <Text style={[text('micro'), { color: tint }]}>{tier}</Text>;
   return (
     <View
-      style={[styles.row, style]}
+      style={[styles.row, wrap && styles.wrap, style]}
       accessible
       accessibilityRole="text"
       accessibilityLabel={a11y}
       testID={`league-${league}`}
     >
-      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-        <Polygon points={HEXAGON} fill={tint} />
-      </Svg>
-      <Text style={[text('micro'), { color: tint }]}>{tier}</Text>
+      {/* Wrapping, the hexagon stays with its tier's name: the level is what moves to the next line. */}
+      {wrap ? (
+        <View style={styles.row}>
+          {hexagon}
+          {tierText}
+        </View>
+      ) : (
+        <>
+          {hexagon}
+          {tierText}
+        </>
+      )}
       {level === null ? null : (
         <Text style={[text('micro'), styles.muted]}>{t('league.levelAfter', { level })}</Text>
       )}
@@ -79,5 +99,6 @@ export function LeagueBadge({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: metrics.league.gap },
+  wrap: { flexWrap: 'wrap', flexShrink: 1, maxWidth: '100%' },
   muted: { color: color.textMuted },
 });

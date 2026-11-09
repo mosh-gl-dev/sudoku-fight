@@ -40,7 +40,8 @@ describe('ChapterUnlockedView', () => {
     await show(onDone);
     expect(screen.getByText('פרק חדש נפתח!')).toBeTruthy();
     expect(screen.getByText('פרק 5 · Biscuit')).toBeTruthy();
-    expect(screen.getByText(/^Biscuit: /)).toBeTruthy();
+    // B27: the bot's line starts with its Latin name, so with an RLM (right to left on Android).
+    expect(screen.getByText(/^‏Biscuit: /)).toBeTruthy();
     expect(screen.getByTestId('chapter-unlocked-news')).toHaveTextContent(
       'מה חדש: בוט חדש: Biscuit, צייד הנקודות, ובמילוי כל ספרה חסרה לפחות פעם אחת',
     );

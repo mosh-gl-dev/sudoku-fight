@@ -65,6 +65,7 @@
     "noLogic": "Het antwoord: {{cell}} → {{digit}}",
     "scoreLine": "De score",
     "penaltyLine": "De straf: wat het juiste cijfer waard was",
+    "formula": "9 − {{x}} + (9 − {{y}}) / 2 = {{points}}",
     "released": {
       "cancel": "Keuze geannuleerd",
       "timeout": "Tijd voorbij",

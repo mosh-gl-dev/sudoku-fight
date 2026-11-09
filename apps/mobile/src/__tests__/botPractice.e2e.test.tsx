@@ -421,14 +421,12 @@ describe('practice against a bot, end to end (work plan stage 5)', () => {
     await screen.findByTestId('results-score');
     expect(resultsShown()).toEqual(first.results);
 
-    // "משחק חדש": the game type of a bot practice, "מהיר" chosen, and then the bot selection on Pip.
+    // "משחק חדש": Pip again at once (UX-2), "מהיר": no stop at the game type or the bot selection.
     await fireEvent.press(screen.getByRole('button', { name: 'משחק חדש' }));
-    await waitFor(() => expect(run.pathname()).toBe('/game-type'));
-    expect(run.searchParams()).toEqual({ gameType: 'fast', mode: 'bot' });
-    expect(await screen.findByTestId('type-fast')).toHaveProp('accessibilityState', { checked: true });
-    await fireEvent.press(screen.getByRole('button', { name: 'בחירת יריב' }));
-    await waitFor(() => expect(run.pathname()).toBe('/bot-select'));
-    expect(screen.getByTestId('bot-1')).toHaveProp('accessibilityState', { checked: true });
+    const { session } = await gameOpened(run);
+    expect(session).toMatchObject({ mode: 'bot', gameType: 'fast' });
+    expect(session.getView().players.map((p) => p.id)).toContain(BOT);
+    expect(session.id).not.toBe(first.id);
     expect(mockApp.saveErrors).toEqual([]);
     await run.kill();
   });

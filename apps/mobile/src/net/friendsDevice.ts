@@ -158,6 +158,9 @@ export function currentFriendsRoomCode(
   if (!session) return null;
   const info = session.online;
   if (info.status === 'closed' && info.closeReason !== 'lostConnection') return null;
+  // Past its game (still connected on the results): nothing to come back to. The server holds the seat only
+  // until the room closes, so a start after it would read "משהו השתבש בשרת", then "החדר נסגר".
+  if (session.hasGame && session.getView().status === 'over') return null;
   return session.friendsCode;
 }
 

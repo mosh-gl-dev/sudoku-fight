@@ -4,6 +4,13 @@ import { join } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 
 import {
+  APK_KEY_ALIAS,
+  apkSignerSha256s,
+  colonFingerprint,
+  hexFingerprint,
+  keytoolFingerprints,
+  newestBuildTools,
+  signingEnv,
   ABI,
   ABORT_FREE,
   apkFileName,
@@ -37,7 +44,6 @@ import {
   PREBUILD_PACKAGES,
   prebuildPlan,
   readZipEntry,
-  releaseSigningConfig,
   REPLACEABLE,
   resolveServer,
   serverEnv,
@@ -52,7 +58,7 @@ import type { Interfaces } from '../../../../scripts/lib/lan.mjs';
 /**
  * `npm run apk` (scripts/build-apk.mjs, docs/BUILD-APK.md): a release APK for the test phones, built on this PC.
  * Its pure parts (scripts/lib/build-apk.mjs) on made-up data: the command line, the server from eas.json, the
- * APK's name and which old ones go, when prebuild starts clean, the release signing in build.gradle, what adb,
+ * APK's name and which old ones go, when prebuild starts clean, this PC's signing key, what adb,
  * Java and Gradle print, and the APK itself (a zip). Then the script, in the modes that build nothing.
  * The real build (Gradle, 15 to 40 minutes) is not run here.
  */
@@ -106,7 +112,32 @@ describe('the command line', () => {
       cleanNative: false,
       verbose: false,
       dryRun: false,
+      keyOnly: false,
+      resignSha1: null,
     });
+  });
+
+  it('--resign-sha1: the key that signs the APK again, as a SHA-1 in any spelling, or "debug"', () => {
+    const debug = '5e8f16062ea3cd2c4a0d547876baa6f38cabf625';
+    expect(options('--resign-sha1', 'debug').resignSha1).toBe(debug);
+    expect(options('--resign-sha1=DEBUG').resignSha1).toBe(debug);
+    expect(options('--resign-sha1', debug.toUpperCase().match(/../g)!.join(':')).resignSha1).toBe(debug);
+    expect(options('--resign-sha1', debug, '--clean', '--dry-run')).toMatchObject({
+      resignSha1: debug,
+      clean: true,
+    });
+    const error = (...argv: string[]) => {
+      const parsed = parseApkArgs(argv);
+      return parsed.kind === 'error' ? parsed.error : null;
+    };
+    expect(error('--resign-sha1')).toMatch(/--resign-sha1 needs the SHA-1/);
+    expect(error('--resign-sha1', 'abc')).toMatch(/--resign-sha1 needs the SHA-1/);
+    // A SHA-256 is not what Firebase lists for Google sign-in.
+    expect(error('--resign-sha1', 'a'.repeat(64))).toMatch(/--resign-sha1 needs the SHA-1/);
+    // Installed before it is signed again, the APK has this PC's key: no update of the phones' app, no Google.
+    expect(error('--resign-sha1', 'debug', '--install')).toMatch(/install the APK once it is signed again/);
+    expect(error('--resign-sha1', 'debug', '--install-only')).toMatch(/--install-only/);
+    expect(USAGE).toContain('--resign-sha1');
   });
 
   it('takes the server both ways, and each switch', () => {
@@ -122,6 +153,7 @@ describe('the command line', () => {
     expect(options('--install-only', '--replace')).toMatchObject({ installOnly: true, replace: true });
     expect(options('--clean-only').cleanOnly).toBe(true);
     expect(options('--dry-run').dryRun).toBe(true);
+    expect(options('--key').keyOnly).toBe(true);
   });
 
   it('refuses what it does not know, and --replace without an install', () => {
@@ -140,6 +172,9 @@ describe('the command line', () => {
     expect(error('--install-only', '--replace', '--dry-run')).toMatch(/--install-only would still run/);
     expect(error('--dry-run', '--clean-only')).toMatch(/--clean-only would still run/);
     expect(options('--dry-run', '--install', '--clean').dryRun).toBe(true);
+    // --key builds nothing and installs nothing: it goes alone.
+    expect(error('--key', '--install')).toBe('--key takes no other options');
+    expect(error('--dry-run', '--key')).toBe('--key takes no other options');
     expect(parseApkArgs(['--install', '--help'])).toEqual({ kind: 'help' });
     expect(parseApkArgs(['-h'])).toEqual({ kind: 'help' });
   });
@@ -416,54 +451,72 @@ describe('when expo prebuild starts from scratch', () => {
   });
 });
 
-describe("the release build's signing (android/app/build.gradle)", () => {
-  // As Expo 57's template writes it (comments included).
-  const TEMPLATE = `
-android {
-    signingConfigs {
-        debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
-    }
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
-        release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
-            def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
-            shrinkResources enableShrinkResources.toBoolean()
-        }
-    }
-}`;
+describe("this PC's signing key (npm run apk -- --key)", () => {
+  const SHA1 = '5e8f16062ea3cd2c4a0d547876baa6f38cabf625';
+  const SHA256 = 'fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c';
 
-  it("Expo's template signs release builds with the debug keystore", () => {
-    expect(releaseSigningConfig(TEMPLATE)).toBe('debug');
-    expect(
-      releaseSigningConfig(
-        TEMPLATE.replace(
-          /signingConfig signingConfigs\.debug(?=\s+def)/,
-          'signingConfig = signingConfigs.upload',
-        ),
-      ),
-    ).toBe('upload');
+  it('reaches Gradle as its injected signing, in environment variables (no password on a command line)', () => {
+    const env = signingEnv({ storeFile: 'C:/keys/a.p12', password: 'pw', alias: APK_KEY_ALIAS });
+    expect(env).toEqual({
+      'ORG_GRADLE_PROJECT_android.injected.signing.store.file': 'C:/keys/a.p12',
+      'ORG_GRADLE_PROJECT_android.injected.signing.store.password': 'pw',
+      'ORG_GRADLE_PROJECT_android.injected.signing.key.alias': 'sudoku-fight-apk',
+      'ORG_GRADLE_PROJECT_android.injected.signing.key.password': 'pw',
+    });
   });
 
-  it('a release block without one, or only a commented-out one, would build an unsigned APK', () => {
-    const unsigned = TEMPLATE.replace(
-      /(release \{[\s\S]*?)signingConfig signingConfigs\.debug/,
-      '$1// signingConfig signingConfigs.debug',
-    );
-    expect(releaseSigningConfig(unsigned)).toBeNull();
+  it('reads both fingerprints from keytool -list -v, in either spelling', () => {
+    const keytool = [
+      'Alias name: sudoku-fight-apk',
+      'Certificate fingerprints:',
+      '\t SHA1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25',
+      '\t SHA256: FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C',
+      'Signature algorithm name: SHA256withRSA',
+    ].join('\r\n');
+    expect(keytoolFingerprints(keytool)).toEqual({ sha1: SHA1, sha256: SHA256 });
+    expect(keytoolFingerprints(keytool.replace('SHA1:', 'SHA-1:').replace('SHA256:', 'SHA-256:'))).toEqual({
+      sha1: SHA1,
+      sha256: SHA256,
+    });
+    // One missing, or a SHA-1 where the SHA-256 should be: nothing.
+    expect(keytoolFingerprints(keytool.replace(/^.*SHA256.*$/m, ''))).toBeNull();
     expect(
-      releaseSigningConfig('android { buildTypes { debug { signingConfig signingConfigs.debug } } }'),
+      keytoolFingerprints(keytool.replace(/SHA256: [0-9A-F:]+/, `SHA256: ${colonFingerprint(SHA1)}`)),
     ).toBeNull();
-    expect(releaseSigningConfig('')).toBeNull();
+    expect(
+      keytoolFingerprints('keytool error: java.io.IOException: keystore password was incorrect'),
+    ).toBeNull();
+  });
+
+  it('writes and reads fingerprints the way Firebase, Play and fly.toml show them', () => {
+    expect(colonFingerprint(SHA1)).toBe('5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25');
+    expect(hexFingerprint(colonFingerprint(SHA256))).toBe(SHA256);
+    expect(hexFingerprint(` ${SHA1.toUpperCase()} `)).toBe(SHA1);
+    for (const junk of [null, '', 'abc', SHA1.slice(1), `${SHA1}00`, 'g'.repeat(40)])
+      expect(hexFingerprint(junk)).toBeNull();
+  });
+
+  it("reads the signers' SHA-256 from apksigner verify --print-certs", () => {
+    const out = [
+      `Signer #1 certificate DN: CN=Sudoku Fight test APKs, O=Moshe Glazman`,
+      `Signer #1 certificate SHA-256 digest: ${SHA256}`,
+      `Signer #1 certificate SHA-1 digest: ${SHA1}`,
+    ].join('\n');
+    expect(apkSignerSha256s(out)).toEqual([SHA256]);
+    expect(apkSignerSha256s(`${out}\nSigner #2 certificate SHA-256 digest: ${'A'.repeat(64)}`)).toEqual([
+      SHA256,
+      'a'.repeat(64),
+    ]);
+    expect(apkSignerSha256s('DOES NOT VERIFY')).toEqual([]);
+  });
+
+  it('runs apksigner from the newest build-tools', () => {
+    expect(newestBuildTools(['28.0.3', '35.0.0', '36.0.0', '32.1.0-rc1', '9.0.0'])).toBe('36.0.0');
+    expect(newestBuildTools(['36.1.0-rc1', '36.0.0'])).toBe('36.1.0-rc1');
+    expect(newestBuildTools(['36.0.0-rc2', '36.0.0'])).toBe('36.0.0');
+    expect(newestBuildTools(['36.0.0-rc1', '36.0.0-rc3'])).toBe('36.0.0-rc3');
+    expect(newestBuildTools(['.DS_Store', 'latest'])).toBeNull();
+    expect(newestBuildTools([])).toBeNull();
   });
 });
 
@@ -727,6 +780,7 @@ describe('scripts/build-apk.mjs', () => {
       '--clean',
       '--clean-only',
       '--clean-native',
+      '--key',
     ])
       expect(help.out).toContain(option);
     expect(help.out).toBe(`${USAGE}\n`);
@@ -751,7 +805,7 @@ describe('scripts/build-apk.mjs', () => {
       ),
     );
     const production = run('--dry-run', '--server', 'production');
-    expect(production.out).toContain('sudoku-fight-prod.fly.dev:443 (TLS)  [eas.json production]');
+    expect(production.out).toContain('sudokufight.app:443 (TLS)  [eas.json production]');
     const lan = run('--dry-run', '--server', '192.168.1.40:2567');
     expect(lan.out).toContain('192.168.1.40:2567 (no TLS)');
     expect(lan.out).toMatch(/allows cleartext traffic/);

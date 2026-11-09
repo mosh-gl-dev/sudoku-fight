@@ -13,7 +13,7 @@ import type { AvatarIdOrNone } from '../../../avatars';
 import { BossCrown } from '../../../components/levels/BossBadge';
 import { type SpotOwner, StarsBar } from '../../../components/levels/StarsBar';
 import { Avatar, SeatGlyph } from '../../../components/player';
-import { secondsOf } from '../../../components/player/format';
+import { clockLabelSeconds, secondsOf } from '../../../components/player/format';
 import { IconButton } from '../../../components/ui';
 import { timing } from '../../../components/ui/motion';
 import { Text } from '../../../components/ui/Text';
@@ -117,8 +117,8 @@ export function RaceHud({
           style={styles.left}
           accessibilityRole="timer"
           accessibilityLabel={t('hud.clockLabel', {
-            count: secondsOf(remaining),
-            s: secondsOf(remaining),
+            count: clockLabelSeconds(remaining, 'left'),
+            s: clockLabelSeconds(remaining, 'left'),
             limit: secondsOf(lv?.limitMs ?? 0),
           })}
           testID="race-left"

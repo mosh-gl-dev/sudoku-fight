@@ -264,7 +264,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space[10],
     paddingHorizontal: tokens.layout.gutterHome,
-    backgroundColor: color.bg,
   },
   column: { alignSelf: 'stretch', alignItems: 'center', gap: space[4] },
   title: { ...text('label'), color: color.textMuted },

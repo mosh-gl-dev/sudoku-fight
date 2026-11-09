@@ -1,18 +1,20 @@
 import { botLevel as botLevelInfo } from '@sudoku-fight/engine';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { isSuspended } from '../../api/me';
+import { isSuspended, needsNewName } from '../../api/me';
 import { refreshMeIfStale, useAuth } from '../../auth/authStore';
+import { useScreenFocused } from '../../avatars/useScreenFocused';
 import { ltr } from '../../components/player';
 import { BottomNav, Button, IconButton, RowButton, useToast } from '../../components/ui';
+import { Enter } from '../../components/ui/Enter';
 import { Text } from '../../components/ui/Text';
 import { useGameStore } from '../../game/gameStore';
-import { useConnectivityWatch } from '../../net/connectivity';
-import { refreshMyProgress } from '../../progress/appProgress';
+import { useConnectivity, useConnectivityWatch } from '../../net/connectivity';
+import { refreshMyProgress, syncProgressNow } from '../../progress/appProgress';
 import { useMyCard, useMyProgress } from '../../progress/hooks';
 import { cue } from '../../services/feedback';
 import { VerifyBanner } from '../account/VerifyEmailScreen';
@@ -22,6 +24,7 @@ import { openPlayerCard } from '../player/navigation';
 import { usePracticeHistory } from '../../state/practiceHistory';
 import { useProfile } from '../../state/profile';
 import { color, size, space, text, tokens } from '../../theme';
+import { HOME_ENTRANCE, homeEntrancePending, markHomeEntrancePlayed } from './homeEntrance';
 import { HOME_RECENT_COUNT, lastPlayOf } from './homeModel';
 import { goToTab } from './navigation';
 import { OfflineBanner } from './OfflineBanner';
@@ -30,6 +33,7 @@ import { usePracticeStats } from './practiceStats';
 import { ProfileCard } from './ProfileCard';
 import { RecentGames } from './RecentGames';
 import { startAndOpen } from './startGame';
+import { warmModesLater } from './warmModes';
 
 const HOME = tokens.layout.home;
 
@@ -90,6 +94,27 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
   const [starting, setStarting] = useState(false);
   const connectivity = useConnectivityWatch();
   const offline = connectivity.status === 'offline';
+  // MOT-3: the first time Home is seen in this run, its parts come in; it waits for the Splash to go (Home is
+  // mounted under it while the sign-in loads: Home stays only for a player who is in, auth/redirect.ts) and for
+  // Home to be the screen shown. Once Home has been left after that, what mounts later (a new recent game) is
+  // simply there. Derived during render. Whether Home is shown matters only until then: after it, a change of
+  // screen never renders Home (B14).
+  const [entrance, setEntrance] = useState(homeEntrancePending);
+  const shown = useScreenFocused(entrance);
+  const splashGone = useAuth((s) => s.status === 'ready' && !needsNewName(s.me));
+  const enter = entrance && shown && splashGone;
+  const [entered, setEntered] = useState(false);
+  if (enter && !entered) setEntered(true);
+  if (entered && !shown && entrance) setEntrance(false);
+  useEffect(() => {
+    if (enter) markHomeEntrancePlayed();
+  }, [enter]);
+  // The first "משחק חדש" after the start (QA run #3, T3-FIRST-PLAY-SLOW): its code and my avatar's pictures there
+  // are made once Home has settled, not on the first tap (./warmModes.ts). Modes draws the profile's avatar. Only
+  // while Home is the screen shown: a game opened meanwhile ("עוד סיבוב") stops it (Home stays mounted under it).
+  useFocusEffect(
+    useCallback(() => (splashGone ? warmModesLater(localAvatar) : undefined), [splashGone, localAvatar]),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -97,6 +122,12 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
       // The account again (a ranked game just played moved its ratings): at most every
       // accountConfig.refresh.minIntervalMs, and at once when it came from the phone (no server last time).
       void refreshMeIfStale();
+      // The connection again (Home stays mounted under the other screens, so its watch checked only once): an
+      // app that went offline meanwhile knows it, and its background check sees the connection come back, which
+      // sends what waits and brings my new XP while Home stays open (QA levels-xp-offline, loop 5).
+      void useConnectivity.getState().check();
+      // What waits (stages and practices played offline) goes now, past the backoff; its answer is my new XP.
+      syncProgressNow();
       // My level, XP and league, and my card's numbers (a game just played moved them).
       void refreshMyProgress();
     }, []),
@@ -162,7 +193,7 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
           />
         </View>
 
-        <View style={styles.card}>
+        <Enter enabled={entrance} play={enter} delayMs={HOME_ENTRANCE.card} style={styles.card}>
           <ProfileCard
             name={name ?? t('profile.defaultName')}
             avatarId={avatarId}
@@ -174,7 +205,7 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
             progress={myProgress}
             onPress={me ? () => openPlayerCard(me.id) : undefined}
           />
-        </View>
+        </Enter>
         <SuspendedBanner style={styles.verify} />
         <VerifyBanner style={styles.verify} />
         {offline ? (
@@ -183,32 +214,36 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
           </View>
         ) : null}
 
-        <Button
-          label={t('play')}
-          size="hero"
-          onPress={() => {
-            cue('primaryPress');
-            router.push('/modes');
-          }}
-          accessibilityHint={t('playHint')}
-          style={styles.play}
-          testID="play"
-        />
+        <Enter kind="settle" enabled={entrance} play={enter} delayMs={HOME_ENTRANCE.play} style={styles.play}>
+          <Button
+            label={t('play')}
+            size="hero"
+            onPress={() => router.push('/modes')}
+            accessibilityHint={t('playHint')}
+            testID="play"
+          />
+        </Enter>
 
         {again && againText ? (
-          <RowButton
-            icon="refresh"
-            title={t('again.title')}
-            subtitle={againText}
-            onPress={() => void playAgain()}
-            loading={starting}
-            disabled={againBlocked}
-            style={styles.again}
-            testID="play-again"
-          />
+          <Enter enabled={entrance} play={enter} delayMs={HOME_ENTRANCE.again} style={styles.again}>
+            <RowButton
+              icon="refresh"
+              title={t('again.title')}
+              subtitle={againText}
+              onPress={() => void playAgain()}
+              loading={starting}
+              disabled={againBlocked}
+              testID="play-again"
+            />
+          </Enter>
         ) : null}
 
-        <View style={styles.recentHeader}>
+        <Enter
+          enabled={entrance}
+          play={enter}
+          delayMs={HOME_ENTRANCE.recentHeader}
+          style={styles.recentHeader}
+        >
           <Text accessibilityRole="header" style={styles.recentTitle}>
             {t('recent.heading')}
           </Text>
@@ -218,12 +253,13 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
             onPress={() => goToTab('history', 'home')}
             testID="recent-all"
           />
-        </View>
+        </Enter>
         <View style={styles.recent}>
           <RecentGames
             games={recent.slice(0, HOME_RECENT_COUNT)}
             status={status}
             onOpen={(id) => router.push({ pathname: '/results/[id]', params: { id } })}
+            entrance={{ enabled: entrance, play: enter, delayMs: HOME_ENTRANCE.recent }}
           />
         </View>
 
@@ -296,7 +332,8 @@ async function refreshHome(): Promise<void> {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg },
+  // Transparent: the wandering digits behind every screen show through (D126, app/_layout.tsx).
+  screen: { flex: 1 },
   content: { paddingHorizontal: GUTTER.home, paddingBottom: space[13] },
   header: {
     flexDirection: 'row',

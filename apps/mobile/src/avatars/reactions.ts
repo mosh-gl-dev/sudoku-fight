@@ -209,18 +209,18 @@ export const AVATAR_REACTIONS: AvatarReactionsConfig = {
 export type AvatarStage = 'picker' | 'winner' | 'home' | 'profile' | 'search' | 'vs' | 'countdown';
 
 /**
- * Where avatars idle, a config like the table above (waiting for Moshe's approval, DECISIONS-PENDING 3.19).
- * motion.md §1 keeps only functional loops, so by default only the stages the spec names idle: the picker's
- * stage (§3.2, the character being chosen: since 14.10.2026 the avatar of my card in registration step 1's
- * preview; the grid in the avatar sheet stays still) and the winner on the results (§3.4, "ממשיך לזוז
- * במקום"). Home's card, the profile, the search, the VS and the countdown stay still until he says otherwise.
- * Wherever it idles, an avatar idles only while its screen is the one shown, and never with reduced motion.
+ * Where avatars idle, a config like the table above (DECISIONS-PENDING 3.19, approved by Moshe 30.10.2026:
+ * "living avatars"). The picker's stage (§3.2, the character being chosen: the avatar of my card in
+ * registration step 1's preview, and the chosen tile in the avatar sheet's grid), the winner on the results
+ * (§3.4, "ממשיך לזוז במקום"), my card on Home and a player's card (the profile). The search, the VS and the
+ * countdown stay still: the match is about to start there. Wherever it idles, an avatar idles only while its
+ * screen is the one shown (useScreenFocused), and never with reduced motion.
  */
 export const AVATAR_STAGES: Readonly<Record<AvatarStage, boolean>> = {
   picker: true,
   winner: true,
-  home: false,
-  profile: false,
+  home: true,
+  profile: true,
   search: false,
   vs: false,
   countdown: false,

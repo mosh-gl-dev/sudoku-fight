@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, radius, size, space, text, tokens } from '../../theme';
 import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
 import { IconButton } from './IconButton';
+import { useModalWindow } from './modalWindows';
 import { usePresence } from './motion';
 import { Scrim } from './Scrim';
 
@@ -87,6 +88,8 @@ export function Sheet({
     { inMs, outMs: motion.duration.sheetOut, reduce },
     onExited,
   );
+  // Its own window: no stage takes the focus it moves for the app leaving (modalWindows.ts).
+  useModalWindow(mounted);
   const height = useSharedValue(windowHeight);
   const drag = useSharedValue(0);
   const titleRef = useRef<ComponentRef<typeof Text>>(null);

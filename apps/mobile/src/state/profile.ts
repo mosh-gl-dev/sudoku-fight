@@ -39,11 +39,19 @@ export interface ProfileState {
   lastPlay: LastPlay | null;
   /** The bot level of the last practice against a bot, or null before the first one. */
   botLevel: BotLevelId | null;
+  /**
+   * The game type of the last friends room this player hosted, as its lobby last showed it (the host's choice
+   * there [D82]); null before the first. "צור חדר" opens the next room with it (QA
+   * friends-room-type-not-remembered). Not `lastPlay`: a game with friends is not Home's "עוד סיבוב".
+   */
+  friendsGameType: GameType | null;
   setName: (name: string | null) => void;
   setAvatar: (avatarId: AvatarIdOrNone) => void;
   setCountry: (country: string | null) => void;
   /** Remembers a game just started; a bot practice also sets `botLevel`. */
   rememberPlay: (play: LastPlay) => void;
+  /** Remembers the game type of the friends room I host (friendsGameType). */
+  rememberFriendsType: (gameType: GameType) => void;
 }
 
 const COUNTRY = /^[A-Za-z]{2}$/;
@@ -81,7 +89,10 @@ function lastPlayOf({ mode, gameType, botLevel, players }: LastPlay): LastPlay {
   return { mode, gameType };
 }
 
-type ProfileData = Pick<ProfileState, 'name' | 'avatarId' | 'country' | 'lastPlay' | 'botLevel'>;
+type ProfileData = Pick<
+  ProfileState,
+  'name' | 'avatarId' | 'country' | 'lastPlay' | 'botLevel' | 'friendsGameType'
+>;
 
 /** What came back from storage, with anything this version does not know dropped. */
 function sanitize(saved: unknown): Partial<ProfileData> {
@@ -96,6 +107,7 @@ function sanitize(saved: unknown): Partial<ProfileData> {
   if (s.lastPlay === null) out.lastPlay = null;
   else if (isLastPlay(s.lastPlay)) out.lastPlay = lastPlayOf(s.lastPlay);
   if (s.botLevel === null || isBotLevelId(s.botLevel)) out.botLevel = s.botLevel;
+  if (s.friendsGameType === null || isGameType(s.friendsGameType)) out.friendsGameType = s.friendsGameType;
   return out;
 }
 
@@ -107,6 +119,7 @@ export const useProfile = create<ProfileState>()(
       country: deviceCountry(),
       lastPlay: null,
       botLevel: null,
+      friendsGameType: null,
       setName: (name) => set({ name: cleanName(name) }),
       setAvatar: (avatarId) => set({ avatarId }),
       setCountry: (country) =>
@@ -115,17 +128,21 @@ export const useProfile = create<ProfileState>()(
         const lastPlay = lastPlayOf(play);
         set(lastPlay.botLevel === undefined ? { lastPlay } : { lastPlay, botLevel: lastPlay.botLevel });
       },
+      rememberFriendsType: (gameType) => {
+        if (isGameType(gameType)) set({ friendsGameType: gameType });
+      },
     }),
     {
       name: 'profile',
       version: 1,
       storage: createJSONStorage(() => Storage),
-      partialize: ({ name, avatarId, country, lastPlay, botLevel }): ProfileData => ({
+      partialize: ({ name, avatarId, country, lastPlay, botLevel, friendsGameType }): ProfileData => ({
         name,
         avatarId,
         country,
         lastPlay,
         botLevel,
+        friendsGameType,
       }),
       merge: (saved, current) => ({ ...current, ...sanitize(saved) }),
     },

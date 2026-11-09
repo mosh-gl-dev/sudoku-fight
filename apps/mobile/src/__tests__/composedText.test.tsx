@@ -108,8 +108,8 @@ describe.each(['he', 'en'] as const)('%s reads as before', (lng) => {
       wrongText: 'Row E already has 4.',
       points: null,
       penalty: 6.5,
-      scoreLine: null,
-      penaltyLine: '9 − 4 + 3 / 2 = 6.5',
+      score: null,
+      penaltyScore: { row: 4, col: 2, box: 3, num: 1, X: 4, Y: 3, points: 6.5 },
       releaseReason: null,
     };
     await render(<ExplanationCard player={player} explanation={x} testID="card" />);
@@ -123,9 +123,14 @@ describe.each(['he', 'en'] as const)('%s reads as before', (lng) => {
         technique: 'Naked single',
         text: 'E5 is only missing 7.',
       }),
-      t('replay:explain.played', { digit: 4, answer: 7 }),
+      // QA 2026-11-03 (P3-JA-A11Y): a line that is not a sentence yet gets its full stop, so no two run together.
+      `${t('replay:explain.played', { digit: 4, answer: 7 })}.`,
       t('replay:explain.why', { digit: 4, text: 'Row E already has 4.' }),
-      `${t('replay:explain.penaltyLine')}: ${ltr('9 − 4 + 3 / 2 = 6.5')}`,
+      // The formula in numbers, then the two counts that set it (B1: no English "points = …").
+      `${t('replay:explain.penaltyLine')}: ${ltr('9 − 4 + (9 − 3) / 2 = 6.5')}${t('game:listSep')}${[
+        t('game:results.best.filled.row', { count: 4, digit: 7 }),
+        t('game:results.best.filled.box', { count: 3, digit: 7 }),
+      ].join(t('game:listSep'))}.`,
     ].join(' ');
     expect(label('card')).toBe(old);
   });

@@ -116,7 +116,8 @@ describe('Cell', () => {
 
   it('my lock: tint, ring with its inner edge, the pulse and the seconds pill; selected, with a hint', async () => {
     await render(<Cell cell={cell('F8', { kind: 'myLock', player: me, lock: lock(7) })} />);
-    const button = screen.getByRole('button', { name: 'F8, ריקה, נעולה אצלך, 7 שניות' });
+    // The label says the seconds in 5-second steps (Q1); the pill shows every one.
+    const button = screen.getByRole('button', { name: 'F8, ריקה, נעולה אצלך, 5 שניות' });
     expect(button).toBeSelected();
     expect(button).toBeEnabled();
     expect(button.props.accessibilityHint).toBe('בחר ספרה במקלדת');
@@ -305,6 +306,32 @@ describe('Cell flashes', () => {
     expect(face()).toHaveAnimatedStyle({ transform: [{ translateX: 0 }] });
     await act(async () => void jest.advanceTimersByTime(1000));
     expect(frame).toHaveAnimatedStyle({ opacity: 0 });
+  });
+
+  it('wrong, reduced motion as the app applies it: the frame holds 300 ms, then fades (B36)', async () => {
+    // With "הפחתת תנועה" on, MotionPolicy's ReducedMotionConfig turns Reanimated's reduced motion on (as the phone's
+    // own setting would): withDelay follows it unless told Never, and skipped the hold, so the frame faded at once.
+    const system = jest.requireActual<{ ReducedMotionManager: { setEnabled: (on: boolean) => void } }>(
+      'react-native-reanimated/lib/module/ReducedMotion',
+    ).ReducedMotionManager;
+    useSettings.setState({ reduceMotion: 'on' });
+    system.setEnabled(true);
+    try {
+      const d = tokens.motion.duration;
+      // My lock goes as the wrong digit lands (motion.md wrong.digit: the cell releases): the frame is not cut.
+      await render(<Cell cell={cell('D5', { kind: 'myLock', player: me, lock: lock(8) })} />);
+      await screen.rerender(<Cell cell={cell('D5', { wrong: [3] })} flash={flash('wrong', 1, 3)} />);
+      const frame = screen.getByTestId('cell-flash-wrong-frame');
+      await act(async () => void jest.advanceTimersByTime(d.wrongShake - 20));
+      expect(frame).toHaveAnimatedStyle({ opacity: 1 });
+      await act(async () => void jest.advanceTimersByTime(20 + d.reducedFade / 2));
+      expect(frame).not.toHaveAnimatedStyle({ opacity: 1 });
+      expect(frame).not.toHaveAnimatedStyle({ opacity: 0 });
+      await act(async () => void jest.advanceTimersByTime(d.reducedFade));
+      expect(frame).toHaveAnimatedStyle({ opacity: 0 });
+    } finally {
+      system.setEnabled(false);
+    }
   });
 
   it('denied ("taken"): a shake, no red; reduced motion: the ring thickens instead', async () => {

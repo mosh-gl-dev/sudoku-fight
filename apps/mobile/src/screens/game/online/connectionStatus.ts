@@ -1,8 +1,11 @@
 import { GAME_ROOM_ERRORS, type GameRoomError } from '@sudoku-fight/protocol';
 
+import { supportCodeLabel } from '../../../components/ui/stateModel';
 import type { OnlineErrorCode } from '../../../net/errors';
 import type { OnlineInfo } from '../../../net/remoteGameHost';
 import type { ConnectionStatus, RoomRefusal } from '../connection/connectionModel';
+
+export { supportCodeLabel };
 
 /**
  * What the connection UI shows (connection/connectionModel's ConnectionStatus) for what RemoteGameHost knows
@@ -14,7 +17,8 @@ import type { ConnectionStatus, RoomRefusal } from '../connection/connectionMode
  * - reconnecting → reconnecting with its attempt, or resyncing once a room took the player back; both with the
  *   ends of the soft phase and of the grace as the host reckons them [D42].
  * - closed: after the game, or left on purpose → online (the model shows the result, or nothing); a refusal or
- *   a connection that could not come back → failed, with the small support code (spec §16.3). No network and
+ *   a connection that could not come back → failed ('expired' when it gave up past the abandonment time), with
+ *   the small support code as a code (supportCodeLabel, spec §16.3). No network and
  *   no answer look the same from here (the app has no network-state module), so both are 'unreachable'.
  */
 export function connectionStatusOf(info: OnlineInfo): ConnectionStatus {
@@ -44,7 +48,7 @@ export function connectionStatusOf(info: OnlineInfo): ConnectionStatus {
         graceEndsAt: r.graceEndsAt,
       };
       if (r.resyncing) return { kind: 'resyncing', ...times };
-      return { kind: 'reconnecting', attempt: Math.max(1, r.attempt), ...times };
+      return { kind: 'reconnecting', attempt: Math.max(1, r.attempt), cause: r.cause, ...times };
     }
 
     case 'closed':
@@ -53,7 +57,7 @@ export function connectionStatusOf(info: OnlineInfo): ConnectionStatus {
 }
 
 function closedStatus(info: OnlineInfo): ConnectionStatus {
-  const code = info.error?.supportCode ?? info.closeReason ?? 'unknown';
+  const code = supportCodeLabel(info.error?.supportCode ?? info.closeReason ?? 'unknown');
   switch (info.closeReason) {
     case null:
     case 'left':
@@ -67,6 +71,8 @@ function closedStatus(info: OnlineInfo): ConnectionStatus {
     case 'protocol':
       return { kind: 'failed', failure: 'refused', code };
     case 'lostConnection':
+      // Back too late: the server called it abandonment, and the room that had the result is gone.
+      return { kind: 'failed', failure: info.pastGrace ? 'expired' : 'lost', code };
     case 'serverClosed':
       return { kind: 'failed', failure: 'lost', code };
   }

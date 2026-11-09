@@ -41,7 +41,9 @@ describe('checkHealth', () => {
   });
 
   it('checks the configured server by default, and waits 5 s at most', () => {
-    expect(CONNECTIVITY).toEqual({ timeoutMs: 5000, recheckMs: 10_000 });
+    // QA levels-xp-offline (loop 5): offline, checked again every 5 s (was 10 s), so the connection back is seen
+    // within a few seconds.
+    expect(CONNECTIVITY).toEqual({ timeoutMs: 5000, recheckMs: 5000 });
   });
 });
 

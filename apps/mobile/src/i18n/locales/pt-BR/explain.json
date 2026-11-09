@@ -30,14 +30,26 @@
       "box": "No quadrado {{label}} só falta o {{digit}}."
     },
     "missing": {
-      "row": "Na linha {{label}} faltam {{digits}}.",
-      "col": "Na coluna {{label}} faltam {{digits}}.",
-      "box": "No quadrado {{label}} faltam {{digits}}."
+      "row_one": "Na linha {{label}} falta o {{digits}}.",
+      "row_many": "Na linha {{label}} faltam {{digits}}.",
+      "row_other": "Na linha {{label}} faltam {{digits}}.",
+      "col_one": "Na coluna {{label}} falta o {{digits}}.",
+      "col_many": "Na coluna {{label}} faltam {{digits}}.",
+      "col_other": "Na coluna {{label}} faltam {{digits}}.",
+      "box_one": "No quadrado {{label}} falta o {{digits}}.",
+      "box_many": "No quadrado {{label}} faltam {{digits}}.",
+      "box_other": "No quadrado {{label}} faltam {{digits}}."
     },
     "seen": {
-      "row": "A linha {{label}} já tem {{digits}}.",
-      "col": "A coluna {{label}} já tem {{digits}}.",
-      "box": "O quadrado {{label}} já tem {{digits}}."
+      "row_one": "A linha {{label}} já tem o {{digits}}.",
+      "row_many": "A linha {{label}} já tem {{digits}}.",
+      "row_other": "A linha {{label}} já tem {{digits}}.",
+      "col_one": "A coluna {{label}} já tem o {{digits}}.",
+      "col_many": "A coluna {{label}} já tem {{digits}}.",
+      "col_other": "A coluna {{label}} já tem {{digits}}.",
+      "box_one": "O quadrado {{label}} já tem o {{digits}}.",
+      "box_many": "O quadrado {{label}} já tem {{digits}}.",
+      "box_other": "O quadrado {{label}} já tem {{digits}}."
     },
     "eliminated": "O {{digit}} foi descartado em {{cell}} no passo {{step}}.",
     "only": "Então só pode ser o {{digit}}."

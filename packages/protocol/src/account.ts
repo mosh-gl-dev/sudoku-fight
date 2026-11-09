@@ -144,10 +144,17 @@ export interface NameAvailability {
 // Avatars (spec §3.4)
 
 /**
- * The avatars a player can choose: our own 101 animated characters (packages/avatars, docs/avatars/STYLE.md),
+ * The avatars a player can choose: our own 119 animated characters (packages/avatars, docs/avatars/STYLE.md),
  * in the picker's order (the catalog's AVATARS: by kind, then by catalog file). The ids are stored with the
- * user, so one is never renamed or reused. This is the contract: it does not import the avatars package, and
- * a test in the app keeps the two lists equal.
+ * user, so one is never renamed or reused; the order is only the picker's (nothing stores a position), so a new
+ * one goes where the picker shows it. This is the contract: it does not import the avatars package, and a test
+ * in the app keeps the two lists equal.
+ *
+ * 31.10.2026: the pirates (the first digit series, packages/avatars catalog/pirates/) open the symbols, so
+ * Moshe finds them at once: first the Captain (1) and Peg-leg Peg (7), then the whole crew, 1 to 9, each in
+ * two looks (18 ids: every house look 1–9, then every invested look 1–9, the catalog's PIRATES order). He has
+ * not chosen a look yet: the one he drops is retired through a legacy map like LEGACY_AVATAR_MAP, never deleted
+ * from under a stored account.
  */
 // prettier-ignore
 export const AVATAR_IDS = [
@@ -169,7 +176,11 @@ export const AVATAR_IDS = [
   // creatures
   'alien', 'cyclops', 'slime', 'ghost', 'furry-monster', 'baby-dragon', 'octopus', 'rusty-robot', 'shadow',
   'mandrake', 'dino-egg', 'walking-eye',
-  // symbols
+  // symbols (the pirates first, 1 to 9: the house style, then invested)
+  'pirates-1-house', 'pirates-2-house', 'pirates-3-house', 'pirates-4-house', 'pirates-5-house',
+  'pirates-6-house', 'pirates-7-house', 'pirates-8-house', 'pirates-9-house',
+  'pirates-1-invested', 'pirates-2-invested', 'pirates-3-invested', 'pirates-4-invested', 'pirates-5-invested',
+  'pirates-6-invested', 'pirates-7-invested', 'pirates-8-invested', 'pirates-9-invested',
   'eight', 'letter-a', 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'nine', 'sudoku-board',
   'question-mark', 'plus', 'minus',
 ] as const;
@@ -267,6 +278,42 @@ export function normalizeAvatarId(v: unknown): AvatarId | typeof NO_AVATAR_ID {
   if (isAvatarId(v)) return v;
   if (isLegacyAvatarId(v)) return LEGACY_AVATAR_MAP[v];
   return NO_AVATAR_ID;
+}
+
+/**
+ * The avatar catalog an app knows, sent in this header on every request whose answer holds avatar ids (its
+ * Me, its history and replays, a friends room ticket). An app without it (1.1.0 and older, and the APK of the
+ * first two pirates) checks every id against its own, shorter AVATAR_IDS and refuses the whole answer over one
+ * it does not know: a history page with one seat of a pirate, a room whose host is one, its own Me. So the
+ * server sends such an app "no avatar" for an id newer than its catalog (avatarIdForCatalog), and an app since
+ * reads an id it does not know as "no avatar" (normalizeAvatarId) instead of refusing the answer.
+ */
+export const AVATAR_CATALOG_HEADER = 'X-Avatar-Catalog';
+
+/** This protocol's catalog: 1, the 101 avatars of 1.1.0; 2, with the 18 pirates (31.10.2026). */
+export const AVATAR_CATALOG = 2;
+
+/** The ids each catalog after the first added. A new catalog: raise AVATAR_CATALOG and add its ids here. */
+export const AVATAR_CATALOG_ADDED: Readonly<Record<number, readonly AvatarId[]>> = {
+  2: AVATAR_IDS.filter((id) => id.startsWith('pirates-')),
+};
+
+/** The catalog an app sent (the header's value, as Express or fetch gives it); 1 when none, or junk. */
+export function avatarCatalogOf(header: unknown): number {
+  const v = Array.isArray(header) ? (header as unknown[])[0] : header;
+  const s = typeof v === 'string' ? v.trim() : '';
+  return /^[1-9]\d{0,3}$/.test(s) ? Number(s) : 1;
+}
+
+/** An avatar as an app of that catalog can show it: the id, or NO_AVATAR_ID when a newer catalog added it. */
+export function avatarIdForCatalog(
+  id: AvatarId | typeof NO_AVATAR_ID,
+  catalog: number,
+): AvatarId | typeof NO_AVATAR_ID {
+  if (id === NO_AVATAR_ID) return id;
+  for (const [added, ids] of Object.entries(AVATAR_CATALOG_ADDED))
+    if (Number(added) > catalog && ids.includes(id)) return NO_AVATAR_ID;
+  return id;
 }
 
 // ---------------------------------------------------------------------------------------------------------
