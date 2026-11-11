@@ -183,3 +183,30 @@ Moshe authorized a test → fix → APK → retest loop on the two phones withou
     - fixes for friends-game (the box, the GO jump) and nav (map recreate, nav bar);
     - a perfetto trace of the first warp, then a warp fix;
     - a recheck of loop 14 on APK 20.
+- 10.11 loop 15 done. data/fix-loop15.json and fixcheck-apk20.json are saved. Loops 1–15 were committed (91df2ac, 803a40b) and pushed.
+- 11.11 loop 16 (data/wf-loop16.js): the friends game opens at GO!, the GO! slam always starts small, and the warp standby no longer stalls. The resultsFrames test is now deterministic. Results are in data/fix-loop16.json and fixcheck-apk21.json.
+- 11.11 QA run #2 sync, stage 1 (no phones; data/qa-sync-stage1.json):
+  - 33 handled bugs were verified and 9 more were marked handled.
+  - 331 untested tasks got a note saying what blocks them.
+- 11.11 loop 17 (data/wf-loop17.js) fixed three bugs: the Home offline banner, the map selection after 'למפה', and the splash handoff. Verify is green (15380). APK 22 was built.
+- 11.11 final phone pass on APK 22 (data/fixcheck-apk22.json):
+  - It covered the loop 16/17 checks, 9 needsPhone bugs and 19 needsPhone tasks, and marked run #2.
+  - Committed and pushed as a542bc5.
+  - It found that loop 17 had hidden Home's entrance under the Splash and that the Splash was held too short.
+- 11.11 loop 18 (data/wf-loop18.js, data/fix-loop18.json; 42476a9):
+  - Splash hold: splashSeenMs 500 ms, counted in drawn frames.
+  - Home's entrance now waits for the handoff.
+  - Solo score flight target, and the board rises in.
+  - History 'מדורג' paging, with the server's rated=1 (staging deployed from 42476a9).
+  - Pirates lab steps.
+  - Verify is green (668/15400). APK 23 is on both phones.
+- 11.11 APK 23 check (data/fixcheck-apk23.json):
+  - Passed: the splash, the solo flight and the history paging.
+  - Partial: the Home card rise is not seen (a UI-thread stall as the Splash fades), the history switch shows a skeleton, and the pirates lab blinks on a quick tap and is slow to start moving.
+- Run #2 now: V 596 · ½ 18 · X 1 · 333 untested (they need Moshe, an account, a 3rd player or iOS). Bugs: 17 open, 2 handled.
+- Open, all low: home-card-rise-not-seen, rm-splash-no-fade-frames (check by eye), history-ranked-switch-skeleton, history-offline-note-wording, pirates-lab-quick-tap-back-blink, pirates-lab-idle-start-late.
+- Waiting for Moshe:
+  - the English 'Reconnecting... N' caption;
+  - the cut during the 🔥 spin (avatars-look-corner-clip);
+  - splashSeenMs (500);
+  - the open bugs that need accounts or decisions.

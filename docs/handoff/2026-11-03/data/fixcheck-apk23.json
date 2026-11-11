@@ -1,0 +1,110 @@
+{
+ "p3": {
+  "checks": [
+   {
+    "id": "account-open-splash-look",
+    "result": "pass",
+    "evidence": "APK 23, phone 3. Recorded 5 cold starts from the drawer icon: RM off x2, RM on x2 and airplane x1. The full Splash (◆■▲●, SUDOKU FIGHT/סודוקו פייט, tagline, spinner with 'טוען את הזירה…', tip) is there in the first cross-fade frame. After the last frame with any trace of the icon, the Splash is alone and fully opaque for about 0.58-0.76 s in every run (off1 3605-4285, off2 3911-4642, rm1 3689-4267+, rm2 3656-4336+, air 3810-4460+). The icon and the Splash never leave in the same frame. With RM off, a fade of about 0.1-0.2 s follows to Home. In airplane mode it is the same, then Home with the offline banner. With RM on, no in-between fade frame was captured in either run: Splash to Home in one frame. The recorder ran at about 12 fps there, so the 0.2 s fade is left to Moshe's eye. Total time from tapping the icon to Home fully shown is about 3.5-4.1 s: about 2.5-3 s on the system icon (JS load), then about 1.0-1.1 s from the icon's fade to Home. Files: qa-shots/l18-RF8Y30L038L-account-open-splash-look-{off1,off2,rm1,rm2,air1}.mp4 and -1.png/-2.png.",
+    "qaAction": "Ran fix 2 with fixed-in '1.1.0 (42476a9, APK 23)' and a loop-18 cause and fix note, then marked pass. Status is now verified."
+   },
+   {
+    "id": "general-motion-home-entrance",
+    "result": "partial",
+    "evidence": "Two RM-off cold starts. In the Splash's first fading frame 'שחק' is absent. In the next frame (about 35 ms later) it is dim and slightly small, and in the frame after that it is full. 'עוד סיבוב' and 'משחקים אחרונים' follow in a stagger, all within about 0.1-0.2 s of the fade starting, so the old bug (Home fully laid out under the Splash) is fixed. The profile card is NOT seen rising: it is already at its final y in the first fading frame. Measured avatar centroid: 473.6 to 471.4 px in off2 and 471.9 to 471.4 px in off1, against a planned rise of about 34 px. It only fades in with the Splash. Duplicate frames and a skipped first ~100 ms of the fade point to a UI-thread stall, as the fix notes predicted. Returning from Settings, from History and from the background gives no second entrance. 'משחק חדש' cards stagger in on both entries. With RM on, Home appears at once.",
+    "qaAction": "Ran fix 2 (APK 23, loop-18 cause and fix), then marked partial with an actual file. Status is now reopened."
+   },
+   {
+    "id": "general-alive-menus",
+    "result": "partial",
+    "evidence": "Home line: partial, the same as home-entrance. 'שחק' and the rows enter after the Splash fades, but there is no card rise. Board line: now seen. In practice vs Pip and in solo, after the screen and cards are drawn, the board appears dim and lower, rises about 40 px and is full within about 60-100 ms. The keypad follows 20-40 ms later with a small rise. A cell and digit tapped right after were accepted. Resuming a running practice through the 3-2-1 cover shows no rise. With RM on, the board and keypad are there at once. Settings back: no re-entrance. 'משחק חדש' cards stagger on every entry. Leaderboard and History show a skeleton, then staggered rows. Achievements appears almost at once, with a short fade on its rows. The tab pill and gold label are present.",
+    "qaAction": "Ran fix 2 (APK 23, both loop-18 fixes), then marked partial with an actual file. Status is now reopened."
+   },
+   {
+    "id": "game-moves-flight",
+    "result": "pass",
+    "evidence": "Solo practice, fast, RM off, recorded. Correct A5=3: '+6' pops on the cell for about 0.27 s, flies in about 70 ms and lands just left of the big score at the top right, not on 'זמן' or 'מהלך שיא'. The score then counts 0 to 6 in about 0.5 s with '+6' beside it. Wrong A9=2: a red '−5' lands in the same slot, and the score turns red and counts down 6 to 1. In English the '+3.5' and '−5' land right of the score at the top left, not on Time/Best move. Whether the motion is smooth is left to Moshe's eye. Files: qa-shots/l18-RF8Y30L038L-game-moves-flight-1.mp4, -en.mp4, -1..4.png.",
+    "qaAction": "Ran fix 2 (APK 23, solo-score-flight-target cause and fix), then marked pass. Status is now verified."
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "home-card-rise-not-seen",
+    "title": "Home profile card shows no rise after the Splash (phone 3)",
+    "severity": "low",
+    "what": "On APK 23, phone 3, RM off cold start: 'שחק' and the rows now enter after the Splash starts to fade, but the profile card is already at its final position (within 2 px) in the first fading frame, so the ~12 dp rise is never visible. It looks like a UI-thread stall at the start of the fade: there are duplicate frames, and the first ~100 ms of the Splash fade is skipped. That stall eats the front-loaded rise. This is the risk the loop-18 notes named (AmbientLayer/Skia mount when covered turns false)."
+   },
+   {
+    "id": "rm-splash-no-fade-frames",
+    "title": "With RM on, no fade frames between Splash and Home",
+    "severity": "low",
+    "what": "In two RM-on cold starts the Splash goes to Home in a single recorded frame, with no 0.2 s fade. The recording was coarse there (~12 fps, also during the icon's native fade), so this may be a capture limit. Moshe should check it by eye."
+   }
+  ],
+  "catalogIssues": [
+   {
+    "taskId": "general-alive-menus",
+    "issue": "The 'הישגים' line asks for staggered rows, but the Achievements screen is a progress page that appears almost at once with a short fade on its rows. The expected line may need updating to match the design."
+   }
+  ],
+  "phoneState": "Phone 3 (RF8Y30L038L) was left as found: Reduced Motion 'כבויה', app language Hebrew, airplane off, font scale 1.0, density 450, animations 1. I ran adb.ts reset, relaunched the app, and it is on Home."
+ },
+ "p1": {
+  "checks": [
+   {
+    "id": "history-ranked-more",
+    "result": "partial",
+    "evidence": "APK 23, phone 1, recorded in l18-RF8Y60PP2XZ-history-ranked-more-1.mp4 and -2.mp4. Logs were read with logcat -d only; the saved log is l18-RF8Y60PP2XZ-logcat-history.txt.\n(a) Paging works. Under 'מדורג', scrolling to the end loaded the older rated games on its own (onEndReached). 81 unique rated cards: today 2, 9 Nov 35, 8 Nov 14, 7 Nov 5, 3 Nov 7, 2 Nov 8, 30 Oct 2, 23 Oct 1, 14-16 Oct 7. None of them is 'עם חברים' or a practice, and no card id appears twice. At the end there is no 'עוד משחקים' button: no such button showed at any point, because the list loads more as you scroll.\n(b) Old sequence: 13 fast flings, back to the top, then 'הכל'. 'הכל' turned gold within about 0.06-0.15 s. A skeleton showed for about 0.76 s, and the cards (friends games among them) faded in by about 1.2 s. It did not stall.\n(c) Quick switching 'הכל', 'מדורג', 'אימון', 'מדורג', 'הכל', about 0.3 s apart. Every tap was answered and the list ended on 'הכל' with cards, with no stuck skeleton. But highlights came late: 'אימון' about 0.4 s after its tap, the final 'הכל' about 0.8 s after its tap, and its cards about 1.6-1.9 s after. The second 'מדורג' never showed as selected (it was merged into the next tap).\n(d) Not met: step 2 expects the rated cards already read to show at once. In both recordings, tapping 'מדורג' first showed a skeleton for about 0.8-1.0 s, and the cards finished fading in about 1.2-1.4 s after the tap.\n(e) Offline: on 'הכל', airplane on, then 'מדורג'. The 2 rated cards already read showed, with the note and 'לנסות שוב' instead of the 'אין חיבור' page. Airplane off, then 'לנסות שוב': the full rated list loaded down to 14 Oct.\nlogcat -d for 07:53-08:03: no 'Skipped frames', no Davey, 0 'synchronouslyUpdateUIProps failed', no ANR. One 'VirtualizedList: You have a large list that is slow to update' at 07:54:57, during the scroll load.",
+    "qaAction": "Not marked: run #2 has no task about history paging ('qa.ts run 2 --bugs' shows none). The related filter task postgame-history-filter-practice was re-tested and marked pass, with a Hebrew note naming APK 23."
+   },
+   {
+    "id": "pirates-lab-stage-fill-slow",
+    "result": "partial",
+    "evidence": "APK 23, phone 1, screen Reduced Motion off, recorded in l18-RF8Y60PP2XZ-pirates-A/B/C/D.mp4. Frames were measured per video frame (button gold share, stage fill, stage frame-diff).\nA) From 1, tap 5: highlight about 0.05 s after the touch, while the Captain is still drawn. Stage empty at about 0.2 s. Parrot Keeper's 96 px row (both looks) filled at about 0.38 s. The 64, 36 and 22 rows were there by about 0.43 s. The stage stayed still until its first change about 2.36 s after the tap (expected 0.4-0.6 s). After the Captain was redrawn in C, the same thing happened at about 2.1 s, and in B at about 2.2 s.\nB) 61 taps, 1→9 and back, every 0.8 s for 50 s. All were registered. Highlight about 0.05-0.19 s after the tap (spread 0-136 ms, median 67). Stage filled 178-377 ms after the highlight (median 244), so about 0.25-0.5 s after the tap. The stage was blank 89-256 ms per switch. No ANR (the app pid stayed the same) and 0 'synchronouslyUpdateUIProps failed' in logcat -d -b all; the log is saved as l18-RF8Y60PP2XZ-logcat-pirates.txt. On APK 22 the highlight took 0.6-1.2 s and the stage 1.2-1.8 s.\nC) FAIL: tap 2, then 1 again 0.13 s later. Highlight 2 came, then the stage emptied, so the Captain was gone, and only then did 1 light up. The Captain came back about 0.39 s later. A second try with taps 0.31 s apart gave the same blink (about 0.31 s).\nD) With the screen's Reduced Motion on, 4→5 and 5→1: stage filled about 0.27-0.31 s after the highlight, the same as with it off, and nothing on the stage moved after the fill. Switched back off.\nThe grid gimmick start (offscreen) was not timed.",
+    "qaAction": "fix 2 avatars-pirates-lab --fixed-in \"1.1.0 (42476a9, APK 23)\", with the cause and fix in Hebrew. Then marked avatars-pirates-lab pass with a Hebrew note naming APK 23, because every line of the catalog task was seen and the stage now fills well within 1 s. The note also says that the hat puff and ladle jump are left for Moshe's eye, and that the quick 2→1 tap still blinks and the stage starts moving late. The task is now V/verified."
+   },
+   {
+    "id": "postgame-history-filter-practice",
+    "result": "pass",
+    "evidence": "APK 23, phone 1. 'אימון': only 'אימון מול בוט' or 'אימון לבד' cards, each with 'ללא דירוג', and the note 'משחקי אימון לא משנים את הדירוג, אבל הצפייה החוזרת עובדת גם בהם.' above the list. 'מדורג': only rated cards (81 down to 14 Oct, none 'עם חברים'), and the note is gone. 'הכל': rated, friends and practice games together.",
+    "qaAction": "Marked pass with a Hebrew note naming APK 23 (it was already verified and stays verified)."
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "pirates-lab-quick-tap-back-blink",
+    "title": "Pirates lab: tapping 2 then 1 within 0.13 s still blanks the Captain for about 0.4 s",
+    "severity": "low",
+    "what": "APK 23, phone 1, Settings › בדיקה › פיראטים, Reduced Motion off, on the Captain (1). Tap 'הגברת הפיראטית (2)' and 0.13 s later 'הקפטן (1)'. The recording shows 2 highlighted, then the stage empties (the 'gone' step runs), and only then does 1 light up. The Captain is redrawn about 0.39 s later. The second tap's highlight comes about 0.14 s after its touch, after 'gone' has run. Device check C expects the Captain to stay drawn. Recording: qa-shots/l18-RF8Y60PP2XZ-pirates-C.mp4. Dev screen only."
+   },
+   {
+    "id": "pirates-lab-idle-start-late",
+    "title": "Pirates lab: the stage starts moving about 2-2.4 s after a switch, not 0.4-0.6 s",
+    "severity": "low",
+    "what": "APK 23, phone 1, Reduced Motion off. After a switch the 96 px stage fills in about 0.4 s, then stays fully still until a single jump of the stage pixels (frame diff 12-16) about 2.1-2.4 s after the tap (1→5: 2.36 s; 2→1: about 2.1 s; last tap of the B run: about 2.2 s). Only then does it move slightly. The fix expects idling to start about 0.4-0.6 s after the tap (32 frames), so each step seems to take longer than 2 frames on the A16. With taps every 0.8 s, a character never starts moving. Recordings: qa-shots/l18-RF8Y60PP2XZ-pirates-A.mp4 and -B.mp4."
+   },
+   {
+    "id": "history-ranked-switch-skeleton",
+    "title": "History: switching to 'מדורג' shows a 0.8-1 s skeleton instead of the rated cards already read",
+    "severity": "low",
+    "what": "APK 23, phone 1. History opened on 'הכל' (cards loaded, two of today's are rated). Tap 'מדורג': the button turns gold at once, but a skeleton shows for about 0.8-1.0 s, and the rated cards finish fading in about 1.2-1.4 s after the tap. This happened in both recordings. The loop-18 change was meant to show the rated games 'הכל' had already read at once (seeding). Offline, the seeded cards do show, with the note. Also, in quick switching about 0.3 s apart the highlight can lag up to about 0.8 s, and one tap ('מדורג') is never shown as selected. Every tap is still answered and none gets stuck. Recordings: qa-shots/l18-RF8Y60PP2XZ-history-ranked-more-1.mp4 and -2.mp4."
+   },
+   {
+    "id": "history-offline-note-wording",
+    "title": "History offline note says only practices are shown while rated cards are listed",
+    "severity": "low",
+    "what": "APK 23, phone 1, History 'מדורג' in airplane mode. The note reads 'אין חיבור לשרת: מוצגים רק האימונים שבמכשיר.', but under it the 2 rated cards already read are shown. Since loop 18 keeps rated cards offline, the wording no longer matches. Shot: qa-shots/l18-RF8Y60PP2XZ-history-ranked-more-3.png."
+   }
+  ],
+  "catalogIssues": [
+   {
+    "taskId": "avatars-pirates-lab",
+    "issue": "The expected lines check content only. The bug this task was reopened for (time to highlight and to stage fill) has no expected line, so a timing regression could pass. A line could be added, such as: 'after a tap, the button is highlighted at once and the stage shows the new character within a second'."
+   },
+   {
+    "taskId": "postgame-history-filter-practice",
+    "issue": "There is no catalog task for paging under 'מדורג' (older rated games load as you scroll, with no friends games and no duplicates) or for answering fast filter switches. Today only fix-loop18's deviceCheck covers this. Also, the deviceCheck speaks of an 'עוד משחקים' button, but APK 23 loads more by itself on scroll and never shows that button."
+   }
+  ],
+  "phoneState": "טלפון 1 (RF8Y60PP2XZ, אורי) נשאר על APK 23. הרצתי adb.ts reset (גודל גופן 1, אנימציות 1, תיקון צבעים כבוי, מצב טיסה כבוי). מצב הטיסה הודלק לבדיקת אופליין וכובה. גם show_touches הודלק לכיול ואז נמחק, כך שחזר ל־null כמו קודם. מתג 'הפחתת תנועה' של מסך הפיראטים הוחזר לכבוי, ו'הפחתת תנועה' של האפליקציה לא שונתה. האפליקציה הופעלה מחדש והיא על הבית, בעברית. קובצי העזר שהעליתי ל־/data/local/tmp ול־/sdcard נמחקו, ואין screenrecord שרץ. ההקלטות, התמונות וקובצי ה־logcat נמצאים ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/ (l18-RF8Y60PP2XZ-*). קובצי ההערות נמצאים ב־C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-final/ (l18-p1-*)."
+ }
+}
