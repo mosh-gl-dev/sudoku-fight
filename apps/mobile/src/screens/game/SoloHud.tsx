@@ -80,12 +80,23 @@ export const SoloHud = memo(function SoloHud({
   const { t } = useTranslation('game');
   const { t: tp } = useTranslation('player');
 
-  // The delta slot sits in the score row; both rects are needed to place it in the HUD.
+  // The delta slot sits in the score row, which sits in my summary: all three rects are needed to place it in the
+  // HUD (soloTargetOf). QA solo-score-flight-target (APK 22): without the summary's own place the chips landed at
+  // the HUD's other side in Hebrew, on the time and best move, ~350 dp from the score that counts.
+  const summary = useRef<Rect | null>(null);
   const scoreRow = useRef<Rect | null>(null);
   const slot = useRef<Rect | null>(null);
   const report = useCallback(() => {
-    if (scoreRow.current && slot.current) onTargetLayout?.(within(scoreRow.current, slot.current));
+    const target = soloTargetOf(summary.current, scoreRow.current, slot.current);
+    if (target) onTargetLayout?.(target);
   }, [onTargetLayout]);
+  const onSummary = useCallback(
+    (e: LayoutChangeEvent) => {
+      summary.current = e.nativeEvent.layout;
+      report();
+    },
+    [report],
+  );
   const onScoreRow = useCallback(
     (e: LayoutChangeEvent) => {
       scoreRow.current = e.nativeEvent.layout;
@@ -148,6 +159,7 @@ export const SoloHud = memo(function SoloHud({
       {/* Start: who I am and my score, read as one summary (components.md §3.6). */}
       <View
         style={styles.start}
+        onLayout={onSummary}
         accessible
         accessibilityRole="text"
         accessibilityLabel={cardLabel(card, tp)}
@@ -259,6 +271,17 @@ const sameStats = (a: SoloStats, b: SoloStats): boolean =>
  */
 export const soloTitleRoom = (hudWidth: number, endWidth: number): number =>
   hudWidth - HUD_GAP - endWidth - AVATAR_SIZES.card.frame - row.headerGap;
+
+/**
+ * Where the chips land, in the HUD's own coordinates (motion.md `points.flight`: the delta slot beside my score):
+ * the slot is laid out in the score row, the score row in my summary, the summary in the HUD. Null until all three
+ * have come. Each onLayout is relative to its parent only, so each step is needed: my summary is at the HUD's
+ * start, which is its right side in Hebrew.
+ */
+export function soloTargetOf(summary: Rect | null, scoreRow: Rect | null, slot: Rect | null): Rect | null {
+  if (!summary || !scoreRow || !slot) return null;
+  return within(summary, within(scoreRow, slot));
+}
 
 /** One stat, read as one element with its own label. */
 function Stat({

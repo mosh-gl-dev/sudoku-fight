@@ -18,7 +18,7 @@ import {
   NO_AVATAR_ID,
   normalizeAvatarId,
 } from '@sudoku-fight/protocol';
-import { and, asc, desc, eq, inArray, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import type { Db } from '../db';
 import { FRIENDS_GAME_MODE, type Game, gameEvents, gamePlayers, games, users } from '../db/schema';
@@ -116,12 +116,16 @@ function toHistoryGame(g: Game, seats: HistoryPlayer[], userId: string): History
   };
 }
 
-/** One page of `userId`'s finished games, after `cursor` (the first page without one). */
+/**
+ * One page of `userId`'s finished games, after `cursor` (the first page without one). `rated`: the games that
+ * can move a rating only, without the friends rooms' ones (the app's "מדורג", protocol HISTORY_RATED_PARAM).
+ */
 export async function listUserGames(
   db: Db,
   userId: string,
   cursor: HistoryCursor | null,
   pageSize: number = HISTORY_PAGE_SIZE,
+  { rated = false }: { rated?: boolean } = {},
 ): Promise<HistoryPage> {
   const after =
     cursor === null
@@ -135,7 +139,7 @@ export async function listUserGames(
   const rows = await db
     .select()
     .from(games)
-    .where(and(isNotNull(games.endedAt), mine, after))
+    .where(and(isNotNull(games.endedAt), mine, after, rated ? ne(games.mode, FRIENDS_GAME_MODE) : undefined))
     .orderBy(desc(games.startedAt), desc(games.id))
     .limit(pageSize + 1);
   const page = rows.slice(0, pageSize);

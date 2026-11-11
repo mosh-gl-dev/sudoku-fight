@@ -1,3 +1,5 @@
+import type { HistoryGame, HistoryPage } from '@sudoku-fight/protocol';
+
 import { fourPlayerGame, soloGame, T0 } from '../../replay/testing/games';
 import {
   botDuelTable,
@@ -7,7 +9,8 @@ import {
   rankedDuel,
   savePractice,
 } from '../../replay/testing/sources';
-import { HistoryLoader } from '../historyLoader';
+import { type HistoryApi, HistoryApiError } from '../historyApi';
+import { HistoryLoader, type HistorySnapshot, MAX_PAGES_PER_READ } from '../historyLoader';
 import { dayOf, type HistoryEntry, mergeEntries, practiceEntry, rankedEntry } from '../historyModel';
 
 /**
@@ -175,7 +178,8 @@ describe('HistoryLoader: 20 at a time from both sources', () => {
         .slice(0, 20)
         .map((t) => t.config.id),
     );
-    expect(api.calls).toEqual(['games:']);
+    // "מדורג" asks for the rated games only (QA loop 18).
+    expect(api.calls).toEqual(['rated:']);
   });
 
   it('offline: the practices still show, and the screen is told', async () => {
@@ -198,5 +202,168 @@ describe('HistoryLoader: 20 at a time from both sources', () => {
     );
     expect(noDb.practiceOk).toBe(false);
     expect(noDb.entries.every((e) => e.source === 'ranked')).toBe(true);
+  });
+});
+
+describe('HistoryLoader: "מדורג" past many friends games (QA loop 18, history-ranked-more)', () => {
+  // The phone of the APK 22 pass: 3 rated games now, a long run of friends games, and older rated games.
+  const template = historyGameOf(rankedDuel('t'));
+  const game = (id: string, minutesAgo: number, friends = false): HistoryGame => ({
+    ...template,
+    id,
+    startedAt: T0 - minutesAgo * MIN,
+    ...(friends && { friends: true }),
+  });
+  const phoneGames = (friendsCount: number): HistoryGame[] => [
+    ...[0, 1, 2].map((k) => game(`new${k}`, k)),
+    ...Array.from({ length: friendsCount }, (_, k) => game(`fr${k}`, 10 + k, true)),
+    ...[0, 1, 2, 3, 4].map((k) => game(`old${k}`, 100_000 + k)),
+  ];
+  const RATED = ['new0', 'new1', 'new2', 'old0', 'old1', 'old2', 'old3', 'old4'];
+
+  /** A server of these games, 20 a page; `ignoresRated`: one before `rated=1`. `hold`: answers wait for it. */
+  function server(
+    list: HistoryGame[],
+    { ignoresRated = false, hold }: { ignoresRated?: boolean; hold?: Promise<void> } = {},
+  ) {
+    const calls: string[] = [];
+    const api: HistoryApi = {
+      async myGames(cursor, options) {
+        const rated = options?.rated === true && !ignoresRated;
+        calls.push(`${rated ? 'rated' : 'games'}:${cursor ?? ''}`);
+        if (hold) await hold;
+        // A keyset cursor, as the server's: where the next page starts among every game, whatever the filter.
+        const from = cursor === null ? 0 : Number(cursor);
+        const pool = list.slice(from).filter((g) => !rated || g.friends !== true);
+        const games = pool.slice(0, 20);
+        return {
+          games,
+          nextCursor: pool.length > 20 ? String(list.indexOf(games[games.length - 1]!) + 1) : null,
+        };
+      },
+      replay: () => Promise.reject(new Error('not here')),
+    };
+    return { api, calls };
+  }
+  const ids = (snap: HistorySnapshot) => snap.entries.map((e) => e.id);
+  const noPractice = async () => null;
+
+  it('a server with rated=1: one read, every rated game, and no "עוד משחקים" once there are no more', async () => {
+    const { api, calls } = server(phoneGames(300));
+    const loader = new HistoryLoader({ practice: noPractice, ranked: api });
+    const snap = await loader.show('ranked');
+    expect(ids(snap)).toEqual(RATED);
+    expect(snap.hasMore).toBe(false);
+    expect(calls).toEqual(['rated:']);
+  });
+
+  it('an older server (every game on every page): reads on past the friends games, a bounded number of pages a tap', async () => {
+    const { api, calls } = server(phoneGames(300), { ignoresRated: true });
+    const loader = new HistoryLoader({ practice: noPractice, ranked: api });
+    let snap = await loader.show('ranked');
+    // 10 pages (200 games) at the most in one read: the 3 new ones, and more to come.
+    expect(ids(snap)).toEqual(RATED.slice(0, 3));
+    expect(snap.hasMore).toBe(true);
+    expect(calls).toHaveLength(MAX_PAGES_PER_READ);
+    // One tap: the rest of the list, the older rated games with it, and nothing more after.
+    snap = await loader.more();
+    expect(ids(snap)).toEqual(RATED);
+    expect(snap.hasMore).toBe(false);
+    expect(snap.entries.some((e) => e.friends)).toBe(false);
+  });
+
+  it('"הכל" never waits for a page "מדורג" is still reading, and one page is never asked for twice', async () => {
+    let release = () => {};
+    const hold = new Promise<void>((r) => (release = r));
+    const list = phoneGames(60);
+    const slow = server(list, { hold });
+    const loader = new HistoryLoader({ practice: noPractice, ranked: slow.api });
+    // "הכל" first: its first page (held), then two taps on "עוד משחקים" while it is still on its way.
+    const first = loader.show('all');
+    const twoMore = [loader.more(), loader.more()];
+    release();
+    await first;
+    const last = (await Promise.all(twoMore))[1]!;
+    expect(ids(last)).toEqual(list.slice(0, 60).map((g) => g.id));
+    expect(slow.calls).toEqual(['games:', 'games:20', 'games:40']);
+
+    // "מדורג" is reading (its server never answers): "הכל" comes back at once, from what it has.
+    const never = new Promise<HistoryPage>(() => {});
+    const stuck: HistoryApi = {
+      myGames: (cursor, options) => (options?.rated ? never : slow.api.myGames(cursor, options)),
+      replay: () => never as never,
+    };
+    const fresh = new HistoryLoader({ practice: noPractice, ranked: stuck });
+    await fresh.show('all');
+    void fresh.show('ranked');
+    expect(ids(await fresh.show('all'))).toEqual(list.slice(0, 20).map((g) => g.id));
+  });
+
+  it('"מדורג" after "הכל" starts from the rated games it has: offline they still show, with the note', async () => {
+    const list = phoneGames(60);
+    const { api } = server(list);
+    let online = true;
+    const flaky: HistoryApi = {
+      myGames: (cursor, options) =>
+        online ? api.myGames(cursor, options) : Promise.reject(new HistoryApiError('network')),
+      replay: api.replay,
+    };
+    const loader = new HistoryLoader({ practice: noPractice, ranked: flaky });
+    await loader.show('all');
+    online = false;
+    const snap = await loader.show('ranked');
+    // The 3 new rated games of "הכל"'s first page, not the "no connection" page with no cards.
+    expect(ids(snap)).toEqual(RATED.slice(0, 3));
+    expect(snap.ranked).toBe('offline');
+
+    // Online again, "מדורג" goes on from "הכל"'s cursor: the older rated games, none twice.
+    online = true;
+    const calls: string[] = [];
+    const counted: HistoryApi = {
+      myGames: (cursor, options) => {
+        calls.push(`${options?.rated ? 'rated' : 'games'}:${cursor ?? ''}`);
+        return api.myGames(cursor, options);
+      },
+      replay: api.replay,
+    };
+    const seeded = new HistoryLoader({ practice: noPractice, ranked: counted });
+    await seeded.show('all');
+    const all = await seeded.show('ranked');
+    expect(ids(all)).toEqual(RATED);
+    expect(calls).toEqual(['games:', 'rated:20']);
+  });
+
+  it('a page still on its way when "נסה שוב" starts over lands nowhere: no card twice, no list cut short', async () => {
+    const list = phoneGames(30);
+    const pending: { rated: boolean; cursor: string | null; answer: (page: HistoryPage) => void }[] = [];
+    const held: HistoryApi = {
+      myGames: (cursor, options) =>
+        new Promise<HistoryPage>((answer) =>
+          pending.push({ rated: options?.rated === true, cursor, answer }),
+        ),
+      replay: () => Promise.reject(new Error('not here')),
+    };
+    const { api } = server(list);
+    const answer = async (k: number) => {
+      const { rated, cursor, answer: send } = pending[k]!;
+      send(await api.myGames(cursor, rated ? { rated: true } : undefined));
+    };
+    const loader = new HistoryLoader({ practice: noPractice, ranked: held });
+    const first = loader.show('ranked');
+    await Promise.resolve();
+    expect(pending).toHaveLength(1);
+    // "נסה שוב" while that page is on its way: a new read of the first page.
+    const again = loader.reload();
+    await Promise.resolve();
+    expect(pending).toHaveLength(2);
+    // The old page comes back first: it is not added to the new list...
+    await answer(0);
+    await first;
+    // ...and the new one, once.
+    await answer(1);
+    const snap = await again;
+    expect(ids(snap)).toEqual(RATED);
+    expect(new Set(ids(snap)).size).toBe(snap.entries.length);
+    expect(snap.hasMore).toBe(false);
   });
 });

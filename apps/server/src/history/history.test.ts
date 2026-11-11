@@ -22,6 +22,7 @@ import {
   isHistoryPage,
   isReplayAnswer,
   LEGACY_AVATAR_MAP,
+  myGamesPath,
   type ReplayAnswer,
   replayPath,
 } from '@sudoku-fight/protocol';
@@ -340,6 +341,61 @@ describe('GET /v1/me/games (spec §14.1)', () => {
     const replayed = await get<ReplayAnswer>(replayPath('f1'), 'ben');
     expect(replayed.status).toBe(200);
     expect(replayed.body.game).toMatchObject({ id: 'f1', friends: true });
+  });
+
+  it('rated=1 (QA loop 18, history-ranked-more): pages through the rated games only, past many friends games', async () => {
+    // ana: 3 rated games now, 50 friends games before them, and 5 older rated games (14–16 Oct on the phone).
+    const add = async (id: string, mode: 'ranked' | 'friends', minutesAgo: number) => {
+      const startedAt = new Date(T0 - minutesAgo * 60_000);
+      await t.db.insert(games).values({
+        id,
+        mode,
+        gameType: 'fast',
+        playerCount: 2,
+        puzzleId: NEARLY_DONE.id,
+        rules: {},
+        startedAt,
+        endedAt: new Date(startedAt.getTime() + 30_000),
+        endReason: 'lastPlayerStanding',
+      });
+      await t.db.insert(gamePlayers).values([
+        { gameId: id, userId: 'ana', seat: 0, status: 'active', finalScore: 1, mistakes: 0, place: 1 },
+        { gameId: id, userId: 'cid', seat: 1, status: 'surrendered', finalScore: 0, mistakes: 0, place: 2 },
+      ]);
+    };
+    for (let k = 0; k < 3; k++) await add(`new${k}`, 'ranked', k);
+    for (let k = 0; k < 50; k++) await add(`fr${String(k).padStart(2, '0')}`, 'friends', 10 + k);
+    for (let k = 0; k < 5; k++) await add(`old${k}`, 'ranked', 1000 + k);
+
+    const pages = async (rated: boolean) => {
+      const seen: HistoryGame[] = [];
+      const sizes: number[] = [];
+      let cursor: string | null = null;
+      do {
+        const answer: { status: number; body: HistoryPage } = await get<HistoryPage>(
+          myGamesPath(cursor, rated),
+          'ana',
+        );
+        expect(answer.status).toBe(200);
+        expect(isHistoryPage(answer.body)).toBe(true);
+        sizes.push(answer.body.games.length);
+        seen.push(...answer.body.games);
+        cursor = answer.body.nextCursor;
+      } while (cursor !== null);
+      return { ids: seen.map((g) => g.id), sizes, friends: seen.filter((g) => g.friends === true).length };
+    };
+    // "מדורג": one page with all 8, none of the friends games.
+    const rated = await pages(true);
+    expect(rated).toEqual({
+      ids: ['new0', 'new1', 'new2', 'old0', 'old1', 'old2', 'old3', 'old4'],
+      sizes: [8],
+      friends: 0,
+    });
+    // Without it (an older app, and "הכל"): every game, as before.
+    const all = await pages(false);
+    expect(all.sizes).toEqual([20, 20, 18]);
+    expect(all.friends).toBe(50);
+    expect(myGamesPath('1_x', true)).toBe(`${HISTORY_PATHS.myGames}?rated=1&cursor=1_x`);
   });
 
   it('refuses a cursor it did not make', async () => {

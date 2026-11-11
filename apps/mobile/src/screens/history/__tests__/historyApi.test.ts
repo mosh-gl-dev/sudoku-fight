@@ -58,6 +58,17 @@ describe('createHistoryApi', () => {
     expect(calls[1]!.url).toBe('http://server:2567/v1/me/games?cursor=1760000000000_g9');
   });
 
+  it('"מדורג" asks for the rated games only: rated=1, with the cursor too (QA loop 18)', async () => {
+    const empty = { games: [], nextCursor: null };
+    const { client, calls } = api([answer(200, empty), answer(200, empty)]);
+    await client.myGames(null, { rated: true });
+    await client.myGames('1760000000000_g9', { rated: true });
+    expect(calls.map((c) => c.url)).toEqual([
+      'http://server:2567/v1/me/games?rated=1',
+      'http://server:2567/v1/me/games?rated=1&cursor=1760000000000_g9',
+    ]);
+  });
+
   it('GET /v1/games/:id/replay: the game and its log', async () => {
     const replay = { game: historyGameOf(table), events: table.log };
     const { client, calls } = api([answer(200, replay)]);

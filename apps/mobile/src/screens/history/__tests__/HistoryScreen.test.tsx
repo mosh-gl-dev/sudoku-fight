@@ -163,6 +163,32 @@ describe('HistoryScreen', () => {
     expect(api.calls).toEqual(['games:', 'games:20']);
   });
 
+  it('"מדורג" past many friends games: every rated game, no endless "עוד משחקים", and "הכל" answers (QA loop 18)', async () => {
+    // APK 22's phone: rated games now, a long run of friends games, and older rated games (2 Nov, 14–16 Oct).
+    const fresh = [0, 1, 2].map((k) => rankedDuel(`new-${k}`, T0 + (200 - k) * MIN));
+    const friends = Array.from({ length: 45 }, (_, k) => rankedDuel(`fr-${k}`, T0 + (150 - k) * MIN));
+    const old = [0, 1].map((k) => rankedDuel(`old-${k}`, T0 + (10 - k) * MIN));
+    const api = fakeHistoryApi([...fresh, ...friends, ...old], { friends: friends.map((f) => f.config.id) });
+    await show(async () => null, api);
+    expect(cardIds()).toHaveLength(20);
+
+    await fireEvent.press(screen.getByTestId('history-filter-ranked'));
+    await settle();
+    expect(cardIds()).toEqual(
+      ['new-0', 'new-1', 'new-2', 'old-0', 'old-1'].map((id) => `history-card-${id}`),
+    );
+    // None left of this filter: no button that adds nothing.
+    expect(screen.queryByTestId('history-more')).toBeNull();
+    // The rated ones "הכל" had already, then on from its cursor, with rated=1.
+    expect(api.calls).toEqual(['games:', 'rated:20']);
+
+    // Back to "הכל": its cards at once, friends games among them.
+    await fireEvent.press(screen.getByTestId('history-filter-all'));
+    await settle();
+    expect(cardIds()).toHaveLength(20);
+    expect(cardIds()).toContain('history-card-fr-0');
+  });
+
   it('speaks English', async () => {
     await i18n.changeLanguage('en');
     const repo = await phone();

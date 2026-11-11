@@ -17,10 +17,13 @@ import { accountConfig } from '../config/account';
  *    Splash's first onLayout), the system splash goes by a short cross-fade (`SYSTEM_SPLASH_EXIT_MS`; Reduced
  *    Motion's short fade too, motion.md `splash.handoff`). The Splash under it is drawn whole from its first frame
  *    (no entrance: the cross-fade is its entrance), and it stays: the two never go together.
- * 3. `done`: the Splash has been seen whole, with no icon over it, for `SPLASH_SEEN_FRAMES` frames the display has
- *    drawn and `accountConfig.splashSeenMs` (counted on the UI thread, `useSystemSplashPacer`, so a busy start
- *    that runs both exits out in one late frame still leaves the Splash alone on screen for those frames). From
- *    here it fades to the first screen as it always did, once the sign-in is known.
+ * 3. `done`: the Splash has been seen whole, with no icon over it, for `accountConfig.splashSeenMs`, counted from
+ *    the end of the icon's cross-fade (its length and a margin), in time the display drew (on the UI thread,
+ *    `useSystemSplashPacer`). A stalled frame is credited at most `SPLASH_FRAME_CREDIT_MS`: the icon's exit runs
+ *    on the same (main) thread and may only start after a stall (QA APK 22 splash-hold-too-short: phone 3 stalls
+ *    at start; the old hold ran out 9 frames after the stall while the icon's 200 ms were only then starting, so
+ *    both went in the same frame). From here it fades to the first screen once the sign-in is known, and Home's
+ *    entrance starts then (HomeScreen: `useSystemSplashCovering`).
  *
  * Expo Go (and Jest, which runs as Expo Go unless a test says otherwise) has no handoff (`off`): the system splash
  * goes when the fonts are ready, as before. The app runs as a development or release build (CLAUDE.md).
@@ -33,20 +36,20 @@ import { accountConfig } from '../config/account';
 /** The system splash's exit: a short cross-fade into the app's Splash (Expo's default is 400 ms). */
 export const SYSTEM_SPLASH_EXIT_MS = 200;
 /**
- * Past the exit's length, before the Splash counts as uncovered: the native exit starts on the first frame drawn
- * after the hide, which can come a frame or two after the hold's clock starts.
+ * Past the exit's length, before the Splash counts as uncovered: the native exit starts only after the app's next
+ * drawn frame and the system's handover of the icon's view, a few frames after the hold's clock starts.
  */
-export const SYSTEM_SPLASH_EXIT_MARGIN_MS = 50;
-/** One frame at 60 Hz, ms. */
-const FRAME_MS = 1000 / 60;
+export const SYSTEM_SPLASH_EXIT_MARGIN_MS = 100;
 /**
- * Frames the display must draw with the Splash whole and uncovered before it may go: the seen time in 60 Hz
- * frames, at least 2 (one frame where the system splash is surely gone, and the next). A frame count, not only a
- * clock: after a stall the clock has run out in one frame, and both exits with it.
+ * The most one frame adds to the hold, ms (two 60 Hz frames, and a 30 Hz frame whole). A longer frame is a stall
+ * of the main thread, which the icon's exit waits on too: it may only start after it, so the stall counts as one
+ * frame, not as time the Splash was seen.
  */
-export const SPLASH_SEEN_FRAMES = Math.max(2, Math.round(accountConfig.splashSeenMs / FRAME_MS));
+export const SPLASH_FRAME_CREDIT_MS = 40;
 /** The Splash's time alone on screen after the system splash's exit, ms (a setting: accountConfig.splashSeenMs). */
 export const SPLASH_SEEN_MS = accountConfig.splashSeenMs;
+/** Drawn time from the hide until the Splash may go: the icon's exit, its margin, then the Splash alone. */
+export const SPLASH_HOLD_MS = SYSTEM_SPLASH_EXIT_MS + SYSTEM_SPLASH_EXIT_MARGIN_MS + SPLASH_SEEN_MS;
 /**
  * The system splash goes after this long even if no layout ever says so, and the app's Splash is let go this long
  * after the exit started even if no frame ever counts it out (fail-safes: neither may stay over the app).
@@ -115,35 +118,36 @@ export function endSystemSplashExit(): void {
 }
 
 /**
- * One frame drawn after the system splash was told to go, `elapsedMs` after the first: how many frames so far had
- * the Splash uncovered (the exit and its margin over), and whether it has been seen long enough.
+ * One frame drawn after the system splash was told to go, `frameGapMs` after the one before (0 for the first):
+ * the drawn time credited so far (`creditedMs`, each frame at most `SPLASH_FRAME_CREDIT_MS`), and whether the
+ * Splash has now been seen alone long enough (the exit and its margin over, then `SPLASH_SEEN_MS`).
  */
-export function systemSplashHoldStep(seen: number, elapsedMs: number): { seen: number; done: boolean } {
+export function systemSplashHoldStep(
+  creditedMs: number,
+  frameGapMs: number,
+): { credited: number; done: boolean } {
   'worklet';
-  const uncoveredAt = SYSTEM_SPLASH_EXIT_MS + SYSTEM_SPLASH_EXIT_MARGIN_MS;
-  const next = elapsedMs >= uncoveredAt ? seen + 1 : seen;
-  return {
-    seen: next,
-    done: next >= SPLASH_SEEN_FRAMES && elapsedMs >= uncoveredAt + SPLASH_SEEN_MS,
-  };
+  const credited = creditedMs + Math.min(Math.max(0, frameGapMs), SPLASH_FRAME_CREDIT_MS);
+  return { credited, done: credited >= SPLASH_HOLD_MS };
 }
 
 /**
  * The hold's clock, on the UI thread, for a component mounted only while the system splash's exit runs (the
- * app's Splash mounts it then: `useSystemSplashExiting`). Counts the frames the display draws from its mount, and
+ * app's Splash mounts it then: `useSystemSplashExiting`). Credits the frames the display draws from its mount, and
  * lets the Splash go when `systemSplashHoldStep` says it has been seen. Not an animation: nothing moves; it only
  * counts. Nothing is registered with the frame loop for the rest of the run.
  */
 export function useSystemSplashPacer(): void {
-  const anchor = useSharedValue(-1);
-  const seen = useSharedValue(0);
+  const last = useSharedValue(-1);
+  const credited = useSharedValue(0);
   const done = useSharedValue(false);
   useFrameCallback((info) => {
     'worklet';
     if (done.get()) return;
-    if (anchor.get() < 0) anchor.set(info.timestamp);
-    const step = systemSplashHoldStep(seen.get(), info.timestamp - anchor.get());
-    seen.set(step.seen);
+    const gap = last.get() < 0 ? 0 : info.timestamp - last.get();
+    last.set(info.timestamp);
+    const step = systemSplashHoldStep(credited.get(), gap);
+    credited.set(step.credited);
     if (!step.done) return;
     done.set(true);
     scheduleOnRN(endSystemSplashExit);

@@ -11,12 +11,14 @@ import { setAuthDeps, useAuth } from '../auth/authStore';
 import { installSignedInPlayer } from '../auth/testing/testAuth';
 import { memoryDb, type SqlJsDb } from '../game/testing/sqlJsDb';
 import i18n from '../i18n';
+import { homeEntrancePending, resetHomeEntrance } from '../screens/home/homeEntrance';
 import {
   endSystemSplashExit,
   hideSystemSplash,
   hideSystemSplashAfterLayout,
   resetSystemSplash,
-  SPLASH_SEEN_FRAMES,
+  SPLASH_FRAME_CREDIT_MS,
+  SPLASH_HOLD_MS,
   SPLASH_SEEN_MS,
   SYSTEM_SPLASH_EXIT_MARGIN_MS,
   SYSTEM_SPLASH_EXIT_MS,
@@ -35,8 +37,10 @@ import { useSettings } from '../state/settings';
  *   known (never Home first);
  * - the system splash goes a frame after the Splash's first layout, by a short cross-fade;
  * - the Splash under it is whole from its first frame (no entrance of its own under the cross-fade);
- * - it stays until the display has drawn it alone for SPLASH_SEEN_FRAMES frames and SPLASH_SEEN_MS (a frame count,
- *   so a stall can't run both exits out in one frame), then fades to Home.
+ * - it stays until the display has drawn it alone for SPLASH_SEEN_MS after the exit and its margin, each frame
+ *   credited at most SPLASH_FRAME_CREDIT_MS (a stall, after which the icon's exit may only start, counts as one
+ *   frame: QA APK 22 splash-hold-too-short), then fades to Home, and Home's entrance starts then (QA APK 22
+ *   home-entrance-hidden-under-splash).
  */
 
 const mockApp: { db: SqlJsDb | null } = { db: null };
@@ -108,6 +112,7 @@ describe('the system splash hands over to the app Splash (QA account-open-splash
   beforeEach(async () => {
     // A build's cold start: the system splash is held (as the root layout's import left it).
     resetSystemSplash('held');
+    resetHomeEntrance();
     hideAsync.mockClear();
     await i18n.changeLanguage('he');
     useSettings.setState({ language: 'he', languageSource: 'app', reduceMotion: 'off' });
@@ -182,11 +187,17 @@ describe('the system splash hands over to the app Splash (QA account-open-splash
     expect(screen.queryByTestId('home-scroll')).toBeNull();
     layout();
 
-    // The frames end it (not the fail-safe): then the Splash fades to Home.
+    // Home's entrance waits under the Splash (before: it played there, unseen, as soon as the sign-in was known).
+    await waitFor(() => expect(Date.now() - hiddenAt).toBeGreaterThanOrEqual(UNCOVERED_AT));
+    expect(systemSplashPhase()).toBe('exiting');
+    expect(homeEntrancePending()).toBe(true);
+
+    // The frames end it (not the fail-safe): then the Splash fades to Home, and Home's entrance starts.
     await waitFor(() => expect(systemSplashPhase()).toBe('done'));
     const heldFor = Date.now() - hiddenAt;
     expect(heldFor).toBeGreaterThanOrEqual(UNCOVERED_AT + SPLASH_SEEN_MS);
     expect(heldFor).toBeLessThan(SYSTEM_SPLASH_FAILSAFE_MS);
+    await waitFor(() => expect(homeEntrancePending()).toBe(false));
     await waitFor(() => expect(screen.getByTestId('home-scroll')).toBeOnTheScreen());
     await waitFor(() => expect(screen.queryByTestId('splash')).toBeNull());
     // Once, whatever layouts followed.
@@ -202,26 +213,56 @@ describe('services/systemSplash', () => {
   });
   afterEach(() => jest.useRealTimers());
 
-  it('counts the Splash seen only in frames past the exit, and never by the clock alone (a stall)', () => {
-    // Frames during the exit don't count.
-    let state = { seen: 0, done: false };
-    for (let t = 0; t < UNCOVERED_AT; t += 16) {
-      state = systemSplashHoldStep(state.seen, t);
-      expect(state).toEqual({ seen: 0, done: false });
+  /** The drawn frames (gaps between them, ms) until the hold says done: the time from the first frame, ms. */
+  function holdUntilDone(gaps: readonly number[]): number | null {
+    let credited = 0;
+    let at = 0;
+    for (const [i, gap] of gaps.entries()) {
+      at += i === 0 ? 0 : gap;
+      const step = systemSplashHoldStep(credited, i === 0 ? 0 : gap);
+      credited = step.credited;
+      if (step.done) return at;
     }
-    // A stall: the first frame after it is 2 s on, both exits' clocks have run out, but the Splash has been
-    // drawn alone in one frame only.
-    state = systemSplashHoldStep(0, 2000);
-    expect(state).toEqual({ seen: 1, done: false });
-    for (let i = 2; i < SPLASH_SEEN_FRAMES; i += 1) {
-      state = systemSplashHoldStep(state.seen, 2000 + i * 16);
-      expect(state.done).toBe(false);
-    }
-    expect(systemSplashHoldStep(state.seen, 2000 + SPLASH_SEEN_FRAMES * 16).done).toBe(true);
-    // Enough frames (a 120 Hz display) but not yet the time: not yet.
-    expect(systemSplashHoldStep(SPLASH_SEEN_FRAMES + 5, UNCOVERED_AT + SPLASH_SEEN_MS - 1).done).toBe(false);
-    expect(systemSplashHoldStep(SPLASH_SEEN_FRAMES + 5, UNCOVERED_AT + SPLASH_SEEN_MS).done).toBe(true);
-    expect(SPLASH_SEEN_FRAMES).toBeGreaterThanOrEqual(2);
+    return null;
+  }
+
+  it('the Splash is let go only after the icon’s exit, its margin, then SPLASH_SEEN_MS of drawn frames', () => {
+    // A seen minimum of about half a second (a setting: accountConfig.splashSeenMs).
+    expect(SPLASH_SEEN_MS).toBeGreaterThanOrEqual(400);
+    expect(SPLASH_SEEN_MS).toBeLessThanOrEqual(600);
+    expect(SPLASH_HOLD_MS).toBe(UNCOVERED_AT + SPLASH_SEEN_MS);
+    // A smooth 60 Hz start: done at the first frame past the hold, not a frame earlier.
+    const at60 = holdUntilDone(Array.from({ length: 200 }, () => 1000 / 60))!;
+    expect(at60).toBeGreaterThanOrEqual(SPLASH_HOLD_MS);
+    expect(at60).toBeLessThan(SPLASH_HOLD_MS + 17);
+    // 120 Hz: the same time.
+    const at120 = holdUntilDone(Array.from({ length: 400 }, () => 1000 / 120))!;
+    expect(at120).toBeGreaterThanOrEqual(SPLASH_HOLD_MS);
+    expect(at120).toBeLessThan(SPLASH_HOLD_MS + 9);
+  });
+
+  it('a stall (phone 3 at start) counts as one frame: the Splash is still alone SPLASH_SEEN_MS after the icon’s exit', () => {
+    // Three frames, then a 1 s stall of the main thread, then 60 Hz. The icon's exit runs on that thread: it may
+    // only start on the frame after the stall, and is gone UNCOVERED_AT after it. The Splash must then stay at
+    // least SPLASH_SEEN_MS more (before: done 9 frames after the stall, while the icon's 200 ms ran, both went
+    // together).
+    const frames = [0, 16, 16, 1000, ...Array.from({ length: 200 }, () => 1000 / 60)];
+    const done = holdUntilDone(frames)!;
+    const stallEnd = 16 + 16 + 1000;
+    expect(done - stallEnd).toBeGreaterThanOrEqual(
+      UNCOVERED_AT + SPLASH_SEEN_MS - 3 * SPLASH_FRAME_CREDIT_MS,
+    );
+    // Several stalls in a row: each one frame.
+    const stalls = holdUntilDone([
+      0,
+      ...Array.from({ length: 10 }, () => 500),
+      ...Array.from({ length: 200 }, () => 16),
+    ])!;
+    expect(stalls - 5000).toBeGreaterThanOrEqual(SPLASH_HOLD_MS - 10 * SPLASH_FRAME_CREDIT_MS);
+    // A frame is credited at most SPLASH_FRAME_CREDIT_MS, and never less than nothing.
+    expect(systemSplashHoldStep(0, 5000)).toEqual({ credited: SPLASH_FRAME_CREDIT_MS, done: false });
+    expect(systemSplashHoldStep(10, -5)).toEqual({ credited: 10, done: false });
+    expect(systemSplashHoldStep(SPLASH_HOLD_MS - 1, 1).done).toBe(true);
   });
 
   it('hides once, a frame after the layout, and covers until the Splash is seen (or the fail-safe)', () => {

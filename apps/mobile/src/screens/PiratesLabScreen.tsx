@@ -8,7 +8,7 @@ import {
   type PirateCharacter,
   type PirateLook,
 } from '@sudoku-fight/avatars';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type Dispatch, memo, type ReactNode, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,14 +31,88 @@ const COLUMN = STAGE + 2 * space[2];
 const SWITCH_FRAMES = 2;
 
 /**
- * A character switch, step by step (B32, QA run #2: a switch every 0.8 s froze the phone, "isn't responding"):
- * `gone`, the old character's avatars go, in a frame of their own; `still`, the new ones come, still; `live`,
- * they move. In the frame that deletes a view Reanimated moved, it still holds that view's last props, and on
- * Android every shape react-native-svg drew for the first time in that frame failed on it (AvatarArt
- * LAYERS_RETIRE_MS): some 3,000 new shapes against dozens of moving layers. What it holds costs every new shape a
- * little too, so the shapes draw before any layer moves.
+ * A character switch, step by step, each step in frames of its own (SWITCH_FRAMES apart):
+ * - `chosen`: the tapped button lights up, and nothing else changes (pirates-lab-stage-fill-slow, APK 22: in one
+ *   commit with the steps below, the highlight came 0.6 to 1.2 s after the tap);
+ * - `gone`: the old character's avatars go (B32, QA run #2: in the frame that deletes a view Reanimated moved, it
+ *   still holds that view's last props, and every shape drawn for the first time in that frame failed on it);
+ * - `stage`, `size-{px}`, `faces-{look}-{n}`: the new character comes, still, a part at a time, each part some 300
+ *   shapes at most: the 96 px stage first, then each smaller size, then every expression, FACES_PER_STEP at a time.
+ *   All at once, some 2,600 shapes held the stage blank until 1.2 to 1.8 s after the tap, and a tap meanwhile
+ *   waited for them;
+ * - `live-stage`, `live-sizes`, `live-faces-{look}-{n}`: it moves, a part at a time too (the shapes draw before any
+ *   layer moves). A part that moves is drawn again as its layers: all at once, the stage and every expression
+ *   with a gimmick (up to 18 at 52 px, some 2,000 shapes) came in one commit some 0.5 s after the tap, in the way
+ *   of the next tap. The last of these (SWITCH_DONE) is the switch's end, and the screen's rest.
+ * A tap midway changes only the highlight, and starts over from there.
  */
-type SwitchStep = 'gone' | 'still' | 'live';
+export type SwitchStep =
+  | 'chosen'
+  | 'gone'
+  | 'stage'
+  | `size-${number}`
+  | `faces-${PirateLook}-${number}`
+  | 'live-stage'
+  | 'live-sizes'
+  | `live-faces-${PirateLook}-${number}`;
+
+/** The expressions of a look drawn in one step of a switch (two of the invested look: some 290 shapes). */
+const FACES_PER_STEP = 2;
+
+/** The faces step that draws the expression at `index` of EXPRESSIONS in `look`. */
+const facesStep = (look: PirateLook, index: number): `faces-${PirateLook}-${number}` =>
+  `faces-${look}-${Math.floor(index / FACES_PER_STEP)}`;
+
+/** Every faces step of a switch, in order. */
+const FACES_STEPS = [
+  ...new Set(PIRATE_LOOKS.flatMap((look) => EXPRESSIONS.map((_, i) => facesStep(look, i)))),
+];
+
+/** Every step of a switch, in order. */
+export const SWITCH_STEPS: readonly SwitchStep[] = [
+  'chosen',
+  'gone',
+  'stage',
+  ...[...SIZES, CELL].map((px) => `size-${px}` as const),
+  ...FACES_STEPS,
+  'live-stage',
+  'live-sizes',
+  ...FACES_STEPS.map((step) => `live-${step}` as const),
+];
+
+/** The last step of a switch: everything drawn and moving as set (the screen at rest). */
+export const SWITCH_DONE: SwitchStep = SWITCH_STEPS[SWITCH_STEPS.length - 1]!;
+
+/** Whether `part` of the character is drawn at `step` (each part from its own step on). */
+export function partDrawn(step: SwitchStep, part: SwitchStep): boolean {
+  return SWITCH_STEPS.indexOf(step) >= SWITCH_STEPS.indexOf(part);
+}
+
+/** The step after `step` (SWITCH_DONE stays). */
+export function nextSwitchStep(step: SwitchStep): SwitchStep {
+  return SWITCH_STEPS[Math.min(SWITCH_STEPS.indexOf(step) + 1, SWITCH_STEPS.length - 1)]!;
+}
+
+/**
+ * Where a switch is: the chosen character (its button lit), the step, and while `chosen`, what is drawn until the
+ * old avatars go (the character and the step it had reached).
+ */
+export interface CharacterSwitch {
+  digit: PirateCharacter['digit'];
+  step: SwitchStep;
+  kept: { digit: PirateCharacter['digit']; step: SwitchStep };
+}
+
+/**
+ * A tap on `next`: only its button lights up (`chosen`), what is drawn stays as it is. Back on the character still
+ * drawn before the old avatars went, the switch is off: it goes on from where it was.
+ */
+export function chooseCharacter(s: CharacterSwitch, next: PirateCharacter['digit']): CharacterSwitch {
+  if (next === s.digit) return s;
+  const kept = s.step === 'chosen' ? s.kept : { digit: s.digit, step: s.step };
+  if (next === kept.digit) return { ...kept, kept };
+  return { digit: next, step: 'chosen', kept };
+}
 
 export interface PiratesLabScreenProps {
   onClose?: () => void;
@@ -59,32 +133,33 @@ export interface PiratesLabScreenProps {
  */
 export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: PiratesLabScreenProps) {
   const { t } = useTranslation('dev');
-  const { t: ta } = useTranslation('avatars');
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const appReduce = useReduceMotion();
   const [ownReduce, setOwnReduce] = useState<boolean | null>(null);
   const reduce = ownReduce ?? appReduce;
-  const [digit, setDigit] = useState<PirateCharacter['digit']>(PIRATE_CAST[0]!.digit);
-  const [step, setStep] = useState<SwitchStep>('live');
-  // The next step of a switch, SWITCH_FRAMES after this one is on screen (a new switch starts over).
+  const [sw, setSw] = useState<CharacterSwitch>(() => {
+    const first = PIRATE_CAST[0]!.digit;
+    return { digit: first, step: SWITCH_DONE, kept: { digit: first, step: SWITCH_DONE } };
+  });
+  const digit = sw.digit;
+  // The next step of a switch, SWITCH_FRAMES after this one is on screen (a new tap starts over).
   useEffect(() => {
-    if (step === 'live') return;
-    return afterFrames(SWITCH_FRAMES, () => setStep(step === 'gone' ? 'still' : 'live'));
-  }, [step, digit]);
-  const choose = (next: PirateCharacter['digit']) => {
-    if (next === digit) return;
-    setDigit(next);
-    setStep('gone');
-  };
-  // The character's avatars (not the board's, which keep theirs): none while the old ones go, then still.
-  const drawn = step !== 'gone';
-  const still = reduce || step === 'still';
+    if (sw.step === SWITCH_DONE) return;
+    const next = nextSwitchStep(sw.step);
+    return afterFrames(SWITCH_FRAMES, () => setSw((s) => ({ ...s, step: next })));
+  }, [sw.step, digit]);
+  const choose = (next: PirateCharacter['digit']) => setSw((s) => chooseCharacter(s, next));
+  // What is drawn now: while `chosen`, what was drawn before the tap. The character's avatars (not the board's,
+  // which keep theirs) come a part at a time, still, then move a part at a time.
+  const view = sw.step === 'chosen' ? sw.kept : sw;
+  const drawn = (part: SwitchStep) => partDrawn(view.step, part);
+  const still = (live: SwitchStep) => reduce || !partDrawn(view.step, live);
   const [expression, setExpression] = useState<Expression>('neutral');
   const [reaction, setReaction] = useState<AvatarReaction | null>(null);
   const [idle, setIdle] = useState(true);
   const [boardLook, setBoardLook] = useState<PirateLook>('invested');
-  const character = PIRATE_CAST.find((c) => c.digit === digit) ?? PIRATE_CAST[0]!;
+  const character = PIRATE_CAST.find((c) => c.digit === view.digit) ?? PIRATE_CAST[0]!;
   // Every digit of the crew has its name (with its digit) and a note on its own moving parts.
   const names: Record<PirateCharacter['digit'], string> = {
     1: t('piratesLab.captain'),
@@ -161,7 +236,7 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
           </View>
           <SizeRow label={t('piratesLab.sizeRow', { px: STAGE })}>
             {PIRATE_LOOKS.map((look) =>
-              drawn ? (
+              drawn('stage') ? (
                 <AvatarArt
                   key={`${look}-${character.looks[look].id}`}
                   avatarId={character.looks[look].id}
@@ -169,7 +244,7 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
                   expression={expression}
                   reaction={reaction}
                   idle={idle}
-                  reduceMotion={still}
+                  reduceMotion={still('live-stage')}
                   testID={`dev-pirates-stage-${look}`}
                 />
               ) : (
@@ -180,14 +255,14 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
           {SIZES.map((px) => (
             <SizeRow key={px} label={t('piratesLab.sizeRow', { px })}>
               {PIRATE_LOOKS.map((look) =>
-                drawn ? (
+                drawn(`size-${px}`) ? (
                   <AvatarArt
                     key={`${look}-${character.looks[look].id}`}
                     avatarId={character.looks[look].id}
                     size={px}
                     expression={expression}
                     reaction={reaction}
-                    reduceMotion={still}
+                    reduceMotion={still('live-sizes')}
                     testID={`dev-pirates-size-${px}-${look}`}
                   />
                 ) : (
@@ -198,7 +273,7 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
           ))}
           <SizeRow label={t('piratesLab.cellRow', { px: CELL })}>
             {PIRATE_LOOKS.map((look) =>
-              drawn ? (
+              drawn(`size-${CELL}`) ? (
                 <AvatarArt
                   key={`${look}-${character.looks[look].id}`}
                   avatarId={character.looks[look].id}
@@ -207,7 +282,7 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
                   radius={size.avatar.cell.radius}
                   expression={expression}
                   reaction={reaction}
-                  reduceMotion={still}
+                  reduceMotion={still('live-sizes')}
                   testID={`dev-pirates-size-${CELL}-${look}`}
                 />
               ) : (
@@ -228,36 +303,7 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
           testID="dev-pirates-reduce"
         />
 
-        <Text style={styles.section}>{t('piratesLab.expressions')}</Text>
-        <View style={styles.buttons}>
-          {EXPRESSIONS.map((e) => (
-            <Button
-              key={e}
-              label={expressionName(ta, e)}
-              accessibilityLabel={t('piratesLab.expressionLabel', { name: expressionName(ta, e) })}
-              variant="secondary"
-              size="modal"
-              selected={e === expression}
-              onPress={() => setExpression(e)}
-              testID={`dev-pirates-expression-${e}`}
-            />
-          ))}
-        </View>
-
-        <Text style={styles.section}>{t('piratesLab.motions')}</Text>
-        <View style={styles.buttons}>
-          {MOTION_IDS.map((m) => (
-            <Button
-              key={m}
-              label={ta(`motions.${m}`)}
-              accessibilityLabel={t('piratesLab.motionLabel', { name: ta(`motions.${m}`) })}
-              variant="secondary"
-              size="modal"
-              onPress={() => setReaction((r) => ({ motion: m, key: Number(r?.key ?? 0) + 1 }))}
-              testID={`dev-pirates-motion-${m}`}
-            />
-          ))}
-        </View>
+        <FaceButtons expression={expression} onExpression={setExpression} onReaction={setReaction} />
 
         <Text style={styles.sectionTitle} accessibilityRole="header">
           {t('piratesLab.allFaces')}
@@ -266,14 +312,14 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
           <View key={look} style={styles.group} testID={`dev-pirates-faces-${look}`}>
             <Text style={styles.groupTitle}>{lookName(look)}</Text>
             <View style={styles.grid}>
-              {EXPRESSIONS.map((e) =>
-                drawn ? (
+              {EXPRESSIONS.map((e, i) =>
+                drawn(facesStep(look, i)) ? (
                   <AvatarArt
                     key={`${e}-${character.looks[look].id}`}
                     avatarId={character.looks[look].id}
                     size={GRID}
                     expression={e}
-                    reduceMotion={still}
+                    reduceMotion={still(`live-${facesStep(look, i)}`)}
                   />
                 ) : (
                   <Gap key={e} side={GRID} />
@@ -324,6 +370,57 @@ export function PiratesLabScreen({ onClose, testID = 'dev-pirates-screen' }: Pir
     </View>
   );
 }
+
+/**
+ * The expression and motion buttons. Memoised (its props are the state and its setters): a step of a character
+ * switch never renders its twenty buttons again.
+ */
+const FaceButtons = memo(function FaceButtons({
+  expression,
+  onExpression,
+  onReaction,
+}: {
+  expression: Expression;
+  onExpression: (e: Expression) => void;
+  onReaction: Dispatch<SetStateAction<AvatarReaction | null>>;
+}) {
+  const { t } = useTranslation('dev');
+  const { t: ta } = useTranslation('avatars');
+  return (
+    <>
+      <Text style={styles.section}>{t('piratesLab.expressions')}</Text>
+      <View style={styles.buttons}>
+        {EXPRESSIONS.map((e) => (
+          <Button
+            key={e}
+            label={expressionName(ta, e)}
+            accessibilityLabel={t('piratesLab.expressionLabel', { name: expressionName(ta, e) })}
+            variant="secondary"
+            size="modal"
+            selected={e === expression}
+            onPress={() => onExpression(e)}
+            testID={`dev-pirates-expression-${e}`}
+          />
+        ))}
+      </View>
+
+      <Text style={styles.section}>{t('piratesLab.motions')}</Text>
+      <View style={styles.buttons}>
+        {MOTION_IDS.map((m) => (
+          <Button
+            key={m}
+            label={ta(`motions.${m}`)}
+            accessibilityLabel={t('piratesLab.motionLabel', { name: ta(`motions.${m}`) })}
+            variant="secondary"
+            size="modal"
+            onPress={() => onReaction((r) => ({ motion: m, key: Number(r?.key ?? 0) + 1 }))}
+            testID={`dev-pirates-motion-${m}`}
+          />
+        ))}
+      </View>
+    </>
+  );
+});
 
 /** A row of the stage: its size, then the house look and the invested one. */
 function SizeRow({ label, children }: { label: string; children: ReactNode[] }) {
@@ -414,7 +511,8 @@ const DESIGN_CELL = 38.4;
 const BOX_GAP = 3;
 const CELL_GAP = 1;
 
-function BoardMock({
+/** Memoised: its props are plain values, so a step of a character switch never renders its 81 cells again. */
+const BoardMock = memo(function BoardMock({
   width,
   look,
   crop,
@@ -524,7 +622,7 @@ function BoardMock({
       ))}
     </View>
   );
-}
+});
 
 const TRACK = { false: color.border, true: color.accent } as const;
 

@@ -30,6 +30,7 @@ import {
  *   GET /v1/me/games?cursor=…   → 200 HistoryPage. The caller's finished games on the server, newest first,
  *                                  HISTORY_PAGE_SIZE at a time; `nextCursor` asks for the page after (null:
  *                                  that was the last one). The cursor is opaque: send back what came.
+ *                                  `&rated=1`: the rated games only (HISTORY_RATED_PARAM).
  *   GET /v1/games/:id/replay    → 200 ReplayAnswer: the game and its whole event log, solution included
  *                                  (gameCreated carries it). Only for a player of that game, and only once
  *                                  it is over (spec §21: the solution never leaves the server mid-game).
@@ -52,6 +53,23 @@ export const replayPath = (gameId: string): string => `/v1/games/${encodeURIComp
 
 /** Spec §14.1: "טעינה הדרגתית, 20 משחקים בכל פעם". */
 export const HISTORY_PAGE_SIZE = 20;
+
+/**
+ * `GET /v1/me/games?rated=1` (QA loop 18, history-ranked-more): only the games that can move a rating, without
+ * the friends rooms' ones (HistoryGame.friends), a page at a time, so the app's "מדורג" filter pages through
+ * them alone and not through every friends game in between. A server before it ignores the parameter and sends
+ * every game: the app leaves the friends games out itself either way.
+ */
+export const HISTORY_RATED_PARAM = 'rated';
+
+/** The path of a page of my games: after `cursor` (null: the first page), only the rated ones when `rated`. */
+export function myGamesPath(cursor: string | null, rated = false): string {
+  const query = [
+    ...(rated ? [`${HISTORY_RATED_PARAM}=1`] : []),
+    ...(cursor === null ? [] : [`cursor=${encodeURIComponent(cursor)}`]),
+  ];
+  return query.length === 0 ? HISTORY_PATHS.myGames : `${HISTORY_PATHS.myGames}?${query.join('&')}`;
+}
 
 /** A game id the routes take: the server's UUIDs (and short ids in tests). */
 export const GAME_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;

@@ -3,7 +3,9 @@ import {
   avatarCatalogOf,
   decodeHistoryCursor,
   GAME_ID_PATTERN,
+  HISTORY_PAGE_SIZE,
   HISTORY_PATHS,
+  HISTORY_RATED_PARAM,
   type HistoryError,
   historyGameForCatalog,
   type HistoryPage,
@@ -20,7 +22,7 @@ import { listUserGames, readReplay } from './store';
 
 /**
  * The history routes (spec §13, §14.1, §21; the contract: packages/protocol/src/history.ts):
- *   GET /v1/me/games?cursor=…  ·  GET /v1/games/:id/replay
+ *   GET /v1/me/games?cursor=…[&rated=1]  ·  GET /v1/games/:id/replay
  *
  * Each request passes, in order: a per-IP limit; the accounts switch (production without FIREBASE_PROJECT_ID:
  * 503 `disabled`); the token (`Authorization: Bearer`, required); a per-account limit; the account itself
@@ -134,7 +136,9 @@ export function createHistoryRouter({
       return send(res, 400, { error: 'badRequest', message: 'cursor: send back a nextCursor as it came' });
     const userId = await accountOf(res);
     if (userId === undefined) return;
-    const page: HistoryPage = await listUserGames(db, userId, cursor);
+    // "מדורג" (QA loop 18): its pages hold rated games only; an older app sends no `rated` and gets every game.
+    const rated = req.query[HISTORY_RATED_PARAM] === '1';
+    const page: HistoryPage = await listUserGames(db, userId, cursor, HISTORY_PAGE_SIZE, { rated });
     // an older app refuses the whole page over one avatar it does not know: it gets none for a newer one
     const catalog = avatarCatalogOf(req.get(AVATAR_CATALOG_HEADER));
     res.json({ ...page, games: page.games.map((g) => historyGameForCatalog(g, catalog)) });

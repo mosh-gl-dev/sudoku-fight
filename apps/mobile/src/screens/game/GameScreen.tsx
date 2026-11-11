@@ -86,7 +86,7 @@ import {
   useSenderFeedback,
 } from './arsenal';
 import { BoardProgress } from './BoardProgress';
-import { BOARD_REVEAL, isFreshGame } from './boardReveal';
+import { BOARD_REVEAL, isFreshGame, useBoardReveal } from './boardReveal';
 import {
   blocksInput,
   ConnectionLayer,
@@ -464,6 +464,8 @@ export function GameScreen({
   // MOT-6 / BRD-8: a fresh game's board and keypad come in at its start (boardReveal.ts); not a stage (its
   // "מוכן?" covers the board) and not a game the screen comes back to. Decided once, on the first render.
   const [reveal] = useState(() => !level && !covered && isFreshGame(view));
+  // When they start: once the screen's own fade is over, unless GO! fades into the game (revealTimingOf).
+  const revealAt = useBoardReveal(reveal);
   // An opponent's second of immunity after a hit ends by the clock alone, with no update [D11]: read the view
   // again then, so "הפרעה" and the picker's kinds are ready on time. The game clock decides (it may run apart
   // from the phone's timers, e.g. synced to a server): the timer only looks again, a tick at most apart.
@@ -1628,7 +1630,8 @@ export function GameScreen({
             <View onLayout={onBoardLayout} testID="board-slot">
               <Enter
                 enabled={reveal}
-                delayMs={BOARD_REVEAL.boardAt}
+                play={revealAt.play}
+                delayMs={revealAt.boardAt}
                 distance={BOARD_REVEAL.rise}
                 testID="board-reveal"
               >
@@ -1660,7 +1663,8 @@ export function GameScreen({
           <View style={styles.keypad}>
             <Enter
               enabled={reveal}
-              delayMs={BOARD_REVEAL.keypadAt}
+              play={revealAt.play}
+              delayMs={revealAt.keypadAt}
               distance={BOARD_REVEAL.keypadRise}
               testID="keypad-reveal"
             >

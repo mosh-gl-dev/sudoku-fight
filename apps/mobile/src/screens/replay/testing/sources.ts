@@ -89,22 +89,44 @@ export function historyGameOf(table: Table, me = 'me'): HistoryGame {
   };
 }
 
-/** A server that knows these games (newest first), in pages of `pageSize`; or fails with `failWith`. */
+/**
+ * A server that knows these games (newest first), in pages of `pageSize`; or fails with `failWith`. `friends`:
+ * the ids of games played in a friends room (HistoryGame.friends). `rated: true` pages through the others only
+ * (a call is logged `rated:<cursor>`), unless `ignoresRated` (a server before it: every game, logged as `games:`).
+ */
 export function fakeHistoryApi(
   tables: readonly Table[],
-  { pageSize = 20, failWith }: { pageSize?: number; failWith?: HistoryApiErrorCode } = {},
+  {
+    pageSize = 20,
+    failWith,
+    friends = [],
+    ignoresRated = false,
+  }: {
+    pageSize?: number;
+    failWith?: HistoryApiErrorCode;
+    friends?: readonly string[];
+    ignoresRated?: boolean;
+  } = {},
 ): HistoryApi & { calls: string[] } {
   const calls: string[] = [];
-  const games = tables.map((t) => historyGameOf(t)).sort((a, b) => b.startedAt - a.startedAt);
+  const games = tables
+    .map((t) => historyGameOf(t))
+    .map((g) => (friends.includes(g.id) ? { ...g, friends: true } : g))
+    .sort((a, b) => b.startedAt - a.startedAt);
   return {
     calls,
-    async myGames(cursor) {
-      calls.push(`games:${cursor ?? ''}`);
+    async myGames(cursor, options) {
+      const rated = options?.rated === true && !ignoresRated;
+      calls.push(`${rated ? 'rated' : 'games'}:${cursor ?? ''}`);
       if (failWith) throw new HistoryApiError(failWith);
+      // The cursor is where the next page starts in the list of every game, whatever the filter: like the
+      // server's keyset (startedAt, id), one list's cursor goes on in the other.
       const from = cursor === null ? 0 : Number(cursor);
+      const pool = games.slice(from).filter((g) => !rated || g.friends !== true);
+      const shown = pool.slice(0, pageSize);
       const page: HistoryPage = {
-        games: games.slice(from, from + pageSize),
-        nextCursor: from + pageSize < games.length ? String(from + pageSize) : null,
+        games: shown,
+        nextCursor: pool.length > pageSize ? String(games.indexOf(shown[shown.length - 1]!) + 1) : null,
       };
       return page;
     },

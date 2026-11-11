@@ -11,9 +11,14 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { avatarDef } from '../avatars';
-import { drawnAvatarId, svgXmlsIn } from '../avatars/testing/avatarTesting';
+import {
+  drawnAvatarId,
+  isAvatarArtRoot,
+  type RenderedNode,
+  svgXmlsIn,
+} from '../avatars/testing/avatarTesting';
 import i18n from '../i18n';
-import { BOARD_LOCKS, PiratesLabScreen } from '../screens/PiratesLabScreen';
+import { BOARD_LOCKS, PiratesLabScreen, SWITCH_STEPS } from '../screens/PiratesLabScreen';
 import { useSettings } from '../state/settings';
 
 /**
@@ -54,8 +59,63 @@ async function frames(ms: number) {
 /** Chooses a character and lets its switch end (the new one drawn, moving as set). */
 async function choose(digit: number) {
   await fireEvent.press(screen.getByTestId(`dev-pirates-character-${digit}`));
-  await frames(200);
+  await settle();
 }
+
+/** Lets a switch run to its end, frame by frame (each step comes in frames of its own). */
+async function settle() {
+  // One step per call: each comes SWITCH_FRAMES (two frames) after the last is drawn.
+  for (let i = 0; i < SWITCH_STEPS.length; i++) await frames(32);
+}
+
+/** The shapes a markup draws (each element of it). */
+const shapesOf = (xml: string) => (xml.match(/<(?!\/)[a-zA-Z]/g) ?? []).length;
+/** The character's avatars (the stage card and every expression; not the board's), drawn now. */
+const characterXmls = () =>
+  ['dev-pirates-stage', ...PIRATE_LOOKS.map((look) => `dev-pirates-faces-${look}`)].flatMap(xmls);
+/**
+ * The shapes the character's avatars draw now that they did not draw a frame before: what a commit mounts (a
+ * markup drawn again as layers, once it moves, counts too).
+ */
+function addedShapes(before: readonly string[], now: readonly string[]): number {
+  const left = new Map<string, number>();
+  for (const x of before) left.set(x, (left.get(x) ?? 0) + 1);
+  let added = 0;
+  for (const x of now) {
+    const n = left.get(x) ?? 0;
+    if (n > 0) left.set(x, n - 1);
+    else added += shapesOf(x);
+  }
+  return added;
+}
+/** The avatars under an element. */
+const avatarsIn = (el: RenderedNode): RenderedNode[] =>
+  isAvatarArtRoot(el) ? [el] : el.children.flatMap((c) => (typeof c === 'string' ? [] : avatarsIn(c)));
+/** The expressions of the grid drawn as layers (moving), both looks. */
+const movingFaces = () =>
+  PIRATE_LOOKS.flatMap((look) => avatarsIn(screen.getByTestId(`dev-pirates-faces-${look}`, hidden))).filter(
+    (a) => svgXmlsIn(a).length > 1,
+  ).length;
+/** Which step of a switch is on screen (SwitchStep), from what is drawn; the highlight is its button's. */
+function stepNow(): string {
+  const stage = screen.queryByTestId('dev-pirates-stage-invested', hidden);
+  if (stage === null) return 'gone';
+  // From `live-stage` on, the stage idles (its layers).
+  if (xmls('dev-pirates-stage-invested').length > 1) return 'live-stage';
+  // The last expressions drawn: `faces-{look}-{n}`, two a step.
+  const faces = PIRATE_LOOKS.map(
+    (look) => [look, svgXmlsIn(screen.getByTestId(`dev-pirates-faces-${look}`, hidden)).length] as const,
+  ).filter(([, n]) => n > 0);
+  const last = faces[faces.length - 1];
+  if (last) return `faces-${last[0]}-${Math.ceil(last[1] / 2) - 1}`;
+  // The last size drawn.
+  const sizes = [64, 36, 22].filter(
+    (px) => screen.queryByTestId(`dev-pirates-size-${px}-invested`, hidden) !== null,
+  );
+  return sizes.length > 0 ? `size-${sizes[sizes.length - 1]}` : 'stage';
+}
+const isSelected = (digit: number) =>
+  screen.getByTestId(`dev-pirates-character-${digit}`).props.accessibilityState?.selected === true;
 
 async function show(onClose = jest.fn()) {
   await render(
@@ -170,7 +230,7 @@ describe('PiratesLabScreen (/dev/pirates)', () => {
       expect(screen.getByRole('button', { name: NAMES[c.digit]![1] })).toBe(
         screen.getByTestId(`dev-pirates-character-${c.digit}`),
       );
-  });
+  }, 60_000); // nine switches, each in its steps
 
   it('idles on the stage, plays a motion on every size, and with reduced motion only the face changes', async () => {
     useSettings.setState({ reduceMotion: 'system' });
@@ -197,33 +257,109 @@ describe('PiratesLabScreen (/dev/pirates)', () => {
     expect(useSettings.getState().reduceMotion).toBe('system');
   });
 
-  it('a new character comes in steps: the old one goes in a frame of its own, the new one comes still, then moves (B32)', async () => {
+  it('the tap lights its button in a commit of its own: the avatars drawn stay as they are (pirates-lab-stage-fill-slow)', async () => {
     await show();
-    const stage = () => screen.queryByTestId('dev-pirates-stage-invested', hidden);
-    const stepNow = () =>
-      stage() === null ? 'gone' : xmls('dev-pirates-stage-invested').length === 1 ? 'still' : 'live';
-    // The stage idles (its layers) as the switch starts.
-    expect(stepNow()).toBe('live');
+    await settle();
+    const before = characterXmls();
+    expect(isSelected(1)).toBe(true);
     await fireEvent.press(screen.getByTestId('dev-pirates-character-2'));
-    // None of the character's avatars in the commit that deletes the old ones; the board keeps its own.
+    // The highlight moves at once; not one avatar is drawn or deleted with it (the Captain still idles).
+    expect(isSelected(2)).toBe(true);
+    expect(isSelected(1)).toBe(false);
+    expect(characterXmls()).toEqual(before);
+    expect(stepNow()).toBe('live-stage');
+    // Another tap before the old avatars go: again only the highlight. Back on the Captain, nothing goes at all.
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-3'));
+    expect(isSelected(3)).toBe(true);
+    expect(characterXmls()).toEqual(before);
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-1'));
+    expect(isSelected(1)).toBe(true);
+    await settle();
+    expect(characterXmls()).toEqual(before);
+    // Then the switch: the old avatars go only once the highlight is on screen.
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-2'));
+    await frames(48);
     expect(stepNow()).toBe('gone');
-    expect(svgXmlsIn(screen.getByTestId('dev-pirates-stage', hidden))).toEqual([]);
-    expect(svgXmlsIn(screen.getByTestId('dev-pirates-faces-invested', hidden))).toEqual([]);
-    expect(xmls('dev-pirates-board-crop')).toHaveLength(BOARD_LOCKS.length);
-    const steps = ['gone'];
-    for (let i = 0; i < 20 && steps[steps.length - 1] !== 'live'; i++) {
+    expect(isSelected(2)).toBe(true);
+    // A tap while the new one starts to move, a part at a time: again only the highlight.
+    await settle();
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-3'));
+    for (let i = 0; i < SWITCH_STEPS.indexOf('live-faces-house-1'); i++) await frames(32);
+    expect(stepNow()).toBe('live-stage');
+    const midLive = characterXmls();
+    expect(midLive.length).toBeGreaterThan(0);
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-4'));
+    expect(isSelected(4)).toBe(true);
+    expect(isSelected(3)).toBe(false);
+    expect(characterXmls()).toEqual(midLive);
+    // Back on the Cabin Girl, she goes on moving from where she was.
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-3'));
+    await settle();
+    expect(drawnAvatarId(xmls('dev-pirates-size-64-house')[0])).toBe(byDigit(3)!.looks.house.id);
+  });
+
+  it('a new character comes in steps: the old one goes in a frame of its own, the new one a part at a time, still, the stage first, then moves a part at a time (B32)', async () => {
+    await show();
+    // The stage idles (its layers) as the switch starts.
+    expect(stepNow()).toBe('live-stage');
+    // The Cabin Girl: among the most shapes of the crew (some 2,700 in all, 12 expressions that move at 52 px).
+    await fireEvent.press(screen.getByTestId('dev-pirates-character-3'));
+    const steps = ['chosen'];
+    let drawnShapes = 0;
+    let stageAtMs: number | null = null;
+    let shown = characterXmls();
+    let moving = 0;
+    let movingAtMs = 0;
+    for (let ms = 16; ms <= 2000; ms += 16) {
       await frames(16);
+      // No commit of the switch mounts more than some 300 shapes: not the still parts, and not the parts that
+      // start to move (drawn again as their layers), two expressions at a time.
+      const xs = characterXmls();
+      expect(addedShapes(shown, xs)).toBeLessThanOrEqual(300);
+      shown = xs;
+      const m = movingFaces();
+      expect(m - moving).toBeLessThanOrEqual(2);
+      if (m !== moving) movingAtMs = ms;
+      moving = m;
       const now = stepNow();
+      if (now === 'live-stage' && steps[steps.length - 1] === 'chosen') continue; // the old one, still drawn
       if (now === steps[steps.length - 1]) continue;
       steps.push(now);
-      // Still: the new character's one picture at every size.
-      if (now === 'still')
+      if (now === 'gone') {
+        // None of the character's avatars in the commit that deletes the old ones; the board keeps its own.
+        expect(characterXmls()).toEqual([]);
+        expect(xmls('dev-pirates-board-crop')).toHaveLength(BOARD_LOCKS.length);
+      }
+      if (now === 'stage') {
+        stageAtMs = ms;
+        // Still: the new character's one picture, on the stage alone.
         expect(xmls('dev-pirates-stage-invested')).toEqual([
-          renderStatic(byDigit(2)!.looks.invested, { size: 96 }),
+          renderStatic(byDigit(3)!.looks.invested, { size: 96 }),
         ]);
+      }
+      if (now !== 'live-stage') drawnShapes = xs.reduce((sum, x) => sum + shapesOf(x), 0);
     }
-    expect(steps).toEqual(['gone', 'still', 'live']);
-    expect(drawnAvatarId(xmls('dev-pirates-size-64-house')[0])).toBe(byDigit(2)!.looks.house.id);
+    const faces = (look: string) => [0, 1, 2, 3, 4].map((n) => `faces-${look}-${n}`);
+    expect(steps).toEqual([
+      'chosen',
+      'gone',
+      'stage',
+      'size-64',
+      'size-36',
+      'size-22',
+      ...faces('house'),
+      ...faces('invested'),
+      'live-stage',
+    ]);
+    expect(steps).toEqual(SWITCH_STEPS.slice(0, SWITCH_STEPS.indexOf('live-stage') + 1));
+    // Then the expressions that move start to, two at a time, by the switch's last step.
+    expect(moving).toBeGreaterThan(2);
+    expect(movingAtMs).toBeLessThanOrEqual(SWITCH_STEPS.length * 2 * 16);
+    // The stage is drawn a few frames after the tap (the highlight, the old avatars gone, then the stage).
+    expect(stageAtMs).not.toBeNull();
+    expect(stageAtMs!).toBeLessThanOrEqual(6 * 16);
+    expect(drawnShapes).toBeGreaterThan(2500);
+    expect(drawnAvatarId(xmls('dev-pirates-size-64-house')[0])).toBe(byDigit(3)!.looks.house.id);
   });
 
   it('mocks the board with three opponents’ locks: the face crop beside the whole numeral', async () => {

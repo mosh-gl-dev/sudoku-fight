@@ -2,9 +2,9 @@ import {
   AVATAR_CATALOG,
   AVATAR_CATALOG_HEADER,
   HISTORY_ERROR_CODES,
-  HISTORY_PATHS,
   type HistoryErrorCode,
   type HistoryPage,
+  myGamesPath,
   readHistoryPage,
   readReplayAnswer,
   type ReplayAnswer,
@@ -57,8 +57,11 @@ export interface HistoryApiDeps {
 }
 
 export interface HistoryApi {
-  /** GET /v1/me/games: a page of my ranked games, newest first; `cursor` from the page before. */
-  myGames(cursor: string | null): Promise<HistoryPage>;
+  /**
+   * GET /v1/me/games: a page of my ranked games, newest first; `cursor` from the page before. `rated`: the rated
+   * ones only, without the friends games ("מדורג"; a server before it sends every game all the same).
+   */
+  myGames(cursor: string | null, options?: { rated?: boolean }): Promise<HistoryPage>;
   /** GET /v1/games/:id/replay: a game I played, with its whole log. */
   replay(gameId: string): Promise<ReplayAnswer>;
 }
@@ -128,11 +131,8 @@ export function createHistoryApi(deps: HistoryApiDeps): HistoryApi {
   }
 
   return {
-    async myGames(cursor) {
-      const path =
-        cursor === null
-          ? HISTORY_PATHS.myGames
-          : `${HISTORY_PATHS.myGames}?cursor=${encodeURIComponent(cursor)}`;
+    async myGames(cursor, options) {
+      const path = myGamesPath(cursor, options?.rated === true);
       // a seat's avatar this app does not know shows none, instead of refusing the page
       const page = readHistoryPage(await get(path));
       if (page === null) throw new HistoryApiError('unexpected');

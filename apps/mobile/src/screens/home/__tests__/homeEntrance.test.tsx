@@ -8,6 +8,12 @@ import { ENTER } from '../../../components/ui/Enter';
 import { useGameStore } from '../../../game/gameStore';
 import { openPracticeRepo, type PracticeRepo } from '../../../game/practiceRepo';
 import { practiceStorageOrNull } from '../../../game/storage';
+import {
+  endSystemSplashExit,
+  hideSystemSplash,
+  resetSystemSplash,
+  systemSplashPhase,
+} from '../../../services/systemSplash';
 import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
 import { usePracticeHistory } from '../../../state/practiceHistory';
@@ -119,6 +125,48 @@ describe('Home’s entrance (MOT-3)', () => {
     await frames(2000);
     expect(wrapperOf('profile-card')).toHaveAnimatedStyle({ opacity: 1, transform: [{ translateY: 0 }] });
     expect(homeEntrancePending()).toBe(false);
+  });
+
+  it('a cold start: waits under the Splash through the system splash’s handoff, and starts as the Splash goes', async () => {
+    // QA APK 22 home-entrance-hidden-under-splash: signed in at once, the entrance played under the Splash that
+    // covers Home for the handoff, and was never seen.
+    resetSystemSplash('held');
+    try {
+      await seedPractices(repo);
+      await renderApp();
+      await screen.findByTestId('recent-list', hidden);
+      await frames(2000);
+      expect(wrapperOf('profile-card')).toHaveStyle({ opacity: 0, transform: [{ translateY: ENTER.rise }] });
+      expect(homeEntrancePending()).toBe(true);
+      // The icon's exit runs over the Splash: still waiting.
+      await act(async () => hideSystemSplash());
+      expect(systemSplashPhase()).toBe('exiting');
+      await frames(1000);
+      expect(wrapperOf('profile-card')).toHaveStyle({ opacity: 0, transform: [{ translateY: ENTER.rise }] });
+      expect(wrapperOf('play')).toHaveStyle({ opacity: 0 });
+      expect(homeEntrancePending()).toBe(true);
+      // The Splash has been seen and starts to go: the entrance starts from its start, and plays to the end.
+      await act(async () => endSystemSplashExit());
+      expect(homeEntrancePending()).toBe(false);
+      expect(wrapperOf('profile-card')).toHaveAnimatedStyle({
+        opacity: 0,
+        transform: [{ translateY: ENTER.rise }],
+      });
+      await frames(2000);
+      expect(wrapperOf('profile-card')).toHaveAnimatedStyle({ opacity: 1, transform: [{ translateY: 0 }] });
+      expect(wrapperOf('play')).toHaveAnimatedStyle({ opacity: 1, transform: [{ scale: 1 }] });
+    } finally {
+      resetSystemSplash();
+    }
+  });
+
+  it('no handoff (a recreated activity, Expo Go): no wait, the entrance plays at once', async () => {
+    resetSystemSplash('off');
+    await renderApp();
+    await screen.findByTestId('profile-card');
+    expect(homeEntrancePending()).toBe(false);
+    await frames(2000);
+    expect(wrapperOf('profile-card')).toHaveAnimatedStyle({ opacity: 1, transform: [{ translateY: 0 }] });
   });
 
   it('once per run: a Home mounted after the entrance played (signed out and in again) is simply there', async () => {

@@ -67,6 +67,7 @@ async function layOut() {
   const layout = (testID: string, x: number, y: number, width: number, height: number) =>
     fireEvent(screen.getByTestId(testID), 'layout', { nativeEvent: { layout: { x, y, width, height } } });
   await layout('solo-hud', 16, 48, 358, 140);
+  await layout('solo-hud-summary', 158, 0, 200, 140);
   await layout('solo-hud-score-row', 0, 58, 200, 56);
   await layout('solo-hud-delta-slot', 70, 10, 44, 18);
   await layout('board-room', 0, 288, 390, 358);

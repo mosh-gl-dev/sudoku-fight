@@ -9,7 +9,9 @@ import { answerIn, emptyCellsOf, smallPool } from '../../../game/testing/practic
 import i18n from '../../../i18n';
 import { useSettings } from '../../../state/settings';
 import { motion } from '../../../theme/motion';
-import { BOARD_REVEAL, isFreshGame } from '../boardReveal';
+import { ANDROID_FADE_MS, flowFadeMs } from '../../../theme/flowFade';
+import { goCoverGate, GoCoverGateContext } from '../../match/goCoverGate';
+import { BOARD_REVEAL, isFreshGame, revealTimingOf } from '../boardReveal';
 import { GameScreen } from '../GameScreen';
 
 /**
@@ -45,10 +47,13 @@ async function practice() {
   return { session, puzzle, cells: emptyCellsOf(puzzle) };
 }
 
+/** Moves time on frame by frame (16 ms, a requestAnimationFrame under fake timers), rendering after each. */
 async function frames(ms: number) {
-  await act(async () => {
-    jest.advanceTimersByTime(ms);
-  });
+  for (let t = 0; t < ms; t += 16) {
+    await act(async () => {
+      jest.advanceTimersByTime(Math.min(16, ms - t));
+    });
+  }
 }
 
 beforeEach(async () => {
@@ -135,5 +140,71 @@ describe('GameScreen: the board reveal', () => {
     expect(animatedStyleOf('board-reveal')).toBeUndefined();
     expect(animatedStyleOf('keypad-reveal')).toBeUndefined();
     expect(screen.getByTestId('board-reveal', hidden)).toBeOnTheScreen();
+  });
+});
+
+/**
+ * QA board-no-rise (APK 22, practice against Pip): "the board shows up in its final place, together with the
+ * whole screen's fade, and does not move at all". The board's rise started one stagger after the mount, while the
+ * screen itself was still fading in (Android 150 ms, iOS 240), and the `standard` curve spends 80 % of it in its
+ * first 90 ms: it was over before the screen was fully drawn. With no GO! over the game the board now waits for the
+ * screen's first frames and its fade, then rises; under GO! (ranked, friends) nothing changes.
+ */
+describe('the reveal waits for the screen’s own fade (QA board-no-rise)', () => {
+  const opacityOf = (id: string) =>
+    (animatedStyleOf(id) as { value?: { opacity?: number } } | undefined)?.value?.opacity;
+
+  it('revealTimingOf: with no GO!, the board as the screen’s fade ends, the keypad a stagger later', () => {
+    const stagger = motion.sequence.matchFound.revealStagger;
+    expect(revealTimingOf(false, 'android')).toEqual({
+      boardAt: ANDROID_FADE_MS,
+      keypadAt: ANDROID_FADE_MS + stagger,
+      frames: 2,
+    });
+    expect(revealTimingOf(false, 'ios')).toEqual({
+      boardAt: motion.duration.stateChange,
+      keypadAt: motion.duration.stateChange + stagger,
+      frames: 2,
+    });
+    // Under GO!: as before, from the mount (QA loops 13-16).
+    expect(revealTimingOf(true, 'android')).toEqual({ boardAt: 60, keypadAt: 120, frames: 0 });
+    expect(revealTimingOf(true, 'ios')).toEqual({ boardAt: 60, keypadAt: 120, frames: 0 });
+  });
+
+  it('a practice: the board is still at its start while the screen fades in, then rises on a drawn screen', async () => {
+    const { session } = await practice();
+    await render(<GameScreen session={session} onEnded={jest.fn()} />);
+    // Well into the screen's own fade (the old reveal was 95 % in by now): not a pixel yet.
+    await frames(flowFadeMs(false) - 20);
+    expect(screen.getByTestId('board-reveal', hidden)).toHaveAnimatedStyle({
+      opacity: 0,
+      transform: [{ translateY: BOARD_REVEAL.rise }],
+    });
+    // The fade is over (and the first frames drawn): the board is on its way up, the keypad still waits.
+    await frames(120);
+    const board = opacityOf('board-reveal') ?? 0;
+    expect(board).toBeGreaterThan(0);
+    expect(board).toBeLessThan(1);
+    await frames(1500);
+    expect(screen.getByTestId('board-reveal', hidden)).toHaveAnimatedStyle({
+      opacity: 1,
+      transform: [{ translateY: 0 }],
+    });
+  });
+
+  it('under GO! (ranked, friends): the board starts as the game mounts under it, as before', async () => {
+    const { session } = await practice();
+    await render(
+      <GoCoverGateContext.Provider value={goCoverGate()}>
+        <GameScreen session={session} onEnded={jest.fn()} />
+      </GoCoverGateContext.Provider>,
+    );
+    await frames(BOARD_REVEAL.boardAt + 60);
+    expect(opacityOf('board-reveal') ?? 0).toBeGreaterThan(0);
+    await frames(1500);
+    expect(screen.getByTestId('board-reveal', hidden)).toHaveAnimatedStyle({
+      opacity: 1,
+      transform: [{ translateY: 0 }],
+    });
   });
 });

@@ -620,6 +620,30 @@ describe('a friends room in production (1.0.4)', () => {
     await leaveAll(gus);
   });
 
+  it('a new room’s first game: its time runs from GO to the end, not from the room’s opening or the lobby (QA loop 18)', async () => {
+    // results-game-time-12min: the time on the results is the server's GameResult.durationMs.
+    const LOBBY_MS = 1500;
+    const ticket = await createRoom('Hal', { gameType: 'normal' });
+    const hal = await Seat.enter('Hal', ticket);
+    const ivy = await Seat.enter('Ivy', await ticketTo('Ivy', ticket.room.code));
+    await hal.lobbyWhere((l) => l.players.length === 2, 'Ivy in the lobby');
+    // A while in the lobby before the host starts.
+    await new Promise((r) => setTimeout(r, LOBBY_MS));
+    hal.send('start');
+    const countdown = await ivy.until(() => ivy.of('countdown')[0], 'countdown');
+    const started = await ivy.event('gameStarted');
+    // The board is there: the host gives up at once.
+    hal.act({ type: 'surrender' });
+    const over = await ivy.event('gameOver');
+    // GO: the countdown's startsAt (a timer may fire a ms early), not the room's opening.
+    expect(started.t).toBeGreaterThanOrEqual(countdown.startsAt - 5);
+    expect(over.durationMs).toBe(over.t - started.t);
+    expect(over.durationMs).toBeLessThan(LOBBY_MS);
+    // Both phones get the same result.
+    expect((await hal.event('gameOver')).durationMs).toBe(over.durationMs);
+    await leaveAll(hal, ivy);
+  });
+
   it('logged nothing unexpected', () => {
     expect(log.errors).toEqual([]);
   });

@@ -41,12 +41,41 @@ export interface HistoryDeps {
   ranked: HistoryApi | null;
 }
 
+/**
+ * Server pages read in one call at the most, while too few of them are for the filter: what an older server
+ * (which sends the friends games under "מדורג" too) costs a tap, at the most. Another tap reads on.
+ */
+export const MAX_PAGES_PER_READ = 10;
+
+/** One list of games from the server, read page by page: every game ("הכל") or the rated ones ("מדורג"). */
+interface ServerList {
+  rated: boolean;
+  games: HistoryGame[];
+  cursor: string | null;
+  done: boolean;
+  status: RankedStatus;
+  code: string | null;
+  /** The page being read: a second read of the same list waits for it, never asks for the same page again. */
+  reading: Promise<void> | null;
+  /** Read from, or seeded: "מדורג"'s list starts from what "הכל"'s already has (`ratedList`). */
+  started: boolean;
+}
+
+/**
+ * "מדורג" is the rated games: a game with friends (1.0.4) shows under "הכל" only (historyModel inFilter). An older
+ * server sends them under "מדורג" too: they are counted out here as well.
+ */
+const isRated = (g: HistoryGame) => g.friends !== true;
+
 export class HistoryLoader {
-  private rankedGames: HistoryGame[] = [];
-  private cursor: string | null = null;
-  private rankedDone: boolean;
-  private rankedStatus: RankedStatus;
-  private rankedCode: string | null = null;
+  /**
+   * Two lists, each read only as far as its own filter needs (QA loop 18, history-ranked-more): "מדורג" used to
+   * page through every server game, friends ones included, and counted them all towards its 20, so with many
+   * friends games between the rated ones a tap on "עוד משחקים" read a page of friends games and showed nothing
+   * new; and one filter's reads ran on the same list as another's.
+   */
+  private all: ServerList;
+  private rated: ServerList;
 
   private practice: PracticeGameRecord[] = [];
   private practiceDone = false;
@@ -58,68 +87,143 @@ export class HistoryLoader {
   private count = PAGE_SIZE;
 
   constructor(private readonly deps: HistoryDeps) {
-    this.rankedDone = deps.ranked === null;
-    this.rankedStatus = deps.ranked === null ? 'signedOut' : 'ok';
+    this.all = this.newList(false);
+    this.rated = this.newList(true);
   }
 
   /** The first page of a filter. */
   async show(filter: HistoryFilter): Promise<HistorySnapshot> {
     this.filter = filter;
     this.count = PAGE_SIZE;
-    await this.fill();
-    return this.snapshot();
+    return this.read(filter, PAGE_SIZE);
   }
 
   /** 20 more cards. */
   async more(): Promise<HistorySnapshot> {
     this.count += PAGE_SIZE;
-    await this.fill();
-    return this.snapshot();
+    return this.read(this.filter, this.count);
   }
 
-  /** Starts over: reads both sources again (after "try again", or a game just played). */
+  /**
+   * Starts over: reads both sources again (after "try again", or a game just played). New lists, not the old ones
+   * emptied: a page still on its way lands in the list that asked for it, which is gone (`isLive`).
+   */
   async reload(): Promise<HistorySnapshot> {
-    this.rankedGames = [];
-    this.cursor = null;
-    this.rankedDone = this.deps.ranked === null;
-    this.rankedStatus = this.deps.ranked === null ? 'signedOut' : 'ok';
-    this.rankedCode = null;
+    this.all = this.newList(false);
+    this.rated = this.newList(true);
     this.practice = [];
     this.practiceDone = false;
     this.practiceOk = true;
     return this.show(this.filter);
   }
 
-  private async fill(): Promise<void> {
-    const wantRanked = this.filter !== 'practice';
-    const wantPractice = this.filter !== 'ranked';
-    await Promise.all([wantRanked ? this.fillRanked() : null, wantPractice ? this.fillPractice() : null]);
+  private newList(rated: boolean): ServerList {
+    const signedIn = this.deps.ranked !== null;
+    return {
+      rated,
+      games: [],
+      cursor: null,
+      done: !signedIn,
+      status: signedIn ? 'ok' : 'signedOut',
+      code: null,
+      reading: null,
+      started: false,
+    };
   }
 
-  private async fillRanked(): Promise<void> {
-    const api = this.deps.ranked;
-    while (api && !this.rankedDone && this.rankedGames.length < this.count) {
-      try {
-        const page = await api.myGames(this.cursor);
-        this.rankedGames.push(...page.games);
-        this.cursor = page.nextCursor;
-        this.rankedDone = page.nextCursor === null;
-      } catch (error) {
-        this.rankedDone = true;
-        this.rankedCode = supportCodeOf(error);
-        this.rankedStatus = !isHistoryApiError(error)
-          ? 'error'
-          : HISTORY_OFFLINE_CODES.includes(error.code) || error.code === 'unexpected'
-            ? 'offline'
-            : error.code === 'signedOut' || error.code === 'unauthorized' || error.code === 'notRegistered'
-              ? 'signedOut'
-              : 'error';
+  /** The server's list a filter shows ("אימון": none). */
+  private listOf(filter: HistoryFilter): ServerList | null {
+    return filter === 'practice' ? null : filter === 'ranked' ? this.ratedList() : this.all;
+  }
+
+  /**
+   * "מדורג"'s list, the first time from the rated games "הכל" has read already, and on from its cursor (the
+   * server's keyset, startedAt and id, is the same with `rated=1` or without): the switch shows them at once, and
+   * offline too, as before the two lists; only the pages after them are asked for with `rated=1`.
+   */
+  private ratedList(): ServerList {
+    const rated = this.rated;
+    const all = this.all;
+    if (!rated.started && (all.games.length > 0 || all.done)) {
+      Object.assign(rated, {
+        games: all.games.filter(isRated),
+        cursor: all.cursor,
+        done: all.done,
+        status: all.status,
+        code: all.code,
+        started: true,
+      });
+    }
+    return rated;
+  }
+
+  /** Whether a list is still one of the loader's (not one `reload` let go of). */
+  private isLive(list: ServerList): boolean {
+    return list === this.all || list === this.rated;
+  }
+
+  /** Reads what `count` cards of `filter` need; its snapshot is that filter's, whatever was asked meanwhile. */
+  private async read(filter: HistoryFilter, count: number): Promise<HistorySnapshot> {
+    const list = this.listOf(filter);
+    await Promise.all([
+      list ? this.fillServer(list, count) : null,
+      filter !== 'ranked' ? this.fillPractice(count) : null,
+    ]);
+    return this.snapshotOf(filter, count);
+  }
+
+  /** How many of the list's games its filter shows. */
+  private shownOf(list: ServerList): number {
+    return list.rated ? list.games.filter(isRated).length : list.games.length;
+  }
+
+  private async fillServer(list: ServerList, count: number): Promise<void> {
+    let pages = 0;
+    list.started = true;
+    while (this.isLive(list) && !list.done && this.shownOf(list) < count && pages < MAX_PAGES_PER_READ) {
+      if (list.reading) {
+        await list.reading;
+        continue;
       }
+      const reading: Promise<void> = this.readPage(list).finally(() => {
+        // Only its own: a newer read of the list is not let go of by an older one.
+        if (list.reading === reading) list.reading = null;
+      });
+      list.reading = reading;
+      await reading;
+      pages++;
     }
   }
 
-  private async fillPractice(): Promise<void> {
-    if (this.practiceDone || this.practice.length >= this.count) return;
+  private async readPage(list: ServerList): Promise<void> {
+    const api = this.deps.ranked;
+    if (!api) {
+      list.done = true;
+      return;
+    }
+    try {
+      const page = await api.myGames(list.cursor, list.rated ? { rated: true } : undefined);
+      // A list `reload` let go of meanwhile: its page goes nowhere.
+      if (!this.isLive(list)) return;
+      list.games.push(...page.games);
+      list.cursor = page.nextCursor;
+      list.done = page.nextCursor === null;
+    } catch (error) {
+      if (!this.isLive(list)) return;
+      list.done = true;
+      list.code = supportCodeOf(error);
+      list.status = !isHistoryApiError(error)
+        ? 'error'
+        : HISTORY_OFFLINE_CODES.includes(error.code) || error.code === 'unexpected'
+          ? 'offline'
+          : error.code === 'signedOut' || error.code === 'unauthorized' || error.code === 'notRegistered'
+            ? 'signedOut'
+            : 'error';
+    }
+  }
+
+  private async fillPractice(count: number): Promise<void> {
+    if (this.practiceDone || this.practice.length >= count) return;
     try {
       const repo = await this.deps.practice();
       if (!repo) {
@@ -128,10 +232,13 @@ export class HistoryLoader {
         return;
       }
       // One more than needed: whether there are more.
-      const limit = this.count + 1;
-      this.practice = await repo.listRecent(limit);
-      this.practiceDone = this.practice.length < limit;
-      for (const r of this.practice) {
+      const limit = count + 1;
+      const rows = await repo.listRecent(limit);
+      // A longer read (another filter's) that came back first stays.
+      if (rows.length < this.practice.length) return;
+      this.practice = rows;
+      this.practiceDone = rows.length < limit;
+      for (const r of rows) {
         if (r.mode === 'solo' || r.status !== 'finished' || this.results.has(r.id)) continue;
         this.results.set(r.id, (await repo.getGame(r.id))?.result ?? null);
       }
@@ -142,18 +249,25 @@ export class HistoryLoader {
     }
   }
 
+  /** What the screen shows now. */
   snapshot(): HistorySnapshot {
-    const ranked = this.rankedGames.map(rankedEntry);
+    return this.snapshotOf(this.filter, this.count);
+  }
+
+  private snapshotOf(filter: HistoryFilter, count: number): HistorySnapshot {
+    const list = this.listOf(filter);
+    const ranked = (list?.games ?? []).map(rankedEntry);
     const practice = this.practice.map((r) => practiceEntry(r, this.results.get(r.id) ?? null));
-    const merged = mergeEntries(ranked, practice, this.filter, this.count + 1);
-    const sourcesLeft =
-      (this.filter !== 'practice' && !this.rankedDone) || (this.filter !== 'ranked' && !this.practiceDone);
+    const merged = mergeEntries(ranked, practice, filter, count + 1);
+    const sourcesLeft = (list !== null && !list.done) || (filter !== 'ranked' && !this.practiceDone);
+    // "אימון" shows no server games: its status is that of "הכל"'s list (the screen notes none for it).
+    const server = list ?? this.all;
     return {
-      filter: this.filter,
-      entries: merged.slice(0, this.count),
-      hasMore: merged.length > this.count || sourcesLeft,
-      ranked: this.rankedStatus,
-      rankedCode: this.rankedStatus === 'ok' ? null : this.rankedCode,
+      filter,
+      entries: merged.slice(0, count),
+      hasMore: merged.length > count || sourcesLeft,
+      ranked: server.status,
+      rankedCode: server.status === 'ok' ? null : server.code,
       practiceOk: this.practiceOk,
     };
   }

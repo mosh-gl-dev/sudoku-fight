@@ -1,5 +1,4 @@
 import { DarkTheme, type NativeStackNavigationOptions, type Theme } from 'expo-router';
-import { Platform } from 'react-native';
 
 import { motion } from './motion';
 
@@ -47,19 +46,5 @@ export function transitions(reduce: boolean): Record<'menu' | 'flow' | 'tab', Tr
   };
 }
 
-/**
- * How long react-native-screens' 'fade' runs on Android, ms: its own tween (android/src/main/res/base/anim/
- * rns_fade_in.xml and rns_fade_out.xml, `android:duration="150"`), whatever `animationDuration` says. That prop is
- * the native `transitionDuration`, iOS only: Android's ScreenViewManager ignores it.
- */
-export const ANDROID_FADE_MS = 150;
-
-/**
- * How long the fade into a screen of a game's flow (`flow.fade`: the game, the results) really runs on this
- * platform: iOS takes the transition's `animationDuration` (240 ms; reduced motion 200), Android fades in its
- * fixed ANDROID_FADE_MS either way.
- */
-export function flowFadeMs(reduce: boolean, os: typeof Platform.OS = Platform.OS): number {
-  if (os === 'android') return ANDROID_FADE_MS;
-  return transitions(reduce).flow.animationDuration ?? 0;
-}
+// Android's fixed fade and the real length of `flow.fade` (flowFade.ts: readable without the navigator's theme).
+export { ANDROID_FADE_MS, flowFadeMs } from './flowFade';

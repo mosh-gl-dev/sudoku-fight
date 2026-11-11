@@ -17,6 +17,7 @@ import { useConnectivity, useConnectivityWatch, watchConnectionWhileShown } from
 import { refreshMyProgress, syncProgressNow } from '../../progress/appProgress';
 import { useMyCard, useMyProgress } from '../../progress/hooks';
 import { cue } from '../../services/feedback';
+import { useSystemSplashCovering } from '../../services/systemSplash';
 import { VerifyBanner } from '../account/VerifyEmailScreen';
 import { Announcer } from '../game/connection/Announcer';
 import { SuspendedBanner } from '../moderation/SuspendedBanner';
@@ -101,7 +102,12 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
   // screen never renders Home (B14).
   const [entrance, setEntrance] = useState(homeEntrancePending);
   const shown = useScreenFocused(entrance);
-  const splashGone = useAuth((s) => s.status === 'ready' && !needsNewName(s.me));
+  const signedIn = useAuth((s) => s.status === 'ready' && !needsNewName(s.me));
+  // On a cold start the Splash also covers Home for the system splash's handoff, after the sign-in is known: the
+  // entrance starts as it begins to fade (QA APK 22 home-entrance-hidden-under-splash: it played under it, unseen).
+  // No handoff (Expo Go, a recreated activity, a later Home): nothing to wait for.
+  const handoffCovering = useSystemSplashCovering();
+  const splashGone = signedIn && !handoffCovering;
   const enter = entrance && shown && splashGone;
   const [entered, setEntered] = useState(false);
   if (enter && !entered) setEntered(true);
