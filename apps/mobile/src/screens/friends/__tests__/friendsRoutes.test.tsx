@@ -19,7 +19,7 @@ import { memoryDb } from '../../../game/testing/sqlJsDb';
 import i18n from '../../../i18n';
 import { createFriendsRooms } from '../../../net/friends';
 import { deviceFriendsDeps, setFriendsRooms } from '../../../net/friendsDevice';
-import { GoCover } from '../../match/GoCover';
+import { GoCover, useGameOnItsWay } from '../../match/GoCover';
 import { handedGoCover, handGoCover } from '../../match/goHandoff';
 import { DANA, elapse, FakeFriendsTable, FakeRoomsApi, FCODE } from '../../../net/testing/fakeFriends';
 import { ME } from '../../../net/testing/fakeServer';
@@ -61,11 +61,16 @@ const ROUTES = {
   game: () => <StubGame />,
 };
 
-/** The game route as app/game.tsx opens it: on the GO! handed over (GoCover), read as it first renders. */
+/**
+ * The game route as app/game.tsx opens it: on the GO! handed over (GoCover), read as it first renders, the game
+ * mounted under it once here (useGameOnItsWay).
+ */
 function StubGame() {
   const [goCover] = useState(handedGoCover);
+  const online = useGameStore((s) => s.online);
+  const waiting = useGameOnItsWay(goCover, online?.connection);
   return (
-    <GoCover model={goCover}>
+    <GoCover model={goCover} waiting={waiting}>
       <Text testID="stub-game">game</Text>
     </GoCover>
   );
@@ -188,6 +193,45 @@ describe('the friends routes', () => {
       myId: ME,
       shownAt: expect.any(Number),
     });
+    await act(async () => handGoCover(null));
+  });
+
+  it('GO! by my clock, the game not here yet: the game screen opens at once on that GO!, and the game mounts under it as it comes (QA go-hold-joiner, loop 16)', async () => {
+    // The game's state comes 17–189 ms after GO! on the phones. The room used to open the game screen only then, so
+    // the push, the game route, its GO! cover's first draw and the room's leaving all came between the game's
+    // arrival and its own mount (the joiner's GO! → board 1.0–1.4 s).
+    const app = await renderApp('/friends/room?create=1', ROUTES);
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-code')).toBeOnTheScreen());
+    await act(async () =>
+      table.arrive({ id: DANA, name: 'Dana', avatarId: 'av00', country: 'IL', rating: 1190 }),
+    );
+    await serve();
+    await fireEvent.press(screen.getByRole('button', { name: 'התחל משחק · 2 שחקנים' }));
+    await act(async () => void table.countdown(3000));
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('friends-countdown-step')).toHaveTextContent('3'));
+    // GO by this phone's clock; the server has not sent the game yet.
+    await act(async () => elapse(table, 3000));
+    await waitFor(() => expect(app.pathname()).toBe('/game'));
+    expect(useGameStore.getState().online?.online.hasGame).toBe(false);
+    const frame = screen.getByTestId('friends-go-frame', hidden);
+    expect(within(frame).getByTestId('friends-countdown-step', hidden)).toHaveTextContent('GO!');
+    expect(within(frame).getByText('מכינים את הלוח…', hidden)).toBeOnTheScreen();
+    expect(handedGoCover()).toEqual(
+      expect.objectContaining({ kind: 'friendsGo', myId: ME, shownAt: expect.any(Number) }),
+    );
+    // While the game is on its way, nothing is mounted under GO! (not the room's online lobby, not the game).
+    await serve(150);
+    expect(app.pathname()).toBe('/game');
+    expect(screen.queryByTestId('stub-game')).toBeNull();
+    expect(screen.getByTestId('go-cover', hidden)).toBeOnTheScreen();
+
+    // The game comes: mounted under that GO!.
+    await act(async () => table.startGame());
+    await serve();
+    await waitFor(() => expect(screen.getByTestId('stub-game', hidden)).toBeOnTheScreen());
+    expect(useGameStore.getState().online?.online.hasGame).toBe(true);
     await act(async () => handGoCover(null));
   });
 

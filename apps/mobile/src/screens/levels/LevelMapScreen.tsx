@@ -76,6 +76,8 @@ import {
  * - Back from a stage (LEVEL_UI.mapChoreography; never under Reduced Motion): the new stars pop on the coin, the
  *   gold pours along the road to the next stage and my token hops there (progressStep, stepTimeline). A touch or
  *   a drag finishes it at once. The labels, the panel and the live region always say the true state.
+ * - Back by the result's "למפה": the stage after the one played is chosen, and the map goes to it (`select`),
+ *   an old stage replayed too (QA levels-to-map).
  *
  * What is open, the gates and the stars: the engine's rules over levels.db's records (the route reads them).
  * Every navigation waits for a closing sheet to leave first (no window torn down with the screen).
@@ -101,8 +103,14 @@ export interface LevelMapScreenProps {
    * Stars and XP count as usual.
    */
   unlockAll?: boolean;
-  /** A stage to choose when the map opens (the result's "לשלב הבא" with the quick entry off). */
+  /**
+   * A stage to choose when the map opens, or when it comes back (the result's "למפה": the stage after the one
+   * played; "לשלב הבא" with the quick entry off). A new value, or a new `pick`, chooses it again and takes the
+   * map to it.
+   */
   select?: string | null;
+  /** New with each choice from a stage's route, so the same stage chosen twice in a row is chosen again. */
+  pick?: string | null;
   /** A chapter whose gate opened and whose "פרק חדש נפתח" waits, and when it was shown. */
   celebrate?: number | null;
   onCelebrated?: (chapter: number) => void;
@@ -116,6 +124,7 @@ export function LevelMapScreen({
   openedChapters: openedOnce,
   unlockAll: unlockAllProp,
   select = null,
+  pick = null,
   celebrate = null,
   onCelebrated,
   onBack,
@@ -215,13 +224,35 @@ export function LevelMapScreen({
     setSeenCurrent(current);
     if (selected.kind === 'level' && selected.n === seenCurrent) setSelected({ kind: 'level', n: current });
   }
+  // A stage chosen from outside again (QA levels-to-map): the result's "למפה" comes back to this map, mounted
+  // under the stage all along, with the stage after the one played. A replayed old stage leaves the current one
+  // where it was, so only this moves the choice off the stage picked before. After the current stage's own
+  // follow, so it wins when both come at once.
+  const chosenTag = preselected !== null ? `${preselected}:${pick ?? ''}` : null;
+  const [seenChosen, setSeenChosen] = useState(chosenTag);
+  if (chosenTag !== seenChosen) {
+    setSeenChosen(chosenTag);
+    if (preselected !== null) setSelected({ kind: 'level', n: preselected });
+  }
+  /**
+   * The stage chosen from outside, which the map keeps in view: the current stage moving on later (levels.db read
+   * again as the map shows) does not take the map from it. Let go once the player moves the map or chooses.
+   */
+  const held = useRef<number | null>(preselected);
   const follow = useEffectEvent((n: number) => {
     if (!placed.current || viewport.current <= 0) return;
     keepInSight.current = null;
     scrollTo(openOffset(layout, n, viewport.current), !reduce);
   });
+  const followChosen = useEffectEvent(() => {
+    held.current = preselected;
+    // Back with no stage chosen (a plain return to the map): the current stage leads again.
+    if (preselected === null) return;
+    follow(preselected);
+  });
+  useEffect(() => followChosen(), [chosenTag]);
   // Only when the current stage moves (not for a new layout of the same progress).
-  useEffect(() => follow(current), [current]);
+  useEffect(() => follow(held.current ?? current), [current]);
 
   // Back from a stage: the map shows its last picture (`shown`) until the step from it to now has played. The
   // labels, the panel and the live region read the true records all along; only the coins' stars, the road's gold
@@ -295,6 +326,7 @@ export function LevelMapScreen({
   const toast = (message: string) => useToast.getState().show({ variant: 'info', message });
 
   const onNode = (info: NodeInfo) => {
+    held.current = null;
     setSelected({ kind: 'level', n: info.n });
     keepInSight.current = { kind: 'level', n: info.n };
     reveal();
@@ -312,6 +344,7 @@ export function LevelMapScreen({
   };
 
   const onGate = (chapter: number) => {
+    held.current = null;
     setSelected({ kind: 'gate', chapter });
     keepInSight.current = { kind: 'gate', chapter };
     reveal();
@@ -326,6 +359,7 @@ export function LevelMapScreen({
   const onJump = (chapter: number) => {
     setJumpOpen(false);
     keepInSight.current = null;
+    held.current = null;
     const index = indexOfChapter(layout, chapter);
     if (index >= 0) list.current?.scrollToIndex({ index, animated: !reduce });
   };
@@ -360,6 +394,7 @@ export function LevelMapScreen({
   // A drag: the player moves the map now (the step finishes, and what was chosen is no longer held in sight).
   const onDrag = () => {
     keepInSight.current = null;
+    held.current = null;
     stopStep();
   };
 

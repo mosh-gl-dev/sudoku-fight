@@ -9,6 +9,7 @@ import {
   type Stars,
 } from '@sudoku-fight/engine';
 import { render } from '@testing-library/react-native';
+import { Stack } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { FlatList, Pressable, StyleSheet, Text, View, type ViewStyle, VirtualizedList } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -209,6 +210,58 @@ describe('the level map', () => {
     });
     await fireEvent(list, 'layout', viewport(420));
     expect(scrolled).toHaveBeenCalledTimes(calls);
+  });
+
+  it('QA levels-to-map: a stage chosen from outside again (the result’s "למפה") moves the choice and the map, each time', async () => {
+    const scrolled = jest.spyOn(FlatList.prototype, 'scrollToOffset');
+    const props = await show({ records: played(5) });
+    const list = screen.getByTestId('level-map-list');
+    const layout = mapLayout(750, 'down', { plateOf: () => 'open' });
+    await fireEvent(list, 'layout', { nativeEvent: { layout: { width: 750, height: 600, x: 0, y: 0 } } });
+    await fireEvent(list, 'contentSizeChange', 750, 30000);
+    const title = () => screen.getByTestId('level-panel-title');
+    expect(title()).toHaveTextContent(/^שלב 6 · /);
+
+    // An old stage picked and replayed: the current stage (6) does not move, yet the map comes back on stage 2.
+    await fireEvent.press(screen.getByTestId('node-1'));
+    expect(title()).toHaveTextContent(/^שלב 1 · /);
+    await again(props, { select: 'L002', pick: 'run-a' });
+    expect(title()).toHaveTextContent(/^שלב 2 · /);
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 2, 600), animated: true });
+
+    // The records read again as the map shows move the current stage on: the map stays on the chosen one.
+    await again(props, { records: played(6), select: 'L002', pick: 'run-a' });
+    expect(title()).toHaveTextContent(/^שלב 2 · /);
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 2, 600), animated: true });
+
+    // The same stage chosen again (a new pick): chosen again, though `select` is the same.
+    await fireEvent.press(screen.getByTestId('node-1'));
+    expect(title()).toHaveTextContent(/^שלב 1 · /);
+    const before = scrolled.mock.calls.length;
+    await again(props, { records: played(6), select: 'L002', pick: 'run-b' });
+    expect(title()).toHaveTextContent(/^שלב 2 · /);
+    expect(scrolled.mock.calls.length).toBe(before + 1);
+
+    // Once the player chooses, a moving current stage takes the map again.
+    await fireEvent.press(screen.getByTestId('node-3'));
+    await again(props, { records: played(7), select: 'L002', pick: 'run-b' });
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 8, 600), animated: true });
+    expect(title()).toHaveTextContent(/^שלב 3 · /);
+  });
+
+  it('QA levels-to-map: back with no stage chosen (a plain return), the current stage leads the map again', async () => {
+    const scrolled = jest.spyOn(FlatList.prototype, 'scrollToOffset');
+    const props = await show({ records: played(5) });
+    const list = screen.getByTestId('level-map-list');
+    const layout = mapLayout(750, 'down', { plateOf: () => 'open' });
+    await fireEvent(list, 'layout', { nativeEvent: { layout: { width: 750, height: 600, x: 0, y: 0 } } });
+    await fireEvent(list, 'contentSizeChange', 750, 30000);
+    await again(props, { select: 'L002', pick: 'run-a' });
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 2, 600), animated: true });
+    // A return with no params ("מוכן?"'s back, a fallback): nothing held, so a moving current stage is followed.
+    await again(props, { select: null, pick: null });
+    await again(props, { records: played(7), select: null, pick: null });
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 8, 600), animated: true });
   });
 
   it("LEVEL_UI.mapDirection 'up': the list runs from chapter 30 down to stage 1 (D60: 'down')", async () => {
@@ -850,6 +903,87 @@ describe.each(['he', 'en'] as const)('the way through, %s', (lang) => {
     expect(screen.getByTestId('level-panel-title')).toHaveTextContent(
       lang === 'he' ? /^שלב 2 · / : /^Stage 2 · /,
     );
+  });
+
+  it('QA levels-to-map: an old stage replayed, "למפה" opens the map on the stage after it (twice in a row)', async () => {
+    const scrolled = jest.spyOn(FlatList.prototype, 'scrollToOffset');
+    // A stack, as the app's: the map stays mounted under the stage (the default Slot would mount it anew).
+    const app = await renderApp('/modes', {
+      ...ROUTES,
+      _layout: () => <Stack screenOptions={{ animation: 'none' }} />,
+    });
+    await fireEvent.press(screen.getByTestId('mode-levels'));
+    await screen.findByTestId('level-map');
+    const list = screen.getByTestId('level-map-list');
+    await fireEvent(list, 'layout', { nativeEvent: { layout: { width: 750, height: 600, x: 0, y: 0 } } });
+    await fireEvent(list, 'contentSizeChange', 750, 30000);
+    const layout = mapLayout(750, 'down', { plateOf: () => 'open' });
+    const panelOn = (n: number) =>
+      expect(screen.getByTestId('level-panel-title')).toHaveTextContent(
+        new RegExp(`^${lang === 'he' ? 'שלב' : 'Stage'} ${n} · `),
+      );
+    const playOnce = async () => {
+      await fireEvent.press(screen.getByTestId('level-panel-play'));
+      await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+      await fireEvent.press(screen.getByTestId('fake-stage-finish'));
+      await screen.findByTestId('level-result');
+      await fireEvent.press(screen.getByTestId('level-result-map'));
+      await waitFor(() => expect(app.pathname()).toBe('/levels'));
+    };
+
+    // Stage 1 played: stage 2 is the current one.
+    await playOnce();
+    await waitFor(() => panelOn(2));
+
+    // Stage 1 picked on the map and played again, twice: the current stage stays 2, and the map is on 2, not 1.
+    for (let k = 0; k < 2; k++) {
+      await fireEvent.press(screen.getByTestId('node-1'));
+      panelOn(1);
+      await playOnce();
+      await waitFor(() => panelOn(2));
+      // The very map that was under the stage, scrolled to stage 2.
+      expect(screen.getByTestId('level-map-list')).toBe(list);
+      expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 2, 600), animated: false });
+      expect(app.pathnameWithParams()).toMatch(/^\/levels\?select=L002&pick=/);
+    }
+
+    // The QA path: stages 2–4 played on through "לשלב הבא" (first plays: the map goes on to stage 5, the new
+    // current one). Then stage 1 picked on the map, "לשלב הבא" twice (2, then 3, all played before), "למפה":
+    // the map is on stage 4, the one after the stage just played, not on 1 and not on the current 5.
+    const finishAndNext = async () => {
+      await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+      await fireEvent.press(screen.getByTestId('fake-stage-finish'));
+      await screen.findByTestId('level-result');
+      await fireEvent.press(screen.getByTestId('level-result-next'));
+    };
+    // Stages 3 and 4 are a puzzle and a row: their "איך משחקים" has its own tests.
+    useTutorials.setState({ seen: { find: true, fillBox: true, puzzle: true, fillRow: true, boss: true } });
+    await fireEvent.press(screen.getByTestId('node-2'));
+    await fireEvent.press(screen.getByTestId('level-panel-play'));
+    await finishAndNext();
+    await finishAndNext();
+    await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+    await fireEvent.press(screen.getByTestId('fake-stage-finish'));
+    await screen.findByTestId('level-result');
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    await waitFor(() => expect(app.pathname()).toBe('/levels'));
+    await waitFor(() => panelOn(5));
+
+    await fireEvent.press(screen.getByTestId('node-1'));
+    panelOn(1);
+    await fireEvent.press(screen.getByTestId('level-panel-play'));
+    await finishAndNext();
+    await finishAndNext();
+    await act(async () => void jest.advanceTimersByTime(LEVEL_UI.readyMs));
+    expect(screen.getByText('L003')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('fake-stage-finish'));
+    await screen.findByTestId('level-result');
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    await waitFor(() => expect(app.pathname()).toBe('/levels'));
+    await waitFor(() => panelOn(4));
+    expect(screen.getByTestId('level-map-list')).toBe(list);
+    expect(scrolled).toHaveBeenLastCalledWith({ offset: openOffset(layout, 4, 600), animated: false });
+    expect(app.pathnameWithParams()).toMatch(/^\/levels\?select=L004&pick=/);
   });
 });
 

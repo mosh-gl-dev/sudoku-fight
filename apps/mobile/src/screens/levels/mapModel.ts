@@ -9,6 +9,7 @@ import {
   isLevelOpen,
   LEVEL_RULES,
   levelIdOf,
+  levelNumber,
   type LevelOutcome,
   type LevelRecords,
   type LevelRules,
@@ -791,6 +792,27 @@ export function nextAfterAttempt(
   rules = LEVEL_RULES,
 ): string | null {
   return nextLevelId(levelId, withAttempt(records, levelId, outcome, rules), openedChapters, rules);
+}
+
+/**
+ * The stage the result's "למפה" chooses on the map (QA levels-to-map). A stage played for the first time that
+ * moved the current stage on: the new current one, "השלב הבא" (L018 played with L019–L033 played before → L034;
+ * in a plain run N → N + 1). Else, a stage played before: the one after it, which "לשלב הבא" starts (L007
+ * replayed → L008); the played one itself when none is open (a gate still shut, the last stage).
+ */
+export function mapAfterAttempt(
+  levelId: string,
+  records: LevelRecords,
+  openedChapters: readonly number[],
+  outcome: Pick<LevelOutcome, 'reason' | 'stars'>,
+  firstPlay: boolean,
+  rules = LEVEL_RULES,
+): string {
+  const after = withAttempt(records, levelId, outcome, rules);
+  const now = currentLevel(after, openedChapters, rules);
+  const n = levelNumber(levelId);
+  if (firstPlay && n !== null && now > n) return levelIdOf(now);
+  return nextLevelId(levelId, after, openedChapters, rules) ?? levelId;
 }
 
 /** What the X's "יציאה" leaves after a stage (afterQuit): the next stage open, still locked, or none at all. */

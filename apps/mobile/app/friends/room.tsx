@@ -52,10 +52,18 @@ export default function FriendsRoomRoute() {
   /** Ways in (create, rejoin) still waiting for the server. */
   const pending = useRef(0);
   const room = current?.room ?? null;
-  // Only the count ticks: once the game came, GO! stays as it is (and this screen, under the game's while it
-  // mounts, does nothing every 100 ms).
+  /** The count's last beat played, and when GO! was first shown (phone time). */
+  const beat = useRef<string | null>(null);
+  const [goShownAt, setGoShownAt] = useState<number | null>(null);
+  // Only the count ticks, up to GO!: from then on GO! stays as it is (and this screen, under the game's while the
+  // game comes and mounts, does nothing every 100 ms).
   const counting = room?.phase === 'countdown';
-  const now = useNow(COUNTDOWN_TICK_MS, { enabled: counting, clock: current?.session.clock });
+  const clock = current?.session.clock;
+  const ticked = useNow(COUNTDOWN_TICK_MS, { enabled: counting && goShownAt === null, clock });
+  // The count's time read afresh at each of its renders: the tick's last value is stale as the count starts (taken
+  // in the lobby, or on the phone's own clock before the room's session came), and must never show GO! at once,
+  // which now opens the game screen.
+  const now = counting && clock ? clock.now() : ticked;
   // Read through the contexts: none outside a navigator.
   const navigation = useContext(NavigationContext);
   const routeKey = useContext(NavigationRouteContext)?.key;
@@ -67,10 +75,6 @@ export default function FriendsRoomRoute() {
    * passed to me when its host left (its type was not mine to remember).
    */
   const [chose, setChose] = useState(false);
-
-  /** The count's last beat played, and when GO! was first shown (phone time). */
-  const beat = useRef<string | null>(null);
-  const [goShownAt, setGoShownAt] = useState<number | null>(null);
 
   const openRoom = useCallback(
     async (replace = false) => {
@@ -134,16 +138,20 @@ export default function FriendsRoomRoute() {
     cue(step === 'go' ? 'go' : 'countdownBeat');
   }, [phase]);
   // GO! is seen before the board, on every phone (QA loop 8: the joiner's count, a little behind the server's,
-  // went from "1" straight to the board). The game screen opens the moment the game came, over this screen and on
-  // this same GO! (GoCover, goHandoff.ts FriendsGo), and mounts the game under it; GO! fades into the board once
-  // the game is drawn and GO! has been seen (motion.md `go`). QA go-hold-joiner, loop 13: holding GO! here first
-  // (250 ms) and only then replacing the screen put the game's whole mount (~0.6 s on the phones) after the hold:
-  // GO! → board 1.1–1.34 s, the game's state itself coming 17–189 ms after GO!.
+  // went from "1" straight to the board). The game screen opens the moment GO! shows (or the game came, if
+  // sooner), over this screen and on this same GO! (GoCover, goHandoff.ts FriendsGo), mounts the game under it as
+  // the game comes (GoCover `waiting`), and GO! fades into the board once the game is drawn and GO! has been seen
+  // (motion.md `go`). QA go-hold-joiner, loop 13: holding GO! here first (250 ms) and only then replacing the
+  // screen put the game's whole mount (~0.6 s on the phones) after the hold: GO! → board 1.1–1.34 s. Loop 16: the
+  // game's state comes 17–189 ms after GO!, and the push, the game route, its cover's first draw (this header and
+  // the players' avatars) and this screen's leaving were all paid only then, ahead of the game's own mount; now
+  // they are paid while the game is on its way.
   const showsGo = phase.kind === 'countdown' && phase.step === 'go';
   if (showsGo && goShownAt === null) setGoShownAt(systemClock.now());
   const go = showsGo ? phase : null;
   useEffect(() => {
-    if (room?.phase !== 'game' || toGame.current) return;
+    // GO! shown, or back into a game already running (no count: a plain push).
+    if (toGame.current || (go === null && room?.phase !== 'game')) return;
     toGame.current = true;
     handGoCover(
       go

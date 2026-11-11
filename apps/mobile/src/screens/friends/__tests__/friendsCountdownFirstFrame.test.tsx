@@ -1,9 +1,11 @@
 import type { LobbyPlayer } from '@sudoku-fight/protocol';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
+import { View } from 'react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
 
 import { slamAt } from '../../game/connection/motion';
 import { type Setup, setUp, styleOf, wait } from '../../game/connection/testing/setup';
+import { FriendsCountdown } from '../FriendsCountdown';
 import type { FriendsLobby } from '../friendsModel';
 import { type FriendsRoomPhase, FriendsRoomScreen, type FriendsRoomScreenProps } from '../FriendsRoomScreen';
 
@@ -87,21 +89,57 @@ describe.each(['off', 'on'] as const)('the friends count’s first frame (reduce
     expect(screen.getByTestId('friends-countdown-step')).toHaveAnimatedStyle({ opacity: 1 });
   });
 
-  it('GO! is set by the time the room noted it (goShownAt), the one the game screen’s GO! takes (QA go-cover-slam-jump, loop 15)', async () => {
+  it('GO! slams from its own first frame, not from when the room noted it; the game screen’s GO! runs from that frame too (QA go-slam-start-skipped, APK 21)', async () => {
+    // APK 21: the room noted GO! (goShownAt) as it rendered, and its first frame came 45–200 ms later (the render,
+    // the commit, the mount): that frame showed the slam that far in, GO! first seen at 1.28–1.32 or at 0.96–0.98,
+    // never from 1.4. Here the room noted it 100 ms before GO!'s first frame.
     const p = props({ kind: 'countdown', lobby, myId: 'p-moshe', step: 'go' });
-    // The room noted GO! 100 ms before this GO! first rendered: both GO!s run on that time, not each on its own.
     const goShownAt = Date.now() - 100;
-    await render(<FriendsRoomScreen {...p} goShownAt={goShownAt} />);
+    const view = await render(
+      <>
+        <View testID="room">
+          <FriendsRoomScreen {...p} goShownAt={goShownAt} />
+        </View>
+        <View testID="cover-slot" />
+      </>,
+    );
+    const drawnAt = Date.now();
     await wait(FRAME_MS);
-    const at = slamAt(reduce === 'on', Date.now() - goShownAt);
-    const style = getAnimatedStyle(screen.getByTestId('friends-countdown-step')) as {
-      opacity?: number;
-      transform?: { scale?: number }[];
-    };
-    expect(style.opacity ?? 1).toBeCloseTo(at.opacity, 3);
-    expect(style.transform?.[0]?.scale ?? 1).toBeCloseTo(at.scale, 3);
+    const room = () => goPose(within(screen.getByTestId('room')).getByTestId('friends-countdown-step'));
+    // Its first frames: the slam's start (from 1.4 with the fade), not 100 ms into it.
+    const start = slamAt(reduce === 'on', Date.now() - drawnAt);
+    expect(room().opacity).toBeCloseTo(start.opacity, 3);
+    expect(room().scale).toBeCloseTo(start.scale, 3);
+    if (reduce === 'off') expect(room().scale).toBeGreaterThan(1.35);
+
+    // The game screen's GO! (the cover, the same goShownAt), mounted later: where the room's is, from that frame.
+    for (let k = 0; k < 3; k += 1) await wait(FRAME_MS);
+    await view.rerender(
+      <>
+        <View testID="room">
+          <FriendsRoomScreen {...p} goShownAt={goShownAt} />
+        </View>
+        <View testID="cover-slot">
+          <FriendsCountdown lobby={lobby} myId="p-moshe" step="go" goShownAt={goShownAt} cover />
+        </View>
+      </>,
+    );
+    for (let k = 0; k < 3; k += 1) {
+      await wait(FRAME_MS);
+      const at = slamAt(reduce === 'on', Date.now() - drawnAt);
+      const cover = goPose(within(screen.getByTestId('cover-slot')).getByTestId('friends-countdown-step'));
+      expect(cover.opacity).toBeCloseTo(at.opacity, 3);
+      expect(cover.scale).toBeCloseTo(at.scale, 3);
+      expect(room()).toEqual(cover);
+    }
   });
 });
+
+/** A GO!'s opacity and scale as drawn now. */
+function goPose(el: Parameters<typeof getAnimatedStyle>[0]): { opacity: number; scale: number } {
+  const style = getAnimatedStyle(el) as { opacity?: number; transform?: { scale?: number }[] };
+  return { opacity: style.opacity ?? 1, scale: style.transform?.[0]?.scale ?? 1 };
+}
 
 /** One frame of the UI thread (requestAnimationFrame under fake timers). */
 const FRAME_MS = 16;

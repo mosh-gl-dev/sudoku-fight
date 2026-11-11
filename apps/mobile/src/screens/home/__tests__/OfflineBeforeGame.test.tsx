@@ -215,4 +215,61 @@ describe('Home offline (spec §16.1)', () => {
     expect(useConnectivity.getState().status).toBe('online');
     expect(screen.queryByTestId('home-offline')).toBeNull();
   });
+
+  it('QA account-home-offline: flight mode on while Home stays open brings the banner within seconds', async () => {
+    jest.useFakeTimers();
+    const net = server();
+    net.online = true;
+    useProfile.setState({ lastPlay: { mode: 'ranked', gameType: 'fast', players: 2 } });
+    const app = await renderApp('/', { _layout: () => <Stack screenOptions={{ headerShown: false }} /> });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useConnectivity.getState().status).toBe('online');
+    expect(screen.getByTestId('play-again')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ disabled: false }),
+    );
+    // Flight mode on; Home stays open, nothing else happens (no focus change, no restart).
+    net.online = false;
+    const before = net.checks;
+    await act(async () => {
+      jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs);
+    });
+    expect(net.checks).toBe(before + 1);
+    expect(useConnectivity.getState().status).toBe('offline');
+    expect(screen.getByTestId('home-offline')).toHaveAccessibleName(
+      'אין חיבור לאינטרנט. משחקים מדורגים לא זמינים',
+    );
+    const again = screen.getByTestId('play-again');
+    expect(again).toHaveProp('accessibilityState', expect.objectContaining({ disabled: true }));
+    expect(again).toHaveTextContent(/מדורג · 2 שחקנים · מהיר · דורש חיבור/);
+    // A tap starts no search.
+    await act(async () => fireEvent.press(again));
+    expect(app.pathname()).toBe('/');
+    expect(screen.getByTestId('home-offline')).toBeOnTheScreen();
+    // Flight mode off: the offline watch (5 s) sees it, the banner goes and "עוד סיבוב" is open again.
+    net.online = true;
+    await act(async () => {
+      jest.advanceTimersByTime(CONNECTIVITY.recheckMs);
+    });
+    expect(screen.queryByTestId('home-offline')).toBeNull();
+    expect(screen.getByTestId('play-again')).not.toHaveTextContent(/דורש חיבור/);
+  });
+
+  it('QA account-home-offline: no online checks while another screen is over Home', async () => {
+    jest.useFakeTimers();
+    const net = server();
+    net.online = true;
+    await renderApp('/', { _layout: () => <Stack screenOptions={{ headerShown: false }} /> });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => router.push('/history'));
+    const before = net.checks;
+    await act(async () => {
+      jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs * 3);
+    });
+    expect(net.checks).toBe(before);
+  });
 });

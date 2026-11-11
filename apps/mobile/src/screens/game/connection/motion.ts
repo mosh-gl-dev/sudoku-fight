@@ -4,6 +4,7 @@ import {
   cancelAnimation,
   defineAnimation,
   Easing,
+  makeMutable,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -174,15 +175,23 @@ function slamPose(
  * Until its first frame on the UI thread it is not drawn (the slam's start, opacity 0), unless it had landed by
  * the render: the view can be drawn before the clock's first frame, and a pose worked out as it rendered is the
  * very pose the cut used to show, one frame. In that frame the room's GO! under it is the one seen.
+ *
+ * `owner` (the room's own GO!): the slam starts on its own first frame, not at `origin`. QA go-slam-start-skipped
+ * (APK 21, 8 recordings at 90 Hz): `origin` is noted as the room renders GO!, and its first frame on the UI thread
+ * came 45–200 ms later (the render, the commit, the mount, then this hook's effect), so that frame already showed
+ * the slam 45–200 ms in: GO! first seen at 1.28–1.32, or at 0.96–0.98 already landing, never from 1.4 (APK 19's
+ * spring, started on its first frame, showed 1.41). So the owner's first frame is noted for `origin`
+ * (slamDrawnAt), and every GO! of that origin (the game screen's cover too) runs from that frame; a GO! whose owner
+ * never ran (none) runs from `origin` itself, as before.
  */
-export function useSlamSince(reduce: boolean, origin: number) {
+export function useSlamSince(reduce: boolean, origin: number, owner = false) {
   const fadeMs = slamFadeMs(reduce);
   const end = reduce ? fadeMs : Math.max(fadeMs, SLAM_LANDED_MS);
   const [seed] = useState(() => (systemClock.now() - origin >= end ? end : 0));
   const since = useSharedValue(seed);
   useEffect(() => {
-    since.set(withClockSince(origin, end));
-  }, [since, origin, end]);
+    since.set(withClockSince(origin, end, owner));
+  }, [since, origin, end, owner]);
   return useAnimatedStyle(() => {
     const pose = slamPose(since.get(), fadeMs, reduce);
     return { opacity: pose.opacity, transform: [{ scale: pose.scale }] };
@@ -190,20 +199,33 @@ export function useSlamSince(reduce: boolean, origin: number) {
 }
 
 /**
- * An animation whose value is, in each frame, the phone's time since `origin` (systemClock's Date.now, read on the
- * UI thread as the frame is drawn), up to `end`, where it stops: the frame's own time, not the time it was started
- * (a frame that comes late, or after a stall, shows where the slam is then).
+ * The first frame of the last slam an owner started (useSlamSince `owner`), by the `origin` it was given: phone
+ * time, on the UI thread. One at a time is enough: one GO! is on screen at a time.
  */
-function withClockSince(origin: number, end: number): number {
+const slamDrawnAt = makeMutable<{ origin: number; at: number }>({ origin: NaN, at: 0 });
+
+/**
+ * An animation whose value is, in each frame, the phone's time since the slam of `origin` started (systemClock's
+ * Date.now, read on the UI thread as the frame is drawn), up to `end`, where it stops: the frame's own time, not the
+ * time it was started (a frame that comes late, or after a stall, shows where the slam is then). The slam started
+ * on its owner's first frame (slamDrawnAt), or, with no owner's, at `origin`. `owner`: its first frame is that one.
+ */
+function withClockSince(origin: number, end: number, owner: boolean): number {
   'worklet';
+  const since = (): number => {
+    'worklet';
+    const drawn = slamDrawnAt.get();
+    return Math.min(end, Date.now() - (drawn.origin === origin ? drawn.at : origin));
+  };
   return defineAnimation<AnimationObject<number>>(end, () => {
     'worklet';
     return {
       onStart: (animation: AnimationObject<number>) => {
-        animation.current = Math.min(end, Date.now() - origin);
+        if (owner && slamDrawnAt.get().origin !== origin) slamDrawnAt.set({ origin, at: Date.now() });
+        animation.current = since();
       },
       onFrame: (animation: AnimationObject<number>) => {
-        animation.current = Math.min(end, Date.now() - origin);
+        animation.current = since();
         return animation.current >= end;
       },
       // Its target until it starts (as withTiming's): Reanimated skips an animation whose target is the value now.

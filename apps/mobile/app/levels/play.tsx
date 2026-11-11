@@ -2,6 +2,7 @@ import {
   type AppLevel,
   attemptLevel,
   chapterStars,
+  countsAsPlayed,
   isTapKind,
   LEVEL_RULES,
   levelEngineOf,
@@ -49,7 +50,12 @@ import {
   LevelResultView,
   type ResultChapter,
 } from '../../src/screens/levels/LevelResultView';
-import { everyChapter, nextAfterAttempt, withAttempt } from '../../src/screens/levels/mapModel';
+import {
+  everyChapter,
+  mapAfterAttempt,
+  nextAfterAttempt,
+  withAttempt,
+} from '../../src/screens/levels/mapModel';
 import { ReadyView } from '../../src/screens/levels/ReadyView';
 import type { StageOver } from '../../src/screens/levels/useStageShell';
 
@@ -59,8 +65,9 @@ import type { StageOver } from '../../src/screens/levels/useStageShell';
  * stage itself, and its result, a state of the same screen (no navigation at a stage's end: the black screen of
  * 1.0.0 came with those). The result's "לשלב הבא" starts the next stage right here (the quick entry, D56;
  * LEVEL_UI.quickEntry off: back to the map with it chosen), "שוב" plays this one again (the session plays an
- * equivalent board from the second attempt, D63), "למפה" goes back to the map. A recreated activity (display or
- * font size) brings the result back as it was, with nothing started again (levels/shownResult.ts).
+ * equivalent board from the second attempt, D63), "למפה" goes back to the map, on the stage after this one. A
+ * recreated activity (display or font size) brings the result back as it was, with nothing started again
+ * (levels/shownResult.ts).
  *
  * The `playing` phase is the stage screens' (the tap kinds' screen, the puzzle's, the game screen with a stage's
  * chrome): they fill `Playing` (LevelPlayingProps), report the end once with what the result shows
@@ -337,6 +344,14 @@ export function LevelPlayFlow({
     setRun((r) => ({ id, quick, n: r.n + 1 }));
   };
 
+  /**
+   * Back to the map with a stage chosen on it (QA levels-to-map). The map stays mounted under this route and kept
+   * the choice it had (a replayed old stage left it there): `select` moves it, and `pick` (this route and run)
+   * is new each time, so the same stage chosen twice in a row still moves it.
+   */
+  const toMapAt = (select: string) =>
+    leave({ pathname: '/levels', params: { select, pick: `${routeKey}:${run.n}` } });
+
   const level = stageOf(run.id);
   if (stuck)
     return <FlowFallback reason="levels: the route did not leave" actionsAfterMs={0} onHome={home} />;
@@ -356,10 +371,10 @@ export function LevelPlayFlow({
         attemptOf={attemptOf}
         onNext={(next) => {
           if (LEVEL_UI.quickEntry) start(next, true);
-          else leave({ pathname: '/levels', params: { select: next } });
+          else toMapAt(next);
         }}
         onAgain={() => start(level.id, false)}
-        onMap={() => leave()}
+        onMap={(select) => (select ? toMapAt(select) : leave())}
       />
     </>
   );
@@ -395,7 +410,8 @@ interface StageRunProps {
   attemptOf: (levelId: string, rev: number) => Promise<number>;
   onNext: (id: string) => void;
   onAgain: () => void;
-  onMap: () => void;
+  /** To the map; from a result, with the stage it chooses (`select`). */
+  onMap: (select?: string) => void;
 }
 
 /** One attempt: its phases, from the card or "מוכן?" to the result. */
@@ -420,9 +436,9 @@ function StageRun({
     forgetShownResult(routeKey);
     again();
   };
-  const onMap = () => {
+  const onMap = (select?: string) => {
     forgetShownResult(routeKey);
-    toTheMap();
+    toTheMap(select);
   };
   const [phase, setPhase] = useState<Phase>(() => {
     if (shown) return { kind: 'result', played: shown, underDialog: false };
@@ -442,10 +458,39 @@ function StageRun({
     };
   }, [attemptRead]);
   const readyPlayed = useMemo(() => (attempt === null ? null : playedOf(level, attempt)), [level, attempt]);
-  const records = useLevelsProgress() ?? NO_RECORDS;
+  const progress = useLevelsProgress();
+  const records = progress ?? NO_RECORDS;
   const opened = useOpenedChapters();
   // A staging build's "פתח את כל השלבים (בדיקה)": "לשלב הבא" goes on past a closed gate too.
   const unlockAll = useUnlockAllLevels();
+  /** The chapters open after this attempt (a gate it opened; every one under the staging switch). */
+  const chaptersAfter = (played: LevelPlayed) => {
+    if (unlockAll) return everyChapter();
+    return played.finished?.gateOpened && !opened.includes(level.chapter + 1)
+      ? [...opened, level.chapter + 1]
+      : opened;
+  };
+  /** The result's "לשלב הבא": the stage after this one, when this attempt leaves it open. */
+  const nextOf = (played: LevelPlayed) =>
+    nextAfterAttempt(level.id, records, chaptersAfter(played), played.outcome);
+  /**
+   * This stage had never been played before this attempt: read as the run starts, before the attempt is stored.
+   * A result brought back after a recreated activity reads levels.db with it stored already. Not known (levels.db
+   * not read, no account): false, so "למפה" chooses the stage after this one.
+   */
+  const [firstPlay] = useState(() => {
+    if (!progress) return false;
+    const plays = progress[level.id]?.plays ?? 0;
+    if (!shown) return plays === 0;
+    return plays <= (countsAsPlayed(shown.outcome.reason) ? 1 : 0);
+  });
+  /**
+   * The result's "למפה" (and back on it), QA levels-to-map: the map chooses the stage after the one just played
+   * (an old stage replayed: the one "לשלב הבא" starts), or the new current stage when this was its first play
+   * (mapAfterAttempt). After a replayed old stage the map used to stay on the choice it had before.
+   */
+  const resultToMap = (played: LevelPlayed) =>
+    onMap(mapAfterAttempt(level.id, records, chaptersAfter(played), played.outcome, firstPlay));
   const finishedOnce = useRef(false);
   // [D65] "מוכן?"'s 2 s stand still while the app is away (LEVEL_UI.backgroundPause).
   const active = useAppActive();
@@ -464,7 +509,7 @@ function StageRun({
       if (phase.kind === 'result') {
         if (!resultLeft.current) {
           resultLeft.current = true;
-          onMap();
+          resultToMap(phase.played);
         }
         return true;
       }
@@ -512,16 +557,12 @@ function StageRun({
           noteShownResult(routeKey, level.id, played);
           setPhase({ kind: 'result', played, underDialog: over?.underDialog === true });
         }}
-        onLeave={onMap}
+        onLeave={() => onMap()}
       />
     );
   }
   const { played } = phase;
-  const openedNow =
-    played.finished?.gateOpened && !opened.includes(level.chapter + 1)
-      ? [...opened, level.chapter + 1]
-      : opened;
-  const next = nextAfterAttempt(level.id, records, unlockAll ? everyChapter() : openedNow, played.outcome);
+  const next = nextOf(played);
   return (
     <LevelResultView
       level={level}
@@ -530,7 +571,7 @@ function StageRun({
       next={next}
       onNext={() => next && onNext(next)}
       onAgain={onAgain}
-      onMap={onMap}
+      onMap={() => resultToMap(played)}
       // The stage ended by itself under "לצאת מהשלב?": a tap meant for its "יציאה" must not press "למפה".
       armAfterMs={phase.underDialog ? LEVEL_UI.resultGuardMs : 0}
     />

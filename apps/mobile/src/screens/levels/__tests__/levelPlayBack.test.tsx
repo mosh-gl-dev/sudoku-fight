@@ -1,15 +1,17 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
-import { type AppLevel, levelOutcome } from '@sudoku-fight/engine';
+import { type AppLevel, levelIdOf, levelNumber, levelOutcome } from '@sudoku-fight/engine';
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { useEffect } from 'react';
 import { BackHandler, Pressable, Text, View } from 'react-native';
 
 import { LevelPlayFlow, type LevelPlayingProps } from '../../../../app/levels/play';
+import { useAuth } from '../../../auth/authStore';
 import { LEVEL_UI } from '../../../config/levels';
 import i18n from '../../../i18n';
 import { firstBossOf, levelsOf } from '../../../levels/__tests__/helpers/levelsOf';
+import { forgetLevels, useLevels } from '../../../levels/levelsStore';
 import { useSettings } from '../../../state/settings';
 import { useTutorials } from '../HowToPlay';
 
@@ -177,12 +179,78 @@ describe('Android back in a stage’s route (QA levels-exit)', () => {
     const dismissTo = jest.spyOn(router, 'dismissTo');
     expect(await pressBack()).toBe(true);
     expect(dismissTo).toHaveBeenCalledTimes(1);
-    expect(dismissTo).toHaveBeenCalledWith('/levels');
+    // As "למפה": the map, on the stage after this one (QA levels-to-map).
+    expect(dismissTo).toHaveBeenCalledWith({
+      pathname: '/levels',
+      params: { select: levelIdOf(levelNumber(FIND.id)! + 1), pick: expect.any(String) },
+    });
     expect(app.getPathname()).toBe('/levels');
     await later(22_000);
     await act(async () => router.push({ pathname: '/levels/play', params: { id: FIND.id } }));
     expect(screen.getByTestId('level-ready')).toBeOnTheScreen();
     expect(screen.queryByTestId('level-result')).toBeNull();
+    dismissTo.mockRestore();
+  });
+});
+
+describe('the result’s "למפה" chooses (QA levels-to-map)', () => {
+  const n = levelNumber(FIND.id)!;
+  /** Signed in, levels.db read: these stages played, each once with ★★★. */
+  async function playedBefore(ids: number[]) {
+    const progress = Object.fromEntries(
+      ids.map((k) => [
+        levelIdOf(k),
+        { stars: 3 as const, plays: 1, metric: null, rev: null, firstPlayedAt: null },
+      ]),
+    );
+    await act(async () => {
+      useAuth.setState({
+        status: 'ready',
+        user: { uid: 'to-map', email: null, emailVerified: true, methods: [] },
+      });
+      useLevels.setState({
+        owner: 'to-map',
+        summary: { played: ids.length, stars: ids.length * 3, current: n },
+        progress,
+        openedChapters: [],
+        status: 'ready',
+      });
+    });
+  }
+  afterEach(async () => {
+    await act(async () => useAuth.setState({ status: 'loading', user: null }));
+    forgetLevels();
+  });
+
+  async function playToMap(): Promise<jest.SpyInstance> {
+    const app = renderRouter(ROUTES, { initialUrl: '/levels' });
+    await app;
+    await act(async () => router.push({ pathname: '/levels/play', params: { id: FIND.id } }));
+    await later(LEVEL_UI.readyMs);
+    await fireEvent.press(screen.getByTestId('fake-stage-finish'));
+    const dismissTo = jest.spyOn(router, 'dismissTo');
+    await fireEvent.press(screen.getByTestId('level-result-map'));
+    return dismissTo;
+  }
+
+  it('a first play, with the stages after it played before: the new current stage ("השלב הבא")', async () => {
+    // As QA's L018 (L019–L033 played before): this stage the current one, the next three played already.
+    await playedBefore([...Array.from({ length: n - 1 }, (_, k) => k + 1), n + 1, n + 2, n + 3]);
+    const dismissTo = await playToMap();
+    expect(dismissTo).toHaveBeenCalledWith({
+      pathname: '/levels',
+      params: { select: levelIdOf(n + 4), pick: expect.any(String) },
+    });
+    dismissTo.mockRestore();
+  });
+
+  it('an old stage replayed: the stage after it, not the current one', async () => {
+    await playedBefore(Array.from({ length: n + 3 }, (_, k) => k + 1));
+    const dismissTo = await playToMap();
+    expect(dismissTo).toHaveBeenCalledWith({
+      pathname: '/levels',
+      params: { select: levelIdOf(n + 1), pick: expect.any(String) },
+    });
     dismissTo.mockRestore();
   });
 });

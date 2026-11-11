@@ -13,7 +13,7 @@ import { BottomNav, Button, IconButton, RowButton, useToast } from '../../compon
 import { Enter } from '../../components/ui/Enter';
 import { Text } from '../../components/ui/Text';
 import { useGameStore } from '../../game/gameStore';
-import { useConnectivity, useConnectivityWatch } from '../../net/connectivity';
+import { useConnectivity, useConnectivityWatch, watchConnectionWhileShown } from '../../net/connectivity';
 import { refreshMyProgress, syncProgressNow } from '../../progress/appProgress';
 import { useMyCard, useMyProgress } from '../../progress/hooks';
 import { cue } from '../../services/feedback';
@@ -132,6 +132,10 @@ export function HomeScreen({ devLinks = __DEV__ }: HomeScreenProps) {
       void refreshMyProgress();
     }, []),
   );
+  // While Home is shown, the connection is checked again now and then (QA account-home-offline): flight mode
+  // turned on with Home open brings the banner and the dimmed ranked "עוד סיבוב" within seconds, not only after
+  // a restart. Stops when another screen comes over Home (a game: no checks under it).
+  useFocusEffect(watchConnectionWhileShown);
 
   // "עוד סיבוב" (spec §4.3): the last setting; against a bot, with the bot's name ("· Pip"); ranked, with the
   // table's size (stage 9: a search in the same queue).

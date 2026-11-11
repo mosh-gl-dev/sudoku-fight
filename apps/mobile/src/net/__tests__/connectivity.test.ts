@@ -1,4 +1,13 @@
-import { checkHealth, CONNECTIVITY, type FetchLike, setHealthCheck, useConnectivity } from '../connectivity';
+import { AppState, type AppStateStatus } from 'react-native';
+
+import {
+  checkHealth,
+  CONNECTIVITY,
+  type FetchLike,
+  setHealthCheck,
+  useConnectivity,
+  watchConnectionWhileShown,
+} from '../connectivity';
 
 /** "Is there a connection?" before a game (spec §16.1): GET /health with a time limit, and the shared state. */
 
@@ -43,7 +52,80 @@ describe('checkHealth', () => {
   it('checks the configured server by default, and waits 5 s at most', () => {
     // QA levels-xp-offline (loop 5): offline, checked again every 5 s (was 10 s), so the connection back is seen
     // within a few seconds.
-    expect(CONNECTIVITY).toEqual({ timeoutMs: 5000, recheckMs: 5000 });
+    // QA account-home-offline: online, a shown Home checks again every 10 s.
+    expect(CONNECTIVITY).toEqual({ timeoutMs: 5000, recheckMs: 5000, onlineRecheckMs: 10000 });
+  });
+});
+
+describe('watchConnectionWhileShown (QA account-home-offline)', () => {
+  let onChange: ((state: AppStateStatus) => void) | null = null;
+  const remove = jest.fn();
+
+  beforeEach(() => {
+    onChange = null;
+    remove.mockClear();
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
+      onChange = handler as (state: AppStateStatus) => void;
+      return { remove } as unknown as ReturnType<typeof AppState.addEventListener>;
+    });
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+  };
+
+  it('online, checks again every onlineRecheckMs and sees the connection go', async () => {
+    jest.useFakeTimers();
+    let answer = true;
+    let calls = 0;
+    setHealthCheck(async () => {
+      calls++;
+      return answer;
+    });
+    await useConnectivity.getState().check();
+    expect(useConnectivity.getState().status).toBe('online');
+    const stop = watchConnectionWhileShown();
+    answer = false;
+    jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs - 1);
+    expect(calls).toBe(1);
+    jest.advanceTimersByTime(1);
+    await flush();
+    expect(calls).toBe(2);
+    expect(useConnectivity.getState().status).toBe('offline');
+    // Offline, it leaves the checks to useConnectivityWatch's 5 s recheck.
+    jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs * 2);
+    await flush();
+    expect(calls).toBe(2);
+    stop();
+    expect(remove).toHaveBeenCalled();
+  });
+
+  it('no checks in the background; one at once back in the foreground; none after the stop', async () => {
+    jest.useFakeTimers();
+    let calls = 0;
+    setHealthCheck(async () => {
+      calls++;
+      return true;
+    });
+    // React Native's jest preset has no state to replace here; the app's is a string.
+    const appState = AppState as unknown as { currentState: unknown };
+    const saved = appState.currentState;
+    appState.currentState = 'background';
+    const stop = watchConnectionWhileShown();
+    try {
+      jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs * 2);
+      expect(calls).toBe(0);
+    } finally {
+      appState.currentState = saved;
+    }
+    onChange?.('active');
+    await flush();
+    expect(calls).toBe(1);
+    stop();
+    jest.advanceTimersByTime(CONNECTIVITY.onlineRecheckMs * 2);
+    expect(calls).toBe(1);
   });
 });
 

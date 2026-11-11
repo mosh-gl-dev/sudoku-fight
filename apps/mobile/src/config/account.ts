@@ -29,6 +29,14 @@ export const accountConfig = {
     blocksPractice: false,
     requiredForRanked: true,
   },
+  /**
+   * The cold start's Splash (QA run #2 account-open-splash-look; services/systemSplash.ts): once the system splash
+   * (the icon) has cross-faded into it, the Splash stays alone on screen, whole, at least this long (ms, and as many
+   * 60 Hz frames as the display draws) before it may fade to Home. The spec asks for no minimum, and §22 asks the
+   * first screen within 2 s, so this is short: enough for the logo, the tagline and the tip to be on screen
+   * whole, not to read them. Moshe may raise it (e.g. 600) for a Splash that is read; 0: two frames.
+   */
+  splashSeenMs: 150,
   /** Work plan stage 8: the name check waits this long after the last keystroke. */
   nameCheckDebounceMs: 300,
   /** HTTP calls to the account API give up after this long (then: "no connection"). */

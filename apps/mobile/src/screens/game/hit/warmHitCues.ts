@@ -1,10 +1,9 @@
 import type { InterferenceKind } from '@sudoku-fight/engine';
 import { useEffect } from 'react';
 
-import { type FeedbackCue, preloadCues } from '../../../services/feedback';
+import { preloadCues } from '../../../services/feedback';
 import { useSettings } from '../../../state/settings';
-import { warmGameLater } from '../../match/warmGame';
-import { hitCue } from '../model';
+import { hitWarmCues, warmGameLater } from '../../match/warmGame';
 
 /**
  * The interference sounds' players, made on idle moments once a game with interferences is up (QA loop 8,
@@ -14,16 +13,15 @@ import { hitCue } from '../model';
  * started: no frame and no JS while it was built, which fits the frozen frame without banner or dim that QA saw
  * at the start of a warp (the black frame before it is the warp's own: see WarpFrame), and the sender's first
  * launch paid the same. Now each is made ahead, one per idle moment (one short stall each, never several in a
- * row), after the board's entrance. With sound off nothing is made (nothing would play).
+ * row), after the board's entrance. With sound off nothing is made (nothing would play). The wait before the game
+ * (the search, a friends room's lobby: screens/match/warmGame.ts) makes them first, so here, in the board's first
+ * seconds, only what it had no time for (QA warp-standby-stalls, APK 21).
  */
 
 /** After the board's entrance and the first moves' sounds; a hit can't come before the first points anyway. */
 export const HIT_WARM_DELAY_MS = 1500;
 
-/** The sounds an interference plays: the start of each kind this game allows, and the sender's picker and launch. */
-export function hitWarmCues(kinds: readonly InterferenceKind[]): FeedbackCue[] {
-  return [...new Set<FeedbackCue>([...kinds.map(hitCue), 'arsenalOpen', 'launch'])];
-}
+export { hitWarmCues };
 
 /** Starts the warm-up; returns what stops it (the screen went). */
 export function warmHitCuesLater(

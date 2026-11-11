@@ -1,4 +1,4 @@
-import { ManualClock, ManualScheduler } from '@sudoku-fight/engine';
+import { INTERFERENCE_KINDS, ManualClock, ManualScheduler } from '@sudoku-fight/engine';
 import { act, render, screen } from '@testing-library/react-native';
 import { createAudioPlayer } from 'expo-audio';
 
@@ -12,10 +12,12 @@ import { MatchScreen } from '../MatchScreen';
 import {
   GAME_WARM_CHOICE_DELAY_MS,
   GAME_WARM_DELAY_MS,
+  hitWarmCues,
   loadGameCode,
   MATCH_CUES,
   warmGameLater,
   warmGameSteps,
+  warmRankedGameSteps,
 } from '../warmGame';
 
 /**
@@ -47,6 +49,8 @@ const soundsOf = (cues: readonly (keyof typeof CUES)[]) =>
   [...new Set(cues.map((c) => CUES[c].sound))].filter((s): s is SoundId => s !== null);
 /** The players of the flow's and the game screen's sounds: what the first game used to make under GO!. */
 const FIRST_GAME_PLAYERS = soundsOf([...MATCH_CUES, ...GAME_CUES]).reduce((n, id) => n + voicesOf(id), 0);
+/** The interferences' players (every kind, the picker and the launch), made after them. */
+const HIT_PLAYERS = soundsOf(hitWarmCues(INTERFERENCE_KINDS)).reduce((n, id) => n + voicesOf(id), 0);
 
 let env: Setup;
 
@@ -115,9 +119,13 @@ it('the search makes the first game’s players and loads its code: nothing is m
   expect(made).not.toHaveBeenCalled();
   expect(mockGameCode).not.toHaveBeenCalled();
   await advance(3000);
-  expect(made).toHaveBeenCalledTimes(FIRST_GAME_PLAYERS);
+  expect(made).toHaveBeenCalledTimes(FIRST_GAME_PLAYERS + HIT_PLAYERS);
   expect(mockGameCode).toHaveBeenCalledTimes(1);
   const before = made.mock.calls.length;
+  // The interferences' sounds too (QA warp-standby-stalls): the game screen's own warm-up in the board's first
+  // seconds finds them made.
+  hitWarmCues(INTERFERENCE_KINDS).forEach((name) => preloadCues([name]));
+  expect(made.mock.calls.length).toBe(before);
 
   // The match: the VS's chime, 3 · 2 · 1 and GO! play players already made…
   await server(() => mm.found());
@@ -187,6 +195,20 @@ it('the game screen’s sounds first, then its code, then the flow’s three: a 
   steps.slice(GAME_CUES.length + 1).forEach((step) => step());
   expect(made).toHaveBeenCalledTimes(FIRST_GAME_PLAYERS);
   expect(steps).toHaveLength(GAME_CUES.length + 1 + MATCH_CUES.length);
+  env = { announced: () => [], restore: () => undefined };
+});
+
+it('the search’s steps: the first game’s first, then the interferences’ sounds, one player per step (QA warp-standby-stalls)', () => {
+  const first = warmGameSteps().length;
+  const steps = warmRankedGameSteps();
+  const hits = hitWarmCues(INTERFERENCE_KINDS);
+  expect(steps).toHaveLength(first + hits.length);
+  steps.slice(0, first).forEach((step) => step());
+  expect(made).toHaveBeenCalledTimes(FIRST_GAME_PLAYERS);
+  for (const [k, step] of steps.slice(first).entries()) {
+    step();
+    expect(made).toHaveBeenCalledTimes(FIRST_GAME_PLAYERS + soundsOf(hits.slice(0, k + 1)).length);
+  }
   env = { announced: () => [], restore: () => undefined };
 });
 

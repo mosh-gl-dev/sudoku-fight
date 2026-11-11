@@ -1,7 +1,6 @@
 import '../src/services/hermesPolyfills';
 
 import { type ErrorBoundaryProps, Stack, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
@@ -24,6 +23,13 @@ import { gameRouteTransition } from '../src/screens/match/goHandoff';
 import { track } from '../src/services/analytics';
 import { useKeepScreenOn } from '../src/services/keepAwake';
 import { logFirstScreen, useAfterFirstScreen } from '../src/services/startup';
+import {
+  hideSystemSplash,
+  hideSystemSplashAfterLayout,
+  holdSystemSplash,
+  useSystemSplashCovering,
+  useSystemSplashFailSafe,
+} from '../src/services/systemSplash';
 import { startTelemetry } from '../src/services/telemetry';
 import { useScreenViews } from '../src/services/telemetry/useScreenViews';
 import { color } from '../src/theme';
@@ -32,7 +38,8 @@ import { useReduceMotion } from '../src/theme/motion';
 import { MotionPolicy } from '../src/theme/MotionPolicy';
 import { NAVIGATION_THEME, SCREEN_CONTENT_STYLE, transitions } from '../src/theme/transitions';
 
-void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+// The system splash waits for the app's Splash to be drawn, and hands over to it (services/systemSplash.ts).
+holdSystemSplash();
 // Development and staging builds: the pseudo languages en-XA and ar-XB (plan 0יג); elsewhere a saved one goes.
 installPseudoLanguages();
 // The language from the first frame (localization plan 0א): the saved setting (read synchronously), after the
@@ -44,14 +51,19 @@ export default function RootLayout() {
   const reduceMotion = useReduceMotion();
   // Accounts (stage 8): who is signed in, and the screens their status allows (login, registration, Home).
   const { splash } = useAuthGate();
+  // The app's Splash is also up while the system splash is held over it and until it has been seen after that
+  // one's exit, so the system splash always uncovers it (never Home) and the two never go together.
+  const systemSplashCovering = useSystemSplashCovering();
+  const covered = splash || systemSplashCovering;
   // A recreated activity's root on a live flow gets the screens under it back (QA cancel-after-recreate…).
   useFlowStack();
 
   // Spec §22 (open in under 2 s): the work the first screen doesn't need starts once it is up (docs/PERF.md).
-  useAfterFirstScreen(fontsReady && !splash, startBackgroundWork);
+  // The first screen is up once the Splash over it goes (the sign-in, and the system splash's handoff).
+  useAfterFirstScreen(fontsReady && !covered, startBackgroundWork);
   useEffect(() => {
-    if (fontsReady && !splash) logFirstScreen();
-  }, [fontsReady, splash]);
+    if (fontsReady && !covered) logFirstScreen();
+  }, [fontsReady, covered]);
   // Spec §22: one app_open per run.
   useEffect(() => track('app_open'), []);
   // Spec §27.1: a screen_view for each screen entered (its route pattern; not the dev tools).
@@ -64,9 +76,10 @@ export default function RootLayout() {
   // return to the foreground (i18n/languageSync.ts).
   useLanguageLifecycle();
 
-  useEffect(() => {
-    if (fontsReady) void SplashScreen.hideAsync().catch(() => undefined);
-  }, [fontsReady]);
+  // The system splash goes when the app's Splash has laid out (its onLayout below), not here at "ready": hidden
+  // here, it went before the app's Splash was drawn and together with it (QA account-open-splash-look). This is
+  // only the fail-safe, should no layout ever say so (and Expo Go's hide, which has no handoff).
+  useSystemSplashFailSafe(fontsReady);
 
   // The app's Reduced Motion decision for every animation, from the first render on (same place in both returns,
   // so it never remounts).
@@ -78,12 +91,12 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: color.bg }}>
         <StatusBar style="light" />
         {/* D126 (Moshe 31.10.2026, "בכל מקום שבו יש רקע"): the wandering digits, once, behind every screen. */}
-        <AmbientLayer covered={splash} />
+        <AmbientLayer covered={covered} />
         {/* Under the Splash, the app is hidden from screen readers until it is the right screen. */}
         <View
           style={{ flex: 1 }}
-          accessibilityElementsHidden={splash}
-          importantForAccessibility={splash ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={covered}
+          importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
         >
           {/* The screens are transparent over the digits (D126), so every change cross-fades (motion.md §4.9);
               screen transitions are animations too: with Reduced Motion they are shorter fades (spec §22). The
@@ -101,8 +114,10 @@ export default function RootLayout() {
             </Stack>
           </ThemeProvider>
         </View>
-        {/* Spec §4.2: the Splash while the sign-in loads (and its "try again" when the profile can't). */}
-        <SplashOverlay visible={splash} />
+        {/* Spec §4.2: the Splash while the sign-in loads (and its "try again" when the profile can't). Its first
+            layout sends the system splash away, and it stays until it has been seen after that exit
+            (services/systemSplash.ts). */}
+        <SplashOverlay visible={covered} onFirstLayout={hideSystemSplashAfterLayout} />
         {/* 1.0.4 (friends-room.md §6.6): a room link while the app runs, in or asked first; a waiting invite. */}
         <InviteLinkPrompt />
         {/* The one toast viewport of the app (components.md §15.1): screens call useToast().show(). */}
@@ -134,5 +149,7 @@ function startBackgroundWork(): () => void {
 
 /** A render error anywhere: recorded in Crashlytics, with a way to try again (stage 8). */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  // The error screen is never left under the system splash.
+  useEffect(() => hideSystemSplash({ handOver: false }), []);
   return <ErrorScreen error={error} retry={retry} />;
 }

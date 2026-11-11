@@ -23,6 +23,7 @@ import {
   MAP,
   mapLayout,
   type MapLayout,
+  mapAfterAttempt,
   nextAfterAttempt,
   nodeBox,
   nodeInfo,
@@ -534,6 +535,25 @@ describe('after an attempt (the result’s "לשלב הבא")', () => {
     expect(unlockedNode(locked)).toEqual({ ...locked, state: 'open' });
     const current = nodeInfo(8, played(7), [], 8);
     expect(unlockedNode(current)).toBe(current);
+  });
+
+  it('QA levels-to-map: "למפה" chooses the next stage after a replay, and the new current one after a first play', () => {
+    const outcome = levelOutcome(find, found);
+    // L019–L033 played before (the staging switch), L018 not: its first play takes the map to L034, "השלב הבא".
+    const gap = { ...played(17, 3), ...played(33, 3, 19) };
+    expect(mapAfterAttempt('L018', gap, everyChapter(), outcome, true)).toBe('L034');
+    // An old stage replayed: the one after it, which "לשלב הבא" starts, not the current one.
+    expect(mapAfterAttempt('L007', played(33, 3), everyChapter(), outcome, false)).toBe('L008');
+    expect(mapAfterAttempt('L010', played(33, 3), everyChapter(), outcome, false)).toBe('L011');
+    // A plain run: N → N + 1 either way.
+    expect(mapAfterAttempt('L013', played(12), [], outcome, true)).toBe('L014');
+    // A boss at a gate still shut: the boss itself; and the last stage.
+    const boss = levelOutcome(find, { ...found, elapsedMs: 15000 });
+    expect(mapAfterAttempt('L010', played(9, 1), [], boss, true)).toBe('L010');
+    expect(mapAfterAttempt('L010', played(10, 1), [], boss, false)).toBe('L010');
+    expect(mapAfterAttempt('L300', played(299, 3), everyChapter(), boss, true)).toBe('L300');
+    // A first play far ahead of the current stage (the staging switch): the one after it.
+    expect(mapAfterAttempt('L050', played(33, 3), everyChapter(), outcome, true)).toBe('L051');
   });
 
   it('never lowers the best', () => {

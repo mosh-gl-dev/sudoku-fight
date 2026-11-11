@@ -4,13 +4,22 @@ import { BackHandler, Platform, Text, View } from 'react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
 
 import { RETIRE_MS, SWAP_FRAMES } from '../../../components/ui/retire';
+import type { OnlineInfo } from '../../../net/remoteGameHost';
 import { motion } from '../../../theme/motion';
 import { ANDROID_FADE_MS } from '../../../theme/transitions';
 import { FriendsCountdown } from '../../friends/FriendsCountdown';
 import type { FriendsLobby } from '../../friends/friendsModel';
 import { slamAt } from '../../game/connection/motion';
 import { hidden, type Setup, setUp, wait } from '../../game/connection/testing/setup';
-import { GoCover, goFadeFrom, goFadeOf, handedGoCover, handGoCover, UNDER_OPACITY } from '../GoCover';
+import {
+  gameOnItsWay,
+  GoCover,
+  goFadeFrom,
+  goFadeOf,
+  handedGoCover,
+  handGoCover,
+  UNDER_OPACITY,
+} from '../GoCover';
 import type { FriendsGo } from '../goHandoff';
 import { headerOf, type MatchScreenModel } from '../matchModel';
 
@@ -310,6 +319,54 @@ describe.each(['off', 'on'] as const)('a friends room GO!, reduced motion %s', (
     expect(screen.getByTestId('go-cover-game')).not.toHaveAnimatedStyle({ opacity: UNDER_OPACITY });
   });
 
+  it('handed over as GO! shows, the game still on its way (QA go-hold-joiner, loop 16): GO! alone however long, then the game mounts under it in the render it comes, and GO! fades into it as before', async () => {
+    // The room opens the game screen at GO!, not once the game came (17–189 ms after GO! on the phones): the push,
+    // the route and this cover's first draw are paid meanwhile, and the game's mount starts the moment it comes.
+    env = await setUp('he', reduceMotion);
+    const backs = jest.spyOn(BackHandler, 'addEventListener');
+    const model = friendsGo(0);
+    const view = await render(
+      <GoCover model={model} waiting>
+        <Game />
+      </GoCover>,
+    );
+    // Frames go by: GO! (the room's picture) alone, nothing mounted under it (not the room's online lobby, not the
+    // game), and Android's back does nothing.
+    for (let k = 0; k < 10; k += 1) await wait(FRAME_MS);
+    expect(screen.getByTestId('friends-go-frame', hidden)).toBeOnTheScreen();
+    expect(screen.getByTestId('go-cover', hidden)).toHaveAnimatedStyle({ opacity: 1 });
+    expect(screen.queryByTestId('game-probe')).toBeNull();
+    expect(mounts).toBe(0);
+    // All there is on screen meanwhile: screen readers may reach it (not an empty screen to TalkBack).
+    expect(screen.getByTestId('go-cover')).toHaveProp('accessibilityElementsHidden', false);
+    expect(screen.getByTestId('go-cover')).toHaveProp('importantForAccessibility', 'auto');
+    const [, onBack] = backs.mock.calls.filter(([event]) => event === 'hardwareBackPress').at(-1)!;
+    expect((onBack as () => boolean)()).toBe(true);
+
+    // The game comes: mounted under GO! in that very render, no frame waited for (the cover was drawn long ago).
+    await view.rerender(
+      <GoCover model={model} waiting={false}>
+        <Game />
+      </GoCover>,
+    );
+    expect(screen.getByTestId('game-probe')).toBeOnTheScreen();
+    expect(screen.getByTestId('go-cover-game')).toHaveAnimatedStyle({ opacity: UNDER_OPACITY });
+    expect(screen.getByTestId('go-cover', hidden)).toHaveAnimatedStyle({ opacity: 1 });
+    // The game under it now: GO! is skipped by screen readers again, as every cover over a game.
+    expect(screen.getByTestId('go-cover', hidden)).toHaveProp('accessibilityElementsHidden', true);
+    expect(screen.getByTestId('go-cover', hidden)).toHaveProp(
+      'importantForAccessibility',
+      'no-hide-descendants',
+    );
+    // Then as before: GO! fades into the game once it is drawn and GO! has been seen GO + 400 ms with the fade.
+    const untilFaded = Math.max(fadeFromMs, (SWAP_FRAMES + 1) * FRAME_MS) + fadeMs + 3 * FRAME_MS;
+    for (let t = 0; t <= untilFaded; t += FRAME_MS) await wait(FRAME_MS);
+    expect(screen.getByTestId('go-cover-game')).toHaveAnimatedStyle({ opacity: 1 });
+    expect(screen.getByTestId('go-cover', hidden)).toHaveAnimatedStyle({ opacity: 0 });
+    expect(mounts).toBe(1);
+    backs.mockRestore();
+  });
+
   it('on Android: GO! fades into the game over the stack fade the room used (150 ms), not 240, from GO + 250 ms', async () => {
     const os = jest.replaceProperty(Platform, 'OS', 'android');
     env = await setUp('he', reduceMotion);
@@ -376,4 +433,23 @@ it('hands GO! over once', async () => {
   expect(handedGoCover()).toBe(GO);
   await act(async () => handGoCover(null));
   expect(handedGoCover()).toBeNull();
+});
+
+it('the game on its way: a friends GO! with the room counting still (not a ranked GO!, not once the game is here, the connection lost or the room closed)', () => {
+  env = { restore: () => undefined } as Setup;
+  const info = (over: Partial<OnlineInfo>) =>
+    ({ status: 'lobby', hasGame: false, startsAt: 5000, ...over }) as OnlineInfo;
+  const friends = friendsGo(0);
+  expect(gameOnItsWay(friends, info({}))).toBe(true);
+  // The connection lost on the way: not GO! alone with no way out, but the game route's reconnecting under it
+  // (its attempts, its ways out), as the room's lobby showed it before.
+  expect(gameOnItsWay(friends, info({ status: 'reconnecting' }))).toBe(false);
+  // Its first state on the way (the room live, no snapshot yet): GO! holds on.
+  expect(gameOnItsWay(friends, info({ status: 'live' }))).toBe(true);
+  expect(gameOnItsWay(friends, info({ status: 'live', hasGame: true }))).toBe(false);
+  // The room closed on the way: the game route's own error, with its ways out.
+  expect(gameOnItsWay(friends, info({ status: 'closed' }))).toBe(false);
+  expect(gameOnItsWay(GO, info({}))).toBe(false);
+  expect(gameOnItsWay(null, info({}))).toBe(false);
+  expect(gameOnItsWay(friends, null)).toBe(false);
 });

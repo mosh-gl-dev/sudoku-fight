@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import { httpBaseUrl } from '../config/server';
@@ -21,6 +22,13 @@ export const CONNECTIVITY = {
    * the first check often missed it and Home waited 20 s and more). Offline, a check fails at once: it is cheap.
    */
   recheckMs: 5000,
+  /**
+   * While online, a screen that watches the connection while it is shown (Home) checks again this often, so a
+   * connection lost while it stays open (flight mode) is seen within seconds: the banner and a dimmed ranked
+   * "עוד סיבוב" (QA account-home-offline). The app has no network-state module, so only a check can tell; one
+   * small GET every 10 s, only while that screen is shown and the app is in the foreground.
+   */
+  onlineRecheckMs: 10000,
 } as const;
 
 export type FetchLike = (
@@ -138,4 +146,26 @@ export function useConnectivityWatch(enabled = true): ConnectivityState {
   }, [enabled, offline]);
 
   return state;
+}
+
+/**
+ * While a screen is shown (Home, from its focus effect; returns the stop): checks again every `onlineRecheckMs`
+ * while not offline and the app is in the foreground, and at once when the app comes back to the foreground.
+ * useConnectivityWatch checks again only while already offline, so without this a connection lost while Home
+ * stays open was never seen (QA account-home-offline). Offline, the watch's own 5 s check takes over and sees
+ * the connection come back (the back-online path is unchanged).
+ */
+export function watchConnectionWhileShown(): () => void {
+  const foreground = () => AppState.currentState !== 'background' && AppState.currentState !== 'inactive';
+  const id = setInterval(() => {
+    if (!foreground() || useConnectivity.getState().status === 'offline') return;
+    void useConnectivity.getState().check();
+  }, CONNECTIVITY.onlineRecheckMs);
+  const sub = AppState.addEventListener('change', (next) => {
+    if (next === 'active') void useConnectivity.getState().check();
+  });
+  return () => {
+    clearInterval(id);
+    sub?.remove();
+  };
 }

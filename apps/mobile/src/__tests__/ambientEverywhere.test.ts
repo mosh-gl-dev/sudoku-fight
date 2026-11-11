@@ -66,7 +66,10 @@ describe('[D126] the wandering digits behind every screen', () => {
   it('one layer, in the root layout, before the navigator (so under every screen), stopped under the Splash', () => {
     const users = files.filter((f) => /components\/ambient\/AmbientLayer'/.test(f.code)).map((f) => f.name);
     expect(users).toEqual(['app/_layout.tsx']);
-    const at = layout.indexOf('<AmbientLayer covered={splash} />');
+    // Stopped while the Splash covers the app: the sign-in, and the system splash's handoff (QA
+    // account-open-splash-look).
+    expect(layout).toMatch(/const covered = splash \|\| systemSplashCovering;/);
+    const at = layout.indexOf('<AmbientLayer covered={covered} />');
     expect(at).toBeGreaterThan(0);
     expect(layout.indexOf('<Stack')).toBeGreaterThan(at);
     // Under the layer, the root view paints the one ground.

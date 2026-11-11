@@ -32,7 +32,8 @@ const openStage = (id: string) => router.push({ pathname: '/levels/play', params
  */
 export default function LevelsRoute() {
   const { t } = useTranslation('levels');
-  const { select } = useLocalSearchParams<{ select?: string }>();
+  // `select`: a stage to choose; `pick`: new with each choice from a stage's route (the same stage may come twice).
+  const { select, pick } = useLocalSearchParams<{ select?: string; pick?: string }>();
   const owner = useOwner();
   const progress = useLevelsProgress();
   const opened = useOpenedChapters();
@@ -106,6 +107,7 @@ export default function LevelsRoute() {
       records={records}
       openedChapters={opened}
       select={select ?? null}
+      pick={pick ?? null}
       celebrate={celebrate}
       onCelebrated={celebrated}
       onBack={goBack}

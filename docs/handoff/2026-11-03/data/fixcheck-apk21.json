@@ -1,0 +1,50 @@
+{
+  "checks": [
+    {
+      "id": "go-cover-slam-jump (friends fast, P1 host / P3 joiner, APK 21; runs off1, off2 = app Reduce Motion off; rm = app 'מופעלת' on both; sys0 = system animations 0 + app 'כמו במכשיר' on both; both phones screen-recorded at 90 Hz and decoded frame by frame, ~11 ms steps)",
+      "result": "partial",
+      "evidence": "The jump/doubling is gone in all 8 recordings. GO! bounding box per frame (quarter-scale px, rest = 50 wide): off1 P3: 64 (1.28x) at 4081 -> 47 (0.94) 4214-4339 -> 50 at 4436, never bigger again; off2 P1: 66 (1.32x) at 4210 -> 47 at 4377-4498 -> 50 at 4643. off1 P1 and off2 P3 (and P3 in warp run on2) show the same path but their first GO! frame is already at 49 (0.98) after 2-4 frames with neither '1' nor GO! (P1 4232-4265, P3 4115-4160): the 1.4x part of the slam is not seen (see appBug go-slam-start-skipped). (b) rm and sys0: GO! is 49-50 x 29 in every frame on both phones, only fades; at the cut (~+250 ms: P1 rm 4479, P3 rm 4184, P1 sys0 4349, P3 sys0 4419) one frame has the same box with +3% yellow pixels (two aligned layers, 6x zoom shows only slightly thicker edges, no offset copy). (c) No frame without GO! at the cut; header, avatars and 'מכינים את הלוח…' stay in place; the cross-fade into the board takes ~35-45 ms (P1 off1 5133->5166, P3 off2 5050->5083), shorter than the ~150 ms in the deviceCheck. (d) ranked GO!->board not recorded (would cost another rated surrender); a ranked game at density 540 started normally. GO! first frame -> first board frame: off1 P1 0.86 s, P3 1.09 s (cold joiner); off2 P1 0.94, P3 0.88; rm P1 0.85, P3 0.82; sys0 P1 0.82, P3 0.83. P3 as cold-started HOST in the warp runs: on1 1.37 s, on2 0.80, off1 1.00, on3 0.95. Target <=1.0 s met in 10 of 12 (misses: 1.09 cold joiner, 1.37 cold host). Files: qa-shots/fix16-<serial>-go-{off1,off2,rm,sys0}.mp4.",
+      "qaAction": "qa.ts fix 2 friends-game-countdown --fixed-in apk21 --fix-note-file (done; the task was ½ handled; 3,2,1,GO! then the board on both phones, 'אני' blue with ●)"
+    },
+    {
+      "id": "levels-map-recreate-lands-home (deviceCheck A-F, P1, APK 21)",
+      "result": "pass",
+      "evidence": "A) Map (stage 78) -> wm density 540: back on the level map, panel 'שלב 78 · פאזל'; Back -> 'משחק חדש', Back -> Home. density reset on the map: the map again (3 times). B) Settings + density 540: Settings, Back -> Home. History tab + density reset: History, Back -> Home. 'משחק חדש' + density 540: 'משחק חדש' (also from 450->540), Back -> Home. C) L079 result ('הזמן נגמר', no stars, 'זמן: 30 ש׳', found 0/2) + density 540: the same result screen (same title, reason, stars, time, buttons), no 'מוכן?', no restart; 'למפה' -> map -> Back 'משחק חדש' -> Back Home. 'שוב' starts the stage again (clock 30 -> time-up result). D) Mid-stage (clock 0.6 s) + density 540: the level map, stage not restarted (2 runs with screenshots, D2/D3, including after a restored result + 'למפה' + a Home recreation). One earlier run looked like 'stale result', but the ui tool had blocked ~30 s on the animating stage and the stage had really timed out before the density change (files levelsmap-midstage540/staleresult are that real result). E) Ranked 2P fast search + density 540: the search screen stays, one search (timer kept counting 0:03/0:04); 'ביטול חיפוש' -> 'סוג משחק'. F) A ranked game vs a stealth bot (score 8.5) + density reset: the same game. Note: at density 540 'אימון בשלבים' on 'משחק חדש' is below the fold behind the friends footer; uiautomator still lists it at y=1972, so an id tap lands in the footer gap (not an app bug). Files: fix16-RF8Y60PP2XZ-levelsmap-*.png, -search540*.png, -ranked-reset.png.",
+      "qaAction": "none (no run #2 task for this is fail/partial; levels-to-map ½ open is about the map's selection after replaying a stage, not changed in loop 15)"
+    },
+    {
+      "id": "nav-bar-light-on-some-screens (both phones, 3-button nav, APK 21)",
+      "result": "pass",
+      "evidence": "Both phones were in system LIGHT theme. Cold start (force-stop + launch): Home bar dark on both (median 9,11,14 vs app bg 15,18,24; white buttons). Then without restart: friends game (P3 cold host/joiner), friends results (both), ranked search at density 540, ranked game, bot game (Pip), end-practice sheet and surrender sheet (14,16,22 under the dim), level map/result/stage, 'משחק חדש' offline banner, error screen 'לא מצאנו חדר עם הקוד' (friends failed): all dark. After density 540/reset recreations: dark. Dark system theme (cmd uimode night yes) + cold start: dark on both; switching back to light with the app open: still dark. Theme restored to 'no' on both. Files: fix16-<serial>-navbar-{1,modal,results,bot,error,darktheme}.png.",
+      "qaAction": "none (no run #2 task for this is fail/partial)"
+    },
+    {
+      "id": "warp-first-hit-freeze standby (P3 receiver, cold start each run, RM off, friends fast 2 players; sound ON x3 (on1 hit video missed), OFF x1; screenrecord 90 Hz + gfxinfo framestats polled; atrace once because stalls >50 ms were seen)",
+      "result": "partial",
+      "evidence": "First warp, first 0.5 s (video, same vsum tool as loop 15): on2 longest no-change 68 ms, 24 fps; on3 66 ms, 30 fps; off1 56 ms, 36 fps. APK 20: ON 61-110 ms / 20-28 fps, OFF 67-69 / 30-34. So OFF is better, ON is at APK 20's best end. on1: the recording ended before the warp; its framestats max gap 58 ms. Framestats during the hit (~4 s): max gap on2 79, on3 62, off1 70 ms. Standby (board first frame -> +4 s, framestats merged and aligned via logcat monotonic tap time): on2 max gap 92 ms (+1.31 s) plus 60/66/59 (+1.67-1.82), 55, 53 (+2.49), 61 (+3.12); on3 136 ms (+1.29 s), 54, 74 (+2.18), 60 (+2.82); off1 only 53 ms (+2.19). With sound ON the rate drops to 6-11 frames/250 ms from +1.25 to +2.25 s (OFF 13-22). atrace (at1, sound ON): 132 ms main-thread gap at +1.74 s during ExoPlayer doSomeWork 91 ms (sound warm-up); seven 54-86 ms gaps at +2.33..+3.47 s during a 684 ms background concurrent GC with lmkd criticalLowMemory active; createViewUnsafe 4 at +2.25, 12 at +2.5, 16 at +2.75 (bare banner, then the avatar, as designed) and 110 at +3.0 with a 58 ms doFrame and 75 ms gap. On screen the standby is invisible: no visual change from board+0.2 s to +3.0 s, no ring/frame. 3-4 players not tested (2 phones; friends rooms have no bots). Files: fix16-RF8Y30L038L-warp-{on1,on2,on3,off1}-*.mp4/-gfx.txt, -warp-at1-standby-atrace.txt (240 MB).",
+      "qaAction": "none (interference-hit-warp-look is already V; the stalls go to appBug warp-standby-stalls)"
+    },
+    {
+      "id": "joiner-me-card-box (deviceCheck A and B, not-a-bug)",
+      "result": "pass",
+      "evidence": "(A) P3 joined by adb type, no touch: card-me-summary focused=\"true\" bounds [588,111][1035,421]; dumpsys window mInTouchMode=false; KEYCODE_TAB moved focus to 'surrender' [723,437][847,560] and the grey box left the card; one tap on an empty spot removed the box and mInTouchMode=true. (B) P3 typed then tapped the lobby once (mInTouchMode=true): no box from the first board frame (shot + off2 video). P1 as joiner (warp run on2, typed then tapped the lobby): no box. (C) P1 host, ranked and bot games: no box. Files: fix16-RF8Y30L038L-joinerbox-{1,2,3,B}.png, -joinerbox-A.xml, fix16-RF8Y60PP2XZ-joinerbox-B.png.",
+      "qaAction": "none (no run #2 task)"
+    }
+  ],
+  "appBugs": [
+    {
+      "id": "go-slam-start-skipped",
+      "title": "GO! של חברים: לפעמים לא רואים את ה־slam, ה־GO! הראשון כבר כמעט בגודל הסופי",
+      "severity": "minor",
+      "what": "APK 21, חדר חברים מהיר, הפחתת תנועה כבויה, הקלטת מסך 90Hz בשני הטלפונים. ב־3 מתוך 8 הקלטות (טלפון 1 off1, טלפון 3 off2, טלפון 3 בריצת warp on2) אחרי ה־'1' יש 2–4 פריימים ריקים (כ־45–60 מ\"ש, בלי ספרה ובלי GO!), והפריים הראשון של GO! כבר בגודל 0.96–0.98 ונוחת ב־0.94→1. כלומר לא רואים את ה־1.4. בשאר ההקלטות ה־GO! מתחיל ב־1.28–1.32 (גם שם החלק הראשון חסר). ב־APK 19 ה־GO! נראה מ־1.41. כנראה תוצאה של השעון האחיד מ־loop 15: הזמן נמדד מהרינדור, והפריים הראשון מצויר מאוחר יותר. אין קפיצה ואין כפילות. קבצים: qa-shots/fix16-RF8Y60PP2XZ-go-off1.mp4 (4232–4276), fix16-RF8Y30L038L-go-off2.mp4 (4115–4171)"
+    },
+    {
+      "id": "warp-standby-stalls",
+      "title": "בזמן ההמתנה אחרי הלוח (4 השניות הראשונות): עצירות של 53–136 מ\"ש, בעיקר כשהצליל פועל",
+      "severity": "minor",
+      "what": "APK 21, טלפון 3 מקבל, הפעלה קרה, חדר חברים מהיר עם 2 שחקנים, הפחתת תנועה כבויה. gfxinfo framestats מהפריים הראשון של הלוח עד +4 ש': עם צליל, עצירה של 92 מ\"ש (on2, +1.31 ש') ו־136 מ\"ש (on3, +1.29 ש'), ועוד 54–74 מ\"ש עד +3.1 ש'. בין +1.25 ל־+2.25 ש' יש רק 6–11 פריימים לכל 250 מ\"ש. בלי צליל: רק עצירה אחת של 53 מ\"ש (+2.19 ש'). ב־atrace: עצירה של 132 מ\"ש ב־+1.74 ש', בזמן ExoPlayer doSomeWork של 91 מ\"ש (חימום הצליל). אחריה 7 עצירות של 54–86 מ\"ש בזמן GC מקבילי של 684 מ\"ש, ובמערכת criticalLowMemory. ב־+3.0 ש' נוצרו 110 views, עם doFrame של 58 מ\"ש. הבאנר עצמו נבנה כמתוכנן: 4 views ב־+2.25 ש', ואחר כך 12 ו־16. על המסך לא רואים כלום. קבצים: qa-shots/fix16-RF8Y30L038L-warp-{on2,on3,off1}-standby-gfx.txt, fix16-RF8Y30L038L-warp-at1-standby-atrace.txt"
+    }
+  ],
+  "catalogIssues": [],
+  "phoneState": "Both phones run APK 21. The installed-<serial>.txt files matched latest-build.json, so nothing was reinstalled. Both are on Home after adb.ts reset, app locale he, stop and relaunch. Checked on both: font scale 1.0, animations 1/1/1, airplane off, show_touches null, wm 1080x2340 at density 450, system theme light ('Night mode: no', as found), app locale [he]. In the app: sound ON, Reduced Motion 'כבויה', as found. P3's sound was OFF only during warp off1, and both phones were briefly on 'מופעלת' and 'כמו במכשיר' for the GO runs. No screenrecord or atrace is left running, and the temp files are removed (/sdcard/f14-*.mp4 from an earlier loop were left as found). Account side effects: P1 (אורי) surrendered one rated fast game to a stealth bot. P1 also surrendered 9 unrated friends games, so P3 won them, and ended one bot practice. No friends room is left open. Heavy files: qa-shots/fix16-RF8Y30L038L-warp-at1-standby-atrace.txt is 240 MB."
+}

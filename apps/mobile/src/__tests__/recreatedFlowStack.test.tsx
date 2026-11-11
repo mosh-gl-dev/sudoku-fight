@@ -1,6 +1,6 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
-import { levelOutcome } from '@sudoku-fight/engine';
+import { levelIdOf, levelNumber, levelOutcome } from '@sudoku-fight/engine';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { type ComponentType, type ReactNode, useEffect, useRef } from 'react';
@@ -125,6 +125,8 @@ function MockStage({ level, onFinished }: LevelPlayingProps) {
   );
 }
 const FIND = levelsOf('find', { chapter: 1 })[1]!;
+/** The stage after FIND: the result's "למפה" opens the map on it (QA levels-to-map). */
+const AFTER_FIND = levelIdOf(levelNumber(FIND.id)! + 1);
 
 function MockLayout() {
   useAuthGate();
@@ -371,7 +373,7 @@ describe('a recreated activity on any other screen comes back to it (levels-map-
       // Its buttons work as before: "למפה", then back to "משחק חדש".
       await fireEvent.press(recreated.getByTestId('level-result-map'));
       await act(async () => jest.runOnlyPendingTimers());
-      expect(mapShown(recreated as never)).toBe('MAP -');
+      expect(mapShown(recreated as never)).toBe(`MAP ${AFTER_FIND}`);
       await act(async () => goBack());
       expect(shown(recreated)).toEqual(['MODES']);
     },
@@ -383,9 +385,10 @@ describe('a recreated activity on any other screen comes back to it (levels-map-
     await fireEvent.press(first.getByTestId('mock-stage-finish'));
     await fireEvent.press(first.getByTestId('level-result-map'));
     await act(async () => jest.runOnlyPendingTimers());
-    expect(mapShown(first as never)).toBe('MAP -');
+    expect(mapShown(first as never)).toBe(`MAP ${AFTER_FIND}`);
+    // The map comes back on the stage it chose.
     const recreated = await recreate(Root);
-    expect(mapShown(recreated as never)).toBe('MAP -');
+    expect(mapShown(recreated as never)).toBe(`MAP ${AFTER_FIND}`);
     expect(recreated.queryByTestId('level-result')).toBeNull();
   });
 

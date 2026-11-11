@@ -74,7 +74,7 @@ export function FriendsCountdown({ lobby, myId, step, goShownAt, cover = false }
           ))}
         </View>
         {go ? (
-          <GoStep key="go" reduce={reduce} shownAt={goShownAt ?? undefined} />
+          <GoStep key="go" reduce={reduce} shownAt={goShownAt ?? undefined} owner={!cover} />
         ) : (
           <Step key={String(step)} step={step} reduce={reduce} />
         )}
@@ -98,11 +98,21 @@ function Step({ step, reduce }: { step: Exclude<CountdownStep, 'go'>; reduce: bo
  * GO!, its slam set by the clock from when it was first shown (useSlamSince): the room's `goShownAt`
  * (app/friends/room.tsx), on the room and on the game screen's cover alike. So where both are drawn in the cut
  * they are one GO!, and the cover's goes on from where the room's is, never again (QA go-cover-slam-jump, loop 15).
+ * The room's GO! (`owner`, not the cover's) slams from 1.4 on its own first frame, not from when the room noted it
+ * as it rendered, 45–200 ms sooner (QA go-slam-start-skipped, APK 21); the cover's runs from that same frame.
  */
-function GoStep({ reduce, shownAt }: { reduce: boolean; shownAt: number | undefined }) {
+function GoStep({
+  reduce,
+  shownAt,
+  owner,
+}: {
+  reduce: boolean;
+  shownAt: number | undefined;
+  owner: boolean;
+}) {
   const { t } = useTranslation('match');
   const [rendered] = useState(() => systemClock.now());
-  const slam = useSlamSince(reduce, shownAt ?? rendered);
+  const slam = useSlamSince(reduce, shownAt ?? rendered, owner);
   return (
     <Animated.Text style={[styles.go, slam]} testID="friends-countdown-step">
       {t('countdown.go')}

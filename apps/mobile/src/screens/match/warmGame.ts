@@ -1,6 +1,9 @@
+import { INTERFERENCE_KINDS, type InterferenceKind } from '@sudoku-fight/engine';
+
 import { type FeedbackCue, GAME_CUES, preloadCues } from '../../services/feedback';
 import { whenIdle } from '../../services/startup';
 import { useSettings } from '../../state/settings';
+import { hitCue } from '../game/model';
 
 /**
  * The first ranked game of a run, ready while searching (QA loop 2, K2: GO! stayed 1.75 s before the board in the
@@ -55,6 +58,29 @@ export function warmGameSteps(): readonly Step[] {
   return [...GAME_CUES.map(soundStep), loadGameCode, ...MATCH_CUES.map(soundStep)];
 }
 
+/** The sounds an interference plays: the start of each kind this game allows, and the sender's picker and launch. */
+export function hitWarmCues(kinds: readonly InterferenceKind[]): FeedbackCue[] {
+  return [...new Set<FeedbackCue>([...kinds.map(hitCue), 'arsenalOpen', 'launch'])];
+}
+
+/**
+ * A game with interferences (ranked, a friends room) also has their sounds (screens/game/hit/warmHitCues.ts). The
+ * game screen made them on idle moments from 1.5 s after it mounted, one player each, right in the board's first
+ * seconds (QA warp-standby-stalls, APK 21, sound on: stalls of 92 and 136 ms at +1.3 s after the board, 132 ms
+ * during ExoPlayer's warm-up, 6–11 frames per 250 ms from +1.25 to +2.25 s; sound off, one of 53 ms). So the wait
+ * before the game (the search, the room's lobby) makes them too, after everything the count and GO! need: every
+ * kind (a room may narrow them, [D47]; a player too many costs nothing on screen), so the game screen finds them
+ * made and makes only what the wait had no time for.
+ */
+function hitSteps(): Step[] {
+  return hitWarmCues(INTERFERENCE_KINDS).map(soundStep);
+}
+
+/** The search's steps (a ranked game, with interferences): the first game's, then the interferences' sounds. */
+export function warmRankedGameSteps(): readonly Step[] {
+  return [...warmGameSteps(), ...hitSteps()];
+}
+
 /** A friends room's count: 3 · 2 · 1 and GO! (no VS). */
 export const FRIENDS_COUNT_CUES: readonly FeedbackCue[] = ['countdownBeat', 'go'];
 
@@ -62,10 +88,11 @@ export const FRIENDS_COUNT_CUES: readonly FeedbackCue[] = ['countdownBeat', 'go'
  * A friends room's lobby (QA go-hold-long-on-joiner: on a phone that joined by a code or a link right after the app
  * started, GO! stayed ~2.1 s before the board, ~1.0 s in every later game). Such a phone never saw the game type
  * screen or a search, so the first game made its 13 players and loaded its code under GO!, as ranked's did before
- * QA K2. The same steps while the players wait in the lobby, the count's two players last.
+ * QA K2. The same steps while the players wait in the lobby, the count's two players next, the interferences'
+ * sounds last (QA warp-standby-stalls: not in the board's first seconds).
  */
 export function warmFriendsGameSteps(): readonly Step[] {
-  return [...GAME_CUES.map(soundStep), loadGameCode, ...FRIENDS_COUNT_CUES.map(soundStep)];
+  return [...GAME_CUES.map(soundStep), loadGameCode, ...FRIENDS_COUNT_CUES.map(soundStep), ...hitSteps()];
 }
 
 /**

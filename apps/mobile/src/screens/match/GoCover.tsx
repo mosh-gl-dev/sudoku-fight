@@ -5,8 +5,11 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { timing } from '../../components/ui/motion';
 import { afterFrames, RETIRE_MS, SWAP_FRAMES } from '../../components/ui/retire';
 import { systemClock } from '../../game/clock';
+import type { SessionConnection } from '../../game/onlineSession';
+import type { OnlineInfo } from '../../net/remoteGameHost';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { FriendsGoFrame } from '../friends/FriendsGoFrame';
+import { useOnlineInfo } from '../game/online/useOnlineInfo';
 import { CountdownView } from './CountdownView';
 import { goCoverGate, GoCoverGateContext } from './goCoverGate';
 import type { HandedGo } from './goHandoff';
@@ -24,9 +27,11 @@ import type { HandedGo } from './goHandoff';
  * again (SWAP_FRAMES: the UI thread drew it) GO! fades out as the game fades in (motion.md `go`: the game's fade
  * over GO!; `flow.fade`'s 240 ms, as the match screen's own layers; reduced motion, the shorter fade). A slow first
  * draw keeps GO! on screen, never an empty one. Taps reach the game from its first frame; GO! takes none, and
- * screen readers skip it. Gone RETIRE_MS after its fade (retire.ts: nothing a worklet moved is deleted sooner).
+ * screen readers skip it (only while it stands alone, the game still on its way, may they reach it: then it is
+ * all there is). Gone RETIRE_MS after its fade (retire.ts: nothing a worklet moved is deleted sooner).
  *
- * A friends room's GO! (FriendsGo) comes the moment the game did, its slam still under way: the room's own
+ * A friends room's GO! (FriendsGo) comes the moment GO! shows (or the game came, if sooner), its slam still under
+ * way, and holds the game's mount until the game is here (`waiting`, gameOnItsWay): the room's own
  * picture (FriendsGoFrame) goes on with it, its GO! set by the clock from when the room first showed it (useSlamSince;
  * QA go-cover-slam-jump, loop 15: not from where it was as this screen rendered), and the fade waits, if the game was drawn sooner, until GO! has been
  * seen motion.md's GO + 400 ms less the fade itself, a fade as long as the room's old stack fade (goFadeOf; QA
@@ -44,17 +49,56 @@ type Phase = 'cover' | 'under' | 'fade' | 'done';
 export interface GoCoverProps {
   /** GO! as the match screen (or the friends room) drew it; null: no cover, the children as they are. */
   model: HandedGo | null;
+  /**
+   * The game is still on its way (a friends room's GO!, handed over as GO! showed: useGameOnItsWay): GO! stays, and
+   * nothing is mounted under it until the game is here; then the game mounts at once, its cover long drawn.
+   */
+  waiting?: boolean;
   children: ReactNode;
 }
 
-export function GoCover({ model, children }: GoCoverProps) {
+export function GoCover({ model, waiting = false, children }: GoCoverProps) {
   if (model === null) return <>{children}</>;
-  return <Covered model={model}>{children}</Covered>;
+  return (
+    <Covered model={model} waiting={waiting}>
+      {children}
+    </Covered>
+  );
 }
 
-function Covered({ model, children }: { model: HandedGo; children: ReactNode }) {
+/**
+ * A friends room's GO! handed over before the game came (app/friends/room.tsx opens the game screen as GO! shows,
+ * QA go-hold-joiner, loop 16): the game is on its way while the room has not closed. The push, the game route and
+ * this cover's own first draw (the room's header and players) are then paid while the game is coming (17–189 ms
+ * after GO! on the phones), no longer after it, ahead of the game's own mount. Never for a ranked GO! (its match
+ * screen hands it over with the game here). Not once the connection was lost or the room closed on the way: the
+ * game route's own connection layer then mounts under GO! (reconnecting with its attempts and ways out, or the
+ * error), as the room's lobby showed its reconnecting before; GO! never stands there alone with no way out.
+ */
+export function gameOnItsWay(model: HandedGo | null, info: OnlineInfo | null): boolean {
+  return (
+    model?.kind === 'friendsGo' &&
+    info !== null &&
+    !info.hasGame &&
+    info.status !== 'closed' &&
+    info.status !== 'reconnecting'
+  );
+}
+
+/** gameOnItsWay for the game route's online session, as its connection changes. */
+export function useGameOnItsWay(
+  model: HandedGo | null,
+  connection: SessionConnection | null | undefined,
+): boolean {
+  return gameOnItsWay(model, useOnlineInfo(connection));
+}
+
+function Covered({ model, waiting, children }: { model: HandedGo; waiting: boolean; children: ReactNode }) {
   const reduce = useReduceMotion();
   const [phase, setPhase] = useState<Phase>('cover');
+  // GO!'s own frame has been drawn: the game may mount under it, once it is here (`waiting`), with no frame more.
+  const [coverDrawn, setCoverDrawn] = useState(false);
+  if (phase === 'cover' && coverDrawn && !waiting) setPhase('under');
   const shown = useSharedValue(0);
   // Android's back does nothing while GO! is on screen (as from "found", [D32]); the game's handlers ask it
   // (goCoverGate.ts: theirs come after this one's, and React Native asks the newest first).
@@ -64,9 +108,9 @@ function Covered({ model, children }: { model: HandedGo; children: ReactNode }) 
   useEffect(() => {
     switch (phase) {
       case 'cover': {
-        // GO!'s own frame first; the game (and its back handlers, behind the gate) a frame later.
+        // GO!'s own frame first; the game (and its back handlers, behind the gate) a frame later, or as it comes.
         const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
-        const stop = afterFrames(1, () => setPhase('under'));
+        const stop = afterFrames(1, () => setCoverDrawn(true));
         return () => {
           stop();
           sub.remove();
@@ -105,6 +149,8 @@ function Covered({ model, children }: { model: HandedGo; children: ReactNode }) 
     opacity: UNDER_OPACITY + (1 - UNDER_OPACITY) * shown.get(),
   }));
   const coverStyle = useAnimatedStyle(() => ({ opacity: 1 - shown.get() }));
+  // GO! alone, the game still on its way: all there is on screen, so screen readers may reach it meanwhile.
+  const alone = phase === 'cover' && waiting;
 
   return (
     <View style={styles.fill}>
@@ -117,8 +163,8 @@ function Covered({ model, children }: { model: HandedGo; children: ReactNode }) 
         <Animated.View
           style={[StyleSheet.absoluteFill, coverStyle]}
           pointerEvents="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden={!alone}
+          importantForAccessibility={alone ? 'auto' : 'no-hide-descendants'}
           testID="go-cover"
         >
           {model.kind === 'friendsGo' ? (

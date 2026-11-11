@@ -1,0 +1,2101 @@
+{
+  "bugs": {
+    "changed": [
+      {
+        "taskId": "general-display-small-big-font",
+        "action": "fix (handled), fixed-in 1.1.0 (91df2ac, APK 21)",
+        "why": "Loops 7, 9 and 11 fixed every cut text this task found, including the en interference picker at 360dp. Phone checks passed on APK 15 and APK 17. Five screens were never checked: the room, join with code, settings, edit profile and Home."
+      },
+      {
+        "taskId": "interference-new-fps",
+        "action": "fix (handled)",
+        "why": "The fail came from the INK worklet crash. Loop 8 fixed it, and APK 14 ran 4 ink hits with no crash. Scramble and keypad were already measured at 0% janky. The ink fps itself was never measured."
+      },
+      {
+        "taskId": "avatars-react-hit-target",
+        "action": "fix (handled)",
+        "why": "The ink crash fix (loop 8, APK 14) unblocks the check. With scramble the dizzy face and the wobble already passed. Not yet seen with ink."
+      },
+      {
+        "taskId": "avatars-motion-on-game",
+        "action": "fix (handled)",
+        "why": "Loop 5 fixed it: under reduced motion the static fire emoji now sits higher (REDUCED_LIFT), so the laugh is visible. Not checked on a phone."
+      },
+      {
+        "taskId": "levels-new-game-small-phone",
+        "action": "fix (handled)",
+        "why": "Loop 5 fixed it: the chips grow with the font (chipSizeAt, minHeight) and wrap at font 2.0. Not checked on a phone."
+      },
+      {
+        "taskId": "general-lang19-sweep",
+        "action": "fix (handled)",
+        "why": "Round 3 (F3) replaced the English 'Offline' chip with each language's own word in de/it/nl/id. Checked only in de and nl (APK 6)."
+      },
+      {
+        "taskId": "general-lang19-numbers-app",
+        "action": "fix (handled)",
+        "why": "K5/H1 fixed History showing one card. APK 6 passed it in Hebrew. Arabic History dates in 0-9 are not checked yet."
+      },
+      {
+        "taskId": "avatars-pirates-lab",
+        "action": "fix (handled)",
+        "why": "Two fixes for B32: the character switch now goes in steps (SwitchStep), and the Reanimated patch (apk6) stops the update flood. Moves and History show 0 failures. The pirates screen itself was not rechecked."
+      },
+      {
+        "taskId": "ranked-end-opp-closes-app",
+        "action": "fix (handled)",
+        "why": "Loop 14 (useTimeUpHold) brought back the 'הזמן נגמר · בודקים מול השרת…' step before the abandon dialog. APK 20 passed it with airplane mode. The 'Reconnecting... N' English caption waits for Moshe. Not yet checked with a real swipe-away."
+      },
+      {
+        "taskId": "friends-game-countdown",
+        "action": "mark pass (verified)",
+        "why": "APK 14, 18 and 19 all showed 3,2,1,GO! then the board on both phones, with me blue and ●. The GO! jump is a separate bug, fixed in loop 15."
+      },
+      {
+        "taskId": "friends-manage-block-mid-game",
+        "action": "mark pass (verified)",
+        "why": "On APK 14 both phones went back to the same game after a block plus a swipe-away, with no 4002."
+      },
+      {
+        "taskId": "network-abandon-countdown",
+        "action": "mark pass (verified)",
+        "why": "APK 20: about 12 s with only the mark, then 15 down to 0, then 'הזמן נגמר' and 'בודקים מול השרת…', then the abandon win. Checked in a ranked game, which uses the same mechanism."
+      },
+      {
+        "taskId": "interference-hit-banner",
+        "action": "mark pass (verified)",
+        "why": "On APK 14 the ring number keeps pace with the arc."
+      },
+      {
+        "taskId": "avatars-react-hit-sender",
+        "action": "mark pass (verified)",
+        "why": "On APK 14 the chip sits under the cards, the sender winks, and the receiver's banner winks too."
+      },
+      {
+        "taskId": "interference-new-ink-tap",
+        "action": "mark pass (verified)",
+        "why": "On APK 14 a digit went into B5 under a blot."
+      },
+      {
+        "taskId": "interference-new-ink-look",
+        "action": "mark pass (verified)",
+        "why": "On APK 14: 4 ink hits, blots that fade out, and no crash."
+      },
+      {
+        "taskId": "postgame-leaderboard-english",
+        "action": "mark pass (verified)",
+        "why": "APK 13 check passed, at normal size and at 360dp/1.3."
+      },
+      {
+        "taskId": "avatars-pirates-rival-phone",
+        "action": "mark pass (verified)",
+        "why": "The fixcheck passed every place the pirate shows."
+      },
+      {
+        "taskId": "general-ambient-everywhere",
+        "action": "mark pass (verified)",
+        "why": "The keys are opaque now (fixcheck). The other lines passed in the first run."
+      },
+      {
+        "taskId": "general-depth-no-pair",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "game-surrender-ranked-dialog",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-lang19-fit-interference",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass in de/ru/th/ja."
+      },
+      {
+        "taskId": "levels-fill-chapter14",
+        "action": "mark pass (verified)",
+        "why": "Passed against the v6 wording."
+      },
+      {
+        "taskId": "network-surrender-cancel",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "game-moves-reduced-wrong",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "account-settings-look",
+        "action": "mark pass (verified)",
+        "why": "Passed against the v6 wording."
+      },
+      {
+        "taskId": "general-depth-pair",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-depth-disabled",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-depth-gold",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass. K14 hero scale passed later on apk6."
+      },
+      {
+        "taskId": "general-lang19-invite-page",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "levels-boss-l020",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-lang19-legal",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "levels-chain-accept",
+        "action": "mark pass (verified)",
+        "why": "Passed against the v6 wording."
+      },
+      {
+        "taskId": "general-lang19-numbers-screen",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass, including the Thai year 2569."
+      },
+      {
+        "taskId": "avatars-pirates-board-pinned-compact",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-lang19-japanese-bot",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "postgame-results-v2-languages",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "general-lang19-arabic-solo",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "postgame-replay-explain-correct",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass. 'points' was removed on purpose; a breakdown line replaces it."
+      },
+      {
+        "taskId": "postgame-results-v2-action-pair",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass. The APK 19 nav sweep also saw replay go back to Results."
+      },
+      {
+        "taskId": "avatars-pirates-crash-join-code",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass."
+      },
+      {
+        "taskId": "postgame-results-buttons-large-font",
+        "action": "mark pass (verified)",
+        "why": "Fixcheck pass at font 2.0."
+      }
+    ],
+    "needsPhone": [
+      {
+        "taskId": "general-display-small-big-font",
+        "what": "Check the 5 screens never checked: friends room, 'הצטרף עם קוד', Settings, edit profile and Home. Look for no cut text, no button off screen and no sideways scroll, in Hebrew and in English. Then close with pass or partial.",
+        "phones": "One phone (phone 3), APK 21, wm density 480 + font_scale 1.3, then reset"
+      },
+      {
+        "taskId": "interference-new-fps",
+        "what": "Measure fps (gfxinfo or Perf Monitor) during an ink hit on the receiver: about 55 fps or more, with no visible stalls. Scramble and keypad are already measured.",
+        "phones": "Two phones in a ranked or friends game with the sender at level 3+, or a dev build plus fake-client --rules ink"
+      },
+      {
+        "taskId": "avatars-react-hit-target",
+        "what": "Sender sends 'דיו'. On both phones, B's avatar must be dizzy (spiral eyes) and wobble for the whole hit, then stop. Also note whether the receiver's banner hides its own avatar.",
+        "phones": "Two phones (phone 1 + phone 3), Reduced Motion off, APK 21"
+      },
+      {
+        "taskId": "avatars-motion-on-game",
+        "what": "Reduced Motion 'מופעלת', bot practice against טירון. Correct move gives a smile, a mistake gives sadness, and 🔥 must now show the laugh (emoji above the face, eyes and mouth visible). No jump, spin, wobble or blink.",
+        "phones": "One phone, APK 21"
+      },
+      {
+        "taskId": "levels-new-game-small-phone",
+        "what": "In 'משחק חדש' at font 2.0, in he and en, the mode-row chips must not be cut at the bottom and must have no '…'. At font 1.0 the six rows fit with no scroll. Optional: Home 'Provisional' at 1.3 in English is one whole word.",
+        "phones": "One phone, wm density 480 (360x780dp), font_scale 1.0 / 1.3 / 2.0, then reset"
+      },
+      {
+        "taskId": "general-lang19-sweep",
+        "what": "Staged-practice chip on New Game in it and id (also es): it must show the local word ('Anche offline' / 'Bisa offline'), not 'Offline'. The rest of the sweep already passed.",
+        "phones": "One phone, set-app-locales it / id / es, back to he at the end"
+      },
+      {
+        "taskId": "general-lang19-numbers-app",
+        "what": "In Arabic, 'السجل' under 'الكل': every card is visible and opaque, and every date and time uses 0-9 digits.",
+        "phones": "One phone with game history, locale ar, back to he"
+      },
+      {
+        "taskId": "avatars-pirates-lab",
+        "what": "Settings › בדיקה › 'פיראטים': tap the character buttons 1→9 and back every 0.8 s for about 50 s. Expect no ANR, a stage that fills within a second, and no flood of 'synchronouslyUpdateUIProps failed' (count with logcat -T).",
+        "phones": "One phone, APK 21, Reduced Motion off"
+      },
+      {
+        "taskId": "ranked-end-opp-closes-app",
+        "what": "Ranked fast. After a correct digit on A, B swipes the app away. On A expect the freeze ring 15→0, then 'בודקים מול השרת…', then '<B> עזב את המשחק · ניצחת בנטישה', and 'לתוצאות' opens the win with no black screen. Separately, Moshe must decide on the English 'Reconnecting... N' caption.",
+        "phones": "Two phones (phone 1 + phone 3), APK 21"
+      },
+      {
+        "taskId": "general-sr-names",
+        "what": "Real TalkBack pass in he and en over every screen in the tour, including the friends room. The History avatar fix (no unnamed node) is verified by dump only.",
+        "phones": "Moshe, one phone with TalkBack on"
+      },
+      {
+        "taskId": "avatars-pirates-rival-fake",
+        "what": "Expected line 1 (PATCH /v1/me returns avatarId pirates-1-invested for Gil) needs Gil's Firebase ID token. Every other line passed by the two-phone route.",
+        "phones": "Moshe (needs a token), or accept the two-phone route and mark V"
+      }
+    ],
+    "leftAsIs": [
+      {
+        "taskId": "ranked-duel-rating-card",
+        "why": "Lines 2-3 (1200→1232/1168 with K=64 and the 'דירוג זמני' line) need two brand-new accounts, so they stay with Moshe. The APK 18 result is still current."
+      },
+      {
+        "taskId": "ranked-duel-guard-behind",
+        "why": "The −32/+32 values need two new accounts (Moshe). The Elo behaviour with K=32 was correct."
+      },
+      {
+        "taskId": "ranked-entry-type-ratings",
+        "why": "1200 with 'זמני' on the 'מהיר' card needs a new account (Moshe)."
+      },
+      {
+        "taskId": "interference-picker-locked",
+        "why": "Needs a level-1 account. Not touched by any loop."
+      },
+      {
+        "taskId": "interference-where-collection-list",
+        "why": "Needs a level-1 account. Not touched by any loop."
+      },
+      {
+        "taskId": "avatars-look-sad-sleepy-sizes",
+        "why": "The 3-player small card needs fake-client with a Firebase token. The 2-player half passed."
+      },
+      {
+        "taskId": "pregame-search-english",
+        "why": "Line 2 needs the stealth bot switched off (Moshe, admin site). The rest passed on APK 15."
+      },
+      {
+        "taskId": "interference-picker-ltr-en",
+        "why": "Line 1 fails on purpose: in English the 2P button is icon-only (loop 6, judgement call). It needs a catalog change or Moshe's decision. The APK 17 result is current."
+      },
+      {
+        "taskId": "levels-gate-locked",
+        "why": "Only the message wording differs from the catalog, and the meaning is the same: a catalog fix. The loop-11 a11y fix was a separate item."
+      },
+      {
+        "taskId": "pregame-found-countdown-reduced",
+        "why": "Reduced motion is correct. GO! holding 1.0-1.3 s before the board is the current design (K2 residual), so the catalog line should be reworded. The APK 15 result is still the newest ranked evidence."
+      },
+      {
+        "taskId": "friends-code-rate-limit",
+        "why": "The server uses a token bucket (20 at once, refills 2 per minute) and gives the wait in seconds. Retry works. The task wording is wrong, not the app."
+      },
+      {
+        "taskId": "states-match-abandon-screen-off",
+        "why": "The catalog's step order makes A lose, because the background disconnects first. Needs a catalog reorder or Moshe's decision on screen-off. No loop changed it, and the APK 18 check skipped screen-off."
+      },
+      {
+        "taskId": "account-home-offline",
+        "why": "Not fixed. Loop 5 only re-checks the connection when Home gains focus. While Home stays open and online, nothing re-checks (useConnectivityWatch polls only when offline), so going offline is still not noticed until Home is re-entered. No new phone evidence."
+      },
+      {
+        "taskId": "levels-to-map",
+        "why": "Not fixed. LevelMapScreen moves the selection only when currentLevel changes, so after replaying an older stage 'למפה' still opens on the old pick. The APK 19 sweep did not check the focus or the stars."
+      },
+      {
+        "taskId": "account-open-splash-look",
+        "why": "Not fixed by any loop. The system splash still covers the app's own splash on a cold start. Moshe should also check with a new or signed-out account, or on a slow network."
+      }
+    ],
+    "summary": "I went through all 59 bugs in run #2 against the loop evidence (fix-loop*, fixcheck-apk*, README, known-bugs). The task asked for Hebrew notes in the run; the summary below is in English for the main session. Every note in the run is Hebrew, 2-3 lines, and naming the build or APK it was checked on.\n\nWhat changed:\n- 9 open bugs that loops 1-15 fixed in code were marked handled with fixed-in \"1.1.0 (91df2ac, APK 21)\". Each note gives the cause, the fix, and what is still unchecked.\n- 33 handled bugs were marked pass and are now verified. In each, a phone check after the fix had seen every expected line (APK 13/14/18/19/20 or the 03.11 04:36 build).\n\nRun status is now: verified 33, handled 11, open 15. The run shows V 572 · ½ 23 · X 3.\n\nWhat is left:\n- needsPhone: 11 handled bugs need a phone check, 9 of them on APK 21 (setup for each is in the list). The other two need Moshe: general-sr-names (real TalkBack) and avatars-pirates-rival-fake (the PATCH line needs Gil's token).\n- leftAsIs: 15 open bugs.\n  - 7 need Moshe or an account: new accounts, a level-1 account, 3 players, or the stealth bot switched off.\n  - 5 are catalog wording or Moshe decisions.\n  - 3 are real bugs no loop fixed: account-home-offline, levels-to-map and account-open-splash-look.\n\nThe server returned HTTP 429 on part of the batch, so the script retried with backoff; every update went through.\n\nNo code edits, adb, build, deploy or git writes. Notes and scripts are in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/qa-sync/ (apply-bugs.cjs, fix-*.txt, pass-*.txt)."
+  },
+  "untested": {
+    "changed": [
+      {
+        "taskId": "account-open-guard",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-look",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-arena",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-empty",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-bad-email",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-wrong-password",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-unknown-email",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-offline",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-success",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-unverified",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-eye",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-login-google",
+        "action": "untested+note",
+        "why": "blocked: כניסת Google"
+      },
+      {
+        "taskId": "account-open-login-google-new",
+        "action": "untested+note",
+        "why": "blocked: כניסת Google"
+      },
+      {
+        "taskId": "account-open-english",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-open-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack + התנתקות"
+      },
+      {
+        "taskId": "account-open-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "account-open-ios-voiceover",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "account-fighter-look",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-preview",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-avatar-sheet",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-avatar-scroll",
+        "action": "untested+note",
+        "why": "blocked: הרשמה + תחושה"
+      },
+      {
+        "taskId": "account-fighter-avatar-motion",
+        "action": "untested+note",
+        "why": "blocked: הרשמה"
+      },
+      {
+        "taskId": "account-fighter-country-sheet",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-country-search-latin",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-country-search-hebrew",
+        "action": "untested+note",
+        "why": "blocked: הרשמה + עברית"
+      },
+      {
+        "taskId": "account-fighter-country-long",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-length",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-chars",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-available",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-taken",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-blocked",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-name-empty",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-large-font",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-fighter-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack + התנתקות"
+      },
+      {
+        "taskId": "account-signup-look",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-edit-fighter",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-empty",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-password-rule",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-strength",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-confirm",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-terms-links",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-email-taken",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-offline",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-success",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-name-race",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-server-down",
+        "action": "untested+note",
+        "why": "blocked: login + local server stop"
+      },
+      {
+        "taskId": "account-signup-large-font",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-google",
+        "action": "untested+note",
+        "why": "blocked: כניסת Google"
+      },
+      {
+        "taskId": "account-signup-google-existing",
+        "action": "untested+note",
+        "why": "blocked: כניסת Google"
+      },
+      {
+        "taskId": "account-signup-google-leave",
+        "action": "untested+note",
+        "why": "blocked: כניסת Google"
+      },
+      {
+        "taskId": "account-signup-english",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-signup-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack + התנתקות"
+      },
+      {
+        "taskId": "account-signup-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "account-recovery-forgot-look",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-forgot-validation",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-forgot-sent",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-forgot-unknown",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-forgot-mail",
+        "action": "untested+note",
+        "why": "blocked: מייל אמיתי"
+      },
+      {
+        "taskId": "account-recovery-verify-look",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-verify-not-yet",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-verify-resend",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-verify-done",
+        "action": "untested+note",
+        "why": "blocked: מייל אמיתי"
+      },
+      {
+        "taskId": "account-recovery-verify-practice",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-verify-ranked",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-english",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-recovery-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack + התנתקות"
+      },
+      {
+        "taskId": "account-recovery-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "account-profile-rename",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand"
+      },
+      {
+        "taskId": "account-profile-name-taken",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand"
+      },
+      {
+        "taskId": "account-settings-version",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-sound",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "account-settings-haptics",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "account-settings-sign-out",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-sign-out-practice",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-delete-password",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-delete-success",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-delete-name-free",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "account-settings-delete-backend",
+        "action": "untested+note",
+        "why": "blocked: מחיקת חשבון"
+      },
+      {
+        "taskId": "account-settings-delete-google",
+        "action": "untested+note",
+        "why": "blocked: מחיקת חשבון"
+      },
+      {
+        "taskId": "account-settings-licenses-scroll",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "account-settings-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "account-settings-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "account-settings-ios-voiceover",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "pregame-modes-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "pregame-type-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "pregame-bot-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "pregame-search-alone",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-search-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "pregame-search-bot-from-notice",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-search-other-type",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-search-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "pregame-timeout-alone",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-timeout-keep-alone",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-timeout-bot",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-timeout-home",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "pregame-timeout-range",
+        "action": "untested+note",
+        "why": "blocked: stealth off + other accounts"
+      },
+      {
+        "taskId": "pregame-timeout-keep-nocap",
+        "action": "untested+note",
+        "why": "blocked: stealth off + other accounts"
+      },
+      {
+        "taskId": "pregame-found-timing",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "pregame-found-sound",
+        "action": "untested+note",
+        "why": "blocked: אוזן (לפי dumpsys ב־APK 13 כל הצלילים נרשמו)"
+      },
+      {
+        "taskId": "pregame-found-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-moves-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "game-moves-voiceover-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-practice-ios-solo",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-practice-ios-bot",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-practice-ios-swipe",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-practice-ios-background",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-online-3p-cards",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-3p-pips",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-3p-small",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-3p-soft",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-3p-grace",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-3p-last-player",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-exit-order",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-4p-cards",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-4p-pips",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-4p-overflow",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-4p-small",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-online-ios-2p",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-online-ios-group",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "game-surrender-3p-dialog",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-no-loss",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-out",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-others",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-home",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-results",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-3p-requeue",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "game-surrender-ios-voiceover",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "ranked-entry-unverified-email",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "ranked-entry-already-queued",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "ranked-search-no-show",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-countdown-sync",
+        "action": "untested+note",
+        "why": "blocked: עין על שני טלפונים"
+      },
+      {
+        "taskId": "ranked-duel-score-feel",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "ranked-duel-results-swipe-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "ranked-duel-admin-user",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "ranked-duel-admin-game",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "ranked-end-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "ranked-four-found",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-three-recent-pair",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-recent-pair",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-cards",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-interfere-target",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-surrender",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-surrender-no-loss-dialog",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-results",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-leavers-order",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-elo-new",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-fake-client-summary",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-admin",
+        "action": "untested+note",
+        "why": "blocked: 4 שחקנים + ניהול"
+      },
+      {
+        "taskId": "ranked-four-home-rating",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "ranked-four-surrender-no-new-search",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-picker-no-points",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand (haptic only left)"
+      },
+      {
+        "taskId": "interference-picker-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "interference-hit-readable",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "interference-hit-fireworks-look",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand (look only left)"
+      },
+      {
+        "taskId": "interference-hit-cats-look",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand (look only left)"
+      },
+      {
+        "taskId": "interference-hit-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "interference-new-scramble-look",
+        "action": "untested+note",
+        "why": "blocked: Dev Build + עין"
+      },
+      {
+        "taskId": "interference-new-keypad-slide-tap",
+        "action": "untested+note",
+        "why": "blocked: Dev Build + רטט"
+      },
+      {
+        "taskId": "interference-a11y-tb-button",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "interference-a11y-tb-launch",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "interference-a11y-tb-hit",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "interference-a11y-voiceover-send",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "interference-a11y-voiceover-hit",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "interference-target-buttons",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-english",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-header",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-highlight",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-others-inert",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-switch",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-hit-only",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-3p",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-third-player",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-target-leaves",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "interference-where-bot-from-search",
+        "action": "untested+note",
+        "why": "blocked: stealth off"
+      },
+      {
+        "taskId": "interference-where-legacy-room",
+        "action": "untested+note",
+        "why": "blocked: old app + Dev Build"
+      },
+      {
+        "taskId": "interference-where-legacy-ranked",
+        "action": "untested+note",
+        "why": "blocked: old app + 3rd-4th player tokens"
+      },
+      {
+        "taskId": "interference-where-staging-old-window",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "interference-where-staging-old-both-ways",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "interference-where-staging-new-new",
+        "action": "untested+note",
+        "why": "blocked: fresh low-level account"
+      },
+      {
+        "taskId": "network-dev-room",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-dev-result-label",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-silent-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "network-ios-silent",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-ios-voiceover",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-both-offline-router",
+        "action": "untested+note",
+        "why": "blocked: נתב"
+      },
+      {
+        "taskId": "network-ios-freeze",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-ios-abandon",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-ios-background",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-offline-announced",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "network-server-down-error",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-loading-card",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-loading-announced",
+        "action": "untested+note",
+        "why": "blocked: TalkBack + Dev Build"
+      },
+      {
+        "taskId": "network-ios-offline",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "network-reconnect-metrics",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-rtt-ping",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-rtt-other",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "network-rtt-fake-client",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "postgame-results-place-4p",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "postgame-results-pairs-4p",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "postgame-results-leaver-4p",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "postgame-results-talkback-guard",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "postgame-results-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "postgame-results-v2-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "postgame-results-v2-sounds",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "postgame-replay-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "postgame-history-empty",
+        "action": "untested+note",
+        "why": "blocked: חשבון חדש"
+      },
+      {
+        "taskId": "postgame-history-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "postgame-leaderboard-no-rating",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "postgame-leaderboard-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "postgame-progress-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "levels-howto-chapter1",
+        "action": "untested+note",
+        "why": "blocked: טלפון נקי"
+      },
+      {
+        "taskId": "levels-feel-variety",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-find-howto",
+        "action": "untested+note",
+        "why": "blocked: טלפון נקי"
+      },
+      {
+        "taskId": "levels-region-look",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-region-color-blind",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-puzzle-ready",
+        "action": "untested+note",
+        "why": "blocked: טלפון נקי"
+      },
+      {
+        "taskId": "levels-puzzle-drag-feel",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-puzzle-guess",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-puzzle-two-fingers",
+        "action": "untested+note",
+        "why": "blocked: שתי אצבעות"
+      },
+      {
+        "taskId": "levels-puzzle-howto-pictures",
+        "action": "untested+note",
+        "why": "blocked: טלפון נקי"
+      },
+      {
+        "taskId": "levels-puzzle-haptics",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "levels-feel-timing",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-boss-clear",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-freeze-call",
+        "action": "untested+note",
+        "why": "blocked: שיחת טלפון"
+      },
+      {
+        "taskId": "levels-app-closed-not-counted",
+        "action": "untested+note",
+        "why": "blocked: admin cookie"
+      },
+      {
+        "taskId": "levels-talkback-map",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand (TalkBack)"
+      },
+      {
+        "taskId": "levels-talkback-play",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "levels-talkback-puzzle",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "levels-sync-restore",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "levels-sync-merge",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "levels-xp-no-double",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "levels-xp-daily-cap",
+        "action": "untested+note",
+        "why": "blocked: תקרת XP יומית"
+      },
+      {
+        "taskId": "levels-old-1-0-1",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "levels-old-1-0-2",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "levels-practice-unchanged",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "levels-practice-freeze-a11y",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "levels-admin-stages",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "levels-admin-user",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "levels-admin-new-kinds",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "levels-upgrade-stars-kept",
+        "action": "untested+note",
+        "why": "blocked: עדכון מ־1.0.2 + ניהול"
+      },
+      {
+        "taskId": "levels-upgrade-first-try",
+        "action": "untested+note",
+        "why": "blocked: עדכון מ־1.0.2 + ניהול"
+      },
+      {
+        "taskId": "levels-testing-production",
+        "action": "untested+note",
+        "why": "blocked: APK production"
+      },
+      {
+        "taskId": "levels-modes-row-new",
+        "action": "untested+note",
+        "why": "blocked: חשבון חדש (ההערה שומרת את פער הניסוח בשורה)"
+      },
+      {
+        "taskId": "levels-modes-row-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "levels-map-scroll-release",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "levels-fillline-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "levels-player-card-talkback",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "friends-room-share-message",
+        "action": "untested+note",
+        "why": "blocked: וואטסאפ"
+      },
+      {
+        "taskId": "friends-room-guest-sound",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "friends-room-server-restart",
+        "action": "untested+note",
+        "why": "blocked: server restart (Moshe)"
+      },
+      {
+        "taskId": "friends-link-signed-out",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "friends-link-sign-up",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "friends-link-sign-up-resume",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "friends-link-unverified-email",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "friends-link-old-app-link",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "friends-link-old-app-works",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "friends-link-old-app-history",
+        "action": "untested+note",
+        "why": "blocked: גרסה ישנה"
+      },
+      {
+        "taskId": "friends-code-paste-button",
+        "action": "untested+note",
+        "why": "blocked: לוח מוואטסאפ"
+      },
+      {
+        "taskId": "friends-code-paste-long-press",
+        "action": "untested+note",
+        "why": "blocked: לוח מוואטסאפ"
+      },
+      {
+        "taskId": "friends-code-paste-no-code",
+        "action": "untested+note",
+        "why": "blocked: לוח מוואטסאפ"
+      },
+      {
+        "taskId": "friends-game-start-without",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-game-start-without-closed",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-game-join-started",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-game-four-seats",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-game-room-full",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-game-four-play",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "friends-a11y-talkback-room",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "friends-a11y-talkback-new-host",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "friends-a11y-talkback-join",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "friends-a11y-english-share",
+        "action": "untested+note",
+        "why": "blocked: וואטסאפ"
+      },
+      {
+        "taskId": "friends-suspended-buttons",
+        "action": "untested+note",
+        "why": "blocked: השעיית חשבון"
+      },
+      {
+        "taskId": "friends-suspended-link",
+        "action": "untested+note",
+        "why": "blocked: השעיית חשבון"
+      },
+      {
+        "taskId": "friends-error-other-device",
+        "action": "untested+note",
+        "why": "blocked: login (same account on 2 phones)"
+      },
+      {
+        "taskId": "friends-pending-choose-name",
+        "action": "untested+note",
+        "why": "blocked: איפוס שם בניהול"
+      },
+      {
+        "taskId": "states-empty-leaderboard-table",
+        "action": "untested+note",
+        "why": "blocked: empty leaderboard data"
+      },
+      {
+        "taskId": "states-empty-friends",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "states-account-forgot-mail-arrives",
+        "action": "untested+note",
+        "why": "blocked: מייל אמיתי"
+      },
+      {
+        "taskId": "states-account-verify-resend",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "states-account-verify-not-yet",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "states-match-network-error",
+        "action": "untested+note",
+        "why": "blocked: Dev Build/שרת מקומי"
+      },
+      {
+        "taskId": "states-match-already-queued",
+        "action": "untested+note",
+        "why": "blocked: login (same account on 2 phones)"
+      },
+      {
+        "taskId": "avatars-react-clarity",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "avatars-motion-dev-local",
+        "action": "untested+note",
+        "why": "blocked: Development Build"
+      },
+      {
+        "taskId": "avatars-motion-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "avatars-idle-register-card",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "avatars-look-cell-distinct",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "avatars-look-small-details",
+        "action": "untested+note",
+        "why": "blocked: Development Build"
+      },
+      {
+        "taskId": "avatars-look-backgrounds",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "avatars-look-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "avatars-perf-android-4p",
+        "action": "untested+note",
+        "why": "blocked: 3rd-4th player"
+      },
+      {
+        "taskId": "avatars-perf-dev-grid",
+        "action": "untested+note",
+        "why": "blocked: Development Build"
+      },
+      {
+        "taskId": "avatars-perf-ios-4p",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "avatars-id-none",
+        "action": "untested+note",
+        "why": "blocked: חשבון שנמחק"
+      },
+      {
+        "taskId": "avatars-id-legacy",
+        "action": "untested+note",
+        "why": "blocked: חשבון עם אווטר ישן"
+      },
+      {
+        "taskId": "avatars-pirates-register",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "avatars-pirates-old-app",
+        "action": "untested+note",
+        "why": "blocked: old app"
+      },
+      {
+        "taskId": "avatars-pirates-api-catalog",
+        "action": "untested+note",
+        "why": "blocked: Firebase ID token"
+      },
+      {
+        "taskId": "avatars-pirates-look-choice",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין (החלטה 3.27)"
+      },
+      {
+        "taskId": "stealth-admin-off-baseline",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-turn-on",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-audit",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-personas",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-games",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-persona-user",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-reset-name",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-off-midgame",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-admin-off-next-search",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "stealth-search-high-rating",
+        "action": "untested+note",
+        "why": "blocked: other account (rating >1500)"
+      },
+      {
+        "taskId": "stealth-after-report-admin",
+        "action": "untested+note",
+        "why": "blocked: אתר הניהול"
+      },
+      {
+        "taskId": "general-lang-share-en",
+        "action": "untested+note",
+        "why": "blocked: וואטסאפ"
+      },
+      {
+        "taskId": "general-lang19-share-message",
+        "action": "untested+note",
+        "why": "blocked: וואטסאפ"
+      },
+      {
+        "taskId": "general-lang19-firebase-email",
+        "action": "untested+note",
+        "why": "blocked: מייל אמיתי"
+      },
+      {
+        "taskId": "general-lang19-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "general-motion-levels",
+        "action": "untested+note",
+        "why": "blocked: Moshe by hand"
+      },
+      {
+        "taskId": "general-motion-feedback",
+        "action": "untested+note",
+        "why": "blocked: צליל/רטט"
+      },
+      {
+        "taskId": "general-motion-ios-silent",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "general-motion-update-migrates",
+        "action": "untested+note",
+        "why": "blocked: old app"
+      },
+      {
+        "taskId": "general-sr-game",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "general-sr-ownership",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "general-sr-levels",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "general-sr-friends",
+        "action": "untested+note",
+        "why": "blocked: TalkBack (האזנה)"
+      },
+      {
+        "taskId": "general-sr-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "general-display-ios-size",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "general-display-design-system",
+        "action": "untested+note",
+        "why": "blocked: Development Build"
+      },
+      {
+        "taskId": "general-background-freeze-call",
+        "action": "untested+note",
+        "why": "blocked: שיחת טלפון"
+      },
+      {
+        "taskId": "general-ambient-login",
+        "action": "untested+note",
+        "why": "blocked: login"
+      },
+      {
+        "taskId": "general-ambient-look",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "general-ambient-ios",
+        "action": "untested+note",
+        "why": "blocked: iOS"
+      },
+      {
+        "taskId": "general-depth-look",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "general-depth-pair-choice",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      },
+      {
+        "taskId": "general-alive-look",
+        "action": "untested+note",
+        "why": "blocked: שיפוט בעין/תחושה"
+      }
+    ],
+    "needsPhone": [
+      {
+        "taskId": "game-moves-flight, game-moves-wrong-shake, avatars-look-corner-clip (practice part), avatars-look-fade",
+        "what": "Session 'practice animations': reduced motion OFF; solo full-board practice 'מהיר' (correct digits and a wrong one; screenrecord plus frames.ps1 at 20 ms): score flies from the cell to my card and counts up (~650 ms), the penalty flies in red, the wrong cell flashes red and shakes (~300 ms), and the mistakes row turns red briefly. Then practice vs bot Pip: reactions 🔥/😂/😱, checking avatar corner clipping frame by frame; end the practice and check the winner avatar fading in as one image (2–3 times). Catalog marks these [moshe]: the 'התנועה חלקה' lines may still be partial or left for Moshe.",
+        "phones": "one phone, phone 1 (RF8Y60PP2XZ)"
+      },
+      {
+        "taskId": "general-motion-menu-fade, general-motion-home-entrance, general-alive-menus, network-loading-skeleton, states-lists-skeleton",
+        "what": "Session 'menus and cold start': reduced motion OFF, then ON. force-stop, then launch with screenrecord: Home entrance one item after another, under 1 s, and no re-entrance on Back. Then 'משחק חדש' cards on every entry, a fade between menus (not a slide), and bottom-bar fade plus gold pill. Tap 'טבלת מובילים' and 'היסטוריה' right after a cold start: skeleton rows that pulse, then the real list. With RM ON: everything instant, the skeleton does not pulse, the bottom bar has no fade, and the ambient digits are still. Restore RM to 'כבויה'.",
+        "phones": "one phone (phone 1 or phone 3)"
+      },
+      {
+        "taskId": "levels-region-open, levels-motion-map, levels-motion-stage, levels-motion-boss, levels-result-stars-confetti",
+        "what": "Session 'levels motion' on the phone that has the 'בדיקה' unlock-all section: with RM OFF, the region frame lands and flashes once (<1 s) when an exact or fill stage opens, and only the flash in a race. Get 3 stars: stars fill one by one from the right, with one confetti burst. With RM ON: no pulse on the current node, no shake on a locked node, and no confetti. Inside stages (exact, race, chain, puzzle, background → 3-2-1): no falling digit, no bot jump, instant chain fill, and an instant puzzle swap. L010 boss: everything appears together, and the crown has no bounce. Restore unlock-all and RM.",
+        "phones": "phone 3 (RF8Y30L038L), same setup as p3-levels-gate"
+      },
+      {
+        "taskId": "game-online-2p-flight, avatars-look-corner-clip (VS part), friends-a11y-reduced-motion (line 1 only), network-reconnect-2s",
+        "what": "Session 'two phones': (1) RM OFF on both. Ranked 2P 'מהיר' together, or a friends room if the stealth bot takes one phone. Phone B enters a correct digit; on phone A (recorded), the number flies to the OPPONENT's card in the opponent's color. Also look at the avatars on the VS screen for corner clipping. (2) Friends room, RM OFF: the dot on the empty seat blinks. Only this line is left: general-motion-friends already passed RM ON (no blink, 'הקוד הועתק' with no motion, countdown fade only). (3) Same room, 'מהיר', 2 players: airplane mode on phone B for 5 s through USB adb (not wireless, no adb reverse). Record both phones. Within 2 s of the Wi-Fi icon returning, B's mark is gone on A, and board, scores and locks match.",
+        "phones": "both phones (RF8Y60PP2XZ host/A, RF8Y30L038L B)"
+      },
+      {
+        "taskId": "interference-where-replay-old-bot, levels-practice-old-replay",
+        "what": "Quick history check: look on phone 1 (older account אורי), and on phone 3 if needed, for a bot game from before 17.10.2026 that had interferences, and for a practice saved before 1.0.2. If one exists: open it in Replay and check 'הפרעות · N' plus the interference step, or that the old practice opens as before. If none exists: mark it untested ('אין משחק כזה בטלפונים').",
+        "phones": "phone 1 (then phone 3)"
+      }
+    ],
+    "leftAsIs": [
+      {
+        "taskId": "game-moves-flight",
+        "why": "doable on a phone, listed in needsPhone; not marked"
+      },
+      {
+        "taskId": "game-moves-wrong-shake",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "game-online-2p-flight",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "avatars-look-corner-clip",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "avatars-look-fade",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "general-motion-menu-fade",
+        "why": "listed in needsPhone (general-ambient-screen-change covers only part of it)"
+      },
+      {
+        "taskId": "general-motion-home-entrance",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "general-alive-menus",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "network-loading-skeleton",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "states-lists-skeleton",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "levels-region-open",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "levels-motion-map",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "levels-motion-stage",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "levels-motion-boss",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "levels-result-stars-confetti",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "friends-a11y-reduced-motion",
+        "why": "lines 2-4 are covered by general-motion-friends (pass), but line 1 (the dot blinks with RM off) has no evidence, so it is not passed; listed in needsPhone"
+      },
+      {
+        "taskId": "network-reconnect-2s",
+        "why": "listed in needsPhone"
+      },
+      {
+        "taskId": "interference-where-replay-old-bot",
+        "why": "listed in needsPhone (check whether such a game exists in the history)"
+      },
+      {
+        "taskId": "levels-practice-old-replay",
+        "why": "listed in needsPhone (check whether such a practice exists in the history)"
+      }
+    ],
+    "summary": "Run #2 had 350 untested tasks, and none had a bug (I did not touch bug tasks). Result: (a) BLOCKED: 331, marked untested with a Hebrew note 'חסום בריצה האוטומטית: <reason>' and a line '— צריך: <what is needed>', in 90 note files grouped by reason. All 331 confirmed on the server. (b) COVERED (pass): 0. No task had concrete evidence for every expected line. friends-a11y-reduced-motion came closest: lines 2-4 are covered by general-motion-friends, line 1 is not. (c) needsPhone: 19 tasks in 5 sessions, left unmarked.\n\nBreakdown of the 331:\n- 157 from triage-loop10 'blocked', with the same task-specific reason. Their reasons: login 72, 3rd-4th player 53, stealth off 10, Moshe by hand 7 (including TalkBack 1), Dev Build 4, old app 2 plus 2 mixed, and single cases (admin cookie, server restart, Firebase token, empty leaderboard, other account, fresh low-level account, local server stop). 'APK 15' was updated to 'APK 21' in the notes.\n- 5 levels tasks: 4 need a clean device for 'איך משחקים', and 1 (levels-modes-row-new) needs a new account. Its note keeps the wording gap 'שלבים קצרים · עד 3 כוכבים' vs '300 שלבים קצרים · 0–3 כוכבים'.\n- 169 catalog-[moshe] tasks:\n  - iOS 44, TalkBack listening 28, eye/feel judgement 21, admin site 16, Dev Build/local server 9, old app 10, sound/haptics 6, Google sign-in 5, real email 4, WhatsApp share 4, clipboard 3.\n  - Singles or pairs: account delete 2, phone call 2, suspension 2, registration 3, and pregame-found-sound. Its note says that dumpsys on APK 13 logged every sound, so only the ear is left.\n  - The rest: two fingers, router, countdown sync by eye, production APK, XP daily cap, legacy avatar, deleted account, empty history, name reset, Dev Build + haptic/eye 2, 4p + admin 1.\n\nNotes:\n- Marks first ran 6 in parallel and hit HTTP 429 for 101 tasks. I retried them one at a time, all 101 succeeded, and a final fetch shows 331/331 with the new note.\n- Each blocked task was checked against a fresh fetch, so none had changed in the meantime.\n- Current run counts from the server: 948 total, 350 untested, 572 pass, 23 partial, 3 fail. The other agent's bug work changed pass, partial and fail.\n- No adb, code, build, deploy or git writes. Scratch files are in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad/qa-sync/ (plan.cjs, plan.json, note-*.txt, marked.txt).\n- A few early read-only commands used cd into the repo before I noticed the no-cd rule. Nothing was written through them."
+  }
+}

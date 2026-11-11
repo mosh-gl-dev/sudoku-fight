@@ -1,5 +1,6 @@
 // First: keeps the real Reanimated in place of the router testing library's old mock (see homeTesting.tsx).
 import 'react-native-reanimated';
+import { INTERFERENCE_KINDS } from '@sudoku-fight/engine';
 import { act, screen, waitFor } from 'expo-router/testing-library';
 import { createAudioPlayer } from 'expo-audio';
 import { Text } from 'react-native';
@@ -15,12 +16,12 @@ import i18n from '../../../i18n';
 import { createFriendsRooms } from '../../../net/friends';
 import { deviceFriendsDeps, setFriendsRooms } from '../../../net/friendsDevice';
 import { DANA, elapse, FakeFriendsTable, FakeRoomsApi } from '../../../net/testing/fakeFriends';
-import { CUES, GAME_CUES } from '../../../services/feedback';
+import { CUES, GAME_CUES, preloadCues } from '../../../services/feedback';
 import { sfx, type SoundId, voicesOf } from '../../../services/sfx';
 import { useProfile } from '../../../state/profile';
 import { useSettings } from '../../../state/settings';
 import { renderApp } from '../../home/testing/homeTesting';
-import { FRIENDS_COUNT_CUES, loadGameCode, warmFriendsGameSteps } from '../../match/warmGame';
+import { FRIENDS_COUNT_CUES, hitWarmCues, loadGameCode, warmFriendsGameSteps } from '../../match/warmGame';
 
 /**
  * QA go-hold-long-on-joiner (APK 14): on the phone that joined a friends room right after the app started, GO!
@@ -98,12 +99,17 @@ it('the lobby makes the first game’s players and loads its code; the count mak
     table.arrive({ id: DANA, name: 'Dana', avatarId: 'av00', country: 'IL', rating: 1190 }),
   );
   await serve();
-  // Waiting for the host's "התחל": the game screen's players and code, then the count's two.
-  const all = playersOf([...GAME_CUES, ...FRIENDS_COUNT_CUES]);
+  // Waiting for the host's "התחל": the game screen's players and code, then the count's two, then the
+  // interferences' (QA warp-standby-stalls: no longer made in the board's first seconds).
+  const hits = hitWarmCues(INTERFERENCE_KINDS);
+  const all = playersOf([...GAME_CUES, ...FRIENDS_COUNT_CUES, ...hits]);
   // (The lobby's own cue, Dana coming in, may make one more.)
   await waitFor(() => expect(made.mock.calls.length).toBeGreaterThanOrEqual(all), { timeout: 5000 });
   expect(mockGameCode).toHaveBeenCalledTimes(1);
   const before = made.mock.calls.length;
+  // The game screen's own warm-up of the interferences' sounds, in the board's first seconds, finds them made.
+  hits.forEach((name) => preloadCues([name]));
+  expect(made).toHaveBeenCalledTimes(before);
 
   // 3… 2… 1…, GO! and the game: the count plays players already made.
   await act(async () => void table.countdown(3000));
@@ -118,8 +124,16 @@ it('the lobby makes the first game’s players and loads its code; the count mak
   expect(made).toHaveBeenCalledTimes(before);
 });
 
-it('the steps: the game screen’s sounds first, then its code, then the count’s two', () => {
+it('the steps: the game screen’s sounds first, then its code, then the count’s two, then the interferences’', () => {
   const steps = warmFriendsGameSteps();
-  expect(steps).toHaveLength(GAME_CUES.length + 1 + FRIENDS_COUNT_CUES.length);
+  const hits = hitWarmCues(INTERFERENCE_KINDS);
+  expect(steps).toHaveLength(GAME_CUES.length + 1 + FRIENDS_COUNT_CUES.length + hits.length);
   expect(steps[GAME_CUES.length]).toBe(loadGameCode);
+  // The interferences' last, one player each.
+  steps.slice(0, GAME_CUES.length + 1 + FRIENDS_COUNT_CUES.length).forEach((step) => step());
+  const before = made.mock.calls.length;
+  steps.slice(-hits.length).forEach((step, k) => {
+    step();
+    expect(made).toHaveBeenCalledTimes(before + playersOf(hits.slice(0, k + 1)));
+  });
 });

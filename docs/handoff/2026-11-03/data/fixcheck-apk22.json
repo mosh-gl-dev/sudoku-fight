@@ -1,0 +1,337 @@
+{
+ "twoA": {
+  "checks": [
+   {
+    "id": "go-slam-start-skipped + go-cover-slam-jump (APK 22, friends fast, P1 host / P3 cold joiner, both phones screen-recorded and checked frame by frame, about 11 ms per frame; runs off1, off2 with app Reduce Motion 'כבויה' and sound ON; rm with 'מופעלת' on both)",
+    "result": "pass",
+    "evidence": "The GO! box is measured in quarter-scale px, with 50 as the resting width. In all 4 recordings with RM off, the first GO! frame is already the big one. off1: P1 69x40 (1.38x) at 4128, P3 69x40 (1.38x) at 4210. off2: P1 67x39 (1.34x) at 4571, P3 69x40 (1.38x) at 4586. Each then shrinks frame by frame (for example 69, 65, 61, 58, 53, 51, 48), dips to 47 (0.94) for about 100 ms, and settles at 50 within about 250-350 ms. GO! never first appears at 0.96-0.98 or at 1.28-1.32. On APK 21, 3 of 8 recordings started at 0.98 and the rest at 1.28-1.32. Frames with neither '1' nor GO!: P1 1 and 1 (about 44 ms), P3 3 (4133-4190) and 2. That is within the allowed 1-3. At the cut there is one GO! box, the same 50x29 in the overlap frame, with no jump and no doubled or offset GO!. The board cross-fades in 1-2 frames, and the header, avatars and 'מכינים את הלוח…' stay in place. RM 'מופעלת': GO! is 49-50x29 in every frame on both phones. It fades in over about 100 ms (red level 111→211→231 on P1) and never scales. Count: the first count frame is the avatars and 'התכוננו…' with no digit, never GO!. Then 3 (about 1.13-1.28 s), 2 (about 2.04-2.09 s), 1 (about 3.05-3.10 s) and GO! (about 4.13-4.21 s), about 1 s apart, on both phones. 'אני' is blue with ● on both. Files: qa-shots/final-<serial>-go-{off1,off2,rm}.mp4, final-RF8Y30L038L-friends-game-countdown-1.png (first GO! frame, 1.38x) and -2.png (the cut).",
+    "qaAction": "Marked friends-game-countdown pass on run 2 (note-file qa-final/friends-game-countdown-final.txt, names APK 22). It stays 'verified'. No 'fix' entry was made, because the task was not open."
+   },
+   {
+    "id": "go-hold-joiner (time from GO!'s first frame to the first board frame, same 3 runs)",
+    "result": "pass",
+    "evidence": "Per run: GO! first frame → first board frame, then → board fully in (GO! gone). off1 (RM off, sound ON): P3 joiner 0.94 / 0.94 s, P1 host 0.94 / 0.97 s. off2: P3 0.97 / 0.98 s, P1 0.75 / 0.77 s. rm (app RM on): P3 0.77 / 0.80 s, P1 0.67 / 0.69 s. The joiner was at or below 1.0 s in all 3 runs (target ≤1.0 s). APK 21 joiner: off1 1.09, off2 0.88, rm 0.82. APK 19 joiner: off 1.00/1.08, RM 1.30. The host did not get worse (APK 21 host 0.86/0.94/0.85). The median per condition is not available, because there was only 1 run per condition and no separate sound-OFF GO run. The 3 GO! runs had sound ON; 'off' means app Reduced Motion off. Back on P3, pressed 4 times about 0.3 s apart from about +3.0 s after the host tapped start (around GO!): P3 did not leave the game and no room or lobby screen showed. The later presses landed after the board appeared and opened the in-game surrender sheet, as expected. Back from the results went to Home on both phones, never to a room. TalkBack (g) was not tested.",
+    "qaAction": "None beyond friends-game-countdown (pass). There is no separate run #2 task for go-hold."
+   },
+   {
+    "id": "warp-standby-stalls (P3 receiver, cold start each run, RM off, friends fast 2P, at least 8 s in the lobby before start; screenrecord P3 plus gfxinfo framestats polled every 0.8 s and aligned to the video by matching present times, 1956-5200 frames matched per run; runs on1, on2, on3 with sound ON, off1 with sound OFF)",
+    "result": "pass",
+    "evidence": "Standby, from the board's first frame to +4 s (framestats). Longest gap between frame starts: on1 56 ms (+2.98 s), on2 56 ms (+2.49 s and +2.71 s), on3 56 ms (+1.74 s), off1 56 ms (+2.73 s). Nothing longer, and 56 ms is 5 vsyncs at 90 Hz. APK 21 with sound ON had 92 ms (+1.31 s), 136 ms (+1.29 s) and 53-74 ms later; with sound OFF, 53 ms. Frames per 250 ms in +1.25..+2.25 s: on1 22/17/17/15, on2 22/16/20/13, on3 22/19/15/17, off1 22/17/18/16. That is 13-22, like sound OFF on APK 21; APK 21 with sound ON had 6-11. Separately, the +2.1..+3.1 s window (the banner or avatar mount) has frames with 50-81 ms render latency: on2 77 and 79 ms, off1 81 ms at +2.20 s. This happens both with sound and without it, as expected. First warp, first 0.5 s (video): on2 longest no-change 57 ms, about 28 fps; on3 67 ms, about 36 fps; off1 56 ms, about 30 fps. APK 21: on2 68 ms/24 fps, on3 66/30, off1 56/36. Framestats during the hit, 0-4 s: longest frame-start gap 55-56 ms in all runs (APK 21: 79/62/70 ms), at 7-12 frames per 250 ms. The warp's sound was not judged by ear. A frame from on3 confirms the warp drew: banner 'אורי שלח/ה לך עיוות!', waves and the dimmed board. Not measured: atrace (no ExoPlayer or createAudioPlayer check), stalls in the lobby itself (item 3), and the ranked search radar (item 4). on1's hit came after its recording ended, so on1 counts for standby only. on2's hit was recorded in a second clip, still the first warp after the cold start. Files: qa-shots/final-RF8Y30L038L-warp-{on1,on2,on3,off1}.mp4, -warp-on2-hit.mp4, -warp-*-gfx.txt, -warp-standby-stalls-1.png.",
+    "qaAction": "None. There is no run #2 task for this; interference-hit-warp-look and interference-hit-warp-dim are already V and were not re-marked."
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "results-game-time-12min",
+    "title": "Results: 'זמן משחק 12:03' after a friends game of about 30 seconds (seen once)",
+    "severity": "minor",
+    "what": "APK 22, friends fast room 822889, P1 host / P3 joiner. Host tapped start at 03:51; P1 surrendered about 30 s after the board appeared. On both phones, results-stat-time showed 'זמן משחק: 12:03'. The next 5 games, run the same way, showed believable times (for example 0:44). It did not repeat and was not looked into further. durationMs comes from the server result, so check the server's start time for the first game of a room or session."
+   }
+  ],
+  "catalogIssues": [],
+  "leftForOtherPhone": [
+   {
+    "taskId": "go-hold-joiner",
+    "what": "(g) TalkBack ON on the joiner during GO! and the board. Also medians from at least 3 runs per condition (only 1 run each: RM off ×2 with sound ON, RM on ×1; no sound-OFF GO run).",
+    "phone": "either (Moshe)"
+   },
+   {
+    "taskId": "warp-standby-stalls",
+    "what": "An atrace run to confirm no ExoPlayer doSomeWork or createAudioPlayer in the board's first 4 s. Stalls in the lobby while waiting with sound ON. Ranked search radar after a cold start. Hearing the first warp's sound.",
+    "phone": "טלפון 3 (RF8Y30L038L)"
+   }
+  ],
+  "phoneState": "Both phones run APK 22 (installed-<serial>.txt = apk22 = latest-build.json). Nothing was reinstalled. Both are on Home after adb.ts reset, app locale [he], stop and relaunch. Checked on both: font scale 1.0, animations 1/1/1, wm 1080x2340 at density 450, airplane off, show_touches null, and no screenrecord left running or temp files left on the phones. In the app on both: sound ON and Reduced Motion 'כבויה', as found. Reduced Motion was 'מופעלת' on both only for the rm run, and P3's sound was OFF only for warp off1. Account side effects: P1 (אורי) surrendered 8 unrated friends games (P3 won them) and sent 4 warps. No friends room is left open: the last ones closed when P1 surrendered and both went Home. Evidence is in qa-shots/final-*.mp4, *.png and *-gfx.txt (about 150 MB). The analysis scripts (gobox.cjs, gosum.cjs, stand.cjs, wrun.sh) and the extracted frames are in C:/Users/mosheg/AppData/Local/Temp/claude/b0377245321c840d/6deeb02e-1cd6-480d-8ffd-14ec3cc5da59/scratchpad."
+ },
+ "twoB": {
+  "checks": [
+   {
+    "id": "interference-where-replay-old-bot",
+    "result": "untested",
+    "evidence": "Scrolled the full history on both phones. On phone 1 the only games before 17.10 are ranked games against מומו (14 to 16 Oct). The oldest practice is from 23 Oct. On phone 3 the oldest game is from 21 Oct. Neither phone has a bot game with interferences from before 17.10.",
+    "qaAction": "Marked untested: 'נשאר למשה: אין משחק כזה בטלפונים (APK 22)'"
+   },
+   {
+    "id": "levels-practice-old-replay",
+    "result": "untested",
+    "evidence": "The oldest practice is from 23 Oct on phone 1 and from 30 Oct on phone 3. Both are after 1.0.2, so there is no practice saved before 1.0.2 to open.",
+    "qaAction": "Marked untested: 'נשאר למשה: אין אימון כזה בטלפונים (APK 22)'"
+   },
+   {
+    "id": "friends-a11y-reduced-motion",
+    "result": "pass",
+    "evidence": "Phone 1 hosted a friends room with Reduced Motion off. A 4 s recording shows the dot on the empty seat changing between bright and dim on a cycle of about 1.2 s. Lines 2 to 4 were already passed in general-motion-friends. Sheet: qa-shots/final-RF8Y60PP2XZ-friends-a11y-reduced-motion-1.png",
+    "qaAction": "Marked pass, note names APK 22"
+   },
+   {
+    "id": "game-online-2p-flight",
+    "result": "pass",
+    "evidence": "I used a fast friends room instead of ranked, so the stealth bot would not take a seat. Phone 3 entered A1=5. In phone 1's recording, an orange '+5' appears in the cell and flies up to אחוותא's card, which counts from 0 to 5. My own score stays 0 and the cell turns orange. The 40 ms frames show continuous motion. Files: qa-shots/final-RF8Y60PP2XZ-game-online-2p-flight-fine.png and -zoom.png",
+    "qaAction": "Marked pass"
+   },
+   {
+    "id": "interference-new-fps",
+    "result": "partial",
+    "evidence": "Phone 1 sent ink to phone 3 twice and the app did not crash either time. On phone 3 I polled framestats for the main window through the whole hit: 431 frames in 6.9 s, about 63 fps on average, 0% janky. In the first second, while the blobs land, it drops to about 38 to 40 fps (gaps of 55 to 66 ms). From 2 s to the end it is 56 to 86 fps. The video, sampled every 250 ms, shows no visible stall. The Skia surface itself is not counted. Files: qa-final/ink2-poll-*.txt and qa-shots/final-RF8Y30L038L-interference-new-fps-ink2.mp4",
+    "qaAction": "Marked partial with actual; the status changed to reopened"
+   },
+   {
+    "id": "avatars-react-hit-target",
+    "result": "partial",
+    "evidence": "With ink, phone 1 (opponent card) shows B's calculator with spiral eyes, wobbling for the whole hit. It keeps wobbling and stays dizzy about 1.2 s after the interference badge disappears. On phone 3, the banner 'אורי הטיל/ה עליך דיו' hides my own avatar for the whole hit. After the banner leaves, the avatar is still dizzy for about 1 s. Shots: final-RF8Y60PP2XZ-avatars-react-hit-target-1/2/3.png and final-RF8Y30L038L-avatars-react-hit-target-1.png",
+    "qaAction": "Marked partial with actual; the status changed to reopened"
+   },
+   {
+    "id": "network-reconnect-2s",
+    "result": "pass",
+    "evidence": "Fast friends room. Phone 3 was in airplane mode for 5 s, set over USB adb with no adb reverse, and both phones were recorded. The Wi-Fi icon came back on phone 3 at about 11.0 s. The disconnect mark on phone 1 cleared at about 12.8 to 13.0 s, about 1.8 to 2.0 s later (the two recordings are synced to within about 0.25 s). After that, the board (81 cells and their owners), the 5:5 score and the locks were identical on both phones.",
+    "qaAction": "Marked pass"
+   },
+   {
+    "id": "ranked-end-opp-closes-app",
+    "result": "pass",
+    "evidence": "Ranked fast game. The two phones found each other. Phone 1 entered a correct digit, then phone 3 was swiped away from recents (not force-stop). On phone 1: an orange dot on the card, then 'המשחק מוקפא · כל הטיימרים עצורים' with 'היריב מתנתק…' and a ring from 15 to 0. At 0: 'אחוותא לא חזר' and 'בודקים מול השרת…'. Then 'אחוותא עזב את המשחק · ניצחת בנטישה'. 'לתוצאות' opened 'ניצחון!' with 'ניצחת בנטישה', with no black screen. The English 'Reconnecting... N' caption is still there and is mentioned in the note as waiting for Moshe. Phone 3 was relaunched afterwards.",
+    "qaAction": "Marked pass; the status changed to verified"
+   },
+   {
+    "id": "avatars-look-corner-clip",
+    "result": "partial",
+    "evidence": "VS screen on both phones: no clipping. Practice against Pip with the 🔥, 😂 and 😱 reactions: nothing leaves the square, and the eyes and mouth stay on the face. During the 🔥 spin (about 1650 to 1725 ms in the recording) the figure is upside down, and the hat and board are visibly cut in a straight line at the edge of the blue square. Jump and squash show no visible cut. Files: qa-shots/final-RF8Y60PP2XZ-avatars-look-corner-clip-react-zoom.png and -vs-zoom.png",
+    "qaAction": "Marked partial with actual (Moshe to judge whether the cut during the spin is acceptable)"
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "history-ranked-more",
+    "title": "History: 'עוד משחקים' under the מדורג filter adds no older ranked games, and the filter buttons stop responding for a while",
+    "severity": "low",
+    "what": "APK 22, phone 1. History, filter 'מדורג': only 3 ranked cards show (today and 9 Nov). I tapped 'עוד משחקים' more than 13 times and the list stayed at the same 3 cards. Older ranked games do exist (2 Nov and 14 to 16 Oct, which the 'הכל' filter does show). Right after those taps, tapping 'הכל' did nothing for over a minute. The app recovered after going to Home and back. Not confirmed: it may be a race condition, or a filter applied only to the page that was already loaded. Shot: qa-shots/final-RF8Y60PP2XZ-history-2.png"
+   }
+  ],
+  "catalogIssues": [
+   {
+    "taskId": "game-online-2p-flight",
+    "issue": "The steps call for a ranked game, but on staging the stealth bot can take one phone. A friends room between the two phones gives the same check, and the steps could say so."
+   },
+   {
+    "taskId": "interference-new-fps",
+    "issue": "The steps need a dev build with Perf Monitor and fake-client. On a release APK the measurement is gfxinfo framestats of the main window, which does not count the Skia ink surface itself. The expected line should say which measurement counts."
+   },
+   {
+    "taskId": "avatars-react-hit-target",
+    "issue": "On the target phone, the interference banner hides the target's own avatar for the whole hit, so the line about 'B's avatar on phone B' cannot be seen as written."
+   }
+  ],
+  "leftForOtherPhone": [],
+  "phoneState": "Both phones (RF8Y60PP2XZ אורי, RF8Y30L038L אחוותא) are on APK 22. I ran adb.ts reset on both (font 1.0, animations 1, airplane off, size 1080x2340 unchanged), relaunched the app, and both are on Home in Hebrew. The in-app Reduced Motion setting is 'כבויה' on both, as it was before. Phone 3's app was swiped away during the test and has been relaunched. All open games ended: the friends game by surrender, the ranked game by abandonment, the practice ended."
+ },
+ "p1": {
+  "checks": [
+   {
+    "id": "levels-to-map",
+    "result": "pass",
+    "evidence": "APK 22, Phone 1. A: from L001, 'לשלב הבא' up to L007, then 'למפה' opened on L008 with panel 'שלב 8 · מלא את השורה' and L007 at 3 stars. B: L008 to L010 (boss), then 'למפה' gave 'שלב 11'. C: L001 twice, 'למפה' gave 'שלב 2' both times. D: Android back on L005's result gave 'שלב 6'. E: first win of the current stage L078 (2★; L079 already played), then 'למפה' gave L080 with 'השלב הבא', the token moved, and L078 shows 2★. F: back on L084's 'מוכן?' returned to the map on L084 with nothing changed. G (display/font size) was not checked. Recorded with fix --fixed-in '1.1.0 (APK 22)', then marked pass; status is now verified. Shots: qa-shots/final-RF8Y60PP2XZ-levels-to-map-1..7.png",
+    "qaAction": "fix 2 levels-to-map --fixed-in \"1.1.0 (APK 22)\" + mark pass"
+   },
+   {
+    "id": "general-lang19-sweep",
+    "result": "pass",
+    "evidence": "APK 22. The staged-practice chip on New Game shows the local word: it 'Anche offline', id 'Bisa offline', es 'Sin conexión'. No 'Offline' and no Hebrew apart from the player name. Locale restored to he (it was [he] at the start). Shots: final-RF8Y60PP2XZ-general-lang19-sweep-{it,id,es}.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "general-lang19-numbers-app",
+    "result": "pass",
+    "evidence": "APK 22, ar. In 'السجل' under 'الكل', every card is visible and opaque. Scrolling read 77 cards ('اليوم' and '9 نوفمبر'), with 0 Arabic-Indic digits. Home 'المباريات الأخيرة' shows '11 نوفمبر، 5:27 ص' in 0-9 digits. Locale restored to he. Shots: final-RF8Y60PP2XZ-general-lang19-numbers-app-1/2.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "avatars-pirates-lab",
+    "result": "partial",
+    "evidence": "APK 22, RM off. Tapped the character buttons 1→9 and back every 0.8 s for 46 s (51 taps), plus an earlier pass of about 60 s. No ANR, no 'not responding' dialog, and 0 'synchronouslyUpdateUIProps failed' lines in logcat -d -b all since 05:57:30. 'סגירה' returns to Settings. Not met: the stage does not always fill within 1 s of the tap. It took about 1.2-1.8 s, and the button highlight itself lags 0.6-1.2 s. Before the fix the stage stayed blank for more than 60 s. Shots: final-RF8Y60PP2XZ-avatars-pirates-lab-seq.png, -1s.png",
+    "qaAction": "mark partial with --actual-file (status now reopened)"
+   },
+   {
+    "id": "levels-region-open",
+    "result": "pass",
+    "evidence": "RM off, screenrecord with 60-70 ms frames. Exact stage L001: the frame lands slightly offset, flashes once, and is done in about 0.66 s while the clock is already running. Race L013: at a new place the frame appears in place and only flashes (about 0.3 s). Shots: final-RF8Y60PP2XZ-levels-region-open-1/2.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "levels-motion-map",
+    "result": "pass",
+    "evidence": "RM on. The current node L082 has no pulse over 7 s. Tapping locked L108 (unlock-all turned off for this check, then back on) gives a press but no shake. L001 at 3★: the stars are full at once and there is no confetti (the screen stays static). Shots: final-RF8Y60PP2XZ-levels-motion-map-1..3.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "levels-motion-stage",
+    "result": "pass",
+    "evidence": "RM on. Exact: the digit appears in place. Race: Pip's digit appears in the cell within one frame, with no jump. Chain L073: G4=8 fills at once and the step changes 1→2 in the same frame. Puzzle L078: the dragged box follows the finger with no scale and no shadow (outline only), and both the drag swap and the tap swap are instant. Background mid-race: 'ממשיכים בעוד 3,2,1', where only the number changes. Shots: final-RF8Y60PP2XZ-levels-motion-stage-1..6.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "levels-motion-boss",
+    "result": "pass",
+    "evidence": "RM on. L010: the 'שלב בוס!' intro appears whole in one frame, with no landing, for about 2.9 s. Beat Pip 5/5 for 3★. On the 'ניצחת את הבוס!' result the crown is static from its first frame. Shots: final-RF8Y60PP2XZ-levels-motion-boss-1/2.png",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "levels-result-stars-confetti",
+    "result": "pass",
+    "evidence": "Hebrew, RM off. L001 at 3★ in 2.7 s. The stars fill one by one starting from the right (7300/7400/7600 ms), then one confetti burst (about 7900-9000 ms), and no second burst through 16 s. Shots: final-RF8Y60PP2XZ-levels-result-stars-confetti-1/2.png",
+    "qaAction": "mark pass"
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "pirates-lab-stage-fill-slow",
+    "title": "Pirates lab: the stage takes 1-1.8 s to fill after a character switch",
+    "severity": "low",
+    "what": "APK 22, Phone 1, Settings › בדיקה › פיראטים, RM off. After tapping a character button, the button is highlighted only after 0.6-1.2 s, and the stage stays blank until about 1.2-1.8 s (e.g. 'הקפטן (1)': still the old character at 0.6 s, blank at 1.2 s, filled at 1.8 s; 'שומר התוכי (5)' still blank at 1.0 s). There is no ANR and no log flood any more, but the 'stage fills within a second' line is not met. Dev screen only (staging)."
+   }
+  ],
+  "catalogIssues": [
+   {
+    "taskId": "levels-motion-map",
+    "issue": "Step 3 says to tap a locked node, but with 'פתח את כל השלבים (בדיקה)' on, no node is locked. The steps should say to turn unlock-all off for this step and back on afterwards."
+   },
+   {
+    "taskId": "general-lang19-numbers-app",
+    "issue": "The expected line asks for 'date and time' in 'السجل', but History cards show only a date ('اليوم' / '9 نوفمبر') and no time. The time appears only in Home's 'المباريات الأخيرة'. The line should say 'date' for History."
+   },
+   {
+    "taskId": "levels-to-map",
+    "issue": "deviceCheck G (after C, change display size or font size, and the map comes back on the same chosen stage) is not in the catalog lines and was not checked in this pass."
+   }
+  ],
+  "leftForOtherPhone": [],
+  "phoneState": "RF8Y60PP2XZ (Phone 1, אורי) on APK 22 (1.1.0). The app is relaunched on Home in Hebrew (app locale [he], as at the start). adb.ts reset was run: font scale 1, animations 1, colour correction off, airplane off. In-app settings are back to how they started: 'הפחתת תנועה' כבויה and 'פתח את כל השלבים (בדיקה)' on. The 'בדיקה' section was already visible and was left as is. Temporary /sdcard recordings were removed. Real progress changes on the אורי account from testing: L078 was first-won with 2★ (current moved to L080), L080 (boss) and L081 were played as timeouts (current stage is now L082), L001 now has 3★, L010 was replayed and won 5/5, and many chapter 1/2/8 stages were replayed as timeouts (best records unchanged). Total stars went from 131 to about 134. Evidence: C:/Users/mosheg/AppData/Local/Temp/claude/c--Users-mosheg-Documents-ReactNative-sudoku-fight/4440d2fa-e446-41ad-83db-f79035cdf42c/scratchpad/qa-shots/final-RF8Y60PP2XZ-*.png. Recordings are in .../scratchpad/rec/p1-*.mp4 and note files in .../scratchpad/qa-final/."
+ },
+ "p3": {
+  "checks": [
+   {
+    "id": "account-open-splash-look",
+    "result": "partial",
+    "evidence": "Recorded 5 cold starts on APK 22 (off1, off2, rm1, rm2 and airplane). The designed Splash is now seen, and every part (◆■▲●, SUDOKU FIGHT/סודוקו פייט, the tagline, the spinner with 'טוען את הזירה…', and the tip) is there from the first cross-fade frame. It then fades to Home. But it is alone and fully opaque for only 0–144 ms. In off2 and rm1 the icon and the Splash leave in the same frame. Only the airplane-mode start held it for about 0.2 s. So deviceCheck (c), at least ~0.2 s alone, fails. Frames: qa-shots/final-RF8Y30L038L-account-open-splash-look-1..4.png.",
+    "qaAction": "fix 2 (1.1.0 (APK 22), loop-17 cause and fix) then mark partial with actual -> status reopened"
+   },
+   {
+    "id": "account-home-offline",
+    "result": "pass",
+    "evidence": "Home was left open, then flight mode on: the banner with the crossed-out Wi‑Fi icon came within 10 s, 'עוד סיבוב' went dim with '· דורש חיבור', and a tap on it did nothing. Flight mode off: 'בודק…' showed, then within about 15 s the banner went and 'דורש חיבור' went. Sending the app to the background in flight mode and bringing it back showed the banner at once. Shot: qa-shots/final-RF8Y30L038L-account-home-offline-1.png",
+    "qaAction": "fix 2 (1.1.0 (APK 22)) then mark pass -> verified"
+   },
+   {
+    "id": "general-display-small-big-font",
+    "result": "pass",
+    "evidence": "At density 480 and font 1.3, in he and en, I checked Home, Settings (full scroll), edit profile, 'הצטרף עם קוד' with the keyboard up, and a friends room (I left it after). Nothing was cut, nothing went off screen and nothing scrolled sideways. Reset afterwards.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "avatars-motion-on-game",
+    "result": "pass",
+    "evidence": "With RM 'מופעלת' against Pip: the smile lasted about 1.1 s with no nod, sadness about 1.4 s with no shake, and on 🔥 the emoji sat above the face with the laugh visible under it. No jump, spin, wobble or blink in any frame.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "levels-new-game-small-phone",
+    "result": "pass",
+    "evidence": "At density 480: with font 1.0 all six rows fit with no scroll in he and en. With font 2.0 the chips ('ללא דירוג', 'עובד גם בלי אינטרנט', 'שלב 11 • ★ 21', 'גם אופליין', 'Unrated', 'Works offline', 'Stage 11 • ★ 21', 'Offline too') are whole, with no '…' and nothing cut at the bottom. 'Provisional' is one whole word at 1.3 in en.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "game-moves-flight",
+    "result": "partial",
+    "evidence": "Solo, RM off, 60fps. The +4.5 pops on the cell, then flies to the top but lands on the left 'מהלך שיא'/'זמן' stats. It covers '0:21' for about 300 ms. The score that counts up (0→4.5, about 460 ms) is about 350 px away on the right. The penalty -3.5 lands in the same place, and the score turns red and goes down. In the 2-card bot game the +5 lands next to the score. Whether the motion is smooth is left to Moshe.",
+    "qaAction": "mark partial with actual"
+   },
+   {
+    "id": "game-moves-wrong-shake",
+    "result": "pass",
+    "evidence": "Wrong digit in A4: the cell turned red and shook for about 250–300 ms, and the board was not blocked. The '1 טעות' row went red for about 0.6 s, then back to normal.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "avatars-look-fade",
+    "result": "pass",
+    "evidence": "Ran it 3 times (RM off, vs Pip, end practice) and analysed the frames of 2 runs at about 60fps, zoomed in. The winner avatar (the chick on a blue tile) fades in as one image, and no tile colour shows through the chick.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "avatars-look-corner-clip",
+    "result": "untested",
+    "evidence": "Not marked again. In this final pass phone 1 already marked it partial on APK 22, covering the practice reactions and the VS screen, and left the decision to Moshe, so I left its mark as it was.",
+    "qaAction": "none"
+   },
+   {
+    "id": "general-motion-menu-fade",
+    "result": "pass",
+    "evidence": "RM off: New Game, Settings, the player card and the tabs change with a fade of about 100–150 ms. No slide, gold pill on the active tab, and frames kept coming during the transitions. RM on: menus still fade, tab content changes at once, and the screen is still.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "general-motion-home-entrance",
+    "result": "partial",
+    "evidence": "In 3 RM-off cold-start recordings Home never staggers in. Every item is already in its final place under the Splash and shows up only through the Splash's fade. This is probably caused by the loop-17 cover. New Game cards stagger on every entry, there is no re-entrance on return, and with RM on everything appears at once.",
+    "qaAction": "mark partial with actual"
+   },
+   {
+    "id": "general-alive-menus",
+    "result": "partial",
+    "evidence": "Not seen: Home entering item by item on open (same as home-entrance), and the board 'rising in' at game start (it only fades in, with no movement). OK: no re-entrance coming back from Settings or History, New Game, leaderboard and history rows stagger in, and the gold pill shows. With RM on, menus and lists appear at once. Not checked: Achievements, and a game with RM on.",
+    "qaAction": "mark partial with actual"
+   },
+   {
+    "id": "network-loading-skeleton",
+    "result": "pass",
+    "evidence": "Skeleton rows show. On History (about 0.9 s) their brightness pulsed slowly, measured at 34→37→33. On the leaderboard (about 0.35 s) only the start of the brightening shows. With RM on the skeleton did not change at all.",
+    "qaAction": "mark pass"
+   },
+   {
+    "id": "states-lists-skeleton",
+    "result": "pass",
+    "evidence": "After a cold start, the leaderboard and History both show a grey skeleton in the shape of the list first, never an empty screen. Then the real rows come in one after another.",
+    "qaAction": "mark pass"
+   }
+  ],
+  "appBugs": [
+   {
+    "id": "splash-hold-too-short",
+    "title": "Designed Splash still barely visible on cold start (APK 22)",
+    "severity": "medium",
+    "what": "Phone 3, signed in, cold start, RM off or on. After the system icon's cross-fade the Splash is alone and fully opaque for only 0–144 ms. In 2 of 4 recordings the icon and the Splash leave in the same frame (rm1 jumps straight to Home). The planned hold (9 frames and at least 400 ms from hide) is not seen. In airplane mode the Splash holds for about 0.2 s. splashSeenMs=150 is Moshe's call."
+   },
+   {
+    "id": "home-entrance-hidden-under-splash",
+    "title": "Home stagger entrance no longer visible on app open",
+    "severity": "medium",
+    "what": "Since loop 17 the Splash covers Home until it leaves. In every RM-off cold start Home is already fully laid out under the Splash and only shows up through the Splash's fade. The card rise, the 'שחק' landing and the staggered rows are never seen. Probably useAfterFirstScreen or the entrance trigger fires while the Splash still covers Home."
+   },
+   {
+    "id": "solo-score-flight-target",
+    "title": "Solo practice: score/penalty flight lands on the left stats, not the score",
+    "severity": "low",
+    "what": "In 'אימון לבד' the flying +4.5 / -3.5 lands on the left stats ('מהלך שיא'/'זמן'). It overlaps '0:21' for about 300 ms. The score that counts is about 350 px to the right. In the 2-card bot game it lands next to the score."
+   },
+   {
+    "id": "board-no-rise",
+    "title": "Board does not rise in at game start",
+    "severity": "low",
+    "what": "Practice vs Pip, RM off: the board shows up in its final place, together with the whole screen's fade (about 70 ms), and does not move at all. general-alive-menus expects a 'rise in'."
+   }
+  ],
+  "catalogIssues": [
+   {
+    "taskId": "account-open-splash-look",
+    "issue": "The expected lines set no minimum display time, but the loop-17 deviceCheck requires about 0.2 s alone. The catalog could add a line for how long the Splash must be visible."
+   },
+   {
+    "taskId": "network-loading-skeleton",
+    "issue": "The leaderboard skeleton shows for only about 0.35 s on staging, too short to judge 'שפועמות לאט'. History (about 0.9 s) is a better place to check it."
+   }
+  ],
+  "leftForOtherPhone": [],
+  "phoneState": "Phone 3 (RF8Y30L038L), APK 22. adb reset done: font 1.0, animations 1, airplane off. wm density and size reset, app locale he, the app's Reduced Motion back to 'כבויה', sound untouched. The app was relaunched and is on Home. Two friends rooms were created and left. Several practice games were played (solo and vs Pip). Note: this phone's Settings 'בדיקה' section has 'פתח את כל השלבים' ON, so the levels-motion session can run here too."
+ },
+ "leftovers": null
+}

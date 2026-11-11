@@ -5,7 +5,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../src/game/gameStore';
 import { FlowFallback } from '../src/screens/FlowFallback';
 import { GameScreen, OnlineGame } from '../src/screens/game';
-import { GoCover, handedGoCover, handGoCover } from '../src/screens/match/GoCover';
+import { GoCover, handedGoCover, handGoCover, useGameOnItsWay } from '../src/screens/match/GoCover';
 import { dropWhenCovered } from '../src/screens/results/dropWhenCovered';
 import { readResultsThenOpen } from '../src/screens/results/resultsHandoff';
 
@@ -67,6 +67,8 @@ export default function GameRoute() {
   // game is drawn (GoCover, QA loop 3). Read once, as the screen first renders.
   const [goCover] = useState(handedGoCover);
   useEffect(() => handGoCover(null), []);
+  // A friends room's GO! comes as GO! shows: the game is mounted under it once here (GoCover, gameOnItsWay).
+  const waiting = useGameOnItsWay(goCover, online?.connection);
 
   useEffect(() => {
     // Under the results (ended), the store may let go of the game: they are the screen shown, not Home.
@@ -95,7 +97,7 @@ export default function GameRoute() {
     return (
       <>
         <Stack.Screen options={{ gestureEnabled: false }} />
-        <GoCover model={goCover}>
+        <GoCover model={goCover} waiting={waiting}>
           <OnlineGame
             key={online.key}
             session={online}

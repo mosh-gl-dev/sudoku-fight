@@ -65,19 +65,37 @@ it('the results are drawn two frames after the screen that replaced the game, ne
   storage.practiceStorageOrNull.mockResolvedValue(game.repo);
   useLocalSearchParams.mockReturnValue({ id: game.session.id });
 
-  await render(<ResultsRoute />);
-  await settle(); // the game is read already: only the frames are missing
-  expect(screen.getByTestId('results-loading')).toBeOnTheScreen();
-  // ...and nothing of it is seen meanwhile (no spinner, no "טוען…" between the game and its results).
-  expect(opacityOf(screen.getByTestId('results-loading-shown'))).toBe(0);
-  await frame();
-  await settle();
-  expect(screen.getByTestId('results-loading')).toBeOnTheScreen();
-  expect(opacityOf(screen.getByTestId('results-loading-shown'))).toBe(0);
-  await frame();
-  await settle();
-  expect(screen.queryByTestId('results-loading')).toBeNull();
-  expect(screen.getByLabelText('מהלכים נכונים: 2')).toBeOnTheScreen();
+  // The clock stands still (QA loop 16, flaky-results-frames): only the frames below move the results on. With
+  // the real clock, a loaded machine spent RESULTS_QUIET_MS between render and the second frame, the loading
+  // state's own timer showed it (by design, for a slow load), and the test failed though no frame was missed.
+  // The promises and the frames still run: setImmediate (settle) and requestAnimationFrame (frame) stay real.
+  jest.useFakeTimers({
+    doNotFake: [
+      'setImmediate',
+      'nextTick',
+      'queueMicrotask',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+    ],
+  });
+  try {
+    await render(<ResultsRoute />);
+    await settle(); // the game is read already: only the frames are missing
+    expect(screen.getByTestId('results-loading')).toBeOnTheScreen();
+    // ...and nothing of it is seen meanwhile (no spinner, no "טוען…" between the game and its results).
+    expect(opacityOf(screen.getByTestId('results-loading-shown'))).toBe(0);
+    await frame();
+    await settle();
+    expect(screen.getByTestId('results-loading')).toBeOnTheScreen();
+    expect(opacityOf(screen.getByTestId('results-loading-shown'))).toBe(0);
+    await frame();
+    await settle();
+    expect(screen.queryByTestId('results-loading')).toBeNull();
+    expect(screen.getByLabelText('מהלכים נכונים: 2')).toBeOnTheScreen();
+  } finally {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  }
 });
 
 it('the loading state is unseen for RESULTS_QUIET_MS (the screen’s fade-in), and shows for a slower load', async () => {

@@ -16,6 +16,11 @@ import { color, radius, size, space, text, tokens } from '../../theme';
 import { motion, reduceMotionFlag, useReduceMotion } from '../../theme/motion';
 import { errorMessage } from './messages';
 import { AccountApiError } from '../../api/accountApi';
+import {
+  systemSplashCovering,
+  useSystemSplashExiting,
+  useSystemSplashPacer,
+} from '../../services/systemSplash';
 import { Brand, BRAND_ENTRANCE, DevModeBadge } from './parts';
 
 const TIPS = ['lock', 'hard', 'mistake', 'interfere'] as const;
@@ -47,9 +52,14 @@ export function splashTip(t: TFunction<'account'>, tip: (typeof TIPS)[number]): 
  *
  * When a sign-in's profile can't be read and none is saved on the phone (first run offline), it says so,
  * with "נסה שוב" and "התנתקות".
+ *
+ * `onFirstLayout`: it has laid out, so it is what the system splash uncovers (the root layout hides that one
+ * then, services/systemSplash.ts). Called on each layout; the handler acts once. While that one's exit runs, the
+ * overlay counts the frames it is seen alone (SystemSplashPacer).
  */
-export function SplashOverlay({ visible }: { visible: boolean }) {
+export function SplashOverlay({ visible, onFirstLayout }: { visible: boolean; onFirstLayout?: () => void }) {
   const reduce = useReduceMotion();
+  const handingOver = useSystemSplashExiting();
   const { mounted, progress } = usePresence(visible, {
     inMs: 0,
     outMs: motion.duration.stateChange,
@@ -61,14 +71,26 @@ export function SplashOverlay({ visible }: { visible: boolean }) {
     <Animated.View
       style={[StyleSheet.absoluteFill, styles.overlay, visible ? null : fade]}
       pointerEvents={visible ? 'auto' : 'none'}
+      onLayout={onFirstLayout}
+      testID="splash-overlay"
     >
       <SplashScreen />
+      {handingOver ? <SystemSplashPacer /> : null}
     </Animated.View>
   );
 }
 
+/** Counts the frames the Splash is seen alone after the system splash's exit (mounted only while that runs). */
+function SystemSplashPacer() {
+  useSystemSplashPacer();
+  return null;
+}
+
 export function SplashScreen() {
   const { t } = useTranslation('account');
+  // Under the system splash (a cold start), it is drawn whole from its first frame: the system splash's cross-fade
+  // is its entrance (an entrance of its own would still be on its way in when the Splash goes). Decided on mount.
+  const [entrance] = useState(() => !systemSplashCovering());
   const { top, bottom } = useSafeAreaInsets();
   const loadError = useAuth((s) => s.loadError);
   const [tip, setTip] = useState(0);
@@ -98,8 +120,8 @@ export function SplashScreen() {
         <DevModeBadge />
       </View>
       <View style={styles.middle}>
-        <Brand entrance testID="splash-brand" />
-        <Enter kind="fade" delayMs={TAGLINE_AT}>
+        <Brand entrance={entrance} testID="splash-brand" />
+        <Enter kind="fade" enabled={entrance} delayMs={TAGLINE_AT} testID="splash-tagline">
           <Text style={styles.tagline}>{t('splash.tagline')}</Text>
         </Enter>
       </View>

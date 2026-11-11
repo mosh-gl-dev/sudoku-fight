@@ -12,10 +12,11 @@ import type { MatchScreenModel } from './matchModel';
 export type CountdownModel = Extract<MatchScreenModel, { kind: 'countdown' }>;
 
 /**
- * A friends room's GO! (app/friends/room.tsx), handed over the moment the game came, not after a hold (QA
- * go-hold-joiner, loop 13: GO! held 250 ms on the room before the game screen even began its ~0.6 s mount, so
- * GO! → board was 1.1–1.34 s): the players, and when GO! was first shown (phone time, systemClock). The game
- * mounts under it at once, and GO! fades into it no sooner than motion.md's GO + 400 ms (GoCover).
+ * A friends room's GO! (app/friends/room.tsx), handed over the moment GO! shows (or the game came, if sooner), not
+ * after a hold (QA go-hold-joiner, loop 13: GO! held 250 ms on the room before the game screen even began its ~0.6 s
+ * mount, so GO! → board was 1.1–1.34 s; loop 16: not after the game's arrival either, 17–189 ms after GO!): the
+ * players, and when GO! was first shown (phone time, systemClock). The game mounts under it the moment it is here
+ * (GoCover `waiting`), and GO! fades into it no sooner than motion.md's GO + 400 ms (GoCover).
  */
 export interface FriendsGo {
   kind: 'friendsGo';

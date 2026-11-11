@@ -39,7 +39,7 @@ import {
 import { metrics } from './metrics';
 import { SearchView } from './SearchView';
 import { TimeoutView } from './TimeoutView';
-import { warmGameLater } from './warmGame';
+import { warmGameLater, warmRankedGameSteps } from './warmGame';
 
 type SearchModel = Extract<MatchScreenModel, { kind: 'search' }>;
 type FoundModel = Extract<MatchScreenModel, { kind: 'found' }>;
@@ -189,9 +189,10 @@ export function MatchScreen({
   const vsModel = found?.model ?? null;
   const shownVs = useMemo(() => (vsModel === null || onVs ? vsModel : allReady(vsModel)), [vsModel, onVs]);
 
-  // The first game's sounds and code, made while searching (./warmGame.ts, QA K2): not under GO!.
+  // The first game's sounds and code, made while searching (./warmGame.ts, QA K2): not under GO!. Then the
+  // interferences' sounds: not in the board's first seconds (QA warp-standby-stalls).
   const searching = model.kind === 'search';
-  useEffect(() => (searching ? warmGameLater() : undefined), [searching]);
+  useEffect(() => (searching ? warmGameLater(warmRankedGameSteps) : undefined), [searching]);
 
   // The search as it was last drawn, to fade out under the VS (SearchOut), then stand still and go.
   // (The model is the same object for the same inputs, so this settles in one more pass of this function.)
