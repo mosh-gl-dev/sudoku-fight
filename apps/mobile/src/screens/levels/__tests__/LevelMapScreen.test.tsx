@@ -11,7 +11,16 @@ import {
 import { render } from '@testing-library/react-native';
 import { Stack } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
-import { FlatList, Pressable, StyleSheet, Text, View, type ViewStyle, VirtualizedList } from 'react-native';
+import {
+  FlatList,
+  I18nManager,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+  VirtualizedList,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import LevelsRoute from '../../../../app/levels/index';
@@ -594,6 +603,25 @@ describe('the board-game road', () => {
     expect(screen.queryByTestId('node-8-ring-band', hidden)).toBeNull();
     expect(screen.getByTestId('node-8-ring', hidden)).toBeTruthy();
     expect(screen.getByTestId('node-8-halo', hidden)).toBeTruthy();
+  });
+
+  it('the coins and the zones float in beats; all still under Reduced Motion (the coin’s shadow stays)', async () => {
+    jest.useFakeTimers();
+    await show({ records: played(7) });
+    const float = () => screen.getByTestId('node-3-float', hidden);
+    expect(screen.getByTestId('node-3-shadow', hidden)).toBeTruthy();
+    const before = JSON.stringify(float().props.jestAnimatedStyle?.value ?? null);
+    // Into the first beat's move.
+    await act(async () => void jest.advanceTimersByTime(400 + 1800));
+    expect(JSON.stringify(float().props.jestAnimatedStyle?.value ?? null)).not.toBe(before);
+    await screen.unmount();
+    useSettings.setState({ reduceMotion: 'on' });
+    await show({ records: played(7) });
+    expect(float()).toHaveAnimatedStyle({ transform: [] });
+    expect(screen.getAllByTestId('chapter-1-zone', hidden)[0]).toHaveAnimatedStyle({
+      transform: [{ rotate: `${I18nManager.isRTL ? 8 : -8}deg` }],
+    });
+    expect(screen.getByTestId('node-3-shadow', hidden)).toBeTruthy();
   });
 
   it('LEVEL_UI.mapToken off: 1.0.2’s 22 dp pin on the current coin (the same testID)', async () => {

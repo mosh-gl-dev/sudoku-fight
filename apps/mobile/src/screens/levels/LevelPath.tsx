@@ -2,16 +2,20 @@ import { type AppLevel, chapterOf, type GateState, type Stars } from '@sudoku-fi
 import { memo, type Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, type LayoutChangeEvent, StyleSheet, View } from 'react-native';
+import type { SharedValue } from 'react-native-reanimated';
 
 import type { AvatarIdOrNone } from '../../avatars';
+import { useScreenFocused } from '../../avatars/useScreenFocused';
 import { LEVEL_UI } from '../../config/levels';
 import { color } from '../../theme';
+import { useReduceMotion } from '../../theme/motion';
 import { ChapterGateway, FinishLine } from './ChapterGateway';
 import { LevelNode, nodeFrame } from './LevelNode';
 import { RoadPieceView, type RoadPour } from './MapRoad';
 import { MapScenery } from './MapScenery';
 import { chapterScenery } from './sceneryModel';
 import { MapToken } from './MapToken';
+import { useAppActive, useDriftClock } from './mapMotion';
 import {
   type ChapterLayout,
   itemLayoutOf,
@@ -26,12 +30,16 @@ import {
 /**
  * The road (components.md §19.3, §19.14; the board-game road of 31.10.2026): a virtualised list with one item
  * per chapter (300 stages in 30 items, every item the same height), each drawn from the map's layout (mapModel),
- * bottom to top: the chapter's quiet scenery (sceneryModel), the road's pieces (gold up to where I am, slate after),
+ * bottom to top: the chapter's scenery (sceneryModel), the way's pieces (a thin gold line up to where I am, slate dots
+ * after),
  * the gateway (the banner "פרק 4 · בלש · ★ 18/30" as an arch's lintel, the gate's sign under it, the barrier of a
  * shut gate; chapter 1's start pad), the current stage's glow, the ten coins, and my token beside the current one.
  * The item heights are known (getItemLayout), so the list opens straight at the current chapter
  * (initialScrollIndex), and the screen then puts the current stage at 40 % of the height. Nothing here paints a
  * ground: the wandering digits behind the app show between the pieces.
+ *
+ * The coins, the big zones and the sudoku box float (mapMotion.ts DRIFT), all off one clock that moves in beats
+ * and rests with the beacon; still under Reduced Motion, while the map is covered and while the app is behind.
  */
 
 /** What is chosen on the map: a stage, or a gate. */
@@ -128,6 +136,11 @@ export function LevelPath({
   listRef,
 }: LevelPathProps) {
   const { t } = useTranslation('levels');
+  const reduce = useReduceMotion();
+  const focused = useScreenFocused();
+  const appActive = useAppActive();
+  const clock = useDriftClock(!reduce && focused && appActive);
+  const drift = reduce ? null : clock;
   const touched = stepChapters(step, layout);
   const tokenChapter = chapterOf(token.n);
   const hopChapter = token.hop ? chapterOf(token.hop.from) : null;
@@ -143,7 +156,7 @@ export function LevelPath({
       maxToRenderPerBatch={1}
       updateCellsBatchingPeriod={32}
       showsVerticalScrollIndicator={false}
-      extraData={[selected, shake, unlocking, nodeOf, gateOf, current, next, token, avatarId, step]}
+      extraData={[selected, shake, unlocking, nodeOf, gateOf, current, next, token, avatarId, step, drift]}
       onLayout={(e: LayoutChangeEvent) => onViewport(e.nativeEvent.layout.height)}
       onContentSizeChange={onContentReady}
       onScrollBeginDrag={onScrollBeginDrag}
@@ -178,6 +191,7 @@ export function LevelPath({
             landHere={tokenChapter === c && hopChapter !== null && hopChapter !== c ? token : null}
             avatarId={avatarId}
             stepHere={touched.has(c) ? step : null}
+            drift={drift}
             onNode={onNode}
             onGate={onGate}
           />
@@ -207,6 +221,8 @@ interface ChapterBlockProps {
   landHere: MapTokenPlan | null;
   avatarId: AvatarIdOrNone | null;
   stepHere: MapStepView | null;
+  /** The drift's clock (mapMotion.ts), or null: nothing floats (Reduced Motion). */
+  drift: SharedValue<number> | null;
   onNode: (info: NodeInfo) => void;
   onGate: (chapter: number) => void;
 }
@@ -227,6 +243,7 @@ const ChapterBlock = memo(function ChapterBlock({
   landHere,
   avatarId,
   stepHere,
+  drift,
   onNode,
   onGate,
 }: ChapterBlockProps) {
@@ -241,7 +258,7 @@ const ChapterBlock = memo(function ChapterBlock({
   const hopFrom: Point | null = tokenHere?.hop && spot ? tokenSpot(item, tokenHere.hop.from) : null;
   return (
     <View style={{ height: item.height, width }} testID={`chapter-${c}`}>
-      {scenery ? <MapScenery chapter={c} items={scenery} tone={tone} /> : null}
+      {scenery ? <MapScenery chapter={c} items={scenery} tone={tone} drift={drift} /> : null}
       <View
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
@@ -292,6 +309,7 @@ const ChapterBlock = memo(function ChapterBlock({
               pin={!LEVEL_UI.mapToken}
               shownStars={stars ? (stepHere?.running ? stars.to : stars.from) : undefined}
               reveal={stars && stepHere?.running ? { from: stars.from, delayMs: stars.delayMs } : null}
+              drift={drift}
               onPress={onNode}
             />
           </View>

@@ -13,25 +13,31 @@ import { curve } from '../../components/ui/motion';
 import { MAP_MOTION } from '../../config/levels';
 import { color } from '../../theme';
 import { reduceMotionFlag } from '../../theme/motion';
-import { MAP, type RoadPiece } from './mapModel';
+import type { RoadPiece } from './mapModel';
 
 /**
- * A piece of the road (components.md §19.14): one segment of the curve as one item draws it, in a small Svg of its
- * own (react-native-svg draws each Svg into a bitmap of its size, so the road never costs a bitmap as tall as a
- * chapter). Four strokes, bottom to top: the edge (the road's depth, 6 dp lower), the kerb, the body (a 3 dp kerb
- * shows each side) and the dashed middle, whose dashes run on from piece to piece. Gold up to where I am
- * (`color.levelMap.roadDone`), slate after it (`road`). Butt ends: the pieces meet edge to edge under the coins.
+ * A piece of the way (components.md §19.14; Moshe 25.11.2026: "הכביש בצבע זהב, לא מתאים. אולי קו זהב דק"): one
+ * segment of the curve as one item draws it, in a small Svg of its own (react-native-svg draws each Svg into a
+ * bitmap of its size, so the way never costs a bitmap as tall as a chapter). No road any more: a thin line.
+ * - **where I have been** (up to where I am): a gold line (`roadDone.kerb`) in a soft gold glow (`beacon.band`),
+ *   a cream thread (`roadDone.dash`) down its middle;
+ * - **ahead**: a quiet slate dotted line (`road.kerb`), its dots running on from piece to piece.
+ * Butt ends (the dots round): the pieces meet edge to edge under the coins.
  *
  * `pour` (back from a stage, motion.md `level.map.pour`): the gold runs along the piece from its start, over the
- * slate, and its cream middle dash fades in at the end. The screen plays it only without Reduced Motion.
+ * dots, and its cream thread fades in at the end. The screen plays it only without Reduced Motion.
  */
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedG = Animated.createAnimatedComponent(G);
 const NEVER = reduceMotionFlag(false);
 
-const R = MAP.road;
-const BODY = R.width - 2 * R.kerb;
+/**
+ * The line's widths: the glow, the gold line and its thread; ahead, dots of `dot` every `dotEvery` dp (a whole
+ * number of them in the model's dash period, MAP.road.dash + gap, so the dots run on across the pieces).
+ */
+export const LINE = { glow: 9, gold: 3, thread: 1, dot: 2.5, dotEvery: 5.5 } as const;
+const DOTS = `0.5 ${LINE.dotEvery - 0.5}`;
 
 export interface RoadPour {
   delayMs: number;
@@ -46,41 +52,40 @@ export interface RoadPieceViewProps {
   ahead?: boolean;
 }
 
-type Tones = { edge: string; kerb: string; body: string; dash: string };
+const DONE = color.levelMap.roadDone;
+const GLOW = color.levelMap.beacon.band;
 
-/** The four strokes of the road, in one set of colours. */
-function Strokes({ d, dashOffset, tones }: { d: string; dashOffset: number; tones: Tones }) {
+/** The gold line: its glow, the line, the thread. */
+function Gold({ d }: { d: string }) {
   return (
     <>
-      <Path
-        d={d}
-        transform={`translate(0 ${R.edge})`}
-        stroke={tones.edge}
-        strokeWidth={R.width}
-        strokeLinecap="butt"
-        fill="none"
-      />
-      <Path d={d} stroke={tones.kerb} strokeWidth={R.width} strokeLinecap="butt" fill="none" />
-      <Path d={d} stroke={tones.body} strokeWidth={BODY} strokeLinecap="butt" fill="none" />
-      <Path
-        d={d}
-        stroke={tones.dash}
-        strokeWidth={R.dashWidth}
-        strokeDasharray={`${R.dash} ${R.gap}`}
-        strokeDashoffset={dashOffset}
-        strokeLinecap="butt"
-        fill="none"
-      />
+      <Path d={d} stroke={GLOW} strokeWidth={LINE.glow} strokeLinecap="butt" fill="none" />
+      <Path d={d} stroke={DONE.kerb} strokeWidth={LINE.gold} strokeLinecap="butt" fill="none" />
+      <Path d={d} stroke={DONE.dash} strokeWidth={LINE.thread} strokeLinecap="butt" fill="none" />
     </>
   );
 }
 
-/** The gold strokes running along the piece (the pour). */
+/** The dotted line ahead. */
+function Dots({ d, dashOffset }: { d: string; dashOffset: number }) {
+  return (
+    <Path
+      d={d}
+      stroke={color.levelMap.road.kerb}
+      strokeWidth={LINE.dot}
+      strokeDasharray={DOTS}
+      strokeDashoffset={dashOffset}
+      strokeLinecap="round"
+      fill="none"
+    />
+  );
+}
+
+/** The gold line running along the piece (the pour). */
 function Pouring({ piece, pour }: { piece: RoadPiece; pour: RoadPour }) {
-  const tones = color.levelMap.roadDone;
   const L = Math.max(1, piece.length);
   const run = useSharedValue(0);
-  const dash = useSharedValue(0);
+  const thread = useSharedValue(0);
   useEffect(() => {
     run.set(
       withDelay(
@@ -90,7 +95,7 @@ function Pouring({ piece, pour }: { piece: RoadPiece; pour: RoadPour }) {
       ),
     );
     const fade = MAP_MOTION.pourDashFadeMs;
-    dash.set(
+    thread.set(
       withDelay(
         pour.delayMs + Math.max(0, pour.durationMs - fade),
         withTiming(1, { duration: fade, easing: curve('standard'), reduceMotion: NEVER }),
@@ -99,19 +104,18 @@ function Pouring({ piece, pour }: { piece: RoadPiece; pour: RoadPour }) {
     );
     return () => {
       cancelAnimation(run);
-      cancelAnimation(dash);
+      cancelAnimation(thread);
     };
-  }, [pour.delayMs, pour.durationMs, run, dash]);
+  }, [pour.delayMs, pour.durationMs, run, thread]);
   const running = useAnimatedProps(() => ({ strokeDashoffset: L * (1 - run.get()) }));
-  const fading = useAnimatedProps(() => ({ opacity: dash.get() }));
+  const fading = useAnimatedProps(() => ({ opacity: thread.get() }));
   const dashes = `${L} ${L}`;
   return (
     <>
       <AnimatedPath
         d={piece.d}
-        transform={`translate(0 ${R.edge})`}
-        stroke={tones.edge}
-        strokeWidth={R.width}
+        stroke={GLOW}
+        strokeWidth={LINE.glow}
         strokeDasharray={dashes}
         strokeLinecap="butt"
         fill="none"
@@ -119,17 +123,8 @@ function Pouring({ piece, pour }: { piece: RoadPiece; pour: RoadPour }) {
       />
       <AnimatedPath
         d={piece.d}
-        stroke={tones.kerb}
-        strokeWidth={R.width}
-        strokeDasharray={dashes}
-        strokeLinecap="butt"
-        fill="none"
-        animatedProps={running}
-      />
-      <AnimatedPath
-        d={piece.d}
-        stroke={tones.body}
-        strokeWidth={BODY}
+        stroke={DONE.kerb}
+        strokeWidth={LINE.gold}
         strokeDasharray={dashes}
         strokeLinecap="butt"
         fill="none"
@@ -137,15 +132,7 @@ function Pouring({ piece, pour }: { piece: RoadPiece; pour: RoadPour }) {
         testID={`road-${piece.key}-pour`}
       />
       <AnimatedG animatedProps={fading}>
-        <Path
-          d={piece.d}
-          stroke={tones.dash}
-          strokeWidth={R.dashWidth}
-          strokeDasharray={`${R.dash} ${R.gap}`}
-          strokeDashoffset={piece.dashOffset}
-          strokeLinecap="butt"
-          fill="none"
-        />
+        <Path d={piece.d} stroke={DONE.dash} strokeWidth={LINE.thread} strokeLinecap="butt" fill="none" />
       </AnimatedG>
     </>
   );
@@ -169,11 +156,7 @@ export const RoadPieceView = memo(function RoadPieceView({
     >
       <Svg width={frame.w} height={frame.h}>
         <G transform={mirror} testID={`road-${piece.key}-${gold ? 'done' : 'ahead'}`}>
-          <Strokes
-            d={piece.d}
-            dashOffset={piece.dashOffset}
-            tones={gold ? color.levelMap.roadDone : color.levelMap.road}
-          />
+          {gold ? <Gold d={piece.d} /> : <Dots d={piece.d} dashOffset={piece.dashOffset} />}
           {pour ? <Pouring piece={piece} pour={pour} /> : null}
         </G>
       </Svg>

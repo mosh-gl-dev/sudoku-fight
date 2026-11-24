@@ -8,7 +8,7 @@ import { toneOf } from '../../../screens/levels/mapModel';
 import { useSettings } from '../../../state/settings';
 import { color, size } from '../../../theme';
 import { REVEAL } from '../StarRow';
-import { COIN, LevelCoin } from '../LevelCoin';
+import { clearOf, COIN, LevelCoin, sheenOf } from '../LevelCoin';
 import { StarCrown } from '../StarCrown';
 
 /**
@@ -164,5 +164,19 @@ describe('StarCrown', () => {
     await render(<StarCrown stars={3} reveal={{ from: 1, delayMs: 350 }} testID="crown" />);
     expect(screen.queryByTestId('crown-1-pop', hidden)).toBeNull();
     for (const i of [0, 1, 2]) expect(screen.getByTestId(`crown-${i}-filled`, hidden)).toBeTruthy();
+  });
+});
+
+describe('the coin’s sheen (Moshe 25.11.2026: ממש תלת מימדיים)', () => {
+  it('fades to its own colour with no alpha, never to `transparent` (Android would run a grey band)', () => {
+    expect(clearOf('#4a5ca8')).toBe('rgba(74, 92, 168, 0)');
+    expect(clearOf('rgba(255,255,255,0.55)')).toBe('rgba(255, 255, 255, 0)');
+    const tone = toneOf(1);
+    for (const look of ['gold', 'locked'] as const) {
+      const sheen = sheenOf(look, tone);
+      expect(sheen).toMatch(/^linear-gradient\(/);
+      expect(sheen).not.toMatch(/transparent/);
+    }
+    for (const look of ['plain', 'gilded'] as const) expect(sheenOf(look, tone)).toBeNull();
   });
 });

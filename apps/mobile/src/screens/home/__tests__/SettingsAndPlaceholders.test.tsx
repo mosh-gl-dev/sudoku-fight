@@ -92,8 +92,10 @@ describe('settings (spec §4.1)', () => {
     expect(screen.getByText('החלפת שפה מפעילה מחדש את האפליקציה.')).toBeTruthy();
     // The picker (localization plan 0י): a field, then a sheet with "שפת המכשיר" and this build's languages.
     await fireEvent.press(screen.getByRole('button', { name: 'שפה: עברית' }));
-    expect((await screen.findAllByRole('radio', { name: /^(שפת המכשיר|עברית|English)$/ })).length).toBe(3);
-    await fireEvent.press(screen.getByRole('radio', { name: 'English' }));
+    expect(
+      (await screen.findAllByRole('radio', { name: /^(שפת המכשיר, English|עברית|אנגלית, English)$/ })).length,
+    ).toBe(3);
+    await fireEvent.press(screen.getByRole('radio', { name: 'אנגלית, English' }));
     expect(useSettings.getState().language).toBe('he');
     expect(await screen.findByText('להחליף את השפה ל־English?')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'החלפה והפעלה מחדש' }));
@@ -199,10 +201,10 @@ describe('settings (spec §4.1)', () => {
     expect(screen.getByRole('switch', { name: 'Sound' })).toBeTruthy();
     expect(screen.getByRole('switch', { name: 'Haptics' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'Like the device' })).toBeTruthy();
-    // Each language is named in itself.
-    await fireEvent.press(screen.getByRole('button', { name: 'Language: עברית' }));
-    expect(await screen.findByRole('radio', { name: 'Device language' })).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'עברית' })).toBeTruthy();
+    // Each language is named in English and in itself (the setting here is Hebrew, the app English).
+    await fireEvent.press(screen.getByRole('button', { name: 'Language: Hebrew, עברית' }));
+    expect(await screen.findByRole('radio', { name: 'Device language, English' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Hebrew, עברית' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'English' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
     // A development build (not on production) has the testing switches too, once the version's taps open them.

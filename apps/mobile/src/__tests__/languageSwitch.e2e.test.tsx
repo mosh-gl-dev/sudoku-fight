@@ -105,7 +105,7 @@ describe('switching the language (work plan stage 13)', () => {
     await launch(true);
     expect(reload).not.toHaveBeenCalled();
 
-    await pick('שפה: עברית', 'English');
+    await pick('שפה: עברית', 'אנגלית, English');
     expect(await screen.findByText('להחליף את השפה ל־English?')).toBeOnTheScreen();
     expect(screen.getByTestId('language-confirm')).toBeOnTheScreen();
     expect(
@@ -124,7 +124,7 @@ describe('switching the language (work plan stage 13)', () => {
 
   it('the confirm saves English, forces LTR and restarts; the next run is English without a restart', async () => {
     const first = await launch(true);
-    await pick('שפה: עברית', 'English');
+    await pick('שפה: עברית', 'אנגלית, English');
     await fireEvent.press(await screen.findByRole('button', { name: 'החלפה והפעלה מחדש' }));
 
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
@@ -152,7 +152,7 @@ describe('switching the language (work plan stage 13)', () => {
     expect(reload).not.toHaveBeenCalled();
 
     // And back to Hebrew: the prompt in English, then RTL and a restart.
-    await pick('Language: English', 'עברית');
+    await pick('Language: English', 'Hebrew, עברית');
     expect(await screen.findByText('Switch the language to עברית?')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Switch and restart' }));
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
@@ -161,7 +161,7 @@ describe('switching the language (work plan stage 13)', () => {
   });
   it('"שפת המכשיר" on an English phone: asks, restarts in English, and is saved as following the phone', async () => {
     await launch(true);
-    await pick('שפה: עברית', 'שפת המכשיר');
+    await pick('שפה: עברית', 'שפת המכשיר, English');
     expect(await screen.findByText('לעבור לשפת המכשיר?')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'החלפה והפעלה מחדש' }));
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));

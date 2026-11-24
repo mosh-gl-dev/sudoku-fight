@@ -25,6 +25,10 @@ import { BossFrame } from './BossFrame';
  * The boss is a fortress: two merlons and a crown badge over its face, its bot's avatar on it, the arena's gold
  * corners around it unless it is locked. A press sinks the face onto its edge (the node drives `press`).
  *
+ * Depth (Moshe 25.11.2026: "ממש תלת מימדיים"): the edge darkens toward its foot like a side in shade, the face's
+ * far side is shaded and its near top lit (inset bevels), and a soft sheen runs across the face from its top
+ * corner, as on enamel. The map's node floats it and lays its shadow on the ground (LevelNode).
+ *
  * Decorative: the button around it says which stage it is and how it stands.
  */
 
@@ -95,13 +99,42 @@ export interface LevelCoinProps {
   testID: string;
 }
 
-const inset = (offsetY: number, tint: string): BoxShadowValue => ({
-  offsetX: 0,
+const inset = (offsetY: number, tint: string, offsetX = 0): BoxShadowValue => ({
+  offsetX,
   offsetY,
   blurRadius: 0,
   color: tint,
   inset: true,
 });
+
+/** The bevel: the face's far side in shade, this wide. */
+const BEVEL = 2;
+/** The edge's foot in shade: the side of the coin turning away from the light. */
+const EDGE_SHADE = `linear-gradient(180deg, transparent 55%, ${color.levelMap.token.shadow} 100%)`;
+/**
+ * The sheen across the face, from its top corner: white on gold, the chapter's lit tone on a closed coin (it
+ * fades sooner), none on a light face.
+ */
+export function sheenOf(look: CoinLook, tone: ChapterTone): string | null {
+  if (look === 'gold') return `linear-gradient(160deg, ${T.goldLip} 0%, ${clearOf(T.goldLip)} 55%)`;
+  if (look === 'locked') return `linear-gradient(160deg, ${tone.lit} 0%, ${clearOf(tone.lit)} 35%)`;
+  return null;
+}
+
+/**
+ * The same colour with no alpha ("#rrggbb" or "rgba(r,g,b,a)", the token forms). A sheen must fade to its own
+ * colour, not to `transparent`: Android blends a gradient's stops unpremultiplied, so a fade to transparent
+ * (black) would run a grey band across the face.
+ */
+export function clearOf(value: string): string {
+  const hex = /^#([0-9a-f]{6})$/i.exec(value);
+  if (hex) {
+    const n = parseInt(hex[1]!, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, 0)`;
+  }
+  const rgba = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(value);
+  return rgba ? `rgba(${rgba[1]}, ${rgba[2]}, ${rgba[3]}, 0)` : 'transparent';
+}
 
 /** The face, edge, grid and number colours of a look. */
 export function coinColors(look: CoinLook, tone: ChapterTone) {
@@ -127,6 +160,7 @@ function faceOf(look: CoinLook, tone: ChapterTone): ViewStyle {
       boxShadow: [
         inset(tokens.elevation.tactile.lip.gold, T.goldLip),
         inset(-tokens.elevation.tactile.goldShade, T.goldShade),
+        inset(0, T.goldShade, -BEVEL),
       ],
     };
   if (look === 'locked')
@@ -135,13 +169,16 @@ function faceOf(look: CoinLook, tone: ChapterTone): ViewStyle {
       experimental_backgroundImage: verticalGradient([tone.lit, tone.deep, tone.deep]),
       borderWidth: tokens.border.hairline,
       borderColor: tone.lit,
-      boxShadow: [inset(tokens.elevation.tactile.lip.slate, T.slateLip)],
+      boxShadow: [
+        inset(tokens.elevation.tactile.lip.slate, T.slateLip),
+        inset(0, color.levelMap.chip, -BEVEL),
+      ],
     };
   return {
     ...NO_BORDER,
     backgroundColor: M.face[1],
     experimental_backgroundImage: verticalGradient(M.face),
-    boxShadow: [inset(-3, M.faceShade)],
+    boxShadow: [inset(-3, M.faceShade), inset(0, M.faceShade, -BEVEL)],
   };
 }
 
@@ -166,6 +203,7 @@ export function LevelCoin({
   }));
   const cell = (c.side - 2 * c.inset) / 3;
   const lines = boss ? [] : [c.inset + cell, c.inset + 2 * cell];
+  const sheen = sheenOf(look, tone);
   return (
     <View
       style={{ width: c.side, height: c.side + c.edge }}
@@ -196,6 +234,8 @@ export function LevelCoin({
             height: c.side,
             borderRadius: c.radius,
             backgroundColor: colors.edge,
+            ...NO_BORDER,
+            experimental_backgroundImage: EDGE_SHADE,
           },
         ]}
         testID={`${testID}-edge`}
@@ -242,6 +282,13 @@ export function LevelCoin({
             ]}
           />
         ))}
+        {sheen ? (
+          <View
+            style={[StyleSheet.absoluteFill, { experimental_backgroundImage: sheen }]}
+            pointerEvents="none"
+            testID={`${testID}-sheen`}
+          />
+        ) : null}
         {boss && bot ? <View style={styles.bot}>{bot}</View> : null}
         <Text
           style={[

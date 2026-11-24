@@ -3,6 +3,7 @@ import { getLocales } from 'expo-localization';
 import { Platform, StyleSheet } from 'react-native';
 
 import i18n from '../../../i18n';
+import { LANGUAGE_NAMES_IN } from '../../../i18n/languageNamesIn.generated';
 import { LANGUAGE_NAMES, LANGUAGES } from '../../../i18n/languages';
 import { useSettings } from '../../../state/settings';
 import { text, typefaceFor } from '../../../theme';
@@ -10,9 +11,10 @@ import { LanguagePicker } from '../LanguagePicker';
 
 /**
  * The language picker (localization plan 0י, components.md §21), as a later stage has it, with all 19
- * languages on (enabled-languages.json): "שפת המכשיר" first, then each language by its own name, in its own
- * font, read by a screen reader in its language; a choice that changes the language asks first (the app
- * restarts for it, D104), one that keeps it is saved at once. SettingsAndPlaceholders.test.tsx and
+ * languages on (enabled-languages.json): "שפת המכשיר" first (the phone's language under it), then each language
+ * by its name in the app's language and, under it, by its own name in its own font (Moshe, 25.11.2026), read by
+ * a screen reader in the app's language; a choice that changes the language asks first (the app restarts for
+ * it, D104), one that keeps it is saved at once. SettingsAndPlaceholders.test.tsx and
  * languageSwitch.e2e.test.tsx drive it with this build's two languages.
  */
 
@@ -58,6 +60,10 @@ async function openSheet() {
 
 const rows = () => screen.getAllByRole('radio');
 
+/** A row's spoken name in Hebrew: "גרמנית, Deutsch"; Hebrew's own row is "עברית". */
+const row = (lang: (typeof LANGUAGES)[number]) =>
+  lang === 'he' ? 'עברית' : `${LANGUAGE_NAMES_IN.he[lang]}, ${LANGUAGE_NAMES[lang]}`;
+
 beforeEach(async () => {
   jest.useFakeTimers();
   phone('he-IL');
@@ -70,37 +76,62 @@ afterEach(() => {
 });
 
 describe('the language picker (plan 0י)', () => {
-  it('"שפת המכשיר" first, then every language in the plan\'s order, each by its own name, read in itself', async () => {
+  it('"שפת המכשיר" first, then every language in the plan\'s order, in Hebrew and in itself', async () => {
     await render(<LanguagePicker />);
     await openSheet();
     expect(rows().map((r) => r.props.accessibilityLabel)).toEqual([
-      'שפת המכשיר',
-      ...LANGUAGES.map((lang) => LANGUAGE_NAMES[lang]),
+      'שפת המכשיר, עברית',
+      ...LANGUAGES.map(row),
     ]);
-    expect(rows().map((r) => r.props.accessibilityLanguage)).toEqual(['he', ...LANGUAGES]);
+    expect(rows().map((r) => r.props.accessibilityLabel)).toContain('גרמנית, Deutsch');
+    // One language to a label: the app's (iOS).
+    expect(rows().map((r) => r.props.accessibilityLanguage)).toEqual(Array(LANGUAGES.length + 1).fill('he'));
     expect(screen.getByRole('radio', { name: 'עברית' })).toHaveProp('accessibilityState', { checked: true });
-    expect(screen.getByRole('radio', { name: 'Deutsch' })).toHaveProp('accessibilityState', {
+    expect(screen.getByRole('radio', { name: 'גרמנית, Deutsch' })).toHaveProp('accessibilityState', {
       checked: false,
     });
   });
 
-  it('each name in its own font: Rubik for Hebrew and German, the system font (Japanese forms) for 日本語', async () => {
+  it("the name in the app's font; its own name under it, smaller, in its font (the system's for 日本語)", async () => {
     await render(<LanguagePicker />);
     await openSheet();
-    const style = (value: string, name: string) =>
-      StyleSheet.flatten(within(screen.getByTestId(`setting-language-${value}`)).getByText(name).props.style);
+    const inRow = (value: string, name: string) =>
+      within(screen.getByTestId(`setting-language-${value}`)).getByText(name);
+    const style = (value: string, name: string) => StyleSheet.flatten(inRow(value, name).props.style);
     expect(style('he', 'עברית')).toMatchObject(text('rowTitle'));
-    expect(style('de', 'Deutsch')).toMatchObject(text('rowTitle', typefaceFor('de', Platform.OS)));
-    expect(style('ja', '日本語')).toMatchObject(text('rowTitle', typefaceFor('ja', Platform.OS)));
+    expect(style('de', 'גרמנית')).toMatchObject(text('rowTitle'));
+    expect(style('de', 'Deutsch')).toMatchObject(text('caption', typefaceFor('de', Platform.OS)));
+    expect(style('ja', 'יפנית')).toMatchObject(text('rowTitle'));
+    expect(style('ja', '日本語')).toMatchObject(text('caption', typefaceFor('ja', Platform.OS)));
     expect(style('ja', '日本語').fontFamily).not.toBe(style('he', 'עברית').fontFamily);
-    // "שפת המכשיר" is in the app's language, in its font.
+    // Hebrew's own row has one line: its name is the same both ways.
+    expect(screen.queryByTestId('setting-language-he-native')).not.toBeOnTheScreen();
+    expect(screen.getByTestId('setting-language-de-native')).toHaveTextContent('Deutsch');
+    // "שפת המכשיר" is in the app's language, in its font, with the phone's language under it.
     expect(style('system', 'שפת המכשיר')).toMatchObject(text('rowTitle'));
+    expect(screen.getByTestId('setting-language-system-native')).toHaveTextContent('עברית');
+  });
+
+  it('in Chinese (switched by mistake), Hebrew is "希伯来语" with "עברית" under it', async () => {
+    await act(async () => void (await i18n.changeLanguage('zh-Hans')));
+    useSettings.setState({ language: 'zh-Hans' });
+    await render(<LanguagePicker />);
+    await openSheet();
+    expect(within(screen.getByTestId('setting-language-he')).getByText('希伯来语')).toBeOnTheScreen();
+    expect(screen.getByTestId('setting-language-he-native')).toHaveTextContent('עברית');
+    expect(screen.getByRole('radio', { name: '希伯来语，עברית' })).toHaveProp(
+      'accessibilityLanguage',
+      'zh-Hans',
+    );
+    expect(screen.queryByTestId('setting-language-zh-Hans-native')).not.toBeOnTheScreen();
+    // The phone is Hebrew: "设备语言" says so in Hebrew.
+    expect(screen.getByTestId('setting-language-system-native')).toHaveTextContent('עברית');
   });
 
   it("a language that changes the app asks first; the confirm saves it as the app's choice", async () => {
     await render(<LanguagePicker />);
     await openSheet();
-    await fireEvent.press(screen.getByRole('radio', { name: 'Deutsch' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'גרמנית, Deutsch' }));
     expect(useSettings.getState().language).toBe('he');
     await settle();
     expect(screen.getByText('להחליף את השפה ל־Deutsch?')).toBeOnTheScreen();
@@ -111,7 +142,7 @@ describe('the language picker (plan 0י)', () => {
   it('"ביטול" changes nothing', async () => {
     await render(<LanguagePicker />);
     await openSheet();
-    await fireEvent.press(screen.getByRole('radio', { name: 'English' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'אנגלית, English' }));
     await settle();
     await fireEvent.press(screen.getByRole('button', { name: 'ביטול' }));
     await settle();
@@ -123,7 +154,7 @@ describe('the language picker (plan 0י)', () => {
     phone('en-US');
     await render(<LanguagePicker />);
     await openSheet();
-    await fireEvent.press(screen.getByRole('radio', { name: 'שפת המכשיר' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'שפת המכשיר, English' }));
     await settle();
     expect(screen.getByText('לעבור לשפת המכשיר?')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'החלפה והפעלה מחדש' }));
@@ -150,5 +181,14 @@ describe('the language picker (plan 0י)', () => {
     await view.rerender(<LanguagePicker />);
     expect(screen.getByRole('button', { name: 'שפה: עברית' })).toBeOnTheScreen();
     expect(screen.queryByTestId('setting-language-device')).not.toBeOnTheScreen();
+    expect(screen.queryByTestId('setting-language-native')).not.toBeOnTheScreen();
+  });
+
+  it('the field: a language other than the one running is named in it and in itself', async () => {
+    useSettings.setState({ language: 'de', languageSource: 'app' });
+    await render(<LanguagePicker />);
+    expect(screen.getByRole('button', { name: 'שפה: גרמנית, Deutsch' })).toBeOnTheScreen();
+    expect(screen.getByTestId('setting-language-value')).toHaveTextContent('גרמנית');
+    expect(screen.getByTestId('setting-language-native')).toHaveTextContent('Deutsch');
   });
 });

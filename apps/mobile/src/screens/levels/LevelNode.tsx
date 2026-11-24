@@ -1,8 +1,8 @@
 import { type AppLevel, botLevel, type BotLevelId, chapterOf, type Stars } from '@sudoku-fight/engine';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { normalizeAvatarId } from '../../avatars';
 import { useScreenFocused } from '../../avatars/useScreenFocused';
@@ -17,7 +17,7 @@ import { LEVEL_UI } from '../../config/levels';
 import { color, space, tokens } from '../../theme';
 import { motion, useReduceMotion } from '../../theme/motion';
 import { kindLabel, type LevelsT, starsOf3 } from './levelWording';
-import { useAppActive, useBeacon } from './mapMotion';
+import { DRIFT, driftSpec, nodePose, shadowPose, useAppActive, useBeacon } from './mapMotion';
 import { coinLook, MAP, type NodeInfo, toneOf } from './mapModel';
 
 /**
@@ -30,6 +30,12 @@ import { coinLook, MAP, type NodeInfo, toneOf } from './mapModel';
  * (`level.node.press`, the tactile press of D125). A boss is the 92 fortress with a crown, the arena's gold corners
  * (never the current stage's ring unless it is the current one), its bot's avatar from chapter 1, and its stars on
  * a pedestal under it. No kind icon (D60), unless LEVEL_UI.nodeKindIcon is turned on.
+ *
+ * It floats (Moshe 25.11.2026: "החלונות של השלבים יכולים להיות ממש תלת מימדיים וגם לנוע בעדינות מעט במקומם כאילו
+ * מרחפים"): the coin, its rings and its stars bob a few dp and tilt a few degrees in perspective, in the map's
+ * drift beats (mapMotion.ts DRIFT), each stage in its own rhythm; its soft shadow stays on the ground under it,
+ * smaller and paler as it rises. Only what is inside the button moves: the button's box (its touch area) never
+ * does. Still under Reduced Motion (no `drift`): the shadow stays, so it still stands off the map.
  *
  * Its label says it all: "שלב 5, מיקום מדויק, שני כוכבים מתוך שלושה", "שלב 12, נעול".
  */
@@ -49,6 +55,8 @@ export interface LevelNodeProps {
   shownStars?: Stars;
   /** Pop the new stars (back from a stage). */
   reveal?: { from: number; delayMs: number } | null;
+  /** The map's drift clock (mapMotion.ts useDriftClock), or none: the coin stands still (Reduced Motion). */
+  drift?: SharedValue<number> | null;
   onPress: (info: NodeInfo) => void;
 }
 
@@ -112,6 +120,7 @@ function LevelNodeBase({
   pin = false,
   shownStars,
   reveal = null,
+  drift = null,
   onPress,
 }: LevelNodeProps) {
   const { t } = useTranslation('levels');
@@ -144,6 +153,28 @@ function LevelNodeBase({
   const { progress, pressIn, pressOut } = useTactilePress(reduce);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale(progress.get(), reduce) }] }));
 
+  // The float: the coin's pose off the map's clock, in this stage's own rhythm; its shadow on the ground.
+  const spec = useMemo(() => driftSpec(n), [n]);
+  const floatStyle = useAnimatedStyle(() => {
+    if (!drift) return { transform: [] };
+    const p = nodePose(spec, drift.get());
+    return {
+      transform: [
+        { perspective: DRIFT.node.perspective },
+        { translateY: p.lift },
+        { rotateX: `${p.tiltX}deg` },
+        { rotateY: `${p.tiltY}deg` },
+        { rotateZ: `${p.spin}deg` },
+      ],
+    };
+  });
+  const shadowStyle = useAnimatedStyle(() => {
+    if (!drift) return { opacity: 1, transform: [] };
+    const p = shadowPose(nodePose(spec, drift.get()).lift);
+    return { opacity: p.opacity, transform: [{ scale: p.scale }] };
+  });
+  const shadowWidth = Math.round(frame.side * SHADOW.width);
+
   const bot = boss && level?.bot ? botLevel(level.bot.level as BotLevelId) : null;
   const kindIcon = LEVEL_UI.nodeKindIcon && level && !locked ? KIND_ICON[level.kind] : null;
   const ringBox = {
@@ -167,61 +198,76 @@ function LevelNodeBase({
         style={{ width: frame.width, height: frame.height }}
         testID={`node-${n}`}
       >
-        <Animated.View style={[styles.fill, pressStyle]}>
-          {state === 'current' ? (
-            <CurrentRing frame={frame} ringBox={ringBox} reduce={reduce} testID={`node-${n}-ring`} />
-          ) : selected ? (
-            <View style={[styles.ring, ringBox, styles.selectedRing]} testID={`node-${n}-selected`} />
-          ) : next ? (
-            <View style={[styles.ring, ringBox, styles.nextRing]} testID={`node-${n}-next`} />
-          ) : null}
-          <View style={[styles.coin, { top: frame.above }]}>
-            <LevelCoin
-              n={n}
-              variant={boss ? 'boss' : 'node'}
-              look={look}
-              tone={tone}
-              press={progress}
-              flash={flash}
-              pin={pin && state === 'current'}
-              bot={
-                bot ? (
-                  <View testID={`node-${n}-bot`}>
-                    <Avatar avatarId={normalizeAvatarId(bot.avatar)} size="compact" colorIndex={1} bot />
-                  </View>
-                ) : null
-              }
-              testID={`node-${n}-tile`}
-            />
-            {kindIcon ? (
-              <View style={styles.kind} testID={`node-${n}-kind`}>
-                <Icon name={kindIcon} size={KIND_ICON_SIZE} color={color.textMuted} />
-              </View>
+        <Animated.View
+          style={[
+            styles.shadow,
+            {
+              top: frame.above + frame.side + frame.edge - SHADOW.overlap,
+              start: (frame.side - shadowWidth) / 2,
+              width: shadowWidth,
+            },
+            shadowStyle,
+          ]}
+          pointerEvents="none"
+          testID={`node-${n}-shadow`}
+        />
+        <Animated.View style={[styles.fill, floatStyle]} testID={`node-${n}-float`}>
+          <Animated.View style={[styles.fill, pressStyle]}>
+            {state === 'current' ? (
+              <CurrentRing frame={frame} ringBox={ringBox} reduce={reduce} testID={`node-${n}-ring`} />
+            ) : selected ? (
+              <View style={[styles.ring, ringBox, styles.selectedRing]} testID={`node-${n}-selected`} />
+            ) : next ? (
+              <View style={[styles.ring, ringBox, styles.nextRing]} testID={`node-${n}-next`} />
             ) : null}
-          </View>
-          {boss ? (
-            <View
-              style={[
-                styles.pedestal,
-                { top: frame.above + frame.side - PEDESTAL.overlap },
-                locked && styles.hidden,
-              ]}
-            >
-              <StarRow
-                stars={locked ? 0 : stars}
-                size={PEDESTAL.star}
-                label={null}
-                gap={space[1]}
-                // Only the new stars pop, at the step's moment, as a coin's crown does.
-                reveal={reveal}
-                testID={`node-${n}-stars`}
+            <View style={[styles.coin, { top: frame.above }]}>
+              <LevelCoin
+                n={n}
+                variant={boss ? 'boss' : 'node'}
+                look={look}
+                tone={tone}
+                press={progress}
+                flash={flash}
+                pin={pin && state === 'current'}
+                bot={
+                  bot ? (
+                    <View testID={`node-${n}-bot`}>
+                      <Avatar avatarId={normalizeAvatarId(bot.avatar)} size="compact" colorIndex={1} bot />
+                    </View>
+                  ) : null
+                }
+                testID={`node-${n}-tile`}
               />
+              {kindIcon ? (
+                <View style={styles.kind} testID={`node-${n}-kind`}>
+                  <Icon name={kindIcon} size={KIND_ICON_SIZE} color={color.textMuted} />
+                </View>
+              ) : null}
             </View>
-          ) : locked ? null : (
-            <View style={styles.crown}>
-              <StarCrown stars={stars} reveal={reveal} testID={`node-${n}-stars`} />
-            </View>
-          )}
+            {boss ? (
+              <View
+                style={[
+                  styles.pedestal,
+                  { top: frame.above + frame.side - PEDESTAL.overlap },
+                  locked && styles.hidden,
+                ]}
+              >
+                <StarRow
+                  stars={locked ? 0 : stars}
+                  size={PEDESTAL.star}
+                  label={null}
+                  gap={space[1]}
+                  // Only the new stars pop, at the step's moment, as a coin's crown does.
+                  reveal={reveal}
+                  testID={`node-${n}-stars`}
+                />
+              </View>
+            ) : locked ? null : (
+              <View style={styles.crown}>
+                <StarCrown stars={stars} reveal={reveal} testID={`node-${n}-stars`} />
+              </View>
+            )}
+          </Animated.View>
         </Animated.View>
       </Pressable>
     </Animated.View>
@@ -271,6 +317,10 @@ function CurrentRing({
   );
 }
 
+/** The coin's shadow on the ground: an oval as wide as 86 % of the coin, 12 high, 3 dp under the coin's edge. */
+const SHADOW = { width: 0.86, height: 12, overlap: 3 } as const;
+const SHADOW_INK = color.levelMap.token.shadow;
+
 const KIND_ICON_SIZE = 14;
 const KIND_BADGE = 20;
 /** The boss's stars on a pedestal: a plate 76 × 24 whose top is 8 dp over the face's bottom. */
@@ -278,6 +328,12 @@ const PEDESTAL = { width: 76, height: 24, overlap: 8, star: 14 } as const;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  shadow: {
+    position: 'absolute',
+    height: SHADOW.height,
+    borderRadius: SHADOW.height / 2,
+    experimental_backgroundImage: `radial-gradient(${SHADOW_INK} 0%, ${SHADOW_INK} 25%, transparent 70%)`,
+  },
   coin: { position: 'absolute', start: 0 },
   crown: { position: 'absolute', top: 0, start: 0, end: 0, alignItems: 'center' },
   ring: { position: 'absolute' },

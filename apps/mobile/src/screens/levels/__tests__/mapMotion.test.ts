@@ -3,7 +3,21 @@ import { join } from 'node:path';
 
 import { REVEAL } from '../../../components/levels/StarRow';
 import { MAP_MOTION } from '../../../config/levels';
-import { BEACON_BURST_MS, BEACON_PERIOD_MS, beaconOpacity, stepTimeline } from '../mapMotion';
+import { LINE } from '../MapRoad';
+import { MAP } from '../mapModel';
+import {
+  BEACON_BURST_MS,
+  BEACON_PERIOD_MS,
+  beaconOpacity,
+  DRIFT,
+  driftSpec,
+  gridPose,
+  msUntilBeat,
+  nodePose,
+  shadowPose,
+  stepTimeline,
+  zonePose,
+} from '../mapMotion';
 
 /**
  * The level map's motion (motion.md §4.11; config/levels.ts MAP_MOTION): the current stage's beacon beats with
@@ -111,5 +125,80 @@ describe('the map’s code', () => {
       });
       expect({ file: f.name, skia: /react-native-skia/.test(code) }).toEqual({ file: f.name, skia: false });
     }
+  });
+});
+
+describe('the drift (Moshe 25.11.2026: the coins, the zones and the sudoku box float)', () => {
+  it('moves in beats with the beacon, and rests 2.4 s or more between them', () => {
+    expect(DRIFT.moveMs + DRIFT.restMs).toBe(BEACON_PERIOD_MS);
+    expect(DRIFT.restMs).toBeGreaterThanOrEqual(2400);
+    // The beacon's burst falls inside the drift's move: both rest together.
+    expect(BEACON_BURST_MS).toBeLessThanOrEqual(DRIFT.moveMs);
+  });
+
+  it('each piece has its own rhythm, from its index alone (no random): the same index, the same float', () => {
+    expect(driftSpec(7)).toEqual(driftSpec(7));
+    const specs = Array.from({ length: 30 }, (_, i) => driftSpec(i + 1));
+    for (const s of specs) {
+      for (const p of s.periods) {
+        expect(p).toBeGreaterThanOrEqual(DRIFT.periodMin);
+        expect(p).toBeLessThanOrEqual(DRIFT.periodMin + DRIFT.periodSpan);
+      }
+      for (const f of s.phases) {
+        expect(f).toBeGreaterThanOrEqual(0);
+        expect(f).toBeLessThan(1);
+      }
+    }
+    // Neighbours never move in step.
+    for (let i = 1; i < specs.length; i++) expect(specs[i]).not.toEqual(specs[i - 1]);
+    const lifts = specs.map((s) => nodePose(s, 0).lift.toFixed(2));
+    expect(new Set(lifts).size).toBeGreaterThan(20);
+    // The reading source has no Math.random.
+    const src = readFileSync(join(__dirname, '..', 'mapMotion.ts'), 'utf8');
+    expect(src).not.toMatch(/Math\.random/);
+  });
+
+  it('a coin bobs ±3 dp and tilts ±6° at most; its shadow shrinks and pales as it rises', () => {
+    for (let i = 1; i <= 50; i++)
+      for (let b = 0; b < 12; b += 0.25) {
+        const p = nodePose(driftSpec(i), b);
+        expect(Math.abs(p.lift)).toBeLessThanOrEqual(DRIFT.node.lift + 1e-9);
+        expect(Math.abs(p.tiltX)).toBeLessThanOrEqual(DRIFT.node.tilt + 1e-9);
+        expect(Math.abs(p.tiltY)).toBeLessThanOrEqual(DRIFT.node.tilt + 1e-9);
+        expect(Math.abs(p.spin)).toBeLessThanOrEqual(DRIFT.node.spin + 1e-9);
+      }
+    const up = shadowPose(-3);
+    const down = shadowPose(3);
+    expect(up.scale).toBeLessThan(1);
+    expect(up.opacity).toBeLessThan(down.opacity);
+    expect(shadowPose(0)).toEqual({ scale: 1, opacity: 1 });
+  });
+
+  it('a zone wanders and breathes a little; the sudoku box wanders, turns and tilts', () => {
+    const spec = driftSpec(16);
+    const scales = Array.from({ length: 40 }, (_, k) => zonePose(spec, k / 4).scale);
+    expect(Math.min(...scales)).toBeGreaterThanOrEqual(1 - DRIFT.zone.breathe - 1e-9);
+    expect(Math.max(...scales)).toBeLessThanOrEqual(1 + DRIFT.zone.breathe + 1e-9);
+    expect(Math.max(...scales) - Math.min(...scales)).toBeGreaterThan(0.05);
+    const g = gridPose(spec, 1.3);
+    expect(Math.abs(g.dx)).toBeLessThanOrEqual(DRIFT.grid.dx);
+    expect(Math.abs(g.tiltX)).toBeLessThanOrEqual(DRIFT.grid.tilt);
+    expect(Math.abs(g.spin)).toBeLessThanOrEqual(DRIFT.grid.spin);
+  });
+
+  it('a beacon that comes later waits for the drift’s next beat', () => {
+    expect(msUntilBeat(1000, 1000)).toBe(MAP_MOTION.beaconWakeMs);
+    expect(msUntilBeat(1000 + MAP_MOTION.beaconWakeMs, 1000)).toBe(0);
+    expect(msUntilBeat(1000 + MAP_MOTION.beaconWakeMs + 1000, 1000)).toBe(BEACON_PERIOD_MS - 1000);
+    expect(msUntilBeat(1000 + MAP_MOTION.beaconWakeMs + 2 * BEACON_PERIOD_MS, 1000)).toBe(0);
+  });
+});
+
+describe('the way: a thin gold line, then dots (Moshe 25.11.2026: "אולי קו זהב דק")', () => {
+  it('thin, and the dots run on across pieces (a whole number of them in the dash period)', () => {
+    expect(LINE.gold).toBeLessThanOrEqual(3);
+    expect(LINE.glow).toBeLessThan(MAP.road.width / 4);
+    const period = MAP.road.dash + MAP.road.gap;
+    expect(Number.isInteger(period / LINE.dotEvery)).toBe(true);
   });
 });

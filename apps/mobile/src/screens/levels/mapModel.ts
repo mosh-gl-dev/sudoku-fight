@@ -33,8 +33,8 @@ import { color, size } from '../../theme';
  *   sign hanging under it and, while the gate is shut, a striped barrier across the road (chapter 1: the banner
  *   and the start pad) · ten stage coins on a winding road (64, the boss's fortress 92), each with its crown of
  *   stars over its top edge · 32 below (chapter 30: and the finish line).
- * The road is one smooth curve (Catmull-Rom) through the start, every stage and every gate, drawn thick: gold up
- * to the stage I am on, slate after it. x are measured from the start edge (the right in Hebrew), so the whole
+ * The road is one smooth curve (Catmull-Rom) through the start, every stage and every gate, drawn as a thin line
+ * (MapRoad.tsx; Moshe 25.11.2026: no road, "קו זהב דק"): gold up to the stage I am on, slate dots after it. x are measured from the start edge (the right in Hebrew), so the whole
  * map mirrors with the language; the digits never do. `mapDirection: 'up'` turns each item upside down (stage 1
  * at the bottom) but keeps its gateway block upright, at the item's bottom, and the list's order around.
  */
@@ -70,7 +70,10 @@ export const MAP = {
   /** Under the last coin's box, and chapter 30's extra room for the finish line. */
   bottom: 32,
   finish: 48,
-  /** The road: 44 wide, a 3 dp kerb each side, a 6 dp edge under it, a 10/12 dashed middle 3 dp wide. */
+  /**
+   * The way's room: the old road's 44 dp, which the scenery and the pieces' frames still keep clear and pad (the
+   * line itself is thin, MapRoad.tsx LINE), and its 10/12 dash period, which the dots ahead run on in.
+   */
   road: {
     width: 44,
     kerb: 3,
