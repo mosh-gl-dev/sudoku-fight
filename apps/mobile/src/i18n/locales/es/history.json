@@ -103,7 +103,7 @@
     },
     "awardDefinitions": {
       "bestMove": "La mayor cantidad de puntos en una sola jugada",
-      "fewestMistakes": "La menor cantidad de errores. En caso de empate, gana quien tenga más puntos",
+      "fewestMistakes": "La menor cantidad de errores. En caso de empate, se comparte",
       "fastest": "El menor tiempo medio de reflexión por jugada correcta (al menos 5 jugadas)",
       "comeback": "Una victoria tras ir 15 puntos o más por detrás",
       "mostPoints": "La mayor cantidad de puntos por jugadas correctas, antes de penalizaciones"

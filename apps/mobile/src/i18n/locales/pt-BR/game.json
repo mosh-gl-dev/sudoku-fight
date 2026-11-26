@@ -481,6 +481,7 @@
       "fastest": "Mais veloz",
       "comeback": "Virada",
       "mostPoints": "Mais pontos",
+      "sameMistakes": "Mesmo número de erros",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} pts",

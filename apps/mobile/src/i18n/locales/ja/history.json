@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "1手で得た点数が最も多い",
-      "fewestMistakes": "ミスが最も少ない。同数の場合は得点が高いほう",
+      "fewestMistakes": "ミスが最も少ない。同数の場合は全員が受賞",
       "fastest": "正解1手あたりの平均思考時間が最も短い（5手以上）",
       "comeback": "15点以上リードされてからの勝利",
       "mostPoints": "ペナルティを引く前の、正解の手による得点が最も多い"

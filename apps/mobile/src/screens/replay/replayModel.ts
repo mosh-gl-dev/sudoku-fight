@@ -124,7 +124,7 @@ export interface ReplayPlayer {
   isMe: boolean;
 }
 
-/** A mark on the timeline (spec §13.1: "נקודות בצבעי השחקנים: נכון, שגוי, הפרעה"). */
+/** A mark on the timeline (spec §13.1: a thin line per move: right, wrong, interference). */
 export interface TimelineDot {
   step: number;
   kind: 'correct' | 'wrong' | 'interference';

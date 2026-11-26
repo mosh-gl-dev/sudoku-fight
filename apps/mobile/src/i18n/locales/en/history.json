@@ -102,7 +102,7 @@
     },
     "awardDefinitions": {
       "bestMove": "The most points for a single move",
-      "fewestMistakes": "The fewest mistakes. On a tie, the higher score",
+      "fewestMistakes": "The fewest mistakes. On a tie, it is shared",
       "fastest": "The lowest average think time per correct move (at least 5 moves)",
       "comeback": "A win after trailing by 15 points or more",
       "mostPoints": "The most points from correct moves, before penalties"

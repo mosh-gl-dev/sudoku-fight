@@ -65,6 +65,21 @@ describe('the time played [D65]', () => {
     expect(g.state.result!.durationMs).toBe(9000);
   });
 
+  it('the average think time is the time played per correct move: a freeze, before or after, left out', () => {
+    const g = solo();
+    g.solve('p1', 'A1', 5000); // 4000 played
+    g.act({ type: 'pause' }, 11_000);
+    g.act({ type: 'resume' }, 71_000);
+    g.solve('p1', 'A2', 75_000); // 14 000 played
+    expect(g.state.players[0]!.thinkMsTotal).toBe(14_000);
+    // A freeze after the last correct move changes nothing.
+    g.act({ type: 'pause' }, 80_000);
+    g.act({ type: 'resume' }, 140_000);
+    g.act({ type: 'surrender', playerId: 'p1' }, 141_000);
+    expect(g.state.result!.stats[0]).toMatchObject({ correct: 2, avgThinkMs: 7000 });
+    expect(replay(g.log).at(-1)).toEqual(g.state);
+  });
+
   it('an interrupted log’s time: its clock to the last event, or since the creation when it never started', () => {
     const g = solo();
     g.act({ type: 'pause' }, 6000);

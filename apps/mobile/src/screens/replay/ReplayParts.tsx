@@ -248,7 +248,7 @@ function Head({ player, name, children }: { player: ReplayPlayer; name: string; 
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// The timeline (spec §13.1: dots in the players' colours for right, wrong and interference)
+// The timeline (spec §13.1: a mark in the players' colours for right, wrong and interference)
 
 export interface TimelineProps {
   total: number;
@@ -261,7 +261,13 @@ export interface TimelineProps {
   testID?: string;
 }
 
-const DOT = { correct: space[5], wrong: space[5], interference: space[6] } as const;
+/**
+ * A step's mark: a thin line as tall as the dots it replaced (Moshe, 2026-11-26: the dots ran into one another
+ * even in a quick game). Right in the player's colour; wrong half the player's colour (top), half red (bottom), so
+ * it still says whose step it was; an interference a little taller.
+ */
+const TICK = { correct: space[5], wrong: space[5], interference: space[6] } as const;
+const TICK_WIDTH = space[1];
 const TRACK = space[2];
 const THUMB = space[8];
 
@@ -317,28 +323,24 @@ export function Timeline({
         testID={`${testID}-fill`}
       />
       {dots.map((d) => {
-        const dot = DOT[d.kind];
-        const palette = paletteAt(d.colorIndex);
+        const wrong = d.kind === 'wrong';
         return (
           <View
             key={d.step}
             pointerEvents="none"
             style={[
-              styles.dot,
+              styles.tick,
               {
-                width: dot,
-                height: dot,
-                borderRadius: dot / 2,
-                marginStart: -dot / 2,
+                height: TICK[d.kind],
                 start: `${fractionOf(d.step) * 100}%`,
-                backgroundColor: palette.ring,
-                borderColor:
-                  d.kind === 'correct' ? color.success : d.kind === 'wrong' ? color.danger : color.bg,
+                backgroundColor: paletteAt(d.colorIndex).ring,
                 opacity: d.step <= index ? 1 : 0.4,
               },
             ]}
             testID={`${testID}-dot-${d.kind}`}
-          />
+          >
+            {wrong && <View style={styles.tickWrong} testID={`${testID}-dot-wrong-half`} />}
+          </View>
         );
       })}
       <View
@@ -506,7 +508,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.bar,
     backgroundColor: color.accent,
   },
-  dot: { position: 'absolute', borderWidth: tokens.border.hairline },
+  tick: {
+    position: 'absolute',
+    width: TICK_WIDTH,
+    marginStart: -TICK_WIDTH / 2,
+    borderRadius: TICK_WIDTH / 2,
+    overflow: 'hidden',
+  },
+  /** A wrong step's lower half: the upper half keeps the player's colour, so the line still says whose step it was. */
+  tickWrong: {
+    position: 'absolute',
+    start: 0,
+    end: 0,
+    bottom: 0,
+    height: '50%',
+    backgroundColor: color.danger,
+  },
   thumb: {
     position: 'absolute',
     width: THUMB,

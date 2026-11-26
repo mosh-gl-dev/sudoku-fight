@@ -768,13 +768,23 @@ describe('awards (§12)', () => {
     expect(award(g, 'bestMove')).toEqual({ kind: 'bestMove', playerIds: ['p1', 'p2'], value: 1.5 });
   });
 
-  it('fewest mistakes: the fewest; equal → the higher score', () => {
+  it('fewest mistakes: the fewest; equal → shared, whatever the scores (Moshe, 2026-11-26)', () => {
     const g = near({ players: 3 });
     err(g, 'p3', 'A1'); // −1.5
     solveEach(g, 'p1', ['A1', 'B7']); // 3, no mistakes
     solveEach(g, 'p2', ['C4', 'D2', 'E5', 'F8']); // 6, no mistakes
     solveEach(g, 'p3', ['G3', 'H9', 'I6']); // 3
-    expect(award(g, 'fewestMistakes')).toEqual({ kind: 'fewestMistakes', playerIds: ['p2'], value: 0 });
+    expect(award(g, 'fewestMistakes')).toEqual({ kind: 'fewestMistakes', playerIds: ['p1', 'p2'], value: 0 });
+  });
+
+  it('fewest mistakes: everyone with the same number shares it, a lower score too', () => {
+    const g = near();
+    err(g, 'p1', 'A1'); // −1.5
+    err(g, 'p2', 'B7'); // −1.5
+    solveEach(g, 'p1', T.slice(0, 2)); // the lower score
+    solveEach(g, 'p2', T.slice(2)); // completes the board
+    expect(result(g).ranking.map((r) => r.playerId)).toEqual(['p2', 'p1']);
+    expect(award(g, 'fewestMistakes')).toEqual({ kind: 'fewestMistakes', playerIds: ['p1', 'p2'], value: 1 });
   });
 
   it('fewest mistakes: equal mistakes and score → shared', () => {
@@ -796,7 +806,7 @@ describe('awards (§12)', () => {
     expect(award(g, 'fewestMistakes')).toEqual({ kind: 'fewestMistakes', playerIds: ['p1'], value: 1 });
   });
 
-  it('fastest: the lowest average think time of correct moves', () => {
+  it('fastest: the lowest average time per correct move, from the start to their last correct move', () => {
     const g = near({}, T10);
     for (const [cell, ms] of [
       ['A1', 1000],
@@ -805,27 +815,41 @@ describe('awards (§12)', () => {
       ['D2', 1000],
       ['E5', 3000],
     ] as const)
-      solveIn(g, 'p1', cell, ms); // average 2000
-    for (const cell of ['F8', 'G3', 'H9', 'I6', 'A2']) solveIn(g, 'p2', cell, 2500); // average 2500
+      solveIn(g, 'p1', cell, ms); // the last at 10000: 2000 a move
+    for (const cell of ['F8', 'G3', 'H9', 'I6', 'A2']) solveIn(g, 'p2', cell, 2500); // the last at 22500: 4500
     expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 2000 });
     expect(result(g).stats.map((s) => [s.playerId, s.correct, s.avgThinkMs])).toEqual([
       ['p1', 5, 2000],
-      ['p2', 5, 2500],
+      ['p2', 5, 4500],
     ]);
+  });
+
+  it('fastest: the time between moves counts, not only lock to digit (Moshe, 2026-11-26)', () => {
+    const g = near({}, T10);
+    // p1 locks and types at once (0 from lock to digit), a move every 3000: the last at 15000.
+    for (const [k, cell] of ['A1', 'B7', 'C4', 'D2', 'E5'].entries()) g.solve('p1', cell, 3000 * (k + 1));
+    // p2 takes 500 from lock to digit, a move every 2000 from 15000: the last at 25000.
+    for (const [k, cell] of ['F8', 'G3', 'H9', 'I6', 'A2'].entries()) {
+      g.select('p2', cell, 15000 + 2000 * (k + 1) - 500);
+      g.place('p2', cell, answer(cell), 15000 + 2000 * (k + 1));
+    }
+    expect(result(g).stats.map((s) => s.avgThinkMs)).toEqual([3000, 5000]);
+    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 3000 });
   });
 
   it('fastest: only with at least 5 correct moves', () => {
     const g = near();
-    for (const cell of T.slice(0, 5)) solveIn(g, 'p1', cell, 3000);
-    for (const cell of T.slice(5)) solveIn(g, 'p2', cell, 100); // 4 moves: much faster, but too few
-    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 3000 });
+    for (const cell of T.slice(5)) solveIn(g, 'p2', cell, 100); // 4 moves, 100 a move: faster, but too few
+    for (const cell of T.slice(0, 5)) solveIn(g, 'p1', cell, 3000); // the last at 15400
+    expect(result(g).stats.map((s) => s.avgThinkMs)).toEqual([3080, 100]);
+    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 3080 });
   });
 
   it('fastest: nobody has 5 correct moves → no award', () => {
     const g = near({}, T8);
-    for (const cell of T8.slice(0, 4)) solveIn(g, 'p1', cell, 1000);
-    for (const cell of T8.slice(4)) solveIn(g, 'p2', cell, 2000);
-    expect(result(g).stats.map((s) => s.avgThinkMs)).toEqual([1000, 2000]);
+    for (const cell of T8.slice(0, 4)) solveIn(g, 'p1', cell, 1000); // the last at 4000
+    for (const cell of T8.slice(4)) solveIn(g, 'p2', cell, 2000); // the last at 12000
+    expect(result(g).stats.map((s) => s.avgThinkMs)).toEqual([1000, 3000]);
     expect(award(g, 'fastest')).toBeUndefined();
   });
 
@@ -854,16 +878,16 @@ describe('awards (§12)', () => {
 
   it('fastest: only players still in the game at the end, however quick the one who left was', () => {
     const g = near({ players: 3 }, T10);
-    for (const cell of ['A1', 'B7', 'C4', 'D2', 'E5']) solveIn(g, 'p1', cell, 100); // 5 moves, 100 ms each
+    for (const cell of ['A1', 'B7', 'C4', 'D2', 'E5']) solveIn(g, 'p1', cell, 100); // 5 moves, 100 a move
     g.playerAct('p1', { type: 'surrender' });
-    for (const cell of ['F8', 'G3', 'H9', 'I6', 'A2']) solveIn(g, 'p2', cell, 2500); // 5 moves, 2500 ms each
+    for (const cell of ['F8', 'G3', 'H9', 'I6', 'A2']) solveIn(g, 'p2', cell, 2500); // the last at 13000
     expect(result(g).reason).toBe('boardComplete');
     expect(result(g).stats.map((s) => [s.playerId, s.correct, s.avgThinkMs])).toEqual([
       ['p1', 5, 100],
-      ['p2', 5, 2500],
+      ['p2', 5, 2600],
       ['p3', 0, null],
     ]);
-    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p2'], value: 2500 });
+    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p2'], value: 2600 });
   });
 
   it('best move and most points still count the moves of a player who left: they stay on the board (§6.6)', () => {

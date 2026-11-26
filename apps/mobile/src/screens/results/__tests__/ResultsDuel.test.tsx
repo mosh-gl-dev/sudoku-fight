@@ -112,7 +112,7 @@ describe('ResultsScreen against a bot (spec §12)', () => {
     );
     expect(screen.getByTestId('results-award-fewestMistakes')).toHaveProp(
       'accessibilityLabel',
-      'הכי מעט טעויות: Mr. Hoot, טעויות: 0. הכי מעט טעויות. בתיקו, הניקוד הגבוה יותר',
+      'הכי מעט טעויות: Mr. Hoot, טעויות: 0. הכי מעט טעויות. בתיקו, הפרס משותף',
     );
     const fastest = result.awards.find((a) => a.kind === 'fastest')!;
     expect(screen.getByTestId('results-award-fastest')).toHaveProp(
@@ -336,6 +336,47 @@ describe('the awards, one line each (VIS-4)', () => {
     );
     expect(screen.queryByText(/Comeback/, hidden)).toBeNull();
   });
+
+  it('fewest mistakes held by everyone: "כמות טעויות זהה" instead of the names (Moshe, 2026-11-26)', async () => {
+    const both = [
+      { playerId: 'me', name: null, mine: true },
+      { playerId: 'bot', name: 'Mr. Hoot', mine: false },
+    ];
+    await render(
+      <AwardsSection
+        awards={[
+          { kind: 'fewestMistakes', winners: both, value: 3, everyone: true },
+          { kind: 'bestMove', winners: both, value: 6, everyone: true },
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('results-award-fewestMistakes')).toHaveProp(
+      'accessibilityLabel',
+      'הכי מעט טעויות: כמות טעויות זהה, טעויות: 3. הכי מעט טעויות. בתיקו, הפרס משותף',
+    );
+    expect(screen.getByTestId('results-award-fewestMistakes-title')).toHaveTextContent(/כמות טעויות זהה/);
+    // Only that award says it so: a shared best move still names its holders.
+    expect(screen.getByTestId('results-award-bestMove-title')).toHaveTextContent(/אני, Mr\. Hoot/);
+  });
+
+  it('fewest mistakes shared by some, not all: the names', async () => {
+    await render(
+      <AwardsSection
+        awards={[
+          {
+            kind: 'fewestMistakes',
+            winners: [
+              { playerId: 'me', name: null, mine: true },
+              { playerId: 'bot', name: 'Mr. Hoot', mine: false },
+            ],
+            value: 1,
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('results-award-fewestMistakes-title')).toHaveTextContent(/אני, Mr\. Hoot/);
+    expect(screen.queryByText(/כמות טעויות זהה/, hidden)).toBeNull();
+  });
 });
 
 describe('ResultsScreen against a bot, in English', () => {
@@ -355,7 +396,7 @@ describe('ResultsScreen against a bot, in English', () => {
     expect(screen.getByRole('header', { name: 'Game awards' })).toBeOnTheScreen();
     expect(screen.getByTestId('results-award-fewestMistakes')).toHaveProp(
       'accessibilityLabel',
-      'Fewest mistakes: Mr. Hoot, Mistakes: 0. The fewest mistakes. On a tie, the higher score',
+      'Fewest mistakes: Mr. Hoot, Mistakes: 0. The fewest mistakes. On a tie, it is shared',
     );
     expect(screen.getByTestId('results-unrated')).toHaveTextContent('Practice: your rating does not change');
 

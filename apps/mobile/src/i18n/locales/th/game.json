@@ -433,6 +433,7 @@
       "fastest": "เร็วที่สุด",
       "comeback": "พลิกเกม",
       "mostPoints": "คะแนนมากที่สุด",
+      "sameMistakes": "จำนวนที่ผิดเท่ากัน",
       "label": "{{title}}: {{who}} {{value}}",
       "value": {
         "bestMove": "{{value}} คะแนน",

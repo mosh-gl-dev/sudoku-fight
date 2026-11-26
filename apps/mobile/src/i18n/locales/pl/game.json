@@ -505,6 +505,7 @@
       "fastest": "Najszybciej",
       "comeback": "Wielki powrót",
       "mostPoints": "Najwięcej punktów",
+      "sameMistakes": "Tyle samo błędów",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} pkt",

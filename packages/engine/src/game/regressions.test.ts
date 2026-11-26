@@ -449,19 +449,19 @@ describe('10. Fewest mistakes and Fastest go only to players still in the game a
   it('Fastest: five instant moves and then surrender do not win it', () => {
     const g = GameDriver.of({ players: 3 });
     const cells = EMPTY.slice(0, 10).map(cellNameOf);
-    cells.slice(0, 5).forEach((cell, k) => g.solve('p3', cell, 10 * k)); // think time 0
+    cells.slice(0, 5).forEach((cell, k) => g.solve('p3', cell, 10 * k)); // the last at 40: 8 a move
     surrender(g, 'p3', 100);
     cells.slice(5).forEach((cell, k) => {
       g.select('p1', cell, 1000 + 2000 * k);
-      g.place('p1', cell, answer(cell), 2000 + 2000 * k); // think time 1000
+      g.place('p1', cell, answer(cell), 2000 + 2000 * k); // a move every 2000
     });
     surrender(g, 'p2', 20000);
     expect(g.state.result!.stats.map((s) => [s.playerId, s.correct, s.avgThinkMs])).toEqual([
-      ['p1', 5, 1000],
+      ['p1', 5, 2000],
       ['p2', 0, null],
-      ['p3', 5, 0],
+      ['p3', 5, 8],
     ]);
-    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 1000 });
+    expect(award(g, 'fastest')).toEqual({ kind: 'fastest', playerIds: ['p1'], value: 2000 });
   });
 });
 

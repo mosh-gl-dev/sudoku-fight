@@ -103,7 +103,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Le plus de points pour un seul coup",
-      "fewestMistakes": "Le moins d’erreurs. En cas d’égalité, le meilleur score",
+      "fewestMistakes": "Le moins d’erreurs. En cas d’égalité, la récompense est partagée",
       "fastest": "Le temps de réflexion moyen le plus court par coup correct (au moins 5 coups)",
       "comeback": "Une victoire après un retard de 15 points ou plus",
       "mostPoints": "Le plus de points en coups corrects, avant pénalités"

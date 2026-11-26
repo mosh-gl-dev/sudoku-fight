@@ -553,6 +553,7 @@
       "fastest": "الأسرع",
       "comeback": "عودة قوية",
       "mostPoints": "أكثر نقاط",
+      "sameMistakes": "عدد الأخطاء متساوٍ",
       "label": "{{title}}: {{who}}، {{value}}",
       "value": {
         "bestMove": "{{value}} نقطة",

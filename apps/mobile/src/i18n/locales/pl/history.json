@@ -110,7 +110,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Najwięcej punktów za jeden ruch",
-      "fewestMistakes": "Najmniej błędów. Przy remisie decyduje wyższy wynik",
+      "fewestMistakes": "Najmniej błędów. Przy remisie nagroda jest wspólna",
       "fastest": "Najkrótszy średni czas namysłu na poprawny ruch (co najmniej 5 ruchów)",
       "comeback": "Wygrana po odrobieniu straty co najmniej 15 punktów",
       "mostPoints": "Najwięcej punktów za poprawne ruchy, przed odjęciem kar"

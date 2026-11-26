@@ -103,7 +103,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Mais pontos em uma única jogada",
-      "fewestMistakes": "Menos erros. Em caso de empate, a maior pontuação",
+      "fewestMistakes": "Menos erros. Em caso de empate, o prêmio é dividido",
       "fastest": "Menor tempo médio de raciocínio por jogada certa (mínimo de 5 jogadas)",
       "comeback": "Uma vitória depois de estar 15 pontos ou mais atrás",
       "mostPoints": "Mais pontos em jogadas certas, antes das penalidades"

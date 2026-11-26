@@ -433,6 +433,7 @@
       "fastest": "최고 속도",
       "comeback": "역전승",
       "mostPoints": "최다 득점",
+      "sameMistakes": "실수 수 같음",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}}점",

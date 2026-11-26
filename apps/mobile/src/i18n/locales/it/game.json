@@ -481,6 +481,7 @@
       "fastest": "Più veloce",
       "comeback": "Rimonta",
       "mostPoints": "Più punti",
+      "sameMistakes": "Stesso numero di errori",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} pt",

@@ -96,7 +96,7 @@
     },
     "awardDefinitions": {
       "bestMove": "De meeste punten voor één zet",
-      "fewestMistakes": "De minste fouten. Bij gelijke stand telt de hoogste score",
+      "fewestMistakes": "De minste fouten. Bij gelijke stand wordt de prijs gedeeld",
       "fastest": "De kortste gemiddelde denktijd per goede zet (minstens 5 zetten)",
       "comeback": "Een overwinning na een achterstand van 15 punten of meer",
       "mostPoints": "De meeste punten uit goede zetten, vóór aftrek van straffen"

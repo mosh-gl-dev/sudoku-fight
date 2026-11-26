@@ -242,14 +242,11 @@ export function awardsFor(state: GameState, ranking: RankEntry[]): Award[] {
   const bestMove = best(movers, (p) => p.bestMove!.points);
   add('bestMove', bestMove, bestMove[0]?.bestMove?.points ?? 0);
 
-  // Fewest mistakes; equal → the higher score.
-  const fewest = best(
-    best(stayed, (p) => p.mistakes, true),
-    (p) => p.score,
-  );
+  // Fewest mistakes; equal → shared, whatever the scores (Moshe, 2026-11-26).
+  const fewest = best(stayed, (p) => p.mistakes, true);
   add('fewestMistakes', fewest, fewest[0]?.mistakes ?? 0);
 
-  // Fastest: the lowest average think time of correct moves, with at least 5 of them.
+  // Fastest: the lowest average time per correct move (thinkMsTotal), with at least 5 of them.
   const avg = (p: PlayerState) => p.thinkMsTotal / p.correct;
   const fastest = best(
     stayed.filter((p) => p.correct >= FASTEST_MIN_MOVES),

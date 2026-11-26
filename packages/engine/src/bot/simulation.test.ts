@@ -326,21 +326,24 @@ describe('a game against the Novice still ends in a reasonable time', () => {
  * general host and the built levels went in). The first scenario has interferences on, mine at the bot every
  * 15 s (so its interferenceEnded events now reach the runner), its own interferences and its reactions; the
  * second a hard board alone.
+ * All ten were recorded again on 2026-11-26: only their gameOver's stats and awards changed (the
+ * average think time became the time played per correct move, and "fewest mistakes" lost its score tie-break);
+ * with those left out, every log hashed the same before and after.
  */
 describe('the five levels play exactly as before the stealth bot (regression)', () => {
   const fingerprint = (events: readonly GameEvent[]) =>
     createHash('sha256').update(JSON.stringify(events)).digest('hex').slice(0, 16);
   const BEFORE: Record<string, string> = {
-    'L1 ranked-like': '8b12e5b9d7a4b830',
-    'L1 hard alone': '9d32ac420c0aa829',
-    'L2 ranked-like': '5d4f07b9fa843af9',
-    'L2 hard alone': 'cfa3ddc318cd426a',
-    'L3 ranked-like': 'df496a79312bf397',
-    'L3 hard alone': '5908d042b957191f',
-    'L4 ranked-like': '38cfdd71f9230314',
-    'L4 hard alone': 'f77b77ecb97c82b6',
-    'L5 ranked-like': '6e6e2fca7a83f61d',
-    'L5 hard alone': 'c69955c71acd5272',
+    'L1 ranked-like': '290128d6933acd24',
+    'L1 hard alone': 'de33743cadc2292a',
+    'L2 ranked-like': '4281bc466989415a',
+    'L2 hard alone': '22e34f5c11c345c3',
+    'L3 ranked-like': '425adf765a53edc0',
+    'L3 hard alone': '5b2d8a958cb87dab',
+    'L4 ranked-like': '04f144810994604f',
+    'L4 hard alone': 'fb0def738cbdc8d9',
+    'L5 ranked-like': '2f970c94bb5b81c6',
+    'L5 hard alone': '76845aff7661cf4f',
   };
 
   it.each(BOT_LEVEL_IDS.map((level) => ({ level })))(

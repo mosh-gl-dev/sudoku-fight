@@ -433,6 +433,7 @@
       "fastest": "Tercepat",
       "comeback": "Bangkit",
       "mostPoints": "Poin terbanyak",
+      "sameMistakes": "Jumlah kesalahan sama",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} poin",

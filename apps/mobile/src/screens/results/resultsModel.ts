@@ -160,6 +160,11 @@ export interface AwardResult {
   kind: AwardKind;
   winners: { playerId: PlayerId; name: string | null; mine: boolean }[];
   value: number;
+  /**
+   * Every player of the game holds it (a tie of all): "fewest mistakes" then says "כמות טעויות זהה" instead of
+   * the names (Moshe, 2026-11-26). Absent otherwise.
+   */
+  everyone?: true;
 }
 
 export interface ResultsModel {
@@ -370,6 +375,7 @@ function versusOf(
       mine: id === myId,
     })),
     value: a.value,
+    ...(players > 1 && a.playerIds.length >= players && { everyone: true as const }),
   }));
   // 3–4 players (spec §12): everyone by place, for the podium and the 4th row.
   const ranking =

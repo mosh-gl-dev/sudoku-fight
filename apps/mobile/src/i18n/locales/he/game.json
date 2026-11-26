@@ -487,6 +487,7 @@
       "fastest": "הכי מהיר",
       "comeback": "מהפך",
       "mostPoints": "הכי הרבה נקודות",
+      "sameMistakes": "כמות טעויות זהה",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} נק׳",

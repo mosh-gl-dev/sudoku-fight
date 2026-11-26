@@ -161,9 +161,11 @@ describe('every other game is exactly as in 1.0.1', () => {
   }
 
   it.each([
-    ['ranked, 2 players', ranked, 24, 'bb597201', '9f5534c9', 'a503a215'],
-    ['solo practice', solo, 13, '95c508ce', '4de98aae', '6233394d'],
-    ['practice against a bot', bot, 14, 'a98b8442', '102cae50', '258c5abe'],
+    ['ranked, 2 players', ranked, 24, 'b73a6cd2', '4605e022', '6a6b57c9'],
+    ['solo practice', solo, 13, 'ced504d3', 'b255ccb7', '9ef7b294'],
+    ['practice against a bot', bot, 14, 'dfbddfa8', '97bfa100', '237c5078'],
+    // Recorded again on 2026-11-26: only the result's stats and awards and the players' thinkMsTotal changed
+    // (the time played per correct move); with those left out, the hashes were the same as before.
   ] as const)('%s: the log, the state and every view hash as in 1.0.1', (_, play, n, log, state, views) => {
     const { g, views: seen } = play();
     expect([g.log.length, hash(g.log), hash(g.state), hash(seen)]).toEqual([n, log, state, views]);

@@ -97,7 +97,12 @@ export interface PlayerState {
   pointsGained: number;
   interferencesSent: number;
   bestMove: BestMove | null;
-  /** Sum of think times of correct moves (lock to digit, timers stopped excluded). */
+  /**
+   * The time played from the start to this player's last correct move, the phone's own freezes left out [D65]:
+   * the sum of the times between their correct moves. Divided by `correct` it is the average think time of the
+   * results and of the "fastest" award (Moshe, 2026-11-26; until then it summed lock-to-digit times, about a
+   * second a move, which the log's `thinkMs` still carries for the cheat check).
+   */
   thinkMsTotal: number;
   /** When this player last placed a correct digit. */
   lastCorrectAt: number | null;
@@ -309,7 +314,7 @@ export interface PlayerStats {
   pointsGained: number;
   interferencesSent: number;
   bestMove: BestMove | null;
-  /** Average think time of correct moves; null without any. */
+  /** Average time per correct move (thinkMsTotal / correct); null without any. */
   avgThinkMs: number | null;
 }
 

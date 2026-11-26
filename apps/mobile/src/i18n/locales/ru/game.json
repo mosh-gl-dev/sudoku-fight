@@ -505,6 +505,7 @@
       "fastest": "Быстрее всех",
       "comeback": "Камбэк",
       "mostPoints": "Больше всех очков",
+      "sameMistakes": "Ошибок поровну",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} оч.",

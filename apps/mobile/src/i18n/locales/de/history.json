@@ -96,7 +96,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Die meisten Punkte für einen einzigen Zug",
-      "fewestMistakes": "Die wenigsten Fehler. Bei Gleichstand die höhere Punktzahl",
+      "fewestMistakes": "Die wenigsten Fehler. Bei Gleichstand wird die Auszeichnung geteilt",
       "fastest": "Die kürzeste durchschnittliche Denkzeit pro richtigem Zug (mindestens 5 Züge)",
       "comeback": "Ein Sieg nach einem Rückstand von 15 Punkten oder mehr",
       "mostPoints": "Die meisten Punkte aus richtigen Zügen, vor Abzügen"

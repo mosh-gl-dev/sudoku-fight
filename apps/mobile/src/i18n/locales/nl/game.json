@@ -457,6 +457,7 @@
       "fastest": "Snelste",
       "comeback": "Ommekeer",
       "mostPoints": "Meeste punten",
+      "sameMistakes": "Evenveel fouten",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} ptn",

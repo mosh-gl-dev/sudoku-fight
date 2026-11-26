@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "单步得分最高",
-      "fewestMistakes": "错误最少。若相同，则得分高者胜出",
+      "fewestMistakes": "错误最少。若相同，则共享此奖",
       "fastest": "每个正确步骤的平均思考时间最短（至少5步）",
       "comeback": "落后15分或以上之后反败为胜",
       "mostPoints": "扣除罚分前，正确步骤的得分最多"

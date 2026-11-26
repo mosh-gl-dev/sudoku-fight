@@ -211,7 +211,8 @@ describe('a client mirror (how RemoteGameHost will work, stage 7)', () => {
     const a1 = parseCellName('A1');
     host.dispatch({ type: 'offlineMove', playerId: 'nina', cell: a1, digit: 8, thinkMs: 2500 });
     expect(mirror.grid[a1]).toBe(8);
-    expect(mirror.players[1]).toMatchObject({ score: 8, thinkMsTotal: 2500, offlineWindow: { left: 7 } });
+    // thinkMsTotal: the time played to the move's arrival (4000), not the 2500 it claims (Moshe, 2026-11-26).
+    expect(mirror.players[1]).toMatchObject({ score: 8, thinkMsTotal: 4000, offlineWindow: { left: 7 } });
     expect(mirror).toEqual(publicState(host.state));
     expect(views).toHaveLength(3);
     expect(host.state.status).toBe('running'); // never frozen

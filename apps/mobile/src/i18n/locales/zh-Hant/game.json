@@ -433,6 +433,7 @@
       "fastest": "最快",
       "comeback": "逆轉",
       "mostPoints": "最高得分",
+      "sameMistakes": "錯誤數相同",
       "label": "{{title}}：{{who}}，{{value}}",
       "value": {
         "bestMove": "{{value}}分",

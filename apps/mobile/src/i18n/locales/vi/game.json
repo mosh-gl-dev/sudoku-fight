@@ -433,6 +433,7 @@
       "fastest": "Nhanh nhất",
       "comeback": "Ngược dòng",
       "mostPoints": "Nhiều điểm nhất",
+      "sameMistakes": "Số lỗi bằng nhau",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} điểm",

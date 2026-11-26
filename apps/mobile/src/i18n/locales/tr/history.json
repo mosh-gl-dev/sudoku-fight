@@ -96,7 +96,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Tek bir hamleden en çok puan",
-      "fewestMistakes": "En az hata. Eşitlikte puanı yüksek olan",
+      "fewestMistakes": "En az hata. Eşitlikte ödül paylaşılır",
       "fastest": "Doğru hamle başına en düşük ortalama düşünme süresi (en az 5 hamle)",
       "comeback": "15 puan ya da daha fazla gerideyken gelen galibiyet",
       "mostPoints": "Cezalardan önce, doğru hamlelerden en çok puan"

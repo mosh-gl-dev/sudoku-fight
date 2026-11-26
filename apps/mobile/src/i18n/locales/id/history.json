@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Poin terbanyak dari satu langkah",
-      "fewestMistakes": "Kesalahan paling sedikit. Jika sama, skor yang lebih tinggi",
+      "fewestMistakes": "Kesalahan paling sedikit. Jika sama, penghargaan dibagi",
       "fastest": "Rata-rata waktu pikir terendah per langkah benar (minimal 5 langkah)",
       "comeback": "Menang setelah tertinggal 15 poin atau lebih",
       "mostPoints": "Poin terbanyak dari langkah benar, sebelum penalti"

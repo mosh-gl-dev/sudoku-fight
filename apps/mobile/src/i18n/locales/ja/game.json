@@ -433,6 +433,7 @@
       "fastest": "最速",
       "comeback": "逆転",
       "mostPoints": "最多得点",
+      "sameMistakes": "ミスの数が同じ",
       "label": "{{title}}：{{who}}、{{value}}",
       "value": {
         "bestMove": "{{value}}点",

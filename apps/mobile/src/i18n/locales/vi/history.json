@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "Nhiều điểm nhất cho một nước đi",
-      "fewestMistakes": "Ít lỗi nhất. Nếu bằng nhau, xét điểm cao hơn",
+      "fewestMistakes": "Ít lỗi nhất. Nếu bằng nhau, cùng nhận giải",
       "fastest": "Thời gian suy nghĩ trung bình ngắn nhất cho mỗi nước đi đúng (ít nhất 5 nước đi)",
       "comeback": "Thắng sau khi bị dẫn từ 15 điểm trở lên",
       "mostPoints": "Nhiều điểm nhất từ các nước đi đúng, trước khi trừ điểm phạt"

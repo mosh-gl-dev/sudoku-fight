@@ -457,6 +457,7 @@
       "fastest": "En hızlı",
       "comeback": "Geri dönüş",
       "mostPoints": "En çok puan",
+      "sameMistakes": "Hata sayısı eşit",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} puan",

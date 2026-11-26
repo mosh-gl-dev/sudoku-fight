@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "한 수로 얻은 가장 높은 점수",
-      "fewestMistakes": "가장 적은 실수. 같으면 점수가 높은 쪽",
+      "fewestMistakes": "가장 적은 실수. 같으면 공동 수상",
       "fastest": "맞힌 수 하나당 평균 생각 시간이 가장 짧은 사람(최소 5수)",
       "comeback": "15점 이상 뒤지다가 거둔 승리",
       "mostPoints": "벌점을 빼기 전, 맞힌 수로 얻은 가장 많은 점수"

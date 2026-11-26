@@ -89,7 +89,7 @@
     },
     "awardDefinitions": {
       "bestMove": "單步得分最高",
-      "fewestMistakes": "錯誤最少。若錯誤相同，比較得分",
+      "fewestMistakes": "錯誤最少。若相同，則共享此獎",
       "fastest": "每一步答對的平均思考時間最短（至少5步）",
       "comeback": "落後15分以上後逆轉獲勝",
       "mostPoints": "答對得分最多（扣分前）"

@@ -1,4 +1,5 @@
 import { CELL_COUNT, parseGrid } from '../sudoku/board';
+import { playedMs } from './played';
 import type { GameConfig, GameEvent, GameState, LeaveStanding, LockTimer, PlayerState } from './types';
 
 /**
@@ -198,7 +199,9 @@ export function evolve(state: GameState | null, e: GameEvent): GameState {
       p.score = e.score;
       p.correct++;
       p.pointsGained += e.points;
-      p.thinkMsTotal += e.thinkMs;
+      // The time played up to this move, the phone's own freezes left out [D65]: the sum of the times between this player's
+      // correct moves (Moshe, 2026-11-26). The event's thinkMs (lock to digit) stays in the log for the cheat check.
+      p.thinkMsTotal = playedMs(s, e.t);
       p.lastCorrectAt = e.t;
       if (!p.bestMove || e.points > p.bestMove.points)
         p.bestMove = { cell: e.cell, digit: e.digit, points: e.points, breakdown: e.breakdown };

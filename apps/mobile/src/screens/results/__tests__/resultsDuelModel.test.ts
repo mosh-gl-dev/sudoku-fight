@@ -82,6 +82,28 @@ describe('resultsModel against a bot (spec §12)', () => {
     expect(model.opponents[0]).toMatchObject({ ...botRow, place: 1, score: model.score });
   });
 
+  it('an award held by every player is marked everyone; one held by some is not (Moshe, 2026-11-26)', async () => {
+    const game = await wonDuel();
+    const saved = (await game.repo.getGame(game.id))!;
+    const events = await game.repo.loadEvents(game.id);
+    const result = saved.result!;
+    const model = resultsModel(
+      {
+        ...saved,
+        result: {
+          ...result,
+          awards: [
+            { kind: 'fewestMistakes', playerIds: [ME, BOT.id], value: 1 },
+            { kind: 'bestMove', playerIds: [ME], value: 6 },
+          ],
+        },
+      },
+      events,
+    );
+    expect(model.awards[0]).toMatchObject({ kind: 'fewestMistakes', everyone: true });
+    expect(model.awards[1]).not.toHaveProperty('everyone');
+  });
+
   it('an interrupted game: no outcome, the bot’s numbers as the log left them', async () => {
     const game = await interruptedDuel();
     const model = await load(game);

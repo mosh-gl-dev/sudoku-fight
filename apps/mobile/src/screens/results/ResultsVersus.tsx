@@ -598,9 +598,13 @@ function AwardRow({ award: a, popAt }: { award: AwardResult; popAt: number | nul
   const row = useEntrance('fade', popAt ?? 0, still || reduce);
   const badge = useEntrance('pop', popAt ?? 0, still || reduce);
   const title = t(`results.awards.${a.kind}`);
-  const who = a.winners
-    .map((w) => (w.mine ? t('me') : w.name === null ? tp('unknownName') : shownName(w.name, tp)))
-    .join(t('listSep'));
+  // Everyone tied on mistakes: "the same number" says it better than every name (Moshe, 2026-11-26).
+  const who =
+    a.kind === 'fewestMistakes' && a.everyone
+      ? t('results.awards.sameMistakes')
+      : a.winners
+          .map((w) => (w.mine ? t('me') : w.name === null ? tp('unknownName') : shownName(w.name, tp)))
+          .join(t('listSep'));
   const value = awardValue(a, t);
   const definition = th(`results.awardDefinitions.${a.kind}`);
   const mine = a.winners.some((w) => w.mine);

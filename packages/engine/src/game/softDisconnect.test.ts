@@ -457,7 +457,7 @@ describe('moves made offline, sent on the return (offlineMove) [D42]', () => {
       thinkMs: 3000,
       offline: true,
     });
-    expect(g.player('p2')).toMatchObject({ correct: 1, thinkMsTotal: 3000, offlineWindow: { left: 7 } });
+    expect(g.player('p2')).toMatchObject({ correct: 1, thinkMsTotal: 2100, offlineWindow: { left: 7 } }); // played to its arrival
     expect(g.lock('p2')).toBeUndefined();
     expect(g.replayMatches()).toBe(true);
   });
@@ -577,7 +577,7 @@ describe('moves made offline, sent on the return (offlineMove) [D42]', () => {
     expect(g.types(g.offlineMove('p2', 'A5', { at: 4100 }))).toEqual(['cellLocked', 'placedCorrect']);
   });
 
-  it('the think time he claims is clamped to [0, thinkTimeMs], and counts like any (thinkMsTotal, fastest)', () => {
+  it('the think time he claims is clamped to [0, thinkTimeMs] in the event; his average is the time played per move', () => {
     const puzzle = nearlySolved(['A1', 'A2', 'A3', 'A4', 'A5', 'A6']);
     const g = GameDriver.of({ puzzle });
     soft(g, 'p2', 1000);
@@ -589,11 +589,12 @@ describe('moves made offline, sent on the return (offlineMove) [D42]', () => {
     expect(placed.map((e) => e?.type === 'placedCorrect' && e.thinkMs)).toEqual([
       0, 8000, 100, 100, 100, 8000,
     ]);
-    expect(g.player('p2').thinkMsTotal).toBe(16300);
+    // The average (and "fastest") counts the time played to his last correct move, not these claims.
+    expect(g.player('p2').thinkMsTotal).toBe(2105);
     // The last cell made offline completes the board.
     const over = g.last('gameOver')!;
     expect(over).toMatchObject({ reason: 'boardComplete' });
-    expect(over.stats.find((s) => s.playerId === 'p2')!.avgThinkMs).toBe(Math.round(16300 / 6));
+    expect(over.stats.find((s) => s.playerId === 'p2')!.avgThinkMs).toBe(Math.round(2105 / 6));
     expect(over.awards.find((a) => a.kind === 'fastest')).toMatchObject({ playerIds: ['p2'] });
     expect(g.replayMatches()).toBe(true);
   });

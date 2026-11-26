@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 
 import { formatScore, ltr, signedText } from '../../../components/player';
 import i18n from '../../../i18n';
+import { color } from '../../../theme';
 import { decimalSeparator } from '../../../i18n/compose';
 import { useSettings } from '../../../state/settings';
 import { scoreCountsOf } from '../../results/resultsModel';
@@ -274,6 +275,16 @@ describe('a practice from the phone', () => {
     expect(screen.getByTestId('replay-counter')).toHaveTextContent(`שלב 2 מתוך ${replay.steps.length}`);
     expect(within(timeline).getAllByTestId('replay-timeline-dot-correct', hidden)).toHaveLength(3);
     expect(within(timeline).getAllByTestId('replay-timeline-dot-wrong', hidden)).toHaveLength(1);
+    // A wrong step: half the player's colour, half red, so the line still says whose it was (Moshe, 2026-11-26).
+    const wrongTick = within(timeline).getByTestId('replay-timeline-dot-wrong', hidden);
+    const correctTick = within(timeline).getAllByTestId('replay-timeline-dot-correct', hidden)[0]!;
+    expect(StyleSheet.flatten(wrongTick.props.style).backgroundColor).not.toBe(color.danger);
+    expect(within(wrongTick).getByTestId('replay-timeline-dot-wrong-half', hidden)).toHaveStyle({
+      backgroundColor: color.danger,
+      height: '50%',
+      bottom: 0,
+    });
+    expect(within(correctTick).queryByTestId('replay-timeline-dot-wrong-half', hidden)).toBeNull();
 
     await fireEvent.press(screen.getByTestId('replay-moment-bestMove'));
     expect(screen.getByTestId('replay-counter')).toHaveTextContent(

@@ -469,6 +469,7 @@
       "fastest": "Fastest",
       "comeback": "Comeback",
       "mostPoints": "Most points",
+      "sameMistakes": "Same number of mistakes",
       "label": "{{title}}: {{who}}, {{value}}",
       "value": {
         "bestMove": "{{value}} pts",

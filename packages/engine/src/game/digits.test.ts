@@ -505,7 +505,7 @@ describe('a correct digit (§6.4)', () => {
       pointsGained: 8,
       mistakes: 0,
       lastCorrectAt: 1500,
-      thinkMsTotal: 500,
+      thinkMsTotal: 1500, // the time played to this move
     });
     expect(g.player('p1')).toMatchObject({ score: 0, correct: 0 });
     // A solved cell cannot be locked again, not by its solver and not by anyone else.
@@ -547,20 +547,22 @@ describe('a correct digit (§6.4)', () => {
     expect(g.player('p2').bestMove).toBeNull();
   });
 
-  it('think time runs from the lock to the digit', () => {
+  it("the event's think time runs from the lock to the digit; the player's is the time played to the move", () => {
     const g = GameDriver.of();
     g.select('p1', 'A1', 1000);
     expect(g.place('p1', 'A1', 8, 3500)[0]).toMatchObject({ thinkMs: 2500 });
-    g.select('p1', 'A2', 4000);
-    expect(g.place('p1', 'A2', 6, 4000)[0]).toMatchObject({ thinkMs: 0 });
-    expect(g.player('p1').thinkMsTotal).toBe(2500);
+    expect(g.player('p1').thinkMsTotal).toBe(3500);
+    g.select('p1', 'A2', 9000);
+    expect(g.place('p1', 'A2', 6, 9000)[0]).toMatchObject({ thinkMs: 0 });
+    // Not 2500 + 0 (lock to digit): the 5500 between the two moves count (Moshe, 2026-11-26).
+    expect(g.player('p1').thinkMsTotal).toBe(9000);
   });
 
   it('a digit stamped before the lock (a clock that went back) counts at the time of the lock: think time 0', () => {
     const g = GameDriver.of();
     g.select('p1', 'A1', 3000);
     expect(g.place('p1', 'A1', 8, 2000)[0]).toMatchObject({ type: 'placedCorrect', t: 3000, thinkMs: 0 });
-    expect(g.player('p1')).toMatchObject({ lastCorrectAt: 3000, thinkMsTotal: 0 });
+    expect(g.player('p1')).toMatchObject({ lastCorrectAt: 3000, thinkMsTotal: 3000 });
   });
 
   it('think time leaves out a freeze (§6.2.7, §16.2) [D4]', () => {
