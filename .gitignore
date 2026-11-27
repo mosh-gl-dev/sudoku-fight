@@ -61,3 +61,6 @@ apps/mobile/credentials/
 
 # Claude Code personal permissions (never commit)
 .claude/settings.local.json
+
+# Music masters and spectrograms (tools/music renders them again, byte for byte; assets/music/README.md)
+/assets/music/candidates/
