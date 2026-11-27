@@ -35,12 +35,14 @@ export const MUSIC_SOURCES: Record<MusicTrackId, number> = {
   kibbitzer: require('../../../../assets/music/app/kibbitzer.m4a') as number,
   caper: require('../../../../assets/music/app/caper.m4a') as number,
   caper_final: require('../../../../assets/music/app/caper_final.m4a') as number,
+  stage_find: require('../../../../assets/music/app/stage_find.m4a') as number,
   stage_race: require('../../../../assets/music/app/stage_race.m4a') as number,
   stage_fill: require('../../../../assets/music/app/stage_fill.m4a') as number,
   stage_spot: require('../../../../assets/music/app/stage_spot.m4a') as number,
   stage_hunter: require('../../../../assets/music/app/stage_hunter.m4a') as number,
   stage_chain: require('../../../../assets/music/app/stage_chain.m4a') as number,
   stage_puzzle: require('../../../../assets/music/app/stage_puzzle.m4a') as number,
+  stage_duel: require('../../../../assets/music/app/stage_duel.m4a') as number,
 };
 
 /** How often a fade moves the volume (each move only posts to the player). */

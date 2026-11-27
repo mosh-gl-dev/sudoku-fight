@@ -2,13 +2,23 @@
 // "Standoff": the staged-practice cue for the DUEL stages (duel to 30 against the bot: locks, digits, score and
 // penalties). Combative and cheeky. Plan: scratchpad/music/stage-set/PLAN.md section 2.6.
 // node tools/music/render.mjs stage_duel
-// Revision 4 (gate round 3): the jab no longer lands C#-E-D-B# (the D drops a tritone to G#, G#7b5 spelled out), the
-// circling walk is new (no tonic-up-m3-down-semitone opening, no B#-C# close), bar 6 has its own twist (no exact
-// transposed sequence), the seam's bass comes to C# from ABOVE (the D7 tritone substitute, D2 -> C#2) and the tuba's
-// pickup drops a third to the feint (no step-down D#/D -> B# -> C# -> E across the seam), the taunt sings the #4 only as a lower
-// neighbour with a -80 c sag (no third-wide fall), a sparse celesta blip doubles the bot's b6 -> 5 in its punch bars,
-// the plunger is a mute colour (no cartoon sweep), the riq / stabs / master are narrowed (mono-safe jingles), the
-// guitar "chk" and the walk guitar decay like plucked strings, bars 10 and 12 breathe, the knockout rings no bell.
+// Revision 5 (gate round 4 follow-up, compositional):
+//   - THE ARENA: a sustained layer at last. A muted viola tremolo pedal (Kugel's tremolo pedal; STYLE 1.4 "pedals
+//     everywhere") runs under every jab and punch, moving only by semitone or by the chord: G#4 (dominant pedal) |
+//     C#5 under the jab up a 4th and the bot's D (D/C# rubs) | B#4 under the G#7b9 | C#5 | G#4 (circling) | C#5 | B#4 | C#5 (KO, fp) | G#4
+//     ringing across the seam into bar 1's G#4. Out only for the one-beat STOP (4/4). 300-2k frames > 12 dB under p90:
+//     29 % -> 9 % (Clown 10 %, Bombach 11 % on the same meter).
+//   - THE BOT HAS A MOTIF: b6 -> 7 -> 8 in its top voice (A4 -> B#4 -> C#5: the harmonic minor's augmented 2nd, then
+//     the semitone), stated as a question (3: A -> G#7), answered alone in the STOP on C# MAJOR (4: the bot's smug
+//     Picardy, with the bass climbing the same cell A1 B#1 -> C#2), sequenced up a 4th into my F# minor (7: D5 E#5
+//     F#5 over D -> C#7 -> F#m), thrown in anger (14: A4 B#4, the KO's C#5 completes it) and left unfinished at the seam
+//     (16: A4 B#4, bar 1's feint B#2 -> C#3 finishes it). The old A4 -> G#4 wiggle is gone from the top voice and the
+//     celesta (the celesta now shadows the cell: A5 C6 | C#6 | F#6).
+//   - THE TAUNT throws the bot's cell back in the Misheberach: E3 -> F##3 -> G#3 (augmented 2nd + semitone, the same
+//     shape) as consecutive notes on 2, 2& and 3 with the D#7/C# chk on the F##; bar 14 repeats it faster (1, 1&, 2).
+//   - The tuba no longer sings b6 -> 5 in bar 2 (C#3 _ F#3 E3) or across 8/9 (the retort climbs G#2 B#2 D#3 F#3 to
+//     the clinch's G#3).
+// Kept from revision 4: the jab, the circling walk, the seam (D2 -> C#2 from above), the mix (centred image, presence EQ).
 //
 // TEMPO / METRE: 140 BPM, 4/4, a bar = 1.714 s. 16 bars = 27.43 s, the whole file loops (a stage of up to 60 s loops
 // it; the app fades it out in 0.5 s when the stage ends).
@@ -32,70 +42,72 @@
 //   BOT = a MUTED BRASS section (stab, kind brass) on its own bus, slightly RIGHT (a point, not a wash). Its short
 //         jabs are dry and open; its LONG hits (3/2&, 7/2&, 8/1) speak through a mute: the bus low-pass sits at
 //         1.8 kHz on the attack and opens to 6.5 kHz within 0.3 beat (no re-closing "doo"). Loose players (seeded
-//         1-7 ms per voice, the top voice on the beat). In its punch bars (3, 7) a soft dry CELESTA blip doubles its
-//         top voice two octaves up on 2& and 4& (A5 -> G#5: the toy-bell layer of the score, b6 -> 5 on top).
+//         1-7 ms per voice, the top voice on the beat). A soft dry CELESTA blip shadows its top voice an octave up
+//         (A5 C6 in 3, C#6 on the stop, F#6 in 7: the toy-bell layer of the score).
+//   ARENA = the muted viola tremolo pedal, centred between the two sides (see revision 5).
 //   When one side plays, the other side's comping is out: jab bars have the guitars, punch bars have only the bot,
 //   and in the clinch the bot's hits TAKE the guitar's slots.
 //
 // MOTIFS (all our own; checked by script (scratchpad/music/duel_r4/ngram.mjs, contour.mjs): no 4 consecutive intervals of
-// the tuba, pizz or walk shared with kibbitzer, caper, caper_final, lobby, the seven other stage cues or the STYLE
-// section 3 hooks (only the bot's trivial A4/G#4 neighbour wiggles and generic 4-grams such as +1 +3 -2 -1 recur);
-// contour check against the Kugel title riff: no 4-note window of a phrase matches its C#-E-D#-B# cell, transposed, in
-// 4 of 4 pitch classes, and the walk and the seam no longer match it in 3 of 4. The jab's head B#-C#-E (leading tone,
-// tonic, b3) is generic minor vocabulary and stays: it continues D -> C#, never down to the 5th or to D#-B#)
+// the tuba, pizz, walk or the bot's top voice shared with kibbitzer, caper, caper_final, lobby, the seven other stage
+// cues or the STYLE section 3 hooks (only generic 4-grams with repeated notes recur); contour check against the Kugel
+// title riff: no 4-note window of a phrase matches its C#-E-D#-B# cell, transposed, in 4 of 4 pitch classes. The jab's
+// head B#-C#-E (leading tone, tonic, b3) is generic minor vocabulary and stays: it continues D -> C#, never down to
+// the 5th or to D#-B#)
 //   JAB   (tuba, bar 1)  B#2 C#3 _ E3^ D3 _ G#2 D#3 (+1 +3 -2 -6 +7): a FEINT from the leading tone on the very first
 //         downbeat, the jab up to the b3, the Phrygian b2 (D, over the G# bass) dropping a tritone to G# (the G#7b5
 //         spelled out, in octaves with the bass), D# (the 5th of G#7) pushing into the landing. Bar 2: C#3^ (land, the
-//         D finally resolved) _ A2^ G#2 (b6 -> 5).
-//   PUNCH (bot, on 2& and 4&, BETWEEN the bounce)  A [C#4 E4 A4] -> G#(maj) [B#3 D#4 G#4]: three semitone moves at
-//         once (A -> G#, C# -> B#, E -> D#). Bar 4 = the bot's one-two-HOOK: 2& A, 3& A, 4 G#7b9 ALONE (the whole band
-//         stops), 4& the b9 falls A4 -> G#4 (G#7) with the bass G#1 coming back in.
-//   JAB UP A 4th (5) over F#m: E#3 F#3 _ A3^ G3 _ C#3 G#3 (the same slip, G over C#: C#7b5); bar 6 is the
-//         TWIST: F#3^ A3 _ D3^ C#3 (a pop up to A3, then the b6 -> 5 of F#m a beat LATE: the Neapolitan D -> C# the
-//         bot is about to shout).
-//   RETORT (tuba, 8)  after the bot's G#7b9 on 1 (and a soft guitar G#7 on 1&): G#2 D#3 F#3^ A3^ (up the G#7b9, the
-//         A3 falls to the clinch's G#3).
+//         D finally resolved) _ F#3^ E3 (a cheeky 4th up, a step back to the 3rd).
+//   THE BOT'S CELL (on the off-beats, BETWEEN the bounce): top voice b6 -> 7 -> 8. 3: A [C#4 E4 A4] (2&, muted) ->
+//         rootless G#7 [D#4 F#4 B#4] (4&): the question, A4 -> B#4. 4 = the one-two-HOOK: A (2&), G#7 (3&), and on 4,
+//         ALONE (the whole band and the pedal stop), C# MAJOR [E#4 G#4 C#5]: solved, smugly in major; the pizz climbs
+//         the same cell A1 B#1 -> C#2 (4&) and falls a 5th to the jab's F#1.
+//   JAB UP A 4th (5) over F#m: E#3 F#3 _ A3^ G3 _ C#3 G#3 (the same slip, G over C#: C#7b5; its feint E#3 is the
+//         E# of the bot's C# major); bar 6 is the TWIST: F#3^ A3 _ D3^ C#3 (a pop up to A3, then the b6 -> 5 of F#m a
+//         beat LATE: the Neapolitan D -> C#).
+//   SEQUENCE (bot, 7)  the cell up a 4th in MY key: D [F#4 A4 D5] (2&, muted, D5 rubbing the C#5 pedal) -> C#7
+//         [G#4 B4 E#5] (3&) -> F#m [A4 C#5 F#5] (4&), the bass D2 -> C#2 -> F#1.
+//   RETORT (tuba, 8)  after the bot's G#7b9 on 1 (and a soft guitar G#7 on 1&): G#2 B#2 D#3 F#3^ (up the G#7, a
+//         whole step to the clinch's G#3).
 //   CLINCH (9-10)  9: the jab from the top, and the tuba takes the bot's correction: G#3 C#3 _ E3 D3 _ D#3 G#2 (D -> D#,
 //         the bot mocks it in a low voicing, top E4 on 2 and D#4 on 3&); 10: the exchange breaks up: G#3 alone, the
 //         bot's D major on 2, C#3 on 3, the bot's G#7 (top F#4) on 3&.
 //   CIRCLING (11-12) no lead: the pizz walks C#2 G#1 D#2 E2 | D2 C#2 B#1 G#1 (-5 +7 +1 -2 -1 -1 -4: down to the 5th,
 //         up the G# chord to E, the Neapolitan D on 3 falling through C# and the leading tone; accents on 1 and 3),
 //         shadowed two octaves up by a soft, ringing guitar; 12 is a breath: the pizz alone G#1 _ A1 D2 B#1 -> C#2
-//         under the chk and a glass dyad.
-//   TAUNT (13-14)  C#3 D#3 E3 _ G#3 F##3 G#3~ (+2 +1 +4 -1 +1: the #4 flashes as G#'s lower neighbour WITH the D#7/C#
-//         chk, the held G#3 sags -80 c at its end); 14: A3^ F##3 G#3 (the fifth circled from both sides, D1), the
-//         bot's G#7b9 on 3& and a G#7b9 voiced up to B#4 on 4& (the leading tone on top into the KO's C#).
-//   KO    (15/1)  tuba C#3 (in tune) + the bot G#3 C#4 G#4 + pizz + a dropKick + a short 808 C#2 (the one modern
-//         device); a quiet finger-cymbal tick inside the band; the bounce goes straight on (riq teks, chk, the pizz E2
-//         on 3 and A1 -> G#1 into 16), 15/4 a jingle breath: an arrival that pushes on, not a final button.
-//   GET UP (16)  the bot climbs its top voice A4 -> G#4 -> B#4 over the D7 tritone substitute [D4 F#4 B#4] on 4&; the
-//         bass G#1 B#1 D#2 D2 -> C#2 comes to the tonic from ABOVE (D2), the bot's top B#4 points up to C#, and the
-//         tuba's pickup F#3 E3 drops a third to the feint B#2 -> C#3: the tonic reached from above (bass) and below
-//         (lead and bot), a contrary-motion seam of our own.
+//         under the chk, a glass dyad and the soft G#4 pedal.
+//   TAUNT (13-14)  C#3 D#3 E3 F##3 G#3~ (+2 +1 +3 +1: the Misheberach climb; E3 -> F##3 -> G#3 is the bot's own cell,
+//         augmented 2nd + semitone, on 2, 2& and 3, the D#7/C# chk WITH the F##, the held G#3 sags -45 c); 14: E3^
+//         F##3 G#3 again on 1, 1& and 2 (faster: "nyah nyah"), then the bot's anger: A4 (G#7b9, 3&) -> B#4 (G#7, 4&).
+//   KO    (15/1)  tuba C#3 (in tune) + the bot [C#4 G#4 C#5] (its cell completed, but by the knockout) + pizz + a
+//         dropKick + a short 808 C#2 (the one modern device) + the pedal fp; a quiet finger-cymbal tick inside the band;
+//         the bounce goes straight on (riq teks, chk, the pizz E2 on 3 and A1 -> G#1 into 16), 15/4 a jingle breath.
+//   GET UP (16)  the bot's cell again, unfinished: A4 (2&) -> B#4 (3&), B#4 held over the D7 tritone substitute
+//         [D4 F#4 B#4] on 4&; the bass G#1 B#1 D#2 D2 -> C#2 comes to the tonic from ABOVE (D2), and the tuba's pickup
+//         F#3 E3 drops a third to the feint B#2 -> C#3, which completes the bot's B# -> C#: a contrary-motion seam.
 //
 // FORM (bar: chord; time at 140 BPM)
-//   1-2   0.00  JAB              C#m (G#7b5 flash) | C#m        tuba + guitars; bass C#2 G#1 B#1 | C#2 C#2 (E2) B1
-//   3-4   3.43  PUNCH            A -> G# | A -> G#7b9 -> G#7      the bot only (+ celesta blips in 3); bass A1 C#2 G#1;
-//                                                                  STOP 4/4
-//   5-6   6.86  JAB up a 4th     F#m (C#7b5) -> C#7 | F#m         tuba + guitars; bass F#1 C#2 E#2 | F#2 F#1 (A1) C#2
-//   7-8  10.29  PUNCH + RETORT   D -> G# | G#7b9                  the bot (D4 -> D#4 vs A4 -> G#4, contrary: D6, the bass
-//                                                                  D2 -> D#2 with it; celesta blips), retort over G#1 B#1 D#2
-//   9-10 13.71  CLINCH           C#m . G#7 | D . G#7              the bot in the guitar's slots, mocking the jab
+//   1-2   0.00  JAB              C#m (G#7b5 flash) | C#m        tuba + guitars; bass C#2 G#1 B#1 | C#2 C#2 (E2) B1; pedal G#4
+//   3-4   3.43  PUNCH            A -> G#7 | A -> G#7 -> C#        the bot only (+ celesta blips); bass A1 C#2 G#1 | A1 B#1
+//                                                                  (STOP 4/4: the bot's C# major alone) C#2
+//   5-6   6.86  JAB up a 4th     F#m (C#7b5) -> C#7 | F#m         tuba + guitars; bass F#1 C#2 E#2 | F#2 F#1 (A1) C#2; pedal C#5
+//   7-8  10.29  SEQUENCE + RETORT D -> C#7 -> F#m | G#7b9         the bot's cell up a 4th; retort over G#1 B#1 D#2; pedal B#4
+//   9-10 13.71  CLINCH           C#m . G#7 | D . G#7              the bot in the guitar's slots, mocking the jab; pedal C#5
 //   11-12 17.14 CIRCLING         C#m . D/C# | C#m . D/A           the bed: the pizz walk (+ a soft guitar shadow in 11),
-//                                                                  a soft glass C#/E dyad
-//   13-14 20.57 TAUNT            C#m . D#7/C# | G#7b9              the climb and the neighbour, the bot's anger
-//   15   24.00  KNOCKOUT         C# (unison) -> C#m bed            the hit, the 808; the bounce goes on; 15/4 jingle breath
-//   16   25.71  GET UP           G#7b9 -> G#7 -> D7(no 5)          bass G#1 B#1 D#2 D2 -> C#2, bot top -> B#4
+//                                                                  a soft glass C#/E dyad, the pedal G#4 (soft)
+//   13-14 20.57 TAUNT            C#m . D#7/C# | D#7 . G#7b9       the Misheberach climb twice, the bot's anger; pedal C#5 | B#4
+//   15   24.00  KNOCKOUT         C# (unison) -> C#m bed            the hit, the 808, the pedal fp; the bounce goes on
+//   16   25.71  GET UP           G#7b9 -> G#7 -> D7(no 5)          bass G#1 B#1 D#2 D2 -> C#2, bot top A4 -> B#4; pedal G#4
 //   Melody (the tuba) in 1, 2 (half), 5, 6 (half), 8 (half), 9, 10 (two notes), 13, 14 (half), 15 (one hit), 16 (a
-//   pickup); the walk shadow in 11: about 8 of 16 bars carry a line.
+//   pickup); the bot's cell in 3, 4, 7, 14 (half), 16 (half); the walk shadow in 11. The pedal is a bed, not a line.
 //
-// SEMITONE DEVICES: D4 (the feint B#2 -> C#3 on the first downbeat, E#3 -> F#3 in 5, the bot's B#4 -> the KO's C#),
-//   D3 (A -> G# in every punch and in the celesta, the jab's b6 -> 5, the hook's b9 falling, the retort's A3 -> G#3,
-//   15/4& A1 -> G#1), D2 (the jab's D -> C#, D -> C# in the walk, D/C# -> C#m in the circling, the seam's bass D2 ->
-//   C#2 under the D7 tritone substitute), D6 (7: D4 -> D#4 against A4 -> G#4; 16: the bass D#2 D2 -> C#2 against the
-//   bot's top G#4 -> B#4), D1 (the taunt's F## and A around G#; the walk's D C# B# C#; bass D2 and tuba B#2
-//   around C# at the seam), the Misheberach #4 (13), the bot's correction D3 -> D#3 (9), D12 (tuba scoops, +12 c, the taunt's -80 c
-//   sag).
+// SEMITONE DEVICES: D4 (the feint B#2 -> C#3 on the first downbeat, E#3 -> F#3 in 5, the bot's B#4 -> C#5 in 4 and
+//   at the KO, the pedal B#4 -> C#5 into 9 and 15), D3 (the pedal G#4 under the bot's A4 in 3-4: A/G# rubs; the jab's
+//   D3 -> C#3 in 6; 15/4& A1 -> G#1), D2 (the jab's D -> C#, the bot's D5 over the C#5 pedal and the bass D2 -> C#2 in
+//   7, D -> C# in the walk, D/C# -> C#m in the circling, the seam's bass D2 -> C#2 under the D7 tritone substitute),
+//   D6 (16: the bass D#2 D2 -> C#2 against the bot's top A4 -> B#4), D1 (the walk's D C# B# C#; bass D2 and tuba B#2
+//   around C# at the seam), the harmonic minor's augmented 2nd as the bot's cell and its Misheberach mirror in the taunt
+//   (E -> F## -> G#, the #4, 13-14), the bot's correction D3 -> D#3 (9), D12 (tuba scoops, +12 c, the taunt's sag).
 // The one modern device: the 808 under the knockout (with a dropKick), short and an octave up (phones).
 
 import { n } from '../engine.mjs';
@@ -193,6 +205,12 @@ export default {
     const busBell = s.bus('bell', { gain: -10, pan: 0.05, reverb: 0.1, eq: [{ type: 'peak', f: 2700, q: 2, gain: 1 }] });
     const busGlass = s.bus('glass', { gain: -10, reverb: 0.25, width: 1.4 });
     const busFx = s.bus('fx', { gain: -14, width: 0, eq: [{ type: 'hp', f: 30 }] });
+    // THE ARENA: a muted viola tremolo pedal (Kugel's tremolo pedal, STYLE 1.4), centred under both sides, a narrow
+    // section; its 2nd-6th partials fill the 300-2k band between the jabs. hp 170 (no low-mid mud), the bow's 2.5 kHz
+    // edge taken down (focus over many replays)
+    const busPed = s.bus('pedal', { gain: -10, pan: 0.02, width: 0.6, room: 0.08, reverb: 0.12,
+      comp: { threshold: -24, ratio: 2, attack: 0.02, release: 0.2, knee: 6, makeup: 0 },
+      eq: [{ type: 'hp', f: 170 }, { type: 'peak', f: 600, q: 0.9, gain: 1.5 }, { type: 'peak', f: 2500, q: 1, gain: -3 }, { type: 'lp', f: 7000, q: 0.7 }] });
 
     // the bot alone (punch bars, and its get-up) steps forward; in the clinch both sides give a little
     busStab.automate('gain', [[B(1), 0], [B(2, 4.9), 0], [B(3), 2], [B(4, 4.9), 2], [B(5), 0], [B(6, 4.9), 0], [B(7), 2], [B(8, 4.9), 2],
@@ -203,6 +221,8 @@ export default {
     // the floor a little forward under the bot alone (the 1 on a phone: within a few dB of its 2& hit), and at the seam
     busPizz.automate('gain', [[B(2, 4.9), 0], [B(3), 1.5], [B(4, 4.9), 1.5], [B(5), 0], [B(6, 4.9), 0], [B(7), 1.5], [B(8, 4.9), 1.5], [B(9), 0],
       [B(16, 3.4), 0], [B(16, 3.5), 2], [B(16, 4.95), 2], [B(17), 0]]);
+    // the arena a little forward where the bot is alone (its punch bars)
+    busPed.automate('gain', [[B(2, 4.5), 0], [B(3), 2], [B(4, 4.9), 2], [B(5, 1.5), 0], [B(6, 4.5), 0], [B(7), 2], [B(8, 4.9), 2], [B(9, 1.5), 0]]);
     busKick.automate('gain', [[B(15, 4.9), 0], [B(16), 1.5], [B(16, 4.95), 1.5], [B(17), 0]]);
 
     // ---------------------------------------------------------------- parts
@@ -222,6 +242,7 @@ export default {
     const snare = feel(s.part(busClap, 'snare', { bright: 0.9 }), 0.004);
     const zils = feel(s.part(busBell, 'fingerCymbals'));
     const glass = feel(s.part(busGlass, 'glassPad', { split: 0.5, decayDb: 10 }));
+    const ped = feel(s.part(busPed, 'stringsTremolo', { section: 'violas', sordino: true, tremRate: 11, spread: 0.5 }), 0.004);
 
     // ---------------------------------------------------------------- helpers
     const rP = s.rng('perc'), rS = s.rng('bot'), rB = s.rng('bass'), rG = s.rng('ghosts'), rV = s.rng('voicing'), rW = s.rng('walk');
@@ -238,7 +259,11 @@ export default {
     };
     const ST = {
       A: ['C#4', 'E4', 'A4'], G: ['B#3', 'D#4', 'G#4'], G7: ['B#3', 'F#4', 'G#4'], G7b9: ['B#3', 'F#4', 'A4'], D: ['D4', 'F#4', 'A4'],
-      KO: ['G#3', 'C#4', 'G#4'],
+      KO: ['C#4', 'G#4', 'C#5'],
+      // THE BOT'S MOTIF (top voice b6 -> 7 -> 8: the augmented 2nd, then the semitone): A -> the rootless G#7 with its
+      // leading tone on top -> C# MAJOR (the bot's smug Picardy); sequenced up a 4th into F# minor in 7 (D -> C#7 -> F#m)
+      G7r: ['D#4', 'F#4', 'B#4'], CM: ['E#4', 'G#4', 'C#5'],
+      D5: ['F#4', 'A4', 'D5'], C7: ['G#4', 'B4', 'E#5'], Fm: ['A4', 'C#5', 'F#5'],
       // the low "mocking" voicings (9), the G#7 with the 7th on top (10), the b9 voiced up to the leading tone (14),
       // the D7 tritone substitute with the leading tone on top (16)
       CmLo: ['G#3', 'C#4', 'E4'], G7Lo: ['G#3', 'B#3', 'D#4'], G7f: ['G#3', 'B#3', 'F#4'], G7up: ['F#4', 'A4', 'B#4'], D7s: ['D4', 'F#4', 'B#4'],
@@ -313,7 +338,8 @@ export default {
     line(1, [[1, 0.5, 'B#2', 0.8, 0.75, { tag: 'tension', det: 0.03, _shift: 0.016 }], [1.5, 0.5, 'C#3', 0.86, 0.55],
       [2.5, 0.5, 'E3', 0.9, 0.85, { accent: 0.65 }], [3, 0.5, 'D3', 0.8, 0.55, { tag: 'tension' }],
       [4, 0.5, 'G#2', 0.82, 0.6, { det: LAND }], [4.5, 0.5, 'D#3', 0.84, 0.72]]);   // the D drops a tritone (G#7b5 spelled out), D# pushes into the landing
-    line(2, [[1, 1, 'C#3', 0.9, 0.8, { accent: 0.6, det: LAND }], [2.5, 0.5, 'A2', 0.82, 0.75, { accent: 0.55, tag: 'tension' }], [3, 0.5, 'G#2', 0.72, 0.8]]);
+    // bar 2: land, then a cheeky 4th up and a step back to the 3rd (no b6 -> 5 here: that colour is the bot's)
+    line(2, [[1, 1, 'C#3', 0.9, 0.8, { accent: 0.6, det: LAND }], [2.5, 0.5, 'F#3', 0.84, 0.72, { accent: 0.55 }], [3, 0.5, 'E3', 0.74, 0.8, { det: LAND }]]);
     bass(1, [[1, 1.5, 'C#2', 0.72], [3, 1.5, 'G#1', 0.62], [4.5, 0.5, 'B#1', 0.6, 0.85]]);      // B#1 -> C#2 (bar 2)
     bass(2, [[1, 1.5, 'C#2', 0.7], [3, 1, 'C#2', 0.62], [4, 0.5, 'E2', 0.3, 0.35], [4.5, 0.5, 'B1', 0.6, 0.85]]);   // a dead ghost E2 on 4; B1 -> A1
     kicks(1, 'C#2', 'G#1'); kicks(2, 'C#2', 'C#2');
@@ -326,14 +352,17 @@ export default {
 
     // ================================================================ 3-4 PUNCH (the bot)
     s.section('Punch', B(3), B(5), 'tension');
-    punch(3, 2.5, 'A', 0.7, 0.55, { decay: 0.24 });     // the 2& is a long hit: it speaks through the mute
-    punch(3, 4.5, 'G', 0.7);                           // A -> G#: three semitones at once (A-G#, E-D#, C#-B#)
-    blip(3, 2.5, 'A4'); blip(3, 4.5, 'G#4', 0.3);      // the toy-bell shadow: b6 -> 5 on top
-    // the one-two-HOOK: the band stops on 4, the hook lands alone (the 7th arrives), its b9 falls to the 8 on 4&
-    punch(4, 2.5, 'A', 0.64); punch(4, 3.5, 'A', 0.72); punch(4, 4, 'G7b9', 0.84, 0.3, { tag: 'tension' }); punch(4, 4.5, 'G7', 0.66, 0.4);
-    bass(3, [[1, 1.5, 'A1', 0.72], [3, 1.5, 'C#2', 0.62], [4.5, 0.5, 'G#1', 0.64, 0.85]]);     // root-position A under the bot; G#1 with the G#
-    bass(4, [[1, 1.5, 'A1', 0.72], [3, 0.75, 'C#2', 0.6, 0.8], [4.5, 0.5, 'G#1', 0.62, 0.9]]); // ... stops before 4; G#1 back WITH the 4& resolution -> A1 (5)
-    kicks(3, 'A1', 'C#2'); kicks(4, 'A1', 'C#2', { ghost: false }); kick.note(B(4, 4.5), 0.4, 'G#1', 0.4);
+    // the QUESTION: A (long, through the mute) -> the rootless G#7, its top A4 -> B#4 (the augmented 2nd)
+    punch(3, 2.5, 'A', 0.7, 0.55, { decay: 0.24 });
+    punch(3, 4.5, 'G7r', 0.72, 0.22, { tag: 'tension' });
+    blip(3, 2.5, 'A4'); blip(3, 4.5, 'B#4', 0.28);     // the toy-bell shadow of the bot's top voice
+    // the ANSWER, the one-two-HOOK: A4, B#4 and on 4, alone (the whole band stops), C# MAJOR: the bot "solves" it
+    // (b6 -> 7 -> 8) and smugly in major (E#); the bass climbs the same cell under it, A1 B#1 -> C#2 on 4&
+    punch(4, 2.5, 'A', 0.64); punch(4, 3.5, 'G7r', 0.72, 0.22, { tag: 'tension' }); punch(4, 4, 'CM', 0.86, 0.4);
+    blip(4, 4, 'C#5', 0.3);
+    bass(3, [[1, 1.5, 'A1', 0.72], [3, 1.5, 'C#2', 0.62], [4.5, 0.5, 'G#1', 0.64, 0.85]]);     // root-position A under the bot; G#1 under its G#7
+    bass(4, [[1, 1.5, 'A1', 0.72], [3, 0.75, 'B#1', 0.62, 0.8], [4.5, 0.5, 'C#2', 0.64, 0.9]]); // A1 B#1 (stop) C#2: the bot's cell in the floor; C#2 -> F#1 (5)
+    kicks(3, 'A1', 'C#2'); kicks(4, 'A1', 'B#1', { ghost: false }); kick.note(B(4, 4.5), 0.4, 'C#2', 0.4);
     riqBar(3, 'punch'); clap4(3, 0.44);
     riqBar(4, 'punch', { skip: [3.5, 4.5] });             // the stop: nothing in the kit from 3& on
 
@@ -357,15 +386,17 @@ export default {
 
     // ================================================================ 7-8 PUNCH on the Neapolitan + the RETORT
     s.section('Punch 2', B(7), B(9), 'tension');
-    punch(7, 2.5, 'D', 0.76, 0.55, { decay: 0.24 }); punch(7, 4.5, 'G', 0.66);   // D4 -> D#4 against A4 -> G#4 (contrary semitones, D6)
-    blip(7, 2.5, 'A4'); blip(7, 4.5, 'G#4', 0.26);
+    // the bot SEQUENCES its cell up a 4th, into my F# minor: D5 (the Neapolitan, long, muted) -> E#5 (C#7) -> F#5
+    // (F#m): b6 -> 7 -> 8 of F#, the same augmented 2nd and semitone; the bass falls D2 -> C#2 under it (D2)
+    punch(7, 2.5, 'D5', 0.74, 0.55, { decay: 0.24, tag: 'tension' }); punch(7, 3.5, 'C7', 0.66, 0.2, { tag: 'tension' }); punch(7, 4.5, 'Fm', 0.7);
+    blip(7, 4.5, 'F#5', 0.22);
     punch(8, 1, 'G7b9', 0.82, 0.5, { tag: 'tension' });    // the bot answers on the downbeat (it rings into beat 2) ...
     chk(8, 'G7', 0.34, [1.5]);                             // ... I shrug (a soft G#7) ...
-    line(8, [[3, 0.5, 'G#2', 0.8, 0.72], [3.5, 0.5, 'D#3', 0.82, 0.72], [4, 0.5, 'F#3', 0.88, 0.75, { accent: 0.6 }],
-      [4.5, 0.5, 'A3', 0.9, 0.85, { accent: 0.7, tag: 'tension' }]]);   // ... and talk back up the G#7b9 (A3 -> G#3)
-    bass(7, [[1, 1.5, 'D2', 0.72], [3, 1.5, 'D2', 0.6], [4.5, 0.5, 'D#2', 0.64, 0.85]]);       // the Neapolitan bass rises a semitone with the bot's D4 -> D#4
+    line(8, [[3, 0.5, 'G#2', 0.8, 0.72], [3.5, 0.5, 'B#2', 0.82, 0.72], [4, 0.5, 'D#3', 0.86, 0.75, { accent: 0.55 }],
+      [4.5, 0.5, 'F#3', 0.9, 0.8, { accent: 0.7, tag: 'tension' }]]);   // ... and talk back up the G#7 (F#3 -> the clinch's G#3)
+    bass(7, [[1, 1.5, 'D2', 0.72], [3, 1, 'C#2', 0.62], [4.5, 0.5, 'F#1', 0.64, 0.85]]);       // D2 -> C#2 under D -> C#7, F#1 with the F#m
     bass(8, [[1, 1.5, 'G#1', 0.72], [3, 1.5, 'B#1', 0.6], [4.5, 0.5, 'D#2', 0.6, 0.85]]);     // up the G#7 under the retort, D#2 -> C#2
-    kicks(7, 'D2', 'D2'); kicks(8, 'G#1', 'B#1', { ghost: false });
+    kicks(7, 'D2', 'C#2'); kicks(8, 'G#1', 'B#1', { ghost: false });
     riqBar(7, 'punch'); clap4(7, 0.44);
     riqBar(8, 'punch', { skip: [3.5, 4.5] }); clap4(8, 0.42);
     // 8/3&-4a: a 16th riq roll in crescendo into the clinch (the last dum capped)
@@ -412,15 +443,19 @@ export default {
 
     // ================================================================ 13-14 TAUNT (the #4 as a neighbour) and the bot's anger
     s.section('Taunt', B(13), B(15), 'climax');
-    line(13, [[1, 0.5, 'C#3', 0.78, 0.72, { det: LAND }], [1.5, 0.5, 'D#3', 0.8, 0.72], [2, 0.5, 'E3', 0.84, 0.6, { accent: 0.5 }],
-      [3, 0.5, 'G#3', 0.86, 0.75, { accent: 0.6 }], [3.5, 0.5, 'F##3', 0.82, 0.75, { tag: 'tension' }]]);   // the #4 flashes as G#'s lower neighbour
-    // the G#3 held, sagging -80 c in its last 130 ms (a short D12 sag, not a fall)
-    tuba.play(B(13, 4), 'G#3:.7@.88 55.2:.28@.5', { legato: true, glide: 0.1, transpose: 0.06, scoop: -0.5, scoopTime: 0.05 });
-    chk(13, ['Cm', 'D7'], 0.36);                           // the II7 flashes once, WITH the F##
-    line(14, [[1, 0.5, 'A3', 0.9, 0.8, { accent: 0.6, tag: 'tension' }], [1.5, 0.5, 'F##3', 0.8, 0.72], [2, 1, 'G#3', 0.86, 0.8, { det: LAND }]]);   // the fifth circled (D1)
-    chk(14, 'G', 0.38, [2]);                               // a plain G# triad under the landing
-    punch(14, 3.5, 'G7b9', 0.8, 0.22, { tag: 'tension' }); punch(14, 4.5, 'G7up', 0.84, 0.26, { tag: 'tension' });   // top A4 -> B#4 into the KO
-    bass(13, [[1, 2, 'C#2', 0.72], [3, 1.5, 'C#2', 0.6], [4.5, 0.5, 'A1', 0.6, 0.85]]);         // a C# pedal; A1 -> G#1 (D3)
+    // I climb the MISHEBERACH scale and throw the bot's own cell back at it: E3 -> F##3 -> G#3 is the bot's
+    // augmented 2nd + semitone (A B# C#), in the Ukrainian Dorian (#4); E3 on 2, F##3 ON 2& with the D#7/C# chk,
+    // G#3 on 3, held and sagging -45 c at its end (D12)
+    line(13, [[1, 0.5, 'C#3', 0.78, 0.72, { det: LAND }], [1.5, 0.5, 'D#3', 0.8, 0.72], [2, 0.5, 'E3', 0.86, 0.85, { accent: 0.55 }],
+      [2.5, 0.5, 'F##3', 0.88, 0.85, { accent: 0.6, tag: 'tension' }]]);
+    tuba.play(B(13, 3), 'G#3:1.15@.9 55.55:.3@.5', { legato: true, glide: 0.1, transpose: 0.06, scoop: -0.4, scoopTime: 0.04, accent: 0.55 });
+    chk(13, ['Cm', 'D7'], 0.38, [1.5, 2.5]);              // the II7 flashes once, WITH the F##
+    // 14: the flash again, faster and higher in the beat ("nyah nyah"): E3 F##3 G#3 on 1, 1& and 2
+    line(14, [[1, 0.5, 'E3', 0.9, 0.85, { accent: 0.65 }], [1.5, 0.5, 'F##3', 0.84, 0.8, { tag: 'tension' }], [2, 1, 'G#3', 0.88, 0.8, { det: LAND, accent: 0.5 }]]);
+    chk(14, ['D7', 'G'], 0.36, [1.5, 2.5]);                // the D#7 under the F##, a plain G# triad after the landing
+    // the bot's anger: its cell again, A4 -> B#4, and the KO's C# completes it
+    punch(14, 3.5, 'G7b9', 0.8, 0.22, { tag: 'tension' }); punch(14, 4.5, 'G7r', 0.84, 0.26, { tag: 'tension' });
+    bass(13, [[1, 2, 'C#2', 0.72], [3, 1.5, 'C#2', 0.6], [4.5, 0.5, 'D#2', 0.6, 0.85]]);        // a C# pedal; D#2 (the 5th of G#) -> G#1
     bass(14, [[1, 1, 'G#1', 0.72], [2, 0.5, 'G#1', 0.3, 0.35], [3, 1.5, 'G#1', 0.6], [4.5, 0.5, 'B#1', 0.62, 0.85]]);
     kicks(13, 'C#2', 'C#2'); kicks(14, 'G#1', 'G#1', { ghost: false });
     riqBar(13, 'jab'); clap4(13, 0.52);
@@ -452,11 +487,26 @@ export default {
     // (no step-down into the leading tone: the Kugel title riff's seam is not ours)
     bass(16, [[1, 1.5, 'G#1', 0.72], [3, 0.5, 'G#1', 0.62, 0.8], [3.5, 0.5, 'B#1', 0.62, 0.85], [4, 0.5, 'D#2', 0.65, 0.85], [4.5, 0.5, 'D2', 0.7, 0.85]]);
     kicks(16, 'G#1', 'G#1', { ghost: false });
-    punch(16, 2.5, 'G7b9', 0.7, 0.22, { tag: 'tension' }); punch(16, 3.5, 'G7', 0.72, 0.22); punch(16, 4.5, 'D7s', 0.76, 0.24, { tag: 'tension' });
+    // the bot's cell one last time, unfinished (A4 -> B#4, B#4 held over the D7 tritone substitute): bar 1's feint
+    // B#2 -> C#3 finishes it for me
+    punch(16, 2.5, 'G7b9', 0.7, 0.22, { tag: 'tension' }); punch(16, 3.5, 'G7r', 0.72, 0.22, { tag: 'tension' }); punch(16, 4.5, 'D7s', 0.76, 0.24, { tag: 'tension' });
     chk(16, 'G7', 0.38, [1.5]);
     line(16, [[4, 0.5, 'F#3', 0.8, 0.6, { accent: 0.5 }], [4.5, 0.5, 'E3', 0.8, 0.72]]);
     riqBar(16, 'punch', { v: 0.85, skip: [3.5] }); clap4(16, 0.45);
     riq.hit(B(16, 4.75), 0.25, 0.34 * jv(), { stroke: 'tek' });
+
+    // ================================================================ THE ARENA: the tremolo pedal under everything
+    // a slow line of its own that moves only by semitone or by the chord: the dominant G#3 under the jab and the bot's
+    // A (A/G# rubs, D3), out for the STOP (4/4); C#4 (the 5th of F#m) under the jab up a 4th and the bot's D (D/C#
+    // rubs, D2); B#3 under the G#7b9, back to C#4 (D4); G#3 under the circling (the dominant pedal of Kugel, softer);
+    // C#4 under the taunt (the 7th of the D#7 flash), B#3 under the anger, C#4 at the KO (fp), G#3 into the seam
+    // (bar 16's G#3 rings into bar 1's G#3: the pedal never breaks across the loop).
+    // [bar, beat, length in beats, pitch, vel, expr]
+    const SWELL = [[0, 0.8], [0.55, 1], [1, 0.82]];
+    for (const [bar, beat, len, p, v, expr = SWELL] of [
+      [1, 1, 14.95, 'G#4', 0.46], [5, 1, 12, 'C#5', 0.44], [8, 1, 4, 'B#4', 0.48], [9, 1, 8, 'C#5', 0.44],
+      [11, 1, 8, 'G#4', 0.38], [13, 1, 4, 'C#5', 0.44], [14, 1, 4, 'B#4', 0.5], [15, 1, 4, 'C#5', 0.5, 'fp'], [16, 1, 4, 'G#4', 0.44],
+    ]) ped.note(B(bar, beat), len, p, v, { expr, ...(p === 'B#4' ? { tag: 'tension' } : {}) });
 
     // the bot's mute on its LONG hits only: the bus low-pass at 1.8 kHz on the attack (the brass bite stays), open
     // within 0.3 beat (0.13 s), no re-closing; the filter rests open (6.5 kHz) under the short jabs

@@ -14,12 +14,14 @@ export const MUSIC_TRACK_IDS = [
   'kibbitzer',
   'caper',
   'caper_final',
+  'stage_find',
   'stage_race',
   'stage_fill',
   'stage_spot',
   'stage_hunter',
   'stage_chain',
   'stage_puzzle',
+  'stage_duel',
 ] as const;
 
 export type MusicTrackId = (typeof MUSIC_TRACK_IDS)[number];
@@ -95,18 +97,17 @@ export const MUSIC_CONFIG = {
   finalAtEmptyCells: 12,
 
   /**
-   * A stage of staged practice: the cue of its kind, from GO to its end. `find` and `duel` have no cue of their
-   * own yet: stage_find and stage_duel did not pass their gate (assets/music/README.md), so they borrow the
-   * nearest passing cue (find: the slow, searching stage_spot; duel: stage_race, the other duel against the bot)
-   * until a new cue passes. Then: add its id to MUSIC_TRACK_IDS, its file to services/music.ts, and map it here.
+   * A stage of staged practice: the cue of its kind, from GO to its end. Every kind has its own cue (Moshe:
+   * "מנגינה שונה לכל סוג משחק"); the three fill kinds share one. A new cue: its id in MUSIC_TRACK_IDS, its file in
+   * services/music.ts, and its kind here.
    */
   stage: {
-    find: 'stage_spot',
+    find: 'stage_find',
     findDuel: 'stage_race',
     fillBox: 'stage_fill',
     fillRow: 'stage_fill',
     fillCol: 'stage_fill',
-    duel: 'stage_race',
+    duel: 'stage_duel',
     spotError: 'stage_spot',
     pointHunter: 'stage_hunter',
     chain: 'stage_chain',

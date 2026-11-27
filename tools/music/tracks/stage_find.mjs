@@ -4,9 +4,28 @@
 // node tools/music/render.mjs stage_find
 //
 // CONCEPT: the sonar sends a ping, the eye sweeps a row in two short waves; the second wave repeats the first a step
-// higher but reaches ONE CELL TOO FAR (the b2, Bb) and drops a semitone onto the tonic: THERE. A true find gets a halo
-// (glass a moment late + a celesta return). The shaker is the eye: a hand that leans into beats 1 and 3 while it scans
+// higher but reaches ONE CELL TOO FAR (the b2, Bb) and drops a semitone onto the tonic: THERE. The scan down lands on a
+// wrong cell (C over F) until the floor moves under it; the quick scan finds a NEW note (the major third). A true
+// find gets a halo (glass a moment late + a celesta return). The shaker is the eye: a hand that leans into beats 1 and 3 while it scans
 // and stops dead where the vibes strike. Airy, no kick, the most "thinking" cue of the set.
+//
+// Revision 5 (gate round 4 follow-up, composition only; the set-check mix fixes below are kept as they were):
+// - FOUR DIFFERENT CADENCES. Round 4 resolved every phrase the same way (Bb -> A onto A: bar 3, bar 7, bar 9 and the
+//   seam bass). Now each landing has its own target, approach and rhythm:
+//     bar 3   A5 from Bb5 ABOVE, by a semitone, on the downbeat after a quarter: the overshoot, the cue's identity (kept).
+//     bar 7   C5 over F (bass F2), from D5 above by a WHOLE step, the wave a beat late, square on the downbeat: a
+//             DECEPTIVE landing on bVI (a wrong cell, not a wrong note). Bar 8 moves the floor back to Am under the
+//             same pitch class (celesta C6, glass A E): the cell was right, the board moved (a common-tone turn).
+//     bar 9   C#6 from C6 BELOW, by a semitone, an 8th early: the overshoot shape (+5 +3) from E5, but the semitone
+//             now goes UP, minor third -> major third (D8 in the line, the pad turns with it): the Picardy find.
+//     seam    E7b9 (the Freygish V) -> Am: bass E2 E2 B2 G#2 -> A2 from BELOW (D4), pad A3 -> G#3 and C4 -> B3 in bar
+//             12 then B3 -> C4, the cello F4 -> E4 (the b9 sighs onto the root, D3) and D4 (the 7th) falling off into
+//             the bar-1 C5 (7th -> 3rd). The Bb now lives only in the overshoot and the Gm/A colour of bar 6.
+// - Bar 5: the echo rises a third (F5, the mirror of wave 1's falling third), so wave 2 (G5 D5 C5) starts a step
+//   above it. Bar 9 wave 1 recalls the opening (C5 F5) with its top bent down (F5 -> E5); the old C#5 start is gone,
+//   the C# is saved for the find. Bar 7's "doubt" is the band's (viola + pad F4 -> E4, bass F2 -> E2), not the lead's.
+// - Tuba: E2 marcato + a soft B1 in bar 12 (was the Bb1 lean); violas pizz: Am roll in bar 9, E7 in bar 12, the seam
+//   dyad G#3 F4 (-> A3 E4).
 //
 // Revision 4 (gate round 3):
 // - KEY: A Phrygian over an A pedal (was F#: the same notes as kibbitzer's B minor, with its G -> F# sigh). The cue now
@@ -27,13 +46,14 @@
 //
 // Set check 2026-11-27 (mix only): the image is centred (lead/celesta/cello/pad/shaker pans; L-R -1.83 -> +0.13 dB),
 // the viola comp is no longer double-widened (bus width 1.6 -> 1.0, pans +-0.7 -> +-0.5: comp corr -0.35 -> +0.34),
-// master -2.5 dB at 720 Hz and +2.5 dB at 3.2 kHz (presence -19.2 -> -15.7 dB rel. total). Notes unchanged.
+// master -2.5 dB at 720 Hz and +2.5 dB at 3.2 kHz (presence -19.2 -> -15.7 dB rel. total). Notes unchanged then.
 //
 // TEMPO / METRE: 92 BPM, 4/4, STRAIGHT (no swing anywhere: kibbitzer owns the half-swung 16th shaker). A bar =
 // 2.609 s. 12 bars = 31.30 s, the whole file loops (stages of 6-60 s; the app fades it in 0.5 s at the stage end).
-// KEY: A Phrygian over an A pedal, the bII (Bb) as the overshoot, a Freygish/Picardy twist (C#) and a bVI "almost":
-//   1 Am | 2 Dm/A | 3 Am | 4 Am -> F/A on 3 | 5 Dm/A | 6 Gm/A | 7 F (bass F2: the miss) | 8 Am -> Gm/A on 3
-//   | 9 A MAJOR | 10 A MAJOR | 11 F/A | 12 Bb (bII, the seam)
+// KEY: A Phrygian over an A pedal, the bII (Bb) as the overshoot, a bVI deceptive "almost", a Picardy find (C#) and
+//   a Freygish V (E7b9) at the seam:
+//   1 Am | 2 Dm/A | 3 Am | 4 Am -> F/A on 3 | 5 Dm/A | 6 Gm/A | 7 F (bass F2: the wrong cell) | 8 Am -> Gm/A on 3
+//   | 9 Am -> A on 4& | 10 A MAJOR | 11 F/A | 12 E7b9 (bass E2 .. G#2, the seam)
 //
 // MOTIFS (our own; checked by script against STYLE.md section 3, the Mori/Schvitz lists, kibbitzer's TICK/CALL/RIFF
 // and caper's hooks, by intervals AND by pitch runs, and against the other stage cues)
@@ -41,20 +61,20 @@
 //   SCAN  (1-2-3/1)  C5 F5 G5~ _ E5~ | _ _ _ _ D5 G5 Bb5^ | A5     cell = 8th 8th quarter, +5 +2; the echo falls a
 //                third; the second wave is the cell a step higher, but its top overshoots by a semitone (+5 +3: Bb5
 //                instead of A5, a b9 against the pedal) and drops onto A5 on the downbeat (D2: the find, 5.2 s).
-//   SCAN DOWN (5-6-7)  A5 E5 D5~ _ G5~ | _ _ _ _ F5 C5 Bb4~ | ~ ~ A4   the cell inverted (-5 -2); its repeat stops one
-//                cell SHORT on Bb4, which hangs over the bar line as the 4th of F (bass F2) and only falls to A4 on
-//                beat 3: the "almost" (D2 as a 4-3 suspension over bVI, no celesta). Bar 8 confirms it: bass back on
-//                A, celesta A5 + a glass fifth.
-//   QUICK (9-10/1)  C#5 F5 E5~ _ E5 G5 Bb5(16th) A5~   the twist, FREYGISH: the cell's first note raised a semitone
-//                (C -> C#, the third swap D8 in the line itself), its top bent down F5 -> E5 (D3), then the second
-//                wave re-strikes E5 and climbs in minor thirds (E G Bb over A: the b9 of A7) and finds A5 an 8th
-//                EARLY ("found faster"); A major landing (Picardy). C# falls back to C in bar 11 (pad, D8).
+//   SCAN DOWN (5-6-7)  A5 E5 D5~ _ F5~ | _ _ _ _ _ _ G5 D5 | C5~   the cell inverted (-5 -2), the echo rises a third;
+//                its repeat comes a beat late and lands square on C5 over F (bass F2): one cell SHORT, a deceptive
+//                bVI, approached by a whole step. Bar 8: the floor goes back to A under the same pitch class (celesta
+//                C6, glass A4 E5): the cell was right.
+//   QUICK (9-10/1)  C5 F5 E5~ _ E5 A5. C6(16th) C#6~   wave 1 recalls the opening with its top bent down (F5 -> E5,
+//                D3); wave 2 is the overshoot shape (+5 +3) from E5, but the semitone goes UP: C6 -> C#6 an 8th
+//                EARLY (D8 in the line; the pad turns C4 -> C#4 with it): found faster, on a new note. A major
+//                landing (Picardy); C# falls back to C in bar 11 (pad, D8).
 //   CELLO (4, 12)  4: E4 (taken over from the pad) ~ F4 on 3 (D7: it leans into the F chord), a fall-off at the end;
-//                12: a scoop into F4 ~ ~ E4(8th, a passing #11 over Bb) D4 (falls off) -> the bar-1 C5 of the vibes.
-// SEMITONE DEVICES: D2 (Bb -> A: overshoot, suspension, grace: three rhythms), D8 (C -> C# -> C in line and pad), D7
-// (E -> F pivot), D3 (F -> E sighs: bar 9 line, bar 7 viola + pad, bar 7 bass F2 -> E2), D12 (cello scoops and
-// fall-offs), double semitone voice leading (bar 8 -> 9 D4 -> C#4, bar 12 -> 1 Bb3 -> A3, D4 -> C4... in the pad), and
-// the Phrygian seam: bass Bb2 (bar 12) -> A2.
+//                12: over E7b9, a scoop into F4 (the b9) -> E4 (D3) -> D4 (the 7th, falls off) -> the bar-1 C5.
+// SEMITONE DEVICES: D2 (Bb5 -> A5, the overshoot), D8 (C6 -> C#6 in the line, C4 -> C#4 -> C4 in the pad), D7 (E -> F
+// pivot, bar 4), D3 (F -> E sighs: bar 9 line, bar 7 viola + pad, bar 7 bass F2 -> E2, bar 12 cello), D4 (bass G#2 -> A2
+// at the seam), D6 (contrary semitones at the seam: G#2 -> A2 against the seam dyad F4 -> E4), D12 (cello scoops and
+// fall-offs), double semitone voice leading in the pad (bar 11 -> 12 A3 -> G#3 + C4 -> B3).
 // SHAPE (3 + 1 | 3 + 1 | 2 + 2): scan bars 1-2, 5-6, 9; landing holds 3, 7, 10; bars 4, 8, 11 and 12 are bed (cello,
 // pad, violas). The vibes sound in 8 of 12 bars (scan figures in 5, landing holds in 3); the cello is an inner voice
 // in bar 4 and the hand-over in bar 12; bar 11 only has a two-note celesta return (the sonar echo).
@@ -62,7 +82,7 @@
 // SOUND: vibes lead (soft mallets, a light motor, damped neighbours, short half-pedal overlaps inside a wave), glassPad
 // halo (enters 25-70 ms after the vibes, never in unison, different length every time), celesta pings with a light
 // dotted-8th ping-pong (the sonar return, the cue's one modern device), solo cello in the bed bars, pizz bass pedal
-// phrased by a player (rests, passing notes, ghosts), tuba marcato on the 4-bar heads (one Bb1 lean in bar 12), violas
+// phrased by a player (rests, passing notes, ghosts), tuba marcato on the 4-bar heads (E2 + a soft B1 in bar 12), violas
 // pizz (wide L/C/R, a different comp per wave), a muted viola-section pad (sordino, legato, swelling with the waves and
 // dipping on each landing), the shaker hand (curved 16th leans into beats 1 and 3 while the eye scans, silence on a
 // landing, soft 16ths in the bed bars) and jingles in the bed bars plus one soft echo jingle after each true find.
@@ -81,17 +101,18 @@ const PAD_T = [
   [7, 1, ['C4', 'F4']],
   [7, 4.5, ['C4', 'E4']],                        // the doubt: F4 -> E4 with the viola pizz
   [8, 1, ['A3', 'C4', 'E4']],
-  [8, 3, ['D4', 'G4']],                          // Gm/A without Bb: D4 -> C#4 and G4 -> E4 into the A major bar
-  [9, 1, ['A3', 'C#4', 'E4']],
-  [11, 1, ['A3', 'C4', 'F4']],
-  [12, 1, ['Bb3', 'D4', 'D5']],
+  [8, 3, ['D4', 'G4']],                          // Gm/A without Bb: D4 -> C4 and G4 -> E4 into bar 9
+  [9, 1, ['A3', 'C4', 'E4']],                    // the quick wave starts in minor ...
+  [9, 4.5, ['A3', 'C#4', 'E4']],                 // ... and turns major WITH the lead's C6 -> C#6 (D8)
+  [11, 1, ['A3', 'C4', 'F4']],                   // C# falls back to C (D8); the F4 goes to the cello in bar 12
+  [12, 1, ['G#3', 'B3', 'D5']],                  // E7b9 (the Freygish V): A3 -> G#3, C4 -> B3 (the D4 is the cello's)
 ];
 // the violas pizz: three chord tones, low to high (the ripple)
 const VLA = {
   Am: ['A3', 'C4', 'E4'], A: ['A3', 'C#4', 'E4'], Bb: ['Bb3', 'D4', 'F4'], F: ['A3', 'C4', 'F4'], Dm: ['A3', 'D4', 'F4'],
-  Gm: ['Bb3', 'D4', 'G4'],
+  Gm: ['Bb3', 'D4', 'G4'], E7: ['G#3', 'B3', 'D4'],
 };
-const HARM = [null, 'Am', 'Dm', 'Am', 'Am', 'Dm', 'Gm', 'F', 'Am', 'A', 'A', 'F', 'Bb'];
+const HARM = [null, 'Am', 'Dm', 'Am', 'Am', 'Dm', 'Gm', 'F', 'Am', 'Am', 'A', 'F', 'E7'];
 const SCAN_BARS = [1, 2, 5, 6, 9];
 const LAND_BARS = [3, 7, 10];
 const BED_BARS = [4, 8, 11, 12];
@@ -259,10 +280,10 @@ export default {
         6: 'A2:q@.6 A2:q@.33 A2:e.@.5 A2:s@.24 _:e G2:e@.38',
         7: 'F2:h@.62 F2:q@.42 E2:q@.44',
         8: 'A2:q@.6 A2:e.@.36 A2:s@.24 A2:q@.5 A2:e@.34 G2:e@.4',
-        9: 'A2:q.@.62 A2:e@.24 A2:q@.48 A2:q@.37',
+        9: 'A2:q.@.62 A2:e@.24 A2:q@.48 _:e E2:e@.42',
         10: 'A2:h@.6 A2:q@.42 E2:q@.44',
         11: 'A2:q@.56 _:e A2:e@.22 A2:q@.48 A2:e@.33 A2:e@.4',
-        12: 'Bb2:q@.6 Bb2:e.@.36 Bb2:s@.24 Bb2:q@.5 Bb2:q@.42',
+        12: 'E2:q@.6 E2:e.@.36 E2:s@.24 B2:q@.48 G#2:q@.46',   // the Freygish V walks up into the seam: G#2 -> A2
       };
       bass.play(B(bar), BP[bar].replace(/@([0-9.]+)/g, (m, x) => '@' + (parseFloat(x) * a).toFixed(3)), { gate: land ? 0.92 : 0.72 });
 
@@ -275,10 +296,10 @@ export default {
       } else if (bar === 5 || bar === 6) {               // scan down: the dyad on 2&, the top on 4
         vlaL.chord(B(bar, 2.5), 0.4, v.slice(0, 2), bar === 5 ? 0.33 : 0.28);
         vlaR.note(B(bar, 4), 0.4, v[2], bar === 5 ? 0.27 : 0.32);
-      } else if (bar === 9) {                            // quick: one roll L -> C -> R on 2
-        vlaL.note(B(bar, 2), 0.4, VLA.A[0], 0.32);
-        vlaC.note(B(bar, 2.08), 0.4, VLA.A[1], 0.3);
-        vlaR.note(B(bar, 2.16), 0.4, VLA.A[2], 0.33);
+      } else if (bar === 9) {                            // quick: one roll L -> C -> R on 2 (still minor)
+        vlaL.note(B(bar, 2), 0.4, VLA.Am[0], 0.32);
+        vlaC.note(B(bar, 2.08), 0.4, VLA.Am[1], 0.3);
+        vlaR.note(B(bar, 2.16), 0.4, VLA.Am[2], 0.33);
       } else if (bed) {                                  // the sonar sweep: low left, middle centre, top right
         const vv = bar === 4 ? VLA.F : bar === 8 ? VLA.Gm : v;
         const w = bar === 12 ? [0.34, 0.32, 0.3] : bar === 8 ? [0.36, 0.35, 0.33] : [0.38, 0.34, 0.31];
@@ -286,7 +307,7 @@ export default {
         vlaC.note(B(bar, 3), 0.4, vv[1], w[1] * a);
         vlaR.note(B(bar, 3.5), 0.4, vv[2], w[2] * a);
         if (bar !== 12) vlaL.chord(B(bar, 1.5), 0.4, (bar === 11 ? VLA.F : VLA.Am).slice(0, 2), (bar === 8 ? 0.22 : 0.26) * a);
-        else vlaL.chord(B(bar, 4.5), 0.4, ['Bb3', 'D4'], 0.28 * a);   // the seam keeps moving into bar 1
+        else vlaL.chord(B(bar, 4.5), 0.4, ['G#3', 'F4'], 0.28 * a);   // the seam keeps moving: G#3 -> A3, F4 -> E4
       } else {                                           // landing bars: one quiet top note, the halo speaks
         if (bar !== 7) vlaR.note(B(bar, 2.5), 0.4, (bar === 10 ? VLA.A : VLA.Am)[2], bar === 10 ? 0.29 : 0.26);
         else vlaL.chord(B(bar, 2), 0.4, ['C4', 'F4'], 0.32);   // the pizz says F: the miss
@@ -333,8 +354,8 @@ export default {
       tuba.note(B(bar), 0.6, 'A2', v, { accent: 0.35 });
       tuba.note(B(bar), 0.6, 'A1', v * 0.35, { accent: 0.2 });
     }
-    tuba.note(B(12), 1.7, 'Bb1', 0.36, { expr: 'swell' });
-    tuba.note(B(12), 0.55, 'Bb2', 0.48, { accent: 0.3 });
+    tuba.note(B(12), 0.55, 'E2', 0.5, { accent: 0.3 });
+    tuba.note(B(12, 3), 0.9, 'B1', 0.3, { expr: 'fade' });
 
     // ---------------------------------------------------------------- the lead
     // inside a wave the notes overlap a little (a half pedal), semitone neighbours stay short, the overshoot is a dead
@@ -364,24 +385,31 @@ export default {
     fall(4, 3, 65, 0.37, 1.85);
 
     s.section('Scan down', B(5), B(9), 'gentle');
-    // the cell inverted: A5 E5 D5~ (-5 -2), the echo rises: G5
-    vn(5, 1, 'A5', 0.54, 0.75); vn(5, 1.5, 'E5', 0.44, 0.65); vn(5, 2, 'D5', 0.52, 1.1); vn(5, 3.5, 'G5', 0.42, 1.6);
-    // its repeat a step lower stops one cell SHORT: F5 C5 Bb4, and the Bb4 hangs over the bar line (the 4th of F)
-    vn(6, 3, 'F5', 0.46, 0.65); vn(6, 3.5, 'C5', 0.44, 0.45); vn(6, 4, 'Bb4', 0.56, 2.95, { tag: 'tension' });
-    // the "almost": A4 only on beat 3, over F (bass F2), no celesta; a thin, late glass
-    vn(7, 3, 'A4', 0.48, 1.9);
-    glass.note(B(7, 3.1), 1.2, 'C5', 0.22);
-    // the true i in bar 8: bass back on A, a celesta A5 and a short glass fifth: there it is
-    cel.note(B(8), 0.5, 'A5', 0.28);
-    glass.chord(B(8, 1.04), 1.0, ['A4', 'E5'], 0.24);
+    // the cell inverted: A5 E5 D5~ (-5 -2), the echo rises a third: F5 (the mirror of wave 1's falling third)
+    vn(5, 1, 'A5', 0.54, 0.75); vn(5, 1.5, 'E5', 0.44, 0.65); vn(5, 2, 'D5', 0.52, 1.1); vn(5, 3.5, 'F5', 0.42, 1.6);
+    // its repeat a step higher than the echo, G5 D5 C5 (-5 -2 again), comes a beat LATE (two 8ths on 4, 4&) and lands
+    // squarely on the downbeat, sure of itself, one cell SHORT of the tonic, where the floor moves: bass F2, the F
+    // chord: a DECEPTIVE landing (bVI), the melody on the 5th of F, approached by a whole step from above (no
+    // semitone: the "almost" is a wrong cell, not a wrong note)
+    vn(6, 4, 'G5', 0.46, 0.55); vn(6, 4.5, 'D5', 0.45, 0.45); vn(7, 1, 'C5', 0.58, 2.6);
+    // the false find gets a false halo: F A under the C, short and thin, a little early (the eye is too sure)
+    glass.chord(B(7, 1.03), 1.1, ['F4', 'A4'], 0.2);
+    // the doubt is the band's, not the lead's: the vibes C5 just rings out while the viola pizz and the pad sigh
+    // F4 -> E4 (D3) and the bass walks F2 -> E2, pointing at the A under the same cell
+    // bar 8: the floor moves back to A under the same cell: C was right all along (now the 3rd of Am). The celesta
+    // confirms C6 an octave up, the glass fills A E under it: there it is
+    cel.note(B(8), 0.5, 'C6', 0.27);
+    glass.chord(B(8, 1.05), 1.2, ['A4', 'E5'], 0.24);
 
     s.section('Quick', B(9), B(11), 'gentle');
-    // the Freygish wave: C#5 F5 E5 (the cell's first note raised, its top sighing down), then the second wave re-strikes
-    // E5 and climbs in minor thirds, the Bb5 only a 16th, and finds A5 an 8th early
-    vn(9, 1, 'C#5', 0.45, 0.65); vn(9, 1.5, 'F5', 0.41, 0.4, { tag: 'tension' }); vn(9, 2, 'E5', 0.46, 0.8);
-    vn(9, 3, 'E5', 0.4, 0.45); vn(9, 3.5, 'G5', 0.45, 0.45);
-    vn(9, 4.25, 'Bb5', 0.46, 0.25, { tag: 'tension' });
-    vn(9, 4.5, 'A5', 0.6, 2.6);
+    // wave 1 recalls the opening (C5 F5) but its top sighs down a semitone: F5 -> E5 (D3)
+    vn(9, 1, 'C5', 0.47, 0.65); vn(9, 1.5, 'F5', 0.42, 0.4, { tag: 'tension' }); vn(9, 2, 'E5', 0.46, 0.8);
+    // wave 2 is the overshoot shape again (+5 +3) from E5: E5 A5 C6, but this time the semitone goes UP: the minor
+    // third C6 flips to the MAJOR third C#6 an 8th early (D8 in the line, the pad turns with it): found faster, and
+    // found on a new note (the 3rd, not the tonic)
+    vn(9, 3, 'E5', 0.4, 0.45); vn(9, 3.5, 'A5', 0.46, 0.7);
+    vn(9, 4.25, 'C6', 0.4, 0.25, { tag: 'tension' });
+    vn(9, 4.5, 'C#6', 0.56, 2.5);
     // the twist: A MAJOR (Picardy) halo, the widest and longest; the celesta answers with a fifth, not the third
     glass.chord(B(10, 1.07), 2.8, ['A4', 'C#5', 'E5'], 0.28);
     cel.note(B(10, 1.5), 0.5, 'A6', 0.28);
@@ -391,10 +419,11 @@ export default {
     // bar 11: the sonar's last return, two soft bells (the cell's tail E -> A)
     cel.note(B(11, 3), 0.5, 'E5', 0.24);
     cel.note(B(11, 3.75), 0.5, 'A5', 0.22);
-    // bar 12: the cello over Bb: a scoop into F4, E4 only a passing 8th (#11), D4 falls off into the bar-1 C5
-    vc(12, 1, 'F4', 0.48, 3.0, { glideFrom: 64.5, glideTime: 0.1, expr: [[0, 0.82], [0.25, 1], [1, 0.86]] });
-    vc(12, 4, 'E4', 0.42, 0.5);
-    fall(12, 4.5, 62, 0.4, 0.5, -34);
+    // bar 12: the cello over E7b9 takes the pad's F4 (the b9) with a scoop, F4 -> E4 (D3, the b9 sighs onto the
+    // root), then D4 (the 7th) falls off and resolves into the bar-1 C5 of the vibes (7th -> 3rd)
+    vc(12, 1, 'F4', 0.48, 1.5, { glideFrom: 64.5, glideTime: 0.1, expr: [[0, 0.82], [0.4, 1], [1, 0.9]] });
+    vc(12, 2.5, 'E4', 0.45, 1.5, { expr: [[0, 0.9], [0.5, 1], [1, 0.88]] });
+    fall(12, 4, 62, 0.42, 1.0, -34);
 
     s.length(B(BAR_COUNT + 1));
   },

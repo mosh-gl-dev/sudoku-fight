@@ -5,7 +5,7 @@
 ## התיקיות
 
 - `app/`: מה שהאפליקציה משמיעה. **רק הקבצים שכאן נארזים באפליקציה** (`apps/mobile/src/services/music.ts`, ‏`require` סטטי לכל קובץ). AAC-LC, ‏44.1 kHz, סטריאו, ‏160 kb/s, לולאה רציפה (`player.loop = true`).
-- `candidates/` (לא ב־git: `tools/music` מרנדר אותם מחדש, זהים ב־md5): המאסטרים, AAC ‏192 kb/s, וספקטרוגרמה (`.png`) לכל קיו. לא נארז באפליקציה. כאן נשארים גם הקיוז שלא נכנסו: `veil`, ‏`clockwork`, ‏`nocturne` (הסבב הראשון, לא עברו gate), ו־`stage_find`, ‏`stage_duel` (לא עברו gate, ראו למטה).
+- `candidates/` (לא ב־git: `tools/music` מרנדר אותם מחדש, זהים ב־md5): המאסטרים, AAC ‏192 kb/s, וספקטרוגרמה (`.png`) לכל קיו. לא נארז באפליקציה. כאן נשארים גם הקיוז שלא נכנסו: `veil`, ‏`clockwork`, ‏`nocturne` (הסבב הראשון, לא עברו gate). ב־`tools/music/tracks/` נשמרים גם הגיבויים של הסבבים, בכותרת של כל קובץ.
 
 הבדיקה `apps/mobile/src/services/__tests__/music.test.ts` נכשלת אם ב־`app/` יש קובץ שאינו ב־`MUSIC_TRACK_IDS`, או שחסר בה קובץ.
 
@@ -17,14 +17,16 @@
 | `kibbitzer.m4a` | 177.61 s | 3.7 MB | 100, ‏4/4 חצי־סווינג, B minor | whistle, accordion | משחק solo ומשחק מול בוט | 8.24 (סבב תיקון אחרון) |
 | `caper.m4a` | 163.63 s | 3.5 MB | 132, ‏2/4 oom-pah, ‏E Phrygian | whistle, accordion, theremin | משחק מדורג ומשחק חברים | 8.26 (סבב תיקון אחרון) |
 | `caper_final.m4a` | 58.19 s | 1.2 MB | כמו caper | כמו caper | הסוף של משחק מדורג או חברים: כשנשארות 12 משבצות ריקות או פחות (`finalAtEmptyCells`) ועד סוף המשחק | קטע D של caper, עבר איתו |
-| `stage_spot.m4a` | 28.56 s | 0.6 MB | 84, ‏4/4 tiptoe, ‏Eb harmonic minor | theremin | שלבים: "מצא את הטעות" (`spotError`), **וגם "מיקום מדויק" (`find`)** | 8.10 (r4) |
+| `stage_find.m4a` | 31.30 s | 0.7 MB | 92, ‏4/4 ישר, ‏A Phrygian על פדל A | vibraphone | שלבים: "מיקום מדויק" (`find`) | 8.08 (סבב המשך, 27.11) |
+| `stage_spot.m4a` | 28.56 s | 0.6 MB | 84, ‏4/4 tiptoe, ‏Eb harmonic minor | theremin | שלבים: "מצא את הטעות" (`spotError`) | 8.10 (r4) |
 | `stage_fill.m4a` | 26.66 s | 0.5 MB | 108, ‏4/4 שמיניות ישרות, ‏Bb minor ל־Bb major | felt piano | שלבים: "מלא את הריבוע/השורה/העמודה" (`fillBox`, ‏`fillRow`, ‏`fillCol`) | 8.16 (r4) |
 | `stage_chain.m4a` | 28.96 s | 0.6 MB | 116, ‏4/4, ‏C harmonic minor | damped guitar | שלבים: "שרשרת" (`chain`) | 8.06 (r2) |
 | `stage_puzzle.m4a` | 30.98 s | 0.7 MB | 124, ‏4/4 swung, ‏F major/Mixolydian | pizz violins, wood | שלבים: "פאזל" (`puzzle`) | 8.12 (r3) |
 | `stage_hunter.m4a` | 29.40 s | 0.6 MB | 147, ‏3/4 waltz, ‏Ab major | accordion | שלבים: "צייד הנקודות" (`pointHunter`) | 8.04 (r3) |
-| `stage_race.m4a` | 30.77 s | 0.7 MB | 156, ‏4/4 gallop, ‏D Freygish | mandolin מול muted brass | שלבים: "מרוץ מול הבוט" (`findDuel`), **וגם "דו־קרב" (`duel`)** | 8.18 (r3) |
+| `stage_race.m4a` | 30.77 s | 0.7 MB | 156, ‏4/4 gallop, ‏D Freygish | mandolin מול muted brass | שלבים: "מרוץ מול הבוט" (`findDuel`) | 8.18 (r3) |
+| `stage_duel.m4a` | 27.42 s | 0.6 MB | 140, ‏4/4 boxer bounce, ‏C# harmonic minor | tuba מול muted brass | שלבים: "דו־קרב" (`duel`) | 8.00 (סבב המשך, 27.11) |
 
-סך הכל כ־14 MB.
+סך הכל כ־15 MB.
 
 מה מתנגן איפה מוגדר במקום אחד: `apps/mobile/src/config/music.ts` (`MUSIC_CONFIG`). שלב מתחיל את הקיו שלו ב־GO, ובתוצאה הקיו דועך ב־0.5 s. מסך התוצאות של משחק שקט, וכך גם `/dev`.
 
@@ -34,14 +36,9 @@
 
 כל קיו עבר פאנל של חמישה שופטים: style, ‏composition, ‏realism, ‏mix, ‏fit. עובר רק ממוצע 8 ומעלה. סבבי השיפוט, השינויים והערות פתוחות קטנות מתועדים בכותרת של כל קובץ ב־`tools/music/tracks/`.
 
-שני קיוז לא עברו, ולכן **אינם באפליקציה**:
+`stage_find` ו־`stage_duel` לא עברו בסבבים הראשונים (7.90 ו־7.96 אחרי ארבעה סבבים), ובינתיים שאלו מנגינה מקיו אחר. ב־27.11 הן הולחנו מחדש (קדנצות שונות ב־find; פדל מתמשך, מוטיב לבוט וה־augmented 2nd בטובה ב־duel) ועברו בסבב הראשון שאחרי. עכשיו לכל סוג שלב מנגינה משלו; שלושת סוגי "מלא" חולקים אחת.
 
-| קיו | ממוצע אחרון | למה | מה מתנגן במקומו |
-|---|---|---|---|
-| `stage_find` | 7.90 (r4) | כל ארבע הקדנצות הן אותו Bb→A (ה־mix תוקן אחרי r4, אבל לא נשפט שוב) | `stage_spot`: הקיו האיטי והמחפש של הסט |
-| `stage_duel` | 7.96 (r4) | אין שכבה מתמשכת; זהות הבוט היא רק A→G#; ה־augmented 2nd לא נשמע בטובה | `stage_race`: גם הוא קרב מול הבוט |
-
-כשקיו חדש עובר: מוסיפים את המזהה ל־`MUSIC_TRACK_IDS`, את הקובץ ל־`MUSIC_SOURCES` ב־`services/music.ts`, ומחליפים את המיפוי ב־`MUSIC_CONFIG.stage`.
+קיו חדש: מוסיפים את המזהה ל־`MUSIC_TRACK_IDS`, את הקובץ ל־`MUSIC_SOURCES` ב־`services/music.ts`, ואת הסוג ב־`MUSIC_CONFIG.stage`.
 
 ## רינדור מחדש
 
@@ -67,4 +64,4 @@ node tools/music/analyze.mjs <scratch>/stage_race.dec.wav --loop
 
 אחר כך מוחקים את ה־WAV (המנוע כותב 16-bit, כ־5 MB לקיו של 30 s וכ־30 MB לקיו של 3 דקות).
 
-המנוע קובע אורך שהוא כפולה של 1024 דגימות (פריים AAC), ו־ffmpeg כותב edit list שמסיר את ה־priming. לכן הקובץ המפוענח באורך זהה ל־WAV, והלולאה מדויקת לדגימה. זה נבדק לכל עשרת הקבצים ב־2026-11-27.
+המנוע קובע אורך שהוא כפולה של 1024 דגימות (פריים AAC), ו־ffmpeg כותב edit list שמסיר את ה־priming. לכן הקובץ המפוענח באורך זהה ל־WAV, והלולאה מדויקת לדגימה. זה נבדק לכל שנים־עשר הקבצים ב־2026-11-27.

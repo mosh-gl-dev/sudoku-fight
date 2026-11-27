@@ -105,15 +105,15 @@ describe('music model: tracks', () => {
     expect(trackOf(gameSceneOf('solo', { status: 'paused', grid: grid(30) }, false))).toBe('kibbitzer');
   });
 
-  it('each staged-practice kind has a cue; the fill kinds share one, find and duel borrow one (no cue passed)', () => {
+  it('each staged-practice kind has a cue of its own; the fill kinds share one', () => {
     const cues = Object.fromEntries(LEVEL_KINDS.map((k) => [k, trackOf(stageSceneOf(k, 'playing'))]));
     expect(cues).toEqual({
-      find: 'stage_spot',
+      find: 'stage_find',
       findDuel: 'stage_race',
       fillBox: 'stage_fill',
       fillRow: 'stage_fill',
       fillCol: 'stage_fill',
-      duel: 'stage_race',
+      duel: 'stage_duel',
       spotError: 'stage_spot',
       pointHunter: 'stage_hunter',
       chain: 'stage_chain',
@@ -151,7 +151,7 @@ describe('music model: requests', () => {
       delayMs: 0,
     });
     expect(requestOf(LOBBY, stage)).toEqual({
-      track: 'stage_race',
+      track: 'stage_duel',
       fadeMs: MUSIC_CONFIG.crossfadeMs,
       delayMs: MUSIC_CONFIG.startDelayMs.stage,
     });
