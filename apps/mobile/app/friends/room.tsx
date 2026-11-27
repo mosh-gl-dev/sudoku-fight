@@ -21,6 +21,8 @@ import { goBack } from '../../src/screens/home/navigation';
 import { handGoCover } from '../../src/screens/match/goHandoff';
 import { warmFriendsGameSteps, warmGameLater } from '../../src/screens/match/warmGame';
 import { dropWhenCovered } from '../../src/screens/results/dropWhenCovered';
+import { friendsRoomSceneOf } from '../../src/music/musicModel';
+import { useMusicScene } from '../../src/music/musicScene';
 import { cue } from '../../src/services/feedback';
 import { useRootTeardown } from '../../src/services/latestRoot';
 import { useProfile } from '../../src/state/profile';
@@ -131,6 +133,8 @@ export default function FriendsRoomRoute() {
   const drawn = roomScreenPhase(room, entry, now);
   // QA friends-room-spinner-after-game: "no room" whose way on did not come is a closed room, with its ways out.
   const phase = useGoneWayOut(drawn, focused);
+  // The room's music (config/music.ts): the lobby while waiting, silence for 3… 2… 1… and GO!.
+  useMusicScene('/friends/room', friendsRoomSceneOf(phase.kind));
   useEffect(() => {
     const step = phase.kind === 'countdown' ? String(phase.step) : null;
     if (step === null || step === beat.current) return;

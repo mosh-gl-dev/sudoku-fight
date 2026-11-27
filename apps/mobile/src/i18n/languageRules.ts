@@ -34,9 +34,9 @@ import {
 export const SETTINGS_STORE_KEY = 'settings';
 /**
  * The record's version: 2 from 1.1.0 (the language may be 'system', with its source and what was seen); 3 from
- * 31.10.2026 (reduced motion starts off, state/settings.ts).
+ * 31.10.2026 (reduced motion starts off, state/settings.ts); 4 from 26.11.2026 (the music's volume).
  */
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 /** The first version whose record holds the language fields (D102). */
 const LANGUAGE_PREFS_SINCE = 2;
 

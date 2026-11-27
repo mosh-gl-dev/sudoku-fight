@@ -173,6 +173,9 @@
   "settings": {
     "title": "設定",
     "feedback": "サウンドと振動",
+    "music": "音楽",
+    "musicHint": "対局中とメニューの背景音楽",
+    "musicOff": "オフ",
     "sound": "サウンド",
     "soundHint": "手や操作の効果音",
     "haptics": "振動",

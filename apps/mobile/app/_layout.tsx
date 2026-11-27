@@ -16,6 +16,7 @@ import { openPracticeStorage } from '../src/game/storage';
 import i18n from '../src/i18n';
 import { syncLanguageWithSystem, useLanguageLifecycle } from '../src/i18n/languageSync';
 import { installPseudoLanguages } from '../src/i18n/pseudoLanguages';
+import { MusicDirector } from '../src/music/MusicDirector';
 import { startProgress } from '../src/progress';
 import { SplashOverlay } from '../src/screens/account/SplashScreen';
 import { ErrorScreen } from '../src/screens/ErrorScreen';
@@ -114,6 +115,8 @@ export default function RootLayout() {
             </Stack>
           </ThemeProvider>
         </View>
+        {/* The music (config/music.ts): what plays where, silence under the Splash (spec §22, D-row "מוזיקה"). */}
+        <MusicDirector covered={covered} />
         {/* Spec §4.2: the Splash while the sign-in loads (and its "try again" when the profile can't). Its first
             layout sends the system splash away, and it stays until it has been seen after that exit
             (services/systemSplash.ts). */}

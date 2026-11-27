@@ -37,6 +37,8 @@ import {
 import { levelById } from '../../src/levels/levelsData';
 import { useLevelsProgress, useOpenedChapters } from '../../src/levels/levelsStore';
 import { forgetShownResult, noteShownResult, shownResultOf } from '../../src/levels/shownResult';
+import { stageSceneOf } from '../../src/music/musicModel';
+import { useMusicScene } from '../../src/music/musicScene';
 import { crashReporter } from '../../src/services/crashlytics';
 import { FlowFallback } from '../../src/screens/FlowFallback';
 import { GameScreen } from '../../src/screens/game/GameScreen';
@@ -492,6 +494,8 @@ function StageRun({
   const resultToMap = (played: LevelPlayed) =>
     onMap(mapAfterAttempt(level.id, records, chaptersAfter(played), played.outcome, firstPlay));
   const finishedOnce = useRef(false);
+  // The stage's music (config/music.ts): its kind's cue from GO to its end, silence on "מוכן?" and the result.
+  useMusicScene(STAGE_ROUTE, stageSceneOf(level.kind, phase.kind));
   // [D65] "מוכן?"'s 2 s stand still while the app is away (LEVEL_UI.backgroundPause).
   const active = useAppActive();
 
@@ -579,6 +583,9 @@ function StageRun({
 }
 
 const NO_RECORDS = {};
+
+/** The route a stage run claims its music for (music/musicScene.ts). */
+const STAGE_ROUTE = '/levels/play';
 
 const styles = StyleSheet.create({
   // No ground of its own: the wandering digits behind the app (D126) show through.

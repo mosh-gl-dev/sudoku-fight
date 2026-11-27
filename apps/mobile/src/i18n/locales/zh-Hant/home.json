@@ -178,6 +178,9 @@
   "settings": {
     "title": "設定",
     "feedback": "音效與震動",
+    "music": "音樂",
+    "musicHint": "對局和選單中的背景音樂",
+    "musicOff": "關閉",
     "sound": "音效",
     "soundHint": "走步和操作的音效",
     "haptics": "震動",

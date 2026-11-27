@@ -2,6 +2,7 @@ import Storage from 'expo-sqlite/kv-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
+import { MUSIC_CONFIG } from '../config/music';
 import {
   defaultLanguagePrefs,
   type LanguagePrefs,
@@ -43,10 +44,25 @@ export type ReduceMotionSetting = 'system' | 'on' | 'off';
 export const DEFAULT_REDUCE_MOTION: ReduceMotionSetting = 'off';
 const REDUCE_MOTION_OFF_SINCE = 3;
 
+/**
+ * The music's volume, 0..1 (Moshe 26.11.2026: "להחליש עד כיבוי את המוזיקה בסקרול קטן"; config/music.ts,
+ * services/music.ts). 0 is off. New from version 4: an older record starts on the default.
+ */
+const MUSIC_VOLUME_SINCE = 4;
+
+/** A saved music volume, or the default when there is none (or it is not a volume). */
+export function musicVolumeOf(saved: unknown): number {
+  return typeof saved === 'number' && Number.isFinite(saved) && saved >= 0 && saved <= 1
+    ? saved
+    : MUSIC_CONFIG.defaultVolume;
+}
+
 export interface SettingsState extends LanguagePrefs {
   sound: boolean;
   haptics: boolean;
   reduceMotion: ReduceMotionSetting;
+  /** The music's volume, 0..1; 0 is off (the sound effects have their own switch, `sound`). */
+  musicVolume: number;
   /** The language setting, chosen in the app unless `source` says otherwise. */
   setLanguage: (language: LanguageSetting, source?: LanguageSource) => void;
   /** The language setting's fields, as i18n/languageSync.ts reconciles them with the system. */
@@ -54,9 +70,13 @@ export interface SettingsState extends LanguagePrefs {
   setSound: (on: boolean) => void;
   setHaptics: (on: boolean) => void;
   setReduceMotion: (value: ReduceMotionSetting) => void;
+  setMusicVolume: (volume: number) => void;
 }
 
-type Persisted = Pick<SettingsState, keyof LanguagePrefs | 'sound' | 'haptics' | 'reduceMotion'>;
+type Persisted = Pick<
+  SettingsState,
+  keyof LanguagePrefs | 'sound' | 'haptics' | 'reduceMotion' | 'musicVolume'
+>;
 
 export const useSettings = create<SettingsState>()(
   persist(
@@ -65,18 +85,28 @@ export const useSettings = create<SettingsState>()(
       sound: true,
       haptics: true,
       reduceMotion: DEFAULT_REDUCE_MOTION,
+      musicVolume: MUSIC_CONFIG.defaultVolume,
       setLanguage: (language, languageSource = 'app') => set({ language, languageSource }),
       setLanguagePrefs: (prefs) => set(prefs),
       setSound: (sound) => set({ sound }),
       setHaptics: (haptics) => set({ haptics }),
       setReduceMotion: (reduceMotion) => set({ reduceMotion }),
+      // The slider sends each step of a drag, the same one again too: only a new value is written. Not a number
+      // (NaN would be saved as null): ignored.
+      setMusicVolume: (volume) =>
+        set((s) => {
+          if (typeof volume !== 'number' || !Number.isFinite(volume)) return s;
+          const musicVolume = Math.min(1, Math.max(0, volume));
+          return musicVolume === s.musicVolume ? s : { musicVolume };
+        }),
     }),
     {
       name: SETTINGS_STORE_KEY,
       version: SETTINGS_VERSION,
       storage: createJSONStorage(() => syncSettingsStorage),
       // Version 1 (until 1.0.4): { language: 'he' | 'en', sound, haptics, reduceMotion }. Version 2 (1.1.0): the
-      // language fields. Version 3: reduced motion's default is off.
+      // language fields. Version 3: reduced motion's default is off. Version 4: the music's volume (the default
+      // for a record from before).
       migrate: (persisted, version) => {
         const saved = persisted as Partial<Persisted>;
         const oldDefault = version < REDUCE_MOTION_OFF_SINCE && saved.reduceMotion === 'system';
@@ -84,6 +114,7 @@ export const useSettings = create<SettingsState>()(
           ...saved,
           ...languagePrefsOf(persisted, version),
           ...(oldDefault ? { reduceMotion: DEFAULT_REDUCE_MOTION } : {}),
+          musicVolume: musicVolumeOf(version < MUSIC_VOLUME_SINCE ? undefined : saved.musicVolume),
         };
       },
       partialize: (s): Persisted => ({
@@ -94,6 +125,7 @@ export const useSettings = create<SettingsState>()(
         sound: s.sound,
         haptics: s.haptics,
         reduceMotion: s.reduceMotion,
+        musicVolume: s.musicVolume,
       }),
     },
   ),

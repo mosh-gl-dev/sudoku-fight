@@ -173,6 +173,9 @@
   "settings": {
     "title": "설정",
     "feedback": "소리와 진동",
+    "music": "음악",
+    "musicHint": "게임과 메뉴의 배경 음악",
+    "musicOff": "끔",
     "sound": "소리",
     "soundHint": "수와 동작에 맞춘 효과음",
     "haptics": "진동",

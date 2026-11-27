@@ -184,6 +184,9 @@
   "settings": {
     "title": "Instellingen",
     "feedback": "Geluid en trillen",
+    "music": "Muziek",
+    "musicHint": "Achtergrondmuziek in spellen en menu’s",
+    "musicOff": "Uit",
     "sound": "Geluid",
     "soundHint": "Geluiden bij zetten en acties",
     "haptics": "Trillen",

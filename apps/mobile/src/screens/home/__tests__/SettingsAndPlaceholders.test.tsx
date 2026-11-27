@@ -4,6 +4,7 @@ import { ENGINE_VERSION } from '@sudoku-fight/engine';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { act, fireEvent, screen } from 'expo-router/testing-library';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { ltr } from '../../../components/player';
 import { directionProblems } from '../../../components/ui/testing/layout';
@@ -15,6 +16,7 @@ import { haptics as hapticsService } from '../../../services/haptics';
 import { useSettings } from '../../../state/settings';
 import { useTestingSwitches } from '../../../state/testingSwitches';
 import { PlaceholderScreen } from '../PlaceholderScreen';
+import { sliderValueAt } from '../SettingControls';
 import { SettingsScreen } from '../SettingsScreen';
 import { renderApp } from '../testing/homeTesting';
 
@@ -71,6 +73,57 @@ describe('settings (spec §4.1)', () => {
     await Promise.resolve();
     expect(haptics.selectionAsync).toHaveBeenCalledTimes(1);
     expect(directionProblems(screen.getByTestId('setting-sound'))).toEqual([]);
+  });
+
+  it('sets the music with a small slider, live, 0 is off (Moshe 26.11.2026)', async () => {
+    useSettings.setState({ musicVolume: 0.6 });
+    await renderApp('/settings');
+    const slider = screen.getByRole('adjustable', { name: 'מוזיקה' });
+    expect(slider).toHaveProp('accessibilityValue', { min: 0, max: 100, now: 60, text: ltr('60%') });
+    expect(screen.getByTestId('setting-music-value')).toHaveTextContent(ltr('60%'));
+
+    // A screen reader's steps: 10%.
+    await fireEvent(slider, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    expect(useSettings.getState().musicVolume).toBe(0.7);
+    for (let i = 0; i < 9; i++)
+      await fireEvent(screen.getByRole('adjustable', { name: 'מוזיקה' }), 'accessibilityAction', {
+        nativeEvent: { actionName: 'decrement' },
+      });
+    expect(useSettings.getState().musicVolume).toBe(0);
+    expect(screen.getByTestId('setting-music-value')).toHaveTextContent('כבויה');
+    expect(screen.getByRole('adjustable', { name: 'מוזיקה' })).toHaveProp('accessibilityValue', {
+      min: 0,
+      max: 100,
+      now: 0,
+      text: 'כבויה',
+    });
+
+    // A tap or a drag on the track: the value where the finger is, on 5% steps, live.
+    await fireEvent(screen.getByTestId('setting-music-track'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 44 } },
+    });
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('setting-music-tap'), [{ x: 151, y: 20 }]);
+    });
+    expect(useSettings.getState().musicVolume).toBe(0.75);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('setting-music-drag'), [{ x: 150 }, { x: 100 }, { x: 41 }]);
+    });
+    expect(useSettings.getState().musicVolume).toBe(0.2);
+    expect(screen.getByTestId('setting-music-value')).toHaveTextContent(ltr('20%'));
+    // The sound effects keep their own switch.
+    expect(useSettings.getState().sound).toBe(true);
+    expect(directionProblems(screen.getByTestId('setting-music'))).toEqual([]);
+  });
+
+  it("the slider's value at a touch: from the track's start, which is the right in RTL", () => {
+    expect(sliderValueAt(0, 200, false, 0.05)).toBe(0);
+    expect(sliderValueAt(200, 200, false, 0.05)).toBe(1);
+    expect(sliderValueAt(52, 200, false, 0.05)).toBe(0.25);
+    expect(sliderValueAt(52, 200, true, 0.05)).toBe(0.75);
+    expect(sliderValueAt(-30, 200, false, 0.05)).toBe(0);
+    expect(sliderValueAt(300, 200, true, 0.05)).toBe(0);
+    expect(sliderValueAt(50, 0, false, 0.05)).toBe(0);
   });
 
   it('chooses reduced motion: like the device, on or off', async () => {

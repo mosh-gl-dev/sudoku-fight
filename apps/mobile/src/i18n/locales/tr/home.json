@@ -184,6 +184,9 @@
   "settings": {
     "title": "Ayarlar",
     "feedback": "Ses ve titreşim",
+    "music": "Müzik",
+    "musicHint": "Oyunlarda ve menülerde arka plan müziği",
+    "musicOff": "Kapalı",
     "sound": "Ses",
     "soundHint": "Hamleler ve işlemler için sesler",
     "haptics": "Titreşim",

@@ -190,6 +190,9 @@
   "settings": {
     "title": "Impostazioni",
     "feedback": "Suono e vibrazione",
+    "music": "Musica",
+    "musicHint": "Musica di sottofondo nelle partite e nei menu",
+    "musicOff": "Spenta",
     "sound": "Suono",
     "soundHint": "Suoni per mosse e azioni",
     "haptics": "Vibrazione",

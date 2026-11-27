@@ -184,6 +184,9 @@
   "settings": {
     "title": "Einstellungen",
     "feedback": "Ton und Vibration",
+    "music": "Musik",
+    "musicHint": "Hintergrundmusik in Spielen und Menüs",
+    "musicOff": "Aus",
     "sound": "Ton",
     "soundHint": "Töne für Züge und Aktionen",
     "haptics": "Vibration",

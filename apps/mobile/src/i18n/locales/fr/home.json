@@ -190,6 +190,9 @@
   "settings": {
     "title": "Réglages",
     "feedback": "Son et vibrations",
+    "music": "Musique",
+    "musicHint": "Musique de fond dans les parties et les menus",
+    "musicOff": "Coupée",
     "sound": "Son",
     "soundHint": "Sons des coups et des actions",
     "haptics": "Vibrations",

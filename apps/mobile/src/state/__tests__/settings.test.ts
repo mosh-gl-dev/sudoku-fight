@@ -25,8 +25,9 @@ describe('settings persistence', () => {
         sound: true,
         haptics: true,
         reduceMotion: 'on',
+        musicVolume: 0.6,
       },
-      version: 3,
+      version: 4,
     });
     useSettings.getState().setLanguage('he');
     expect(onDisk()?.state).toMatchObject({ language: 'he' });
@@ -67,7 +68,7 @@ describe('settings persistence', () => {
       sound: false,
       reduceMotion: 'on',
     });
-    expect(onDisk()).toMatchObject({ state: { language: 'he', languageSource: 'migrated' }, version: 3 });
+    expect(onDisk()).toMatchObject({ state: { language: 'he', languageSource: 'migrated' }, version: 4 });
   });
 
   it('reduced motion starts off (Moshe, 31.10.2026), and an older record that held the old default takes it', () => {
@@ -83,7 +84,7 @@ describe('settings persistence', () => {
       languageSource: 'app',
       reduceMotion: 'off',
     });
-    expect(onDisk()).toMatchObject({ state: { reduceMotion: 'off' }, version: 3 });
+    expect(onDisk()).toMatchObject({ state: { reduceMotion: 'off' }, version: 4 });
     // A choice the player made stays: 'on' from before, and 'system' chosen from now on.
     Storage.setItemSync(
       'settings',
@@ -97,5 +98,40 @@ describe('settings persistence', () => {
     );
     void useSettings.persist.rehydrate();
     expect(useSettings.getState().reduceMotion).toBe('system');
+  });
+
+  it("the music's volume (26.11.2026): 60% to start, kept in 0..1, and an older record starts on it", () => {
+    expect(useSettings.getInitialState().musicVolume).toBe(0.6);
+    useSettings.getState().setMusicVolume(0.35);
+    expect(onDisk()).toMatchObject({ state: { musicVolume: 0.35 }, version: 4 });
+    useSettings.getState().setMusicVolume(3);
+    expect(useSettings.getState().musicVolume).toBe(1);
+    useSettings.getState().setMusicVolume(-1);
+    expect(useSettings.getState().musicVolume).toBe(0);
+    // Not a number (NaN would be saved as null): ignored.
+    useSettings.getState().setMusicVolume(Number.NaN);
+    expect(useSettings.getState().musicVolume).toBe(0);
+    expect(onDisk()).toMatchObject({ state: { musicVolume: 0 } });
+
+    // A version 3 record has no volume: the default, whatever the store held.
+    const saved = { language: 'en', languageSource: 'app', appLocalesSeen: null, systemLocaleSeen: null };
+    Storage.setItemSync(
+      'settings',
+      JSON.stringify({ state: { ...saved, sound: false, haptics: true, reduceMotion: 'on' }, version: 3 }),
+    );
+    void useSettings.persist.rehydrate();
+    expect(useSettings.getState()).toMatchObject({ musicVolume: 0.6, sound: false, reduceMotion: 'on' });
+    expect(onDisk()).toMatchObject({ state: { musicVolume: 0.6 }, version: 4 });
+
+    // A version 4 record keeps its own, 0 (off) too.
+    Storage.setItemSync(
+      'settings',
+      JSON.stringify({
+        state: { ...saved, sound: true, haptics: true, reduceMotion: 'on', musicVolume: 0 },
+        version: 4,
+      }),
+    );
+    void useSettings.persist.rehydrate();
+    expect(useSettings.getState().musicVolume).toBe(0);
   });
 });

@@ -196,6 +196,9 @@
   "settings": {
     "title": "Ustawienia",
     "feedback": "Dźwięk i wibracje",
+    "music": "Muzyka",
+    "musicHint": "Muzyka w tle w grach i menu",
+    "musicOff": "Wyłączona",
     "sound": "Dźwięk",
     "soundHint": "Dźwięki ruchów i akcji",
     "haptics": "Wibracje",

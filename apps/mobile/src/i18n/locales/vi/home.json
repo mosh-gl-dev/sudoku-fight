@@ -178,6 +178,9 @@
   "settings": {
     "title": "Cài đặt",
     "feedback": "Âm thanh và rung",
+    "music": "Nhạc",
+    "musicHint": "Nhạc nền trong ván chơi và menu",
+    "musicOff": "Tắt",
     "sound": "Âm thanh",
     "soundHint": "Âm thanh cho nước đi và thao tác",
     "haptics": "Rung phản hồi",

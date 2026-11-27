@@ -178,6 +178,9 @@
   "settings": {
     "title": "设置",
     "feedback": "声音与触感",
+    "music": "音乐",
+    "musicHint": "对局和菜单中的背景音乐",
+    "musicOff": "关",
     "sound": "声音",
     "soundHint": "落子和操作时的音效",
     "haptics": "触感反馈",

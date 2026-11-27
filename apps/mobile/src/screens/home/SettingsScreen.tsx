@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ltr } from '../../components/player';
 import { VersionInfo } from '../../components/VersionInfo';
 import { RowButton } from '../../components/ui/RowButton';
 import { Text } from '../../components/ui/Text';
@@ -19,6 +20,8 @@ import {
   thisBuild,
   UNLOCK_TAPS,
 } from '../../config/testing';
+import { MUSIC_CONFIG } from '../../config/music';
+import { percent } from '../../i18n/compose';
 import { cue } from '../../services/feedback';
 import { type ReduceMotionSetting, useSettings } from '../../state/settings';
 import { useTestingSwitches } from '../../state/testingSwitches';
@@ -29,12 +32,12 @@ import { LanguagePicker } from './LanguagePicker';
 import { goBack } from './navigation';
 import { GUTTER, ScreenHeader, SectionLabel } from './parts';
 import { PseudoLanguageSettings } from './PseudoLanguageSettings';
-import { Choice, SwitchRow } from './SettingControls';
+import { Choice, SliderRow, SwitchRow } from './SettingControls';
 
 const REDUCE_MOTION: readonly ReduceMotionSetting[] = ['system', 'on', 'off'];
 
 /**
- * "הגדרות" (spec §4.1; no board yet, built in direction C with the design-system pieces): sound, haptics,
+ * "הגדרות" (spec §4.1; no board yet, built in direction C with the design-system pieces): music, sound, haptics,
  * reduced motion and language, kept in the persisted settings store. The language is a picker ("שפת המכשיר" and
  * every language this build offers, LanguagePicker; localization plan 0י), and a change restarts the app (the
  * root layout does it, D104), so the picker asks first (work plan stage 13). Stage 8 adds the
@@ -91,6 +94,8 @@ export function SettingsScreen({ version = appVersionInfo(), build = thisBuild()
   const sound = useSettings((s) => s.sound);
   const haptics = useSettings((s) => s.haptics);
   const reduceMotion = useSettings((s) => s.reduceMotion);
+  const musicVolume = useSettings((s) => s.musicVolume);
+  const musicPercent = Math.round(musicVolume * 100);
   const testing = testingSwitchesAllowed(build);
   const sectionOpen = useTestingSwitches((s) => s.sectionOpen);
   const chainPenalty = useTestingSwitches((s) => s.chainPenalty);
@@ -112,6 +117,18 @@ export function SettingsScreen({ version = appVersionInfo(), build = thisBuild()
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + space[12] }]}>
         <Section title={t('settings.feedback')}>
           <View style={styles.card}>
+            {/* The music's volume (Moshe 26.11.2026), live while dragging; 0 is off (services/music.ts). */}
+            <SliderRow
+              title={t('settings.music')}
+              hint={t('settings.musicHint')}
+              value={musicVolume}
+              valueText={musicPercent === 0 ? t('settings.musicOff') : ltr(percent(musicPercent, t))}
+              onChange={useSettings.getState().setMusicVolume}
+              step={MUSIC_CONFIG.volumeStep}
+              a11yStep={MUSIC_CONFIG.volumeA11yStep}
+              testID="setting-music"
+            />
+            <View style={styles.rule} />
             <SwitchRow
               title={t('settings.sound')}
               hint={t('settings.soundHint')}

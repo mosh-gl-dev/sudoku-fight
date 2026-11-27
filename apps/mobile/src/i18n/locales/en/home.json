@@ -192,6 +192,9 @@
   "settings": {
     "title": "Settings",
     "feedback": "Sound and haptics",
+    "music": "Music",
+    "musicHint": "Background music in games and menus",
+    "musicOff": "Off",
     "sound": "Sound",
     "soundHint": "Sounds for moves and actions",
     "haptics": "Haptics",

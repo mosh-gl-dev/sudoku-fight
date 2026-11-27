@@ -185,6 +185,9 @@
   "settings": {
     "title": "Configuración",
     "feedback": "Sonido y vibración",
+    "music": "Música",
+    "musicHint": "Música de fondo en partidas y menús",
+    "musicOff": "Apagada",
     "sound": "Sonido",
     "soundHint": "Sonidos para jugadas y acciones",
     "haptics": "Vibración",

@@ -3,6 +3,7 @@ import { NavigationContext, NavigationRouteContext } from 'expo-router/react-nav
 import { useContext, useEffect, useRef, useState } from 'react';
 
 import { useGameStore } from '../src/game/gameStore';
+import { useGameMusic } from '../src/music/useGameMusic';
 import { FlowFallback } from '../src/screens/FlowFallback';
 import { GameScreen, OnlineGame } from '../src/screens/game';
 import { GoCover, handedGoCover, handGoCover, useGameOnItsWay } from '../src/screens/match/GoCover';
@@ -35,6 +36,8 @@ const retry = () => useGameStore.getState().retryOnline();
 export default function GameRoute() {
   const session = useGameStore((s) => s.session);
   const online = useGameStore((s) => s.online);
+  // The game's music (config/music.ts): its mode's track while it runs, the final loop near its end.
+  useGameMusic();
   const leaving = useRef(false);
   // The results are open over this screen (see above): it only waits to be covered, then leaves the history.
   const ended = useRef(false);

@@ -178,6 +178,9 @@
   "settings": {
     "title": "Pengaturan",
     "feedback": "Suara dan getaran",
+    "music": "Musik",
+    "musicHint": "Musik latar di permainan dan menu",
+    "musicOff": "Nonaktif",
     "sound": "Suara",
     "soundHint": "Suara untuk langkah dan aksi",
     "haptics": "Getaran",
